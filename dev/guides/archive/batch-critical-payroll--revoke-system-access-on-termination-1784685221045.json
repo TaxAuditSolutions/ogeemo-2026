@@ -1,0 +1,66 @@
+{
+  "guideId": "payroll--revoke-system-access-on-termination",
+  "title": "Revoke System Access On Termination in Payroll",
+  "module": "payroll",
+  "intent": "revoke-system-access-on-termination",
+  "targetAudience": "admin",
+  "description": "Complete the revoke system access on termination workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for revoke system access on termination are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the revoke system access on termination entry point in the module workflow.",
+    "Enter or select the required inputs for revoke system access on termination.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Revoke System Access On Termination completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during revoke system access on termination.",
+    "Permission constraints prevent completion of revoke system access on termination.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun revoke system access on termination.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun revoke system access on termination?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm revoke system access on termination is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "revoke-system-access-on-termination",
+    "admin",
+    "revoke",
+    "system",
+    "access",
+    "on",
+    "termination",
+    "revoke system access on termination"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:41.045Z",
+  "lastVerifiedAt": "2026-07-22T01:53:41.045Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--revoke-system-access-on-termination"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

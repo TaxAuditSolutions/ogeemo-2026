@@ -1,0 +1,65 @@
+{
+  "guideId": "inventory--consume-inventory-for-internal-use",
+  "title": "Consume Inventory For Internal Use in Inventory",
+  "module": "inventory",
+  "intent": "consume-inventory-for-internal-use",
+  "targetAudience": "admin",
+  "description": "Complete the consume inventory for internal use workflow in the Inventory module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Inventory module in the current Ogeemo environment.",
+    "Required data inputs for consume inventory for internal use are prepared before starting."
+  ],
+  "steps": [
+    "Open the Inventory module from the main navigation.",
+    "Locate the consume inventory for internal use entry point in the module workflow.",
+    "Enter or select the required inputs for consume inventory for internal use.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Consume Inventory For Internal Use completes without warnings or blockers.",
+    "Resulting records are visible in the expected Inventory views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during consume inventory for internal use.",
+    "Permission constraints prevent completion of consume inventory for internal use.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun consume inventory for internal use.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun consume inventory for internal use?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm consume inventory for internal use is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "inventory",
+    "consume-inventory-for-internal-use",
+    "admin",
+    "consume",
+    "for",
+    "internal",
+    "use",
+    "consume inventory for internal use"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:23:16.868Z",
+  "lastVerifiedAt": "2026-07-22T02:23:16.868Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for inventory--consume-inventory-for-internal-use"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

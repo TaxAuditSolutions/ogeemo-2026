@@ -1,0 +1,427 @@
+# critical draft Verification Report
+
+Generated at: 2026-07-22T06:34:52.466Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 103
+Passed: 68
+Failed: 35
+
+## Results
+
+- [PASS] image-generator::generate-image-from-prompt
+  - Question: How do I generate image from prompt?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To generate an image from a prompt in the Image Generator module, follow these steps:  1.  Open the Image Generator module from the main navigation. 2.  Locate the generate image from prompt entry point in the module wor
+- [PASS] image-generator::handle-image-generation-failure
+  - Question: How do I handle image generation failure?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To handle image generation failure in the Image Generator module, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  Y
+- [PASS] image-generator::resolve-image-generation-unauthorized-error
+  - Question: How do I resolve image generation unauthorized error?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To resolve an "Image Generation Unauthorized Error" in the Image Generator module, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent p
+- [PASS] image-generator::troubleshoot-missing-generated-image-url
+  - Question: How do I troubleshoot missing generated image url?
+  - Reason: contains 15 numbered procedural steps
+  - Answer excerpt: To troubleshoot a missing generated image URL in the Image Generator module, follow these steps:  **1. Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent perm
+- [PASS] settings::upload-new-site-image
+  - Question: How do I upload new site image?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To upload a new site image, you can follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the upload document entry point in the module workflow. 3.  Enter or select the required inputs for 
+- [PASS] settings::replace-existing-site-image
+  - Question: How do I replace existing site image?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To replace an existing site image, you can do so either in the Image Manager module or the Settings module.  **In the Image Manager module:** 1. Open the Image Manager module from the main navigation. 2. Locate the repla
+- [PASS] settings::delete-site-image
+  - Question: How do I delete site image?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To delete a site image, you can follow procedures in either the Image Manager module or the Settings module.  **In the Image Manager Module:** 1.  Open the Image Manager module from the main navigation. 2.  Locate the de
+- [PASS] settings::invite-team-user-to-workspace
+  - Question: How do I invite team user to workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To invite a team user to a workspace in Settings, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the invite team user to workspace entry point in the module workflow. 3.  Enter or 
+- [PASS] settings::manage-team-authority-levels
+  - Question: How do I manage team authority levels?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To manage team authority levels, follow these steps in the Settings module:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Settings module in the current Ogeem
+- [PASS] settings::change-team-member-password
+  - Question: How do I change team member password?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To change a team member's password, follow these steps:  **Prerequisites:** 1. You are signed in with admin access or equivalent permissions. 2. You can open the Settings module in the current Ogeemo environment. 3. Requ
+- [PASS] settings::remove-team-member-record
+  - Question: How do I remove team member record?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To remove a team member record, follow these steps in the Settings module:  1.  Open the Settings module from the main navigation. 2.  Locate the remove team member record entry point in the module workflow. 3.  Enter or
+- [PASS] image-manager::upload-new-site-image
+  - Question: How do I upload new site image?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To upload a new site image, please follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the upload document entry point in the module workflow. 3.  Enter or select the required inputs for u
+- [PASS] image-manager::replace-existing-site-image
+  - Question: How do I replace existing site image?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: The guide context indicates that "replace existing site image" can be performed in two different modules: Image Manager or Settings.  To provide you with the correct procedural guidance, please specify which module you w
+- [PASS] image-manager::delete-site-image
+  - Question: How do I delete site image?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: You can delete a site image in two different modules: Image Manager or Settings.  **To delete a site image in the Image Manager module:** 1.  Open the Image Manager module from the main navigation. 2.  Locate the delete 
+- [PASS] image-manager::recover-from-image-upload-failure
+  - Question: How do I recover from image upload failure?
+  - Reason: contains 3 numbered procedural steps
+  - Answer excerpt: Based on the provided guide context, common errors that could lead to an upload failure, such as an image upload failure, and their recovery steps are detailed under the "Upload Document in Files" module.  To recover fro
+- [PASS] image-manager::recover-from-image-delete-failure
+  - Question: How do I recover from image delete failure?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To recover from image delete failure, follow these steps in the Image Manager module:  1.  Open the Image Manager module from the main navigation. 2.  Locate the recover from image delete failure entry point in the modul
+- [FAIL] backup::execute-firestore-backup-export
+  - Question: How do I execute firestore backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to execute a Firestore backup export. It primarily focuses on exporting various types of reports (CSV, PDF, and general analytics reports) from the Reports o
+- [FAIL] backup::execute-auth-backup-export
+  - Question: How do I execute auth backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to execute an "auth backup export."  The available guides cover exporting various types of reports and generating audit reports from the Reports or Analytics
+- [PASS] backup::run-combined-firestore-and-auth-backup
+  - Question: How do I run combined firestore and auth backup?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To run the combined Firestore and Auth backup, follow these steps:  1.  Open the Backup module from the main navigation. 2.  Locate the "run combined firestore and auth backup" entry point in the module workflow. 3.  Ent
+- [PASS] backup::handle-firestore-backup-failure
+  - Question: How do I handle firestore backup failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To handle Firestore backup failure, follow these steps:  **Prerequisites:**  1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Backup module in the current Ogeemo environment. 3.  Re
+- [PASS] backup::handle-auth-backup-failure
+  - Question: How do I handle auth backup failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To handle auth backup failure, please follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Backup module in the current Ogeemo environment. 3.  R
+- [PASS] user-manager::enforce-admin-only-user-manager-access
+  - Question: How do I enforce admin only user manager access?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To enforce admin only user manager access, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the enforce admin only user manager access entry point in the module workflow. 3.  Ent
+- [FAIL] user-manager::add-user-from-contact-directory
+  - Question: How do I add user from contact directory?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to add a user from a contact directory. The available guides describe how to: *   Create a contact from an email. *   Create a contact generally. *   Create 
+- [PASS] user-manager::provision-new-user-credential-node
+  - Question: How do I provision new user credential node?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To provision a new user credential node, please follow these steps:  **Prerequisites:** 1.  Ensure you are signed in with admin access or equivalent permissions. 2.  Be able to open the User Manager module in the current
+- [PASS] user-manager::assign-user-access-level
+  - Question: How do I assign user access level?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To assign user access level, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the assign user access level entry point in the module workflow. 3.  Enter or select the required in
+- [PASS] user-manager::revoke-user-access-level
+  - Question: How do I revoke user access level?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To revoke user access level in the User Manager, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the revoke user access level entry point in the module workflow. 3.  Enter or se
+- [PASS] user-manager::change-user-password
+  - Question: How do I change user password?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To change a user password, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the change user password entry point in the module workflow. 3.  Enter or select the required inputs f
+- [FAIL] user-manager::delete-user-profile-record
+  - Question: How do I delete user profile record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a user profile record.
+- [PASS] user-manager::invite-user-to-organization
+  - Question: How do I invite user to organization?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To invite a user to an organization, follow these steps in the User Manager module:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with admin access or equivalent permissions. 2.  You c
+- [FAIL] user-manager::enforce-invite-role-hierarchy-rules
+  - Question: How do I enforce invite role hierarchy rules?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to enforce invite role hierarchy rules. The available guides focus on confirming the completion of inviting team users to a workspace and creating/configurin
+- [PASS] email-hub::archive-email-thread-using-pdf-method
+  - Question: How do I archive email thread using pdf method?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To archive an email thread using the PDF method, follow these steps:  1.  Open the Email Hub module from the main navigation. 2.  Locate the archive email thread using pdf method entry point in the module workflow. 3.  E
+- [FAIL] email-hub::link-email-activity-to-contact
+  - Question: How do I link email activity to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot find information on how to link email activity to contact in the provided guide context.  The available information includes: *   How to link contact activity to a time log. *   How to link a contact to a deal. 
+- [FAIL] email-hub::save-email-activity-to-contact-folder
+  - Question: How do I save email activity to contact folder?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to save email activity to a contact folder. The available guides cover creating contact folders, creating contacts from emails, and creating contact subfolde
+- [PASS] email-hub::push-email-activity-to-master-mind
+  - Question: How do I push email activity to master mind?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To push email activity to Master Mind, follow these steps:  1.  Open the Email Hub module from the main navigation. 2.  Locate the push email activity to master mind entry point in the module workflow. 3.  Enter or selec
+- [PASS] email-hub::resolve-email-log-save-failure
+  - Question: How do I resolve email log save failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve an email log save failure in the Email Hub, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open
+- [PASS] contacts::delete-contact-folder
+  - Question: How do I delete contact folder?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To delete a contact folder, follow these steps:  **Prerequisites:** 1.  Ensure you are signed in with admin access or equivalent permissions. 2.  Be able to open the Contacts module in the current Ogeemo environment. 3. 
+- [PASS] contacts::bulk-delete-contacts
+  - Question: How do I bulk delete contacts?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To bulk delete contacts, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Contacts module in the current Ogeemo environment. 3.  Required dat
+- [PASS] contacts::create-contact-with-worker-hr-metadata
+  - Question: How do I create contact with worker hr metadata?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create a contact with worker HR metadata, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the create contact with worker hr metadata entry point in the module workflow. 3.  Enter
+- [PASS] contacts::scrub-worker-hr-fields-for-non-worker-contact
+  - Question: How do I scrub worker hr fields for non worker contact?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To scrub worker HR fields for non-worker contacts, follow these steps in the Contacts module:  **Overview** This workflow is used to complete the scrub worker HR fields for non-worker contact process in the Contacts modu
+- [PASS] contacts::resolve-contact-save-failure
+  - Question: How do I resolve contact save failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve a contact save failure, follow these steps:  **Prerequisites:** 1.  Ensure you are signed in with general access or equivalent permissions. 2.  Verify you can open the Contacts module in the current Ogeemo env
+- [PASS] projects::create-blank-project
+  - Question: How do I create blank project?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To create a blank project, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1. You are signed in with general access or equivalent permissions. 2. You can open the Projects module in the cu
+- [PASS] projects::create-project-from-template
+  - Question: How do I create project from template?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To create a project from a template in the Projects module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Projects module in the current
+- [FAIL] projects::delete-project-and-associated-tasks
+  - Question: How do I delete project and associated tasks?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to delete a project and its associated tasks. The available guides focus on deleting individual tasks or removing task dependencies within the Tasks m
+- [PASS] projects::bulk-delete-projects
+  - Question: How do I bulk delete projects?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To bulk delete projects, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the bulk delete projects entry point in the module workflow. 3.  Enter or select the required inputs for bul
+- [FAIL] project-status::add-task-to-todo-column
+  - Question: How do I add task to todo column?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to "add task to todo column."  The available guides describe how to: *   Create a task *   Assign a task *   Link a task to a document *   Link a task to a c
+- [FAIL] project-status::drag-task-between-status-columns
+  - Question: How do I drag task between status columns?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to drag tasks between status columns.
+- [FAIL] project-status::mark-task-as-done-from-board
+  - Question: How do I mark task as done from board?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to mark a task as done from a board. The available information describes how to complete a task within the general Tasks module workflow.
+- [FAIL] project-status::delete-task-from-board-card
+  - Question: How do I delete task from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context describes how to delete a task in the Tasks module generally, but it does not contain specific information on how to delete a task *from a board card*.  The guide outlines the following general
+- [FAIL] project-status::resolve-task-status-update-failure
+  - Question: How do I resolve task status update failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to resolve a general "task status update failure."  To provide more precise guidance, please specify the particular task operation that resulted in 
+- [PASS] project-status::resolve-task-creation-from-step-failure
+  - Question: How do I resolve task creation from step failure?
+  - Reason: contains 3 numbered procedural steps
+  - Answer excerpt: To resolve task creation from step failure, you can address common errors using the following recovery steps:  1.  **Validate required field inputs** and rerun the create task workflow. 2.  **Confirm role permissions** f
+- [PASS] idea-board::record-new-idea-with-title-and-notes
+  - Question: How do I record new idea with title and notes?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To record a new idea with a title and notes, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Idea 
+- [PASS] idea-board::delete-idea-permanently
+  - Question: How do I delete idea permanently?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To delete an idea permanently in the Idea Board module, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1. You are signed in with general access or equivalent permissions. 2. You can open 
+- [PASS] idea-board::drag-idea-between-yes-no-maybe-lanes
+  - Question: How do I drag idea between yes no maybe lanes?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To drag an idea between Yes, No, and Maybe lanes in the Idea Board:  1.  Open the Idea Board module from the main navigation. 2.  Locate the drag idea between yes no maybe lanes entry point in the module workflow. 3.  En
+- [PASS] idea-board::convert-idea-to-project
+  - Question: How do I convert idea to project?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To convert an idea to a project in the Idea Board module, please follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Idea Board module in the 
+- [PASS] idea-board::resolve-idea-save-failure
+  - Question: How do I resolve idea save failure?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To resolve an idea save failure in the Idea Board, follow these steps:  **1. Prerequisites:** Before you begin, ensure the following: *   You are signed in with general access or equivalent permissions. *   You can open 
+- [PASS] idea-board::resolve-idea-scheduling-failure
+  - Question: How do I resolve idea scheduling failure?
+  - Reason: contains 13 numbered procedural steps
+  - Answer excerpt: To resolve idea scheduling failure in the Idea Board module, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You ca
+- [PASS] idea-board::resolve-idea-archive-failure
+  - Question: How do I resolve idea archive failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve idea archive failure, follow these steps:  **1. Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Idea Board mod
+- [PASS] to-do::add-new-to-do-task
+  - Question: How do I add new to do task?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To add a new task, follow these steps:  1.  Open the Tasks module from the main navigation. 2.  Locate the create task entry point in the module workflow. 3.  Enter or select the required inputs for create task. 4.  Revi
+- [PASS] to-do::drag-to-do-between-status-columns
+  - Question: How do I drag to do between status columns?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To drag a To Do item between status columns, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the drag to do between status columns entry point in the module workflow. 3.  Enter or sele
+- [PASS] to-do::mark-to-do-as-done
+  - Question: How do I mark to do as done?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To mark a to do as done, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the mark to do as done entry point in the module workflow. 3.  Enter or select the required inputs for mark to 
+- [PASS] to-do::convert-to-do-into-project
+  - Question: How do I convert to do into project?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To convert a To Do into a Project, follow these steps:  **Prerequisites:** Before you start, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the To Do module in
+- [PASS] to-do::delete-to-do-task
+  - Question: How do I delete to do task?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To delete a task, follow these steps:  1.  Open the Tasks module from the main navigation. 2.  Locate the delete task entry point in the module workflow. 3.  Enter or select the required inputs for delete task. 4.  Revie
+- [PASS] to-do::resolve-to-do-status-update-failure
+  - Question: How do I resolve to do status update failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve a To Do status update failure, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the To Do mo
+- [FAIL] ledgers::open-bks-general-ledger
+  - Question: How do I open bks general ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot find information on how to "open bks general ledger" in the provided guide context.  The available guides describe how to: *   Reconcile Subledger To General Ledger *   Open Accounting Period *   Produce Ledger 
+- [FAIL] ledgers::post-ledger-transaction
+  - Question: How do I post ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to post a ledger transaction. The available guides focus on "Post Journal Entry," "Produce Ledger Detail With Support Links," and "Audit Ledger Changes."  To
+- [FAIL] ledgers::delete-ledger-transaction
+  - Question: How do I delete ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a ledger transaction. The available guides focus on handling duplicate transactions, auditing ledger changes, and reversing journal entries.
+- [FAIL] ledgers::bulk-delete-ledger-transactions
+  - Question: How do I bulk delete ledger transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to bulk delete ledger transactions. It includes guides for auditing ledger changes, preparing for CRA audit, handling duplicate transactions, and reversing j
+- [FAIL] ledgers::open-reconciliation-wizard
+  - Question: How do I open reconciliation wizard?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information about a "reconciliation wizard."  The context describes how to perform "Reconcile Transactions" and "Reconcile Subledger To General Ledger" workflows. If you are lo
+- [FAIL] ledgers::upload-bank-statement-csv-for-reconciliation
+  - Question: How do I upload bank statement csv for reconciliation?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to upload a bank statement CSV for reconciliation.  The guides mention that "required data inputs for reconcile transactions are prepared before starting" an
+- [FAIL] ledgers::bulk-verify-reconciliation-matches
+  - Question: How do I bulk verify reconciliation matches?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to bulk verify reconciliation matches. The available information describes how to confirm that the "reconcile transactions" process is complete and pr
+- [FAIL] ledgers::auto-ingest-unmatched-bank-transactions
+  - Question: How do I auto ingest unmatched bank transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to auto ingest unmatched bank transactions. The available guides focus on recovering missing tasks, resolving task assignment errors, and configuring task au
+- [FAIL] ledgers::resolve-ledger-batch-delete-failure
+  - Question: How do I resolve ledger batch delete failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to resolve "ledger batch delete failure."  To provide an answer, information specific to "ledger batch delete failure" would be needed, including common erro
+- [PASS] document-manager::create-new-folder
+  - Question: How do I create new folder?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create a new folder, follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the create folder entry point in the module workflow. 3.  Enter or select the required inputs for create folder.
+- [FAIL] document-manager::delete-folder-and-subtree
+  - Question: How do I delete folder and subtree?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to delete a folder and its subtree. The available guides cover renaming folders, archiving folders, creating folders, and moving files betwee
+- [PASS] document-manager::create-new-file-link-record
+  - Question: How do I create new file link record?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To create a new file link record by linking a document to a contact, follow these steps:  **Prerequisites:** 1. You must have access to both the Files module and Contacts records. 2. The document must already be uploaded
+- [FAIL] document-manager::delete-single-file-record
+  - Question: How do I delete single file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain enough information on how to delete a single file record.  The guides cover recovering deleted files, revoking document access, and instructions for what to do 
+- [FAIL] document-manager::bulk-delete-selected-file-records
+  - Question: How do I bulk delete selected file records?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to bulk delete selected file records using the provided guide context. The context includes information on "Recover Deleted File" and "Bulk Upload Documents," but it does not contain 
+- [PASS] document-manager::resolve-file-or-folder-update-failure
+  - Question: How do I resolve file or folder update failure?
+  - Reason: contains 3 numbered procedural steps
+  - Answer excerpt: To resolve common file or folder update failures, refer to the following procedural guidance, which is applicable to operations such as creating, moving, and renaming files or folders:  1.  **Address Missing Required Fie
+- [PASS] reports::generate-work-activity-report-by-contact-and-date
+  - Question: How do I generate work activity report by contact and date?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To generate a Work Activity Report By Contact And Date, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the generate work activity report by contact and date entry point in the modul
+- [PASS] reports::generate-worker-time-log-report-by-worker-and-date
+  - Question: How do I generate worker time log report by worker and date?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To generate a worker time log report by worker and date, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the generate worker time log report by worker and date entry point in the mod
+- [PASS] reports::generate-client-time-log-report-by-contact-and-date
+  - Question: How do I generate client time log report by contact and date?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To generate a client time log report by contact and date, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the generate client time log report by contact and date entry point in the m
+- [FAIL] reports::generate-client-statement-by-client-and-date
+  - Question: How do I generate client statement by client and date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to generate a client statement by client and date.  The available guides cover: *   Segmenting contacts by tag *   Opening contact evidence folders *   Expor
+- [PASS] reports::resolve-report-data-load-failure
+  - Question: How do I resolve report data load failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve report data load failure, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Reports module in the current Ogeemo environment. 3. 
+- [PASS] work-activity::select-contact-for-work-activity-report
+  - Question: How do I select contact for work activity report?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: To select the contact for a Work Activity Report, follow step 3 in the process for generating the report:  1.  **Enter or select the required inputs for generate work activity report by contact and date.**  The provided 
+- [PASS] work-activity::resolve-work-activity-data-load-failure
+  - Question: How do I resolve work activity data load failure?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To resolve work activity data load failure, follow these steps:  **1. Prerequisites:** Before you begin, ensure the following: *   You are signed in with general access or equivalent permissions. *   You can open the Wor
+- [FAIL] client-statement::select-client-for-statement
+  - Question: How do I select client for statement?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain information on how to "select client for statement".  The available guides cover topics such as: *   Selecting all visible contacts for bulk actions *   Creating
+- [FAIL] client-statement::generate-client-statement-ledger
+  - Question: How do I generate client statement ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to generate a client statement ledger, as the provided guide context does not contain information on this specific workflow.  The guide context includes information on: *   Producing 
+- [PASS] client-statement::review-total-balance-due
+  - Question: How do I review total balance due?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review total balance due, follow these steps:  1.  Open the Client Statement module from the main navigation. 2.  Locate the review total balance due entry point in the module workflow. 3.  Enter or select the require
+- [FAIL] client-statement::resolve-client-statement-data-load-failure
+  - Question: How do I resolve client statement data load failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to resolve client statement data load failure. The available guides focus on resolving contact save failure, attaching documents to contacts, opening contact
+- [PASS] worker-time-log::select-worker-filter-for-time-log
+  - Question: How do I select worker filter for time log?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To select the worker filter for time log, follow these steps in the Worker Time Log module:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the select worker filter for time log entry point in t
+- [PASS] worker-time-log::log-new-time-card-entry
+  - Question: How do I log new time card entry?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To log a new time card entry, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the log new time card entry entry point in the module workflow. 3.  Enter or select the required
+- [PASS] worker-time-log::delete-manual-time-log-entry
+  - Question: How do I delete manual time log entry?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To delete a manual time log entry, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the delete manual time log entry entry point in the module workflow. 3.  Enter or select th
+- [PASS] worker-time-log::resolve-worker-time-log-data-load-failure
+  - Question: How do I resolve worker time log data load failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve a worker time log data load failure, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Worker Time Log module in the current Ogeemo
+- [FAIL] client-time-log::select-client-filter-for-time-log
+  - Question: How do I select client filter for time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to select a client filter for a time log. The available guides describe how to "Link Contact Activity To Time Log" and "Open Contact Log Time Dialog" 
+- [PASS] client-time-log::log-new-client-time-entry
+  - Question: How do I log new client time entry?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To log a new client time entry, you need to open the contact log time dialog in the Contacts module. Here are the steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the entry point for the "open co
+- [FAIL] client-time-log::delete-manual-client-time-log-entry
+  - Question: How do I delete manual client time log entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a manual client time log entry.  The available guides cover: *   Linking contact activity to a time log. *   Opening the contact log time dialog.  
+- [FAIL] client-time-log::create-invoice-from-client-time-entry
+  - Question: How do I create invoice from client time entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to create an invoice specifically from client time entry.  The guides detail the general process for creating an invoice in the Accounting module but do not 
+- [FAIL] client-time-log::create-invoice-for-selected-client-total
+  - Question: How do I create invoice for selected client total?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: To create an invoice, follow these steps in the Accounting module:  1.  Open the Accounting module from the main navigation. 2.  Locate the create invoice entry point in the module workflow. 3.  Enter or select the requi
+- [FAIL] client-time-log::resolve-client-time-log-data-load-failure
+  - Question: How do I resolve client time log data load failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to resolve "client time log data load failure."  To provide a solution, I would need more information about: *   The exact error message or type of 
+- [PASS] calendar::create-event-from-empty-time-slot
+  - Question: How do I create event from empty time slot?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To create an event from an empty time slot, please follow these steps:  **Prerequisites:** 1.  Ensure you are signed in with general access or equivalent permissions. 2.  Be able to open the Calendar module in the curren
+- [PASS] calendar::drag-drop-event-to-reschedule-time
+  - Question: How do I drag drop event to reschedule time?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To drag drop an event to reschedule its time, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the drag drop event to reschedule time entry point in the module workflow. 3.  Enter or
+- [FAIL] calendar::mark-calendar-task-complete-or-reopen
+  - Question: How do I mark calendar task complete or reopen?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: Based on the provided guide context:  **To reopen a task:**  The following steps describe how to reopen a task in the Tasks module. Please note that the provided context does not specifically mention "calendar tasks," bu
+- [PASS] calendar::resolve-calendar-event-load-failure
+  - Question: How do I resolve calendar event load failure?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To resolve calendar event load failure, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Calendar m
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

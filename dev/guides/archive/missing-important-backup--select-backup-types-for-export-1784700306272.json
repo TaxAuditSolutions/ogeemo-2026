@@ -1,0 +1,65 @@
+{
+  "guideId": "backup--select-backup-types-for-export",
+  "title": "Select Backup Types For Export in Backup",
+  "module": "backup",
+  "intent": "select-backup-types-for-export",
+  "targetAudience": "admin",
+  "description": "Complete the select backup types for export workflow in the Backup module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Backup module in the current Ogeemo environment.",
+    "Required data inputs for select backup types for export are prepared before starting."
+  ],
+  "steps": [
+    "Open the Backup module from the main navigation.",
+    "Locate the select backup types for export entry point in the module workflow.",
+    "Enter or select the required inputs for select backup types for export.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Select Backup Types For Export completes without warnings or blockers.",
+    "Resulting records are visible in the expected Backup views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during select backup types for export.",
+    "Permission constraints prevent completion of select backup types for export.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun select backup types for export.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun select backup types for export?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm select backup types for export is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "select-backup-types-for-export",
+    "admin",
+    "select",
+    "types",
+    "for",
+    "export",
+    "select backup types for export"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.272Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.272Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for backup--select-backup-types-for-export"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,68 @@
+{
+  "guideId": "email-hub--review-email-hub-integration-instructions",
+  "title": "Review Email Hub Integration Instructions in Email Hub",
+  "module": "email-hub",
+  "intent": "review-email-hub-integration-instructions",
+  "targetAudience": "general",
+  "description": "Complete the review email hub integration instructions workflow in the Email Hub module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Email Hub module in the current Ogeemo environment.",
+    "Required data inputs for review email hub integration instructions are prepared before starting."
+  ],
+  "steps": [
+    "Open the Email Hub module from the main navigation.",
+    "Locate the review email hub integration instructions entry point in the module workflow.",
+    "Enter or select the required inputs for review email hub integration instructions.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Review Email Hub Integration Instructions completes without warnings or blockers.",
+    "Resulting records are visible in the expected Email Hub views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during review email hub integration instructions.",
+    "Permission constraints prevent completion of review email hub integration instructions.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun review email hub integration instructions.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun review email hub integration instructions?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm review email hub integration instructions is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "email-hub",
+    "review-email-hub-integration-instructions",
+    "general",
+    "productivity",
+    "review",
+    "email",
+    "hub",
+    "integration",
+    "instructions",
+    "email hub",
+    "review email hub integration instructions"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.278Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.278Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for email-hub--review-email-hub-integration-instructions"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

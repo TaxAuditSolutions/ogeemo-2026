@@ -1,0 +1,65 @@
+{
+  "guideId": "contacts--create-contact-folder",
+  "title": "Create Contact Folder in Contacts",
+  "module": "contacts",
+  "intent": "create-contact-folder",
+  "targetAudience": "admin",
+  "description": "Complete the create contact folder workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for create contact folder are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the create contact folder entry point in the module workflow.",
+    "Enter or select the required inputs for create contact folder.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Contact Folder completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create contact folder.",
+    "Permission constraints prevent completion of create contact folder.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create contact folder.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create contact folder?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create contact folder is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "create-contact-folder",
+    "admin",
+    "crm",
+    "create",
+    "contact",
+    "folder",
+    "create contact folder"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.278Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.278Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--create-contact-folder"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,76 @@
+{
+  "guideId": "client-time-log--resolve-client-time-log-data-load-failure",
+  "title": "Resolve Client Time Log Data Load Failure in Client Time Log",
+  "module": "client-time-log",
+  "intent": "resolve-client-time-log-data-load-failure",
+  "targetAudience": "general",
+  "description": "Answer: How do I resolve client time log data load failure? This is the canonical Client Time Log workflow for resolve-client-time-log-data-load-failure.",
+  "prerequisites": [
+    "You are signed in as general and can access Client Time Log.",
+    "Route /reports/client-time-log is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for resolve-client-time-log-data-load-failure are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/client-time-log and open Client Time Log.",
+    "Verify active workspace/company context before running resolve client time log data load failure.",
+    "Open the exact workflow action labeled for resolve client time log data load failure.",
+    "Enter required fields for resolve client time log data load failure (entity selection, date range, and status where applicable).",
+    "Apply changes and execute resolve client time log data load failure with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The resolve-client-time-log-data-load-failure action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Client Time Log lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting resolve-client-time-log-data-load-failure.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/client-time-log, reapply field values, and rerun resolve-client-time-log-data-load-failure with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I resolve client time log data load failure?",
+      "answer": "Open Client Time Log at /reports/client-time-log, run resolve client time log data load failure with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot resolve client time log data load failure if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-time-log",
+    "client time log",
+    "resolve-client-time-log-data-load-failure",
+    "resolve client time log data load failure",
+    "/reports/client-time-log",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "resolve",
+    "client",
+    "time",
+    "log",
+    "data",
+    "load",
+    "failure"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.209Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.209Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/client-time-log",
+    "workflowInstruction": "Hard-fail remediation guide for client-time-log--resolve-client-time-log-data-load-failure"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

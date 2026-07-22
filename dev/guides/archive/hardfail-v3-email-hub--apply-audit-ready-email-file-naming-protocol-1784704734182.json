@@ -1,0 +1,76 @@
+{
+  "guideId": "email-hub--apply-audit-ready-email-file-naming-protocol",
+  "title": "Apply Audit Ready Email File Naming Protocol in Email Hub",
+  "module": "email-hub",
+  "intent": "apply-audit-ready-email-file-naming-protocol",
+  "targetAudience": "general",
+  "description": "Answer: How do I apply audit ready email file naming protocol? This is the canonical Email Hub workflow for apply-audit-ready-email-file-naming-protocol.",
+  "prerequisites": [
+    "You are signed in as general and can access Email Hub.",
+    "Route /actions is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for apply-audit-ready-email-file-naming-protocol are available before execution."
+  ],
+  "steps": [
+    "Navigate to /actions and open Email Hub.",
+    "Verify active workspace/company context before running apply audit ready email file naming protocol.",
+    "Open the exact workflow action labeled for apply audit ready email file naming protocol.",
+    "Enter required fields for apply audit ready email file naming protocol (entity selection, date range, and status where applicable).",
+    "Apply changes and execute apply audit ready email file naming protocol with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The apply-audit-ready-email-file-naming-protocol action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Email Hub lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting apply-audit-ready-email-file-naming-protocol.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /actions, reapply field values, and rerun apply-audit-ready-email-file-naming-protocol with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I apply audit ready email file naming protocol?",
+      "answer": "Open Email Hub at /actions, run apply audit ready email file naming protocol with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot apply audit ready email file naming protocol if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "email-hub",
+    "email hub",
+    "apply-audit-ready-email-file-naming-protocol",
+    "apply audit ready email file naming protocol",
+    "/actions",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "apply",
+    "audit",
+    "ready",
+    "email",
+    "file",
+    "naming",
+    "protocol"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.182Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.182Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/actions",
+    "workflowInstruction": "Hard-fail remediation guide for email-hub--apply-audit-ready-email-file-naming-protocol"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

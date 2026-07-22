@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--screen-candidate-application",
+  "title": "Screen Candidate Application in Payroll",
+  "module": "payroll",
+  "intent": "screen-candidate-application",
+  "targetAudience": "admin",
+  "description": "Complete the screen candidate application workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for screen candidate application are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the screen candidate application entry point in the module workflow.",
+    "Enter or select the required inputs for screen candidate application.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Screen Candidate Application completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during screen candidate application.",
+    "Permission constraints prevent completion of screen candidate application.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun screen candidate application.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun screen candidate application?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm screen candidate application is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "screen-candidate-application",
+    "admin",
+    "screen",
+    "candidate",
+    "application",
+    "screen candidate application"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:42.296Z",
+  "lastVerifiedAt": "2026-07-22T01:53:42.296Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--screen-candidate-application"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

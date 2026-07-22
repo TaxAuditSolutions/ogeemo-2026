@@ -1,0 +1,75 @@
+{
+  "guideId": "project-status--mark-task-as-done-from-board",
+  "title": "Mark Task As Done From Board in Project Status",
+  "module": "project-status",
+  "intent": "mark-task-as-done-from-board",
+  "targetAudience": "general",
+  "description": "Answer: How do I mark task as done from board? This is the canonical Project Status workflow for mark-task-as-done-from-board.",
+  "prerequisites": [
+    "You are signed in as general and can access Project Status.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for mark-task-as-done-from-board are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Project Status.",
+    "Verify active workspace/company context before running mark task as done from board.",
+    "Open the exact workflow action labeled for mark task as done from board.",
+    "Enter required fields for mark task as done from board (entity selection, date range, and status where applicable).",
+    "Apply changes and execute mark task as done from board with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The mark-task-as-done-from-board action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Project Status lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting mark-task-as-done-from-board.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun mark-task-as-done-from-board with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I mark task as done from board?",
+      "answer": "Open Project Status at /projects, run mark task as done from board with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot mark task as done from board if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "mark-task-as-done-from-board",
+    "mark task as done from board",
+    "/projects",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "mark",
+    "task",
+    "as",
+    "done",
+    "from",
+    "board"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.188Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.188Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for project-status--mark-task-as-done-from-board"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

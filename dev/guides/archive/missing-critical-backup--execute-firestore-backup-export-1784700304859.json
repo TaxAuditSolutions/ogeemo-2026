@@ -1,0 +1,64 @@
+{
+  "guideId": "backup--execute-firestore-backup-export",
+  "title": "Execute Firestore Backup Export in Backup",
+  "module": "backup",
+  "intent": "execute-firestore-backup-export",
+  "targetAudience": "admin",
+  "description": "Complete the execute firestore backup export workflow in the Backup module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Backup module in the current Ogeemo environment.",
+    "Required data inputs for execute firestore backup export are prepared before starting."
+  ],
+  "steps": [
+    "Open the Backup module from the main navigation.",
+    "Locate the execute firestore backup export entry point in the module workflow.",
+    "Enter or select the required inputs for execute firestore backup export.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Execute Firestore Backup Export completes without warnings or blockers.",
+    "Resulting records are visible in the expected Backup views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during execute firestore backup export.",
+    "Permission constraints prevent completion of execute firestore backup export.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun execute firestore backup export.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun execute firestore backup export?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm execute firestore backup export is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "execute-firestore-backup-export",
+    "admin",
+    "execute",
+    "firestore",
+    "export",
+    "execute firestore backup export"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.859Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.859Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for backup--execute-firestore-backup-export"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,763 @@
+# important draft Verification Report
+
+Generated at: 2026-07-22T06:49:05.796Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 187
+Passed: 135
+Failed: 52
+
+## Results
+
+- [PASS] wellness::start-hytexercise-routine
+  - Question: How do I start hytexercise routine?
+  - Reason: contains 18 numbered procedural steps
+  - Answer excerpt: Configure Hytexercise Wellness Break Routine (wellness):  Prerequisites: 1. You can access the Hytexercise Wellness Manager. 2. Notifications and timer prompts are enabled for your profile. 3. You have access to My Progr
+- [PASS] wellness::pause-or-end-hytexercise-break
+  - Question: How do I pause or end hytexercise break?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To pause or end a hytexercise break, follow these steps:  1.  Open the Wellness module from the main navigation. 2.  Locate the pause or end hytexercise break entry point in the module workflow. 3.  Enter or select the r
+- [PASS] wellness::set-hytexercise-break-frequency
+  - Question: How do I set hytexercise break frequency?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the hytexercise break frequency in the Wellness module, follow these steps:  1.  Open the Wellness module from the main navigation. 2.  Locate the set hytexercise break frequency entry point in the module workflow
+- [PASS] wellness::set-hytexercise-break-duration
+  - Question: How do I set hytexercise break duration?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the Hytexercise break duration, follow these steps in the Wellness module:  1.  Open the Wellness module from the main navigation. 2.  Locate the set hytexercise break duration entry point in the module workflow. 
+- [PASS] wellness::test-hytexercise-break-alert
+  - Question: How do I test hytexercise break alert?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To test the hytexercise break alert:  1.  Open the Wellness module from the main navigation. 2.  Locate the test hytexercise break alert entry point in the module workflow. 3.  Enter or select the required inputs for tes
+- [PASS] wellness::view-hytexercise-weekly-activity
+  - Question: How do I view hytexercise weekly activity?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To view Hytexercise Weekly Activity:  1.  Open the Wellness module from the main navigation. 2.  Locate the view hytexercise weekly activity entry point in the module workflow. 3.  Enter or select the required inputs for
+- [PASS] wellness::view-hytexercise-time-exercised
+  - Question: How do I view hytexercise time exercised?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To view hytexercise time exercised, follow these steps in the Wellness module:  1.  Open the Wellness module from the main navigation. 2.  Locate the view hytexercise time exercised entry point in the module workflow. 3.
+- [PASS] wellness::list-hytexercise-chair-exercises
+  - Question: How do I list hytexercise chair exercises?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list hytexercise chair exercises, follow these steps:  1.  Open the Wellness module from the main navigation. 2.  Locate the list hytexercise chair exercises entry point in the module workflow. 3.  Enter or select the
+- [PASS] image-generator::open-image-generator-workspace
+  - Question: How do I open image generator workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Image Generator workspace, follow these steps:  1.  Open the Image Generator module from the main navigation. 2.  Locate the open image generator workspace entry point in the module workflow. 3.  Enter or sel
+- [PASS] image-generator::refine-image-prompt-for-better-output
+  - Question: How do I refine image prompt for better output?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To refine an image prompt for better output in the Image Generator module, follow these steps:  1.  Open the Image Generator module from the main navigation. 2.  Locate the refine image prompt for better output entry poi
+- [PASS] image-generator::regenerate-image-with-modified-prompt
+  - Question: How do I regenerate image with modified prompt?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To regenerate an image with a modified prompt, follow these steps:  1.  Open the Image Generator module from the main navigation. 2.  Locate the regenerate image with modified prompt entry point in the module workflow. 3
+- [PASS] image-generator::generate-marketing-creative-image
+  - Question: How do I generate marketing creative image?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To generate a marketing creative image, follow these steps:  1.  Open the Image Generator module from the main navigation. 2.  Locate the generate marketing creative image entry point in the module workflow. 3.  Enter or
+- [PASS] image-generator::download-generated-image
+  - Question: How do I download generated image?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To download a generated image, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Image Generator module in the current Ogeemo environment. 3
+- [FAIL] image-generator::close-image-generator-and-return-to-action-manager
+  - Question: How do I close image generator and return to action manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to close an image generator and return to an action manager. This information might be found in guides related to "image generator" or "action manager
+- [FAIL] settings::update-user-profile-settings
+  - Question: How do I update user profile settings?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to update user profile settings. The guides available focus on document management within the Files module, such as setting document retentio
+- [PASS] settings::save-settings-changes
+  - Question: How do I save settings changes?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To save settings changes, follow these steps:  **Prerequisites:** 1. You are signed in with general access or equivalent permissions. 2. You can open the Settings module in the current Ogeemo environment. 3. Required dat
+- [PASS] settings::configure-voice-dictation-preference
+  - Question: How do I configure voice dictation preference?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To configure voice dictation preference, follow these steps:  **Prerequisites:** Before you start, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Settings 
+- [PASS] settings::set-default-sales-tax-rate
+  - Question: How do I set default sales tax rate?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the default sales tax rate, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the set default sales tax rate entry point in the module workflow. 3.  Enter or select the require
+- [PASS] settings::apply-visual-identity-theme-preset
+  - Question: How do I apply visual identity theme preset?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To apply a visual identity theme preset, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the apply visual identity theme preset entry point in the module workflow. 3.  Enter or sele
+- [PASS] settings::save-custom-visual-theme-preset
+  - Question: How do I save custom visual theme preset?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To save a custom visual theme preset, follow these steps in the Settings module:  1.  Open the Settings module from the main navigation. 2.  Locate the save custom visual theme preset entry point in the module workflow. 
+- [PASS] settings::delete-custom-visual-theme-preset
+  - Question: How do I delete custom visual theme preset?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To delete a custom visual theme preset in Settings, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the delete custom visual theme preset entry point in the module workflow. 3.  Ent
+- [PASS] settings::reset-visual-identity-to-default
+  - Question: How do I reset visual identity to default?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To reset visual identity to default, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the reset visual identity to default entry point in the module workflow. 3.  Enter or select the
+- [PASS] settings::open-site-images-manager
+  - Question: How do I open site images manager?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Site Images Manager, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the open site images manager entry point in the module workflow. 3.  Enter or select the required in
+- [PASS] settings::configure-daily-planning-ritual
+  - Question: How do I configure daily planning ritual?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To configure your daily planning ritual, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the configure daily planning ritual entry point in the module workflow. 3.  Enter or select 
+- [PASS] settings::configure-weekly-planning-ritual
+  - Question: How do I configure weekly planning ritual?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To configure the weekly planning ritual, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the configure weekly planning ritual entry point in the module workflow. 3.  Enter or select
+- [PASS] settings::repeat-daily-ritual-across-weekdays
+  - Question: How do I repeat daily ritual across weekdays?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To repeat the daily ritual across weekdays, follow these steps:  1.  Open the Settings module from the main navigation. 2.  Locate the repeat daily ritual across weekdays entry point in the module workflow. 3.  Enter or 
+- [PASS] image-manager::open-image-manager-workspace
+  - Question: How do I open image manager workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Image Manager workspace, follow these steps:  1.  Open the Image Manager module from the main navigation. 2.  Locate the open image manager workspace entry point in the module workflow. 3.  Enter or select th
+- [PASS] image-manager::validate-unique-image-id-before-upload
+  - Question: How do I validate unique image id before upload?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To validate unique image ID before upload, follow these steps in the Image Manager module:  1.  Open the Image Manager module from the main navigation. 2.  Locate the validate unique image id before upload entry point in
+- [PASS] image-manager::confirm-image-replacement-preview
+  - Question: How do I confirm image replacement preview?
+  - Reason: contains 10 numbered procedural steps
+  - Answer excerpt: To confirm image replacement preview in the Image Manager module, follow these steps:  **Steps to Complete the Preview:** 1.  Open the Image Manager module from the main navigation. 2.  Locate the confirm image replaceme
+- [PASS] image-manager::refresh-image-library-after-change
+  - Question: How do I refresh image library after change?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To refresh the image library after a change, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Image Manager module in the current Ogeemo envi
+- [PASS] image-manager::manage-image-library-assets
+  - Question: How do I manage image library assets?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To manage image library assets, follow these steps:  1.  Open the Image Manager module from the main navigation. 2.  Locate the manage image library assets entry point in the module workflow. 3.  Enter or select the requ
+- [PASS] backup::open-backup-manager-workspace
+  - Question: How do I open backup manager workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Backup Manager Workspace, follow these steps:  1.  Open the Backup module from the main navigation. 2.  Locate the open backup manager workspace entry point in the module workflow. 3.  Enter or select the req
+- [FAIL] backup::select-backup-types-for-export
+  - Question: How do I select backup types for export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information about how to select backup types for export.  The available guides focus on exporting analytics reports, including steps for filtering and choosing output formats, 
+- [PASS] backup::prevent-backup-run-without-selection
+  - Question: How do I prevent backup run without selection?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To prevent a backup run without selection, follow these steps:  1.  Open the Backup module from the main navigation. 2.  Locate the prevent backup run without selection entry point in the module workflow. 3.  Enter or se
+- [PASS] backup::monitor-backup-session-status
+  - Question: How do I monitor backup session status?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To monitor backup session status, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Backup module in the current Ogeemo environment. 3.  Requi
+- [PASS] backup::locate-backup-bucket-destination
+  - Question: How do I locate backup bucket destination?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To locate the backup bucket destination, follow these steps:  1.  Open the Backup module from the main navigation. 2.  Locate the locate backup bucket destination entry point in the module workflow. 3.  Enter or select t
+- [FAIL] backup::download-exported-backup-payloads
+  - Question: How do I download exported backup payloads?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to download exported backup payloads. The guides primarily focus on exporting analytics reports in various formats (e.g., PDF, CSV).
+- [FAIL] backup::prepare-export-payload-for-third-party-ingestion
+  - Question: How do I prepare export payload for third party ingestion?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to prepare export payload for third-party ingestion.  The available guides describe how to export reports from Analytics and how to validate exports within t
+- [PASS] user-manager::open-user-manager-dashboard
+  - Question: How do I open user manager dashboard?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To open the User Manager Dashboard, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the User Manager module in the current Ogeemo environment. 3
+- [PASS] user-manager::review-authenticated-user-directory
+  - Question: How do I review authenticated user directory?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review an authenticated user directory, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the review authenticated user directory entry point in the module workflow. 3.  Enter 
+- [FAIL] user-manager::edit-user-profile-details
+  - Question: How do I edit user profile details?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to edit user profile details. The available guides focus on actions within the Files module, such as renaming folders, auditing document acce
+- [PASS] user-manager::resolve-user-manager-load-failure
+  - Question: How do I resolve user manager load failure?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To resolve a user manager load failure, follow these steps:  1.  Open the User Manager module from the main navigation. 2.  Locate the resolve user manager load failure entry point in the module workflow. 3.  Enter or se
+- [PASS] user-manager::open-user-management-protocol-instructions
+  - Question: How do I open user management protocol instructions?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To open user management protocol instructions, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1. You are signed in with admin access or equivalent permissions. 2. You can open the User Ma
+- [PASS] email-hub::open-email-hub-workspace
+  - Question: How do I open email hub workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Email Hub Workspace, follow these steps:  1.  Open the Email Hub module from the main navigation. 2.  Locate the open email hub workspace entry point in the module workflow. 3.  Enter or select the required i
+- [PASS] email-hub::launch-gmail-inbox-from-email-hub
+  - Question: How do I launch gmail inbox from email hub?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To launch Gmail Inbox from the Email Hub:  1.  Open the Email Hub module from the main navigation. 2.  Locate the launch gmail inbox from email hub entry point in the module workflow. 3.  Enter or select the required inp
+- [FAIL] email-hub::open-document-manager-mirror-from-email-hub
+  - Question: How do I open document manager mirror from email hub?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open "document manager mirror from email hub." The guides focus on linking documents to contacts within the Files module.
+- [FAIL] email-hub::apply-audit-ready-email-file-naming-protocol
+  - Question: How do I apply audit ready email file naming protocol?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to apply an audit-ready email file naming protocol.  Guide 8 mentions that "Files are named according to internal standards" as a prerequisite for uploading 
+- [PASS] email-hub::open-schedule-and-bill-email-activity
+  - Question: How do I open schedule and bill email activity?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open schedule and bill email activity, follow these steps:  1.  Open the Email Hub module from the main navigation. 2.  Locate the open schedule and bill email activity entry point in the module workflow. 3.  Enter or
+- [FAIL] email-hub::create-or-edit-contact-during-email-log
+  - Question: How do I create or edit contact during email log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to create or edit a contact during an email log.  The available guides describe how to: *   Create a contact from an email. *   Open a contact log tim
+- [PASS] email-hub::capture-email-activity-time-window
+  - Question: How do I capture email activity time window?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To capture email activity time window, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Email Hub m
+- [FAIL] email-hub::resolve-missing-contact-or-subject-before-log
+  - Question: How do I resolve missing contact or subject before log?
+  - Reason: response was too short and lacked clear procedural structure
+  - Answer excerpt: To resolve missing contact or subject before logging a contact call, you should:  1.  **Validate required field inputs** for the log contact call. 2.  **Rerun log contact call** after validating the inputs.
+- [PASS] email-hub::review-email-hub-integration-instructions
+  - Question: How do I review email hub integration instructions?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review Email Hub integration instructions:  1.  Open the Email Hub module from the main navigation. 2.  Locate the review email hub integration instructions entry point in the module workflow. 3.  Enter or select the 
+- [PASS] contacts::create-contact-folder
+  - Question: How do I create contact folder?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To create a contact folder, follow these steps:  **Prerequisites:** 1.  You are signed in with admin access or equivalent permissions. 2.  You can open the Contacts module in the current Ogeemo environment. 3.  Required 
+- [PASS] contacts::create-contact-subfolder
+  - Question: How do I create contact subfolder?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To create a contact subfolder, follow these steps:  **Prerequisites:** 1. You are signed in with admin access or equivalent permissions. 2. You can open the Contacts module in the current Ogeemo environment. 3. Required 
+- [PASS] contacts::rename-contact-folder
+  - Question: How do I rename contact folder?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To rename a contact folder, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the rename contact folder entry point in the module workflow. 3.  Enter or select the required inputs for
+- [PASS] contacts::move-contact-between-folders
+  - Question: How do I move contact between folders?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To move a contact between folders, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the move contact between folders entry point in the module workflow. 3.  Enter or select the requi
+- [PASS] contacts::move-contact-folder-hierarchy
+  - Question: How do I move contact folder hierarchy?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To move a contact folder hierarchy, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the move contact folder hierarchy entry point in the module workflow. 3.  Enter or select the req
+- [PASS] contacts::select-all-visible-contacts-for-bulk-actions
+  - Question: How do I select all visible contacts for bulk actions?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To select all visible contacts for bulk actions, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the select all visible contacts for bulk actions entry point in the module workflow.
+- [PASS] contacts::open-contact-evidence-folder
+  - Question: How do I open contact evidence folder?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the contact evidence folder, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the open contact evidence folder entry point in the module workflow. 3.  Enter or select the req
+- [PASS] contacts::link-contact-activity-to-time-log
+  - Question: How do I link contact activity to time log?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To link contact activity to time log, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the link contact activity to time log entry point in the module workflow. 3.  Enter or select t
+- [PASS] contacts::open-contact-log-time-dialog
+  - Question: How do I open contact log time dialog?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the contact log time dialog, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the open contact log time dialog entry point in the module workflow. 3.  Enter or select the req
+- [PASS] contacts::resolve-contact-folder-move-failure
+  - Question: How do I resolve contact folder move failure?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To resolve contact folder move failure, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the resolve contact folder move failure entry point in the module workflow. 3.  Enter or sele
+- [PASS] projects::open-project-register
+  - Question: How do I open project register?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the project register, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the open project register entry point in the module workflow. 3.  Enter or select the required inputs f
+- [PASS] projects::edit-project-details
+  - Question: How do I edit project details?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To edit project details, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the edit project details entry point in the module workflow. 3.  Enter or select the required inputs for edi
+- [FAIL] projects::open-project-task-board
+  - Question: How do I open project task board?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a project task board.  The available guides focus on specific task workflows within the Tasks module, such as "Reopen Task," "Start Task," "Recover M
+- [PASS] projects::open-project-planner
+  - Question: How do I open project planner?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open project planner, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the open project planner entry point in the module workflow. 3.  Enter or select the required inputs for ope
+- [PASS] projects::save-project-as-template
+  - Question: How do I save project as template?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To save a project as a template, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the save project as template entry point in the module workflow. 3.  Enter or select the required in
+- [PASS] projects::edit-project-template
+  - Question: How do I edit project template?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To edit a project template, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the edit project template entry point in the module workflow. 3.  Enter or select the required inputs for
+- [PASS] projects::delete-project-template
+  - Question: How do I delete project template?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To delete a project template, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Projects module in the current Ogeemo environment. 3.  Requi
+- [FAIL] projects::assign-project-to-contact
+  - Question: How do I assign project to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to assign a project to a contact using the provided guide context. The guides contain information on "Link Contact To Deal" and "Assign Contact Owner", but not "assign project to cont
+- [PASS] projects::create-project-step
+  - Question: How do I create project step?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To create a project step, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Projects module in the c
+- [PASS] projects::reorder-project-steps
+  - Question: How do I reorder project steps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To reorder project steps, follow these steps:  1.  Open the Projects module from the main navigation. 2.  Locate the reorder project steps entry point in the module workflow. 3.  Enter or select the required inputs for r
+- [FAIL] projects::delete-project-step-and-linked-task
+  - Question: How do I delete project step and linked task?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a project step or a linked task.  The available guides focus on: *   **Deleting a Task** in the Tasks module. *   **Removing a Task Dependency** in
+- [FAIL] projects::convert-task-into-new-project
+  - Question: How do I convert task into new project?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to convert a task into a new project, as the provided guide context does not contain information on this specific workflow.  The guides offer procedures for: *   Converting a task to 
+- [PASS] project-status::open-project-board-status-columns
+  - Question: How do I open project board status columns?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open project board status columns, follow these steps:  1.  Open the Project Status module from the main navigation. 2.  Locate the open project board status columns entry point in the module workflow. 3.  Enter or se
+- [FAIL] project-status::reorder-task-within-status-column
+  - Question: How do I reorder task within status column?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain information on how to reorder tasks within a status column. The available guides cover setting task priority, reassigning tasks, reopening tasks, resolving task 
+- [FAIL] project-status::reopen-done-task-to-todo
+  - Question: How do I reopen done task to todo?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: To reopen a task in the Tasks module, follow these steps. Please note that the provided guide context describes the general process for reopening a task but does not contain specific instructions on changing a task's sta
+- [PASS] project-status::create-task-from-project-step-drop
+  - Question: How do I create task from project step drop?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide specific steps on how to "create task from project step drop" based on the provided guide context.  The available information details how to "Create Task in Tasks" generally, but it does not specify crea
+- [FAIL] project-status::edit-task-details-from-board-card
+  - Question: How do I edit task details from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to edit task details specifically "from board card".  The available guide for "Edit Task in Tasks" (Guide 2) provides general steps for editing a task
+- [FAIL] project-status::archive-task-from-board-to-file-manager
+  - Question: How do I archive task from board to file manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to archive a task from a board to a file manager.  The available information focuses on how to **archive a folder in the Files module**, how to **upload docu
+- [PASS] project-status::schedule-board-task-to-calendar
+  - Question: How do I schedule board task to calendar?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to schedule a board task to a calendar using the provided guide context.  The guide context contains information for the following tasks: *   Convert Task To Action Chip *   Set Task 
+- [FAIL] project-status::add-board-task-to-global-todo-list
+  - Question: How do I add board task to global todo list?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to add a board task to a global todo list.
+- [FAIL] project-status::review-column-task-counts
+  - Question: How do I review column task counts?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to review column task counts. It seems the guides cover other tasks such as auditing task history, recovering missing tasks, and bulk updati
+- [PASS] idea-board::open-idea-board-list
+  - Question: How do I open idea board list?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Idea Board List, follow these steps:  1.  Open the Idea Board module from the main navigation. 2.  Locate the open idea board list entry point in the module workflow. 3.  Enter or select the required inputs f
+- [PASS] idea-board::open-organize-ideas-board
+  - Question: How do I open organize ideas board?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Organize Ideas Board:  1.  Open the Idea Board module from the main navigation. 2.  Locate the entry point for "open organize ideas board" within the module workflow. 3.  Enter or select the required inputs f
+- [PASS] idea-board::save-idea-into-maybe-lane
+  - Question: How do I save idea into maybe lane?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To save an idea into the "maybe" lane in the Idea Board module, follow these steps:  1.  Open the Idea Board module from the main navigation. 2.  Locate the save idea into maybe lane entry point in the module workflow. 3
+- [PASS] idea-board::edit-idea-details
+  - Question: How do I edit idea details?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To edit idea details, follow these steps:  1.  Open the Idea Board module from the main navigation. 2.  Locate the edit idea details entry point in the module workflow. 3.  Enter or select the required inputs for edit id
+- [PASS] idea-board::reorder-ideas-within-lane
+  - Question: How do I reorder ideas within lane?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To reorder ideas within a lane in the Idea Board module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Idea Board module in the current 
+- [PASS] idea-board::schedule-idea-as-task
+  - Question: How do I schedule idea as task?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create a task, you can follow these steps:  1.  Open the Tasks module from the main navigation. 2.  Locate the create task entry point in the module workflow. 3.  Enter or select the required inputs for create task. 4
+- [FAIL] idea-board::archive-idea-as-reference-file
+  - Question: How do I archive idea as reference file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to "archive idea as reference file". The available guides only detail the process for "Archive Folder in Files".
+- [PASS] idea-board::open-idea-board-instructions-dialog
+  - Question: How do I open idea board instructions dialog?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Idea Board instructions dialog, follow these steps:  1.  Open the Idea Board module from the main navigation. 2.  Locate the open idea board instructions dialog entry point in the module workflow. 3.  Enter o
+- [PASS] idea-board::review-ideas-by-yes-no-maybe-priority
+  - Question: How do I review ideas by yes no maybe priority?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review ideas by yes no maybe priority, follow these steps:  1.  Open the Idea Board module from the main navigation. 2.  Locate the review ideas by yes no maybe priority entry point in the module workflow. 3.  Enter o
+- [PASS] to-do::open-to-do-list-workspace
+  - Question: How do I open to do list workspace?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the To Do List Workspace, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the open to do list workspace entry point in the module workflow. 3.  Enter or select the required inp
+- [PASS] to-do::filter-to-do-by-project
+  - Question: How do I filter to do by project?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To filter To Do by project, follow these steps:  **Before you begin, ensure the following prerequisites are met:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the To Do module in
+- [PASS] to-do::filter-to-do-to-unassigned-items
+  - Question: How do I filter to do to unassigned items?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To filter To Do to unassigned items, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the filter to do to unassigned items entry point in the module workflow. 3.  Enter or select the re
+- [PASS] to-do::assign-to-do-to-project-during-create
+  - Question: How do I assign to do to project during create?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To assign a To Do to a project during creation, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the assign to do to project during create entry point in the module workflow. 3.  Enter 
+- [PASS] to-do::edit-to-do-task-details
+  - Question: How do I edit to do task details?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To edit task details in the Tasks module, follow these steps:  **Prerequisites:** 1.  You must be signed in with general access or equivalent permissions. 2.  You must be able to open the Tasks module in the current Ogee
+- [PASS] to-do::set-to-do-urgency-and-importance
+  - Question: How do I set to do urgency and importance?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set to do urgency and importance, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the set to do urgency and importance entry point in the module workflow. 3.  Enter or select the re
+- [PASS] to-do::reorder-to-do-within-status-column
+  - Question: How do I reorder to do within status column?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To reorder a to do within a status column, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the reorder to do within status column entry point in the module workflow. 3.  Enter or selec
+- [PASS] to-do::reopen-done-to-do-to-todo
+  - Question: How do I reopen done to do to todo?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To reopen a "done to do" item to "todo" in the To Do module, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the reopen done to do to todo entry point in the module workflow. 3.  Enter
+- [PASS] to-do::schedule-to-do-to-calendar
+  - Question: How do I schedule to do to calendar?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To schedule a To Do item to your calendar, follow these steps:  1.  Open the To Do module from the main navigation. 2.  Locate the schedule to do to calendar entry point in the module workflow. 3.  Enter or select the re
+- [PASS] to-do::archive-to-do-to-file-manager
+  - Question: How do I archive to do to file manager?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To archive a folder in the Files module, follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the archive folder entry point in the module workflow. 3.  Enter or select the required inputs 
+- [FAIL] ledgers::switch-between-general-income-expense-tabs
+  - Question: How do I switch between general income expense tabs?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to switch between general income expense tabs. The available guides describe procedures for categorizing expenses, preparing profit loss, run
+- [FAIL] ledgers::edit-ledger-transaction
+  - Question: How do I edit ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to edit a ledger transaction. It contains guides for "Edit Invoice" and "Audit Ledger Changes".
+- [FAIL] ledgers::sort-ledger-by-date-contact-category-amount
+  - Question: How do I sort ledger by date contact category amount?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to sort a ledger by date, contact, category, or amount. The guides available describe workflows such as producing ledger detail with support 
+- [FAIL] ledgers::filter-ledger-by-date-range
+  - Question: How do I filter ledger by date range?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to filter a ledger by date range. This information would typically be found in detailed procedural guides for viewing or reporting on ledger data.
+- [FAIL] ledgers::clear-ledger-filters
+  - Question: How do I clear ledger filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain enough information on how to clear ledger filters.  The guides available cover: *   Auditing Ledger Changes *   Producing Ledger Detail With Support Links *   P
+- [PASS] ledgers::run-duplicate-audit-toggle
+  - Question: How do I run duplicate audit toggle?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To run the duplicate audit toggle, follow these steps:  1.  Open the Ledgers module from the main navigation. 2.  Locate the run duplicate audit toggle entry point in the module workflow. 3.  Enter or select the required
+- [FAIL] ledgers::export-ledger-to-csv
+  - Question: How do I export ledger to csv?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to export ledger to CSV. The available guides describe how to "Export Report Csv in Reports" and "Export Reports from Analytics."  To answer your question, i
+- [PASS] ledgers::print-ledger-report
+  - Question: How do I print ledger report?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to print a ledger report using the provided guide context. The guides only contain information on printing the Income Statement Report, Work Activity Report, and Bank Reconciliation S
+- [PASS] ledgers::flag-bank-records-as-orphan-or-duplicate
+  - Question: How do I flag bank records as orphan or duplicate?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To flag bank records as orphan or duplicate, follow these steps:  1.  Open the Ledgers module from the main navigation. 2.  Locate the flag bank records as orphan or duplicate entry point in the module workflow. 3.  Ente
+- [FAIL] document-manager::open-document-manager-workspace
+  - Question: How do I open document manager workspace?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to open a "document manager workspace".  The guides primarily describe workflows within the "Files module" for tasks like version control, do
+- [FAIL] document-manager::open-document-manager-instructions
+  - Question: How do I open document manager instructions?
+  - Reason: response was too short and lacked clear procedural structure
+  - Answer excerpt: To open the document manager, follow these steps:  1.  Open the file or document manager module.
+- [PASS] document-manager::create-subfolder-under-parent
+  - Question: How do I create subfolder under parent?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create a subfolder, follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the create folder entry point in the module workflow. 3.  Enter or select the required inputs for create folder (
+- [PASS] document-manager::rename-folder
+  - Question: How do I rename folder?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To rename a folder, follow these steps:  1.  Open the Files module from the main navigation. 2.  Locate the rename folder entry point in the module workflow. 3.  Enter or select the required inputs for rename folder. 4. 
+- [FAIL] document-manager::link-google-drive-folder-to-node
+  - Question: How do I link google drive folder to node?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to link a Google Drive folder to a node, as the provided guide context does not contain information on this specific topic.  The guides offer information on: *   Linking a document to
+- [FAIL] document-manager::move-folder-with-drag-and-drop
+  - Question: How do I move folder with drag and drop?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to move a folder using drag and drop. The available guides focus on moving files between folders and renaming folders, describing a workflow that invo
+- [FAIL] document-manager::open-linked-google-drive-file
+  - Question: How do I open linked google drive file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a linked Google Drive file.  The guides cover how to link a document to a contact, audit document linkage changes, and troubleshoot linking issues, b
+- [FAIL] document-manager::rename-file-record
+  - Question: How do I rename file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to rename a file record. It only contains procedural guidance for renaming a folder in the Files module.
+- [FAIL] document-manager::link-google-drive-url-to-file-record
+  - Question: How do I link google drive url to file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to link a Google Drive URL to a file record. The available guides describe how to link an uploaded document to a contact record.  Information is missing rega
+- [FAIL] document-manager::move-file-to-folder-with-drag-and-drop
+  - Question: How do I move file to folder with drag and drop?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to move a file to a folder using drag and drop, as the provided guide context does not contain information about this specific method.  The available guide, "Move File Between Folders
+- [FAIL] document-manager::sort-folder-tree-order
+  - Question: How do I sort folder tree order?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort folder tree order. It includes guides for renaming folders, creating folders, and moving files between folders.  To answer your question, information
+- [FAIL] document-manager::sort-files-by-name-or-modified-date
+  - Question: How do I sort files by name or modified date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort files by name or modified date. You may need to consult documentation related to file viewing or display options within the Files module.
+- [PASS] reports::open-reports-hub-dashboard
+  - Question: How do I open reports hub dashboard?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Reports Hub Dashboard, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the open reports hub dashboard entry point in the module workflow. 3.  Enter or select the required
+- [PASS] reports::navigate-to-work-activity-summary-report
+  - Question: How do I navigate to work activity summary report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Work Activity Summary Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the Work Activity Summary Report entry point in the module workflow. 3.  Enter or sel
+- [PASS] reports::navigate-to-worker-time-logs-report
+  - Question: How do I navigate to worker time logs report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Worker Time Logs Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the navigate to worker time logs report entry point in the module workflow. 3.  Enter or s
+- [PASS] reports::navigate-to-client-time-log-report
+  - Question: How do I navigate to client time log report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Client Time Log Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the navigate to client time log report entry point in the module workflow. 3.  Enter or sel
+- [PASS] reports::navigate-to-client-statement-report
+  - Question: How do I navigate to client statement report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Client Statement Report:  1.  Open the Reports module from the main navigation. 2.  Locate the navigate to client statement report entry point in the module workflow. 3.  Enter or select the required i
+- [PASS] reports::navigate-to-income-statement-report
+  - Question: How do I navigate to income statement report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Income Statement Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the navigate to income statement report entry point in the module workflow. 3.  Enter or s
+- [PASS] reports::navigate-to-accrual-adjustments-report
+  - Question: How do I navigate to accrual adjustments report?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To navigate to the Accrual Adjustments Report in the Reports module, please follow these steps. This process is intended for an accountant.  **Prerequisites:** 1.  You are signed in with accountant access or equivalent p
+- [PASS] reports::navigate-to-advanced-ai-search-report
+  - Question: How do I navigate to advanced ai search report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate to the Advanced AI Search Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the navigate to advanced ai search report entry point in the module workflow. 3.  Enter 
+- [PASS] reports::print-work-activity-report
+  - Question: How do I print work activity report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To print the Work Activity Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the print work activity report entry point in the module workflow. 3.  Enter or select the required
+- [PASS] reports::print-income-statement-report
+  - Question: How do I print income statement report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To print an income statement report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the print income statement report entry point in the module workflow. 3.  Enter or select the req
+- [FAIL] reports::print-bank-reconciliation-statement
+  - Question: How do I print bank reconciliation statement?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to print a bank reconciliation statement. The available guides focus on reconciling transactions and subledgers to the general ledger, and preparing balance 
+- [PASS] work-activity::open-work-activity-summary-report
+  - Question: How do I open work activity summary report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Work Activity Summary Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the Work Activity Summary Report entry point in the module workflow. 3.  Enter or select the
+- [PASS] work-activity::set-work-activity-start-date-filter
+  - Question: How do I set work activity start date filter?
+  - Reason: contains 13 numbered procedural steps
+  - Answer excerpt: To set the Work Activity Start Date Filter, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Work A
+- [PASS] work-activity::set-work-activity-end-date-filter
+  - Question: How do I set work activity end date filter?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the work activity end date filter, follow these steps:  1.  Open the Work Activity module from the main navigation. 2.  Locate the set work activity end date filter entry point in the module workflow. 3.  Enter or
+- [PASS] work-activity::clear-work-activity-filters
+  - Question: How do I clear work activity filters?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To clear work activity filters, follow these steps:  1.  Open the Work Activity module from the main navigation. 2.  Locate the clear work activity filters entry point in the module workflow. 3.  Enter or select the requ
+- [PASS] work-activity::toggle-work-activity-detail-level-summary-or-notes
+  - Question: How do I toggle work activity detail level summary or notes?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To toggle work activity detail level summary or notes, follow these steps:  1.  Open the Work Activity module from the main navigation. 2.  Locate the toggle work activity detail level summary or notes entry point in the
+- [PASS] work-activity::view-work-activity-metric-cards
+  - Question: How do I view work activity metric cards?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To view work activity metric cards, follow these steps:  1.  Open the Work Activity module from the main navigation. 2.  Locate the view work activity metric cards entry point in the module workflow. 3.  Enter or select 
+- [PASS] work-activity::review-billable-vs-nonbillable-activity
+  - Question: How do I review billable vs nonbillable activity?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review billable vs nonbillable activity, follow these steps in the Work Activity module:  1.  Open the Work Activity module from the main navigation. 2.  Locate the review billable vs nonbillable activity entry point 
+- [PASS] work-activity::identify-ritual-vs-staff-activity-sources
+  - Question: How do I identify ritual vs staff activity sources?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To identify ritual vs staff activity sources, follow these steps:  1.  Open the Work Activity module from the main navigation. 2.  Locate the identify ritual vs staff activity sources entry point in the module workflow. 
+- [FAIL] work-activity::print-work-activity-evidence-pdf
+  - Question: How do I print work activity evidence pdf?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to print a work activity evidence PDF.  The available guides cover uploading, organizing, auditing, sharing, and linking documents, but do not include
+- [PASS] work-activity::review-work-activity-log-timeline
+  - Question: How do I review work activity log timeline?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To review the work activity log timeline, follow these steps in the Work Activity module:  1.  Open the Work Activity module from the main navigation. 2.  Locate the review work activity log timeline entry point in the m
+- [PASS] client-statement::open-client-statement-report
+  - Question: How do I open client statement report?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To navigate to the Client Statement Report in the Reports module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Reports module in the cu
+- [FAIL] client-statement::set-client-statement-start-date
+  - Question: How do I set client statement start date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to set a client statement start date.  The available guides cover: *   Opening Contact Log Time Dialog *   Segmenting Contacts By Tag *   Lin
+- [FAIL] client-statement::set-client-statement-end-date
+  - Question: How do I set client statement end date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to set a client statement end date.  To answer your question, information regarding "client statements" or "end dates" for such statements would be needed.
+- [PASS] client-statement::apply-month-to-date-range
+  - Question: How do I apply month to date range?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To apply month to date range, follow these steps:  1.  Open the Client Statement module from the main navigation. 2.  Locate the apply month to date range entry point in the module workflow. 3.  Enter or select the requi
+- [FAIL] client-statement::clear-client-statement-date-filters
+  - Question: How do I clear client statement date filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain enough information on how to clear client statement date filters.
+- [PASS] client-statement::calculate-balance-forward
+  - Question: How do I calculate balance forward?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To calculate balance forward in the Client Statement module, follow these steps:  **Prerequisites:** 1. You are signed in with general access or equivalent permissions. 2. You can open the Client Statement module in the 
+- [PASS] client-statement::calculate-running-balance-per-entry
+  - Question: How do I calculate running balance per entry?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To calculate running balance per entry, follow these steps:  1.  Open the Client Statement module from the main navigation. 2.  Locate the calculate running balance per entry entry point in the module workflow. 3.  Enter
+- [FAIL] client-statement::print-client-statement
+  - Question: How do I print client statement?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to print a client statement.
+- [PASS] worker-time-log::open-worker-time-log-report
+  - Question: How do I open worker time log report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Worker Time Logs Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the "navigate to worker time logs report" entry point in the module workflow. 3.  Enter or select
+- [PASS] worker-time-log::set-time-log-start-date-filter
+  - Question: How do I set time log start date filter?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the time log start date filter in the Worker Time Log module, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the set time log start date filter entry point in the mod
+- [PASS] worker-time-log::set-time-log-end-date-filter
+  - Question: How do I set time log end date filter?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set the time log end date filter, please follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the set time log end date filter entry point in the module workflow. 3.  Enter or 
+- [PASS] worker-time-log::clear-worker-time-log-filters
+  - Question: How do I clear worker time log filters?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To clear worker time log filters, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the clear worker time log filters entry point in the module workflow. 3.  Enter or select th
+- [FAIL] worker-time-log::sort-worker-time-log-by-worker-client-date-billing
+  - Question: How do I sort worker time log by worker client date billing?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort worker time logs by worker client date billing.
+- [PASS] worker-time-log::edit-manual-time-log-entry
+  - Question: How do I edit manual time log entry?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To edit a manual time log entry, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the edit manual time log entry entry point in the module workflow. 3.  Enter or select the re
+- [PASS] worker-time-log::schedule-time-log-entry-in-calendar
+  - Question: How do I schedule time log entry in calendar?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To schedule a time log entry in the calendar, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the schedule time log entry in calendar entry point in the module workflow. 3.  
+- [FAIL] worker-time-log::open-worker-document-folder-from-time-log
+  - Question: How do I open worker document folder from time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to open a worker document folder from a time log.  The guides describe how to: *   Audit document access (Guide 1) *   Version control documents (Guid
+- [PASS] worker-time-log::review-total-hours-billable-hours-and-billable-amount
+  - Question: How do I review total hours billable hours and billable amount?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To review total hours billable hours and billable amount, follow these steps in the Worker Time Log module:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the review total hours billable hours 
+- [PASS] worker-time-log::redirect-calendar-entry-edit-to-scheduler
+  - Question: How do I redirect calendar entry edit to scheduler?
+  - Reason: contains 18 numbered procedural steps
+  - Answer excerpt: To redirect calendar entry edit to scheduler, you can follow the steps in either the Worker Time Log module or the Client Time Log module.  Here are the procedures for each:  **In the Worker Time Log module (for Admins):
+- [PASS] worker-time-log::block-direct-delete-for-calendar-sourced-entries
+  - Question: How do I block direct delete for calendar sourced entries?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To block direct delete for calendar sourced entries in the Worker Time Log module, follow these steps:  1.  Open the Worker Time Log module from the main navigation. 2.  Locate the block direct delete for calendar source
+- [PASS] client-time-log::open-client-time-log-report
+  - Question: How do I open client time log report?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the Client Time Log Report, follow these steps:  1.  Open the Reports module from the main navigation. 2.  Locate the Client Time Log Report entry point in the module workflow. 3.  Enter or select the required in
+- [FAIL] client-time-log::set-client-time-log-start-date-filter
+  - Question: How do I set client time log start date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to set a client time log start date filter. The available guides focus on workflows for "Link Contact Activity To Time Log" and "Open Contact
+- [FAIL] client-time-log::set-client-time-log-end-date-filter
+  - Question: How do I set client time log end date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to set a client time log end date filter. The available guides focus on opening the contact log time dialog and linking contact activity to a time log.  To a
+- [FAIL] client-time-log::clear-client-time-log-filters
+  - Question: How do I clear client time log filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to clear client time log filters. The guides available are focused on "Link Contact Activity To Time Log" and "Open Contact Log Time Dialog" 
+- [FAIL] client-time-log::sort-client-time-log-by-client-worker-date-and-billable
+  - Question: How do I sort client time log by client worker date and billable?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort client time logs by client worker date and billable.  The available guides focus on: *   Linking contact activity to a time log. *   Opening the cont
+- [FAIL] client-time-log::edit-manual-client-time-log-entry
+  - Question: How do I edit manual client time log entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to edit a manual client time log entry. The available guides focus on opening a contact log time dialog and linking contact activity to a time log.
+- [FAIL] client-time-log::schedule-client-time-entry-in-calendar
+  - Question: How do I schedule client time entry in calendar?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to schedule client time entry in a calendar.  The available guides describe how to: *   Sync Contacts With Calendar *   Open Contact Log Tim
+- [PASS] client-time-log::review-billable-hours-and-total-amount
+  - Question: How do I review billable hours and total amount?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To review billable hours and total amount in the Client Time Log module, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions
+- [PASS] client-time-log::redirect-calendar-entry-edit-to-scheduler
+  - Question: How do I redirect calendar entry edit to scheduler?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: You can redirect calendar entry edit to scheduler in both the Worker Time Log and Client Time Log modules.  **To redirect calendar entry edit to scheduler in the Worker Time Log module:** 1. Open the Worker Time Log modu
+- [FAIL] client-time-log::block-direct-delete-for-calendar-sourced-client-entries
+  - Question: How do I block direct delete for calendar sourced client entries?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to block direct delete for calendar-sourced client entries. The available guides focus on deleting contact folders and bulk deleting contacts, includi
+- [PASS] calendar::open-command-centre-calendar
+  - Question: How do I open command centre calendar?
+  - Reason: contains 15 numbered procedural steps
+  - Answer excerpt: To open the Command Centre Calendar, follow these steps:  **Prerequisites:** 1.  You must be signed in with general access or equivalent permissions. 2.  You must be able to open the Calendar module in the current Ogeemo
+- [PASS] calendar::set-calendar-day-span-view
+  - Question: How do I set calendar day span view?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To set the calendar day span view, follow these steps:  **Prerequisites:** 1. You are signed in with general access or equivalent permissions. 2. You can open the Calendar module in the current Ogeemo environment. 3. Req
+- [PASS] calendar::set-calendar-visible-hour-window
+  - Question: How do I set calendar visible hour window?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To set the calendar visible hour window, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Calendar module in the current Ogeemo environment
+- [PASS] calendar::set-calendar-slot-granularity-per-hour
+  - Question: How do I set calendar slot granularity per hour?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To set calendar slot granularity per hour, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the set calendar slot granularity per hour entry point in the module workflow. 3.  Enter o
+- [PASS] calendar::navigate-calendar-previous-next-range
+  - Question: How do I navigate calendar previous next range?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To navigate calendar previous next range, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the navigate calendar previous next range entry point in the module workflow. 3.  Enter or 
+- [PASS] calendar::jump-calendar-to-today
+  - Question: How do I jump calendar to today?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To jump the calendar to today in the Calendar module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Calendar module in the current Ogeem
+- [PASS] calendar::pick-calendar-anchor-date
+  - Question: How do I pick calendar anchor date?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To pick a calendar anchor date, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the pick calendar anchor date entry point in the module workflow. 3.  Enter or select the required in
+- [PASS] calendar::create-all-day-event-from-day-lane
+  - Question: How do I create all day event from day lane?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create an all-day event from the day lane in Calendar, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the create all day event from day lane entry point in the module workflow. 
+- [PASS] calendar::drag-drop-event-to-all-day-lane
+  - Question: How do I drag drop event to all day lane?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To drag and drop an event to the all-day lane in the Calendar module, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the drag drop event to all day lane entry point in the module w
+- [PASS] calendar::start-timer-from-calendar-event
+  - Question: How do I start timer from calendar event?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To start a timer from a calendar event, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Calendar module in the current Ogeemo environment.
+- [PASS] calendar::log-actual-time-from-calendar-event
+  - Question: How do I log actual time from calendar event?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To log actual time from a calendar event, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the log actual time from calendar event entry point in the module workflow. 3.  Enter or se
+- [PASS] calendar::open-linked-project-workspace-from-calendar-event
+  - Question: How do I open linked project workspace from calendar event?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To open a linked project workspace from a calendar event, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1. You are signed in with general access or equivalent permissions. 2. You can ope
+- [PASS] calendar::create-reminder-event-from-reminder-page
+  - Question: How do I create reminder event from reminder page?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To create a reminder event from the reminder page in the Calendar module, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the create reminder event from reminder page entry point in
+- [PASS] calendar::open-calendar-instructions-page
+  - Question: How do I open calendar instructions page?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To open the calendar instructions page, follow these steps:  1.  Open the Calendar module from the main navigation. 2.  Locate the open calendar instructions page entry point in the module workflow. 3.  Enter or select t
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

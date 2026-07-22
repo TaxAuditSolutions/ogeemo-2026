@@ -1,0 +1,73 @@
+{
+  "guideId": "client-time-log--set-client-time-log-start-date-filter",
+  "title": "Set Client Time Log Start Date Filter in Client Time Log",
+  "module": "client-time-log",
+  "intent": "set-client-time-log-start-date-filter",
+  "targetAudience": "general",
+  "description": "Use this guide to complete set client time log start date filter in Client Time Log. Intent key: set-client-time-log-start-date-filter. Module key: client-time-log.",
+  "prerequisites": [
+    "You are signed in with general access and can open Client Time Log.",
+    "Records needed for set client time log start date filter are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Client Time Log."
+  ],
+  "steps": [
+    "Open Client Time Log from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Set Client Time Log Start Date Filter\" in Client Time Log.",
+    "Set client and date filters first, then review billable flags and amount calculations.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the set client time log start date filter action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Set Client Time Log Start Date Filter finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Client Time Log lists, totals, or linked records.",
+    "Output references can be traced back to client-time-log--set-client-time-log-start-date-filter with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing set-client-time-log-start-date-filter.",
+    "Insufficient permissions for general while attempting set-client-time-log-start-date-filter.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Client Time Log, reapply required filters, and repeat set client time log start date filter.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm set client time log start date filter completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Client Time Log immediately after execution."
+    },
+    {
+      "question": "What should I do if set client time log start date filter returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-time-log",
+    "client time log",
+    "set-client-time-log-start-date-filter",
+    "set client time log start date filter",
+    "general",
+    "set",
+    "client",
+    "time",
+    "log",
+    "start",
+    "date",
+    "filter",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.188Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.188Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for client-time-log--set-client-time-log-start-date-filter from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

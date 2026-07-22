@@ -1,0 +1,77 @@
+{
+  "guideId": "image-generator--close-image-generator-and-return-to-action-manager",
+  "title": "Close Image Generator And Return To Action Manager in Image Generator",
+  "module": "image-generator",
+  "intent": "close-image-generator-and-return-to-action-manager",
+  "targetAudience": "general",
+  "description": "Answer: How do I close image generator and return to action manager? This is the canonical Image Generator workflow for close-image-generator-and-return-to-action-manager.",
+  "prerequisites": [
+    "You are signed in as general and can access Image Generator.",
+    "Route /actions is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for close-image-generator-and-return-to-action-manager are available before execution."
+  ],
+  "steps": [
+    "Navigate to /actions and open Image Generator.",
+    "Verify active workspace/company context before running close image generator and return to action manager.",
+    "Open the exact workflow action labeled for close image generator and return to action manager.",
+    "Enter required fields for close image generator and return to action manager (entity selection, date range, and status where applicable).",
+    "Apply changes and execute close image generator and return to action manager with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The close-image-generator-and-return-to-action-manager action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Image Generator lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting close-image-generator-and-return-to-action-manager.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /actions, reapply field values, and rerun close-image-generator-and-return-to-action-manager with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I close image generator and return to action manager?",
+      "answer": "Open Image Generator at /actions, run close image generator and return to action manager with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot close image generator and return to action manager if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "tools",
+    "image-generator",
+    "image generator",
+    "close-image-generator-and-return-to-action-manager",
+    "close image generator and return to action manager",
+    "/actions",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "close",
+    "image",
+    "generator",
+    "and",
+    "return",
+    "to",
+    "action",
+    "manager"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.151Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.151Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/actions",
+    "workflowInstruction": "Hard-fail remediation guide for image-generator--close-image-generator-and-return-to-action-manager"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

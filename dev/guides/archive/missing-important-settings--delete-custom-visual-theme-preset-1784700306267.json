@@ -1,0 +1,67 @@
+{
+  "guideId": "settings--delete-custom-visual-theme-preset",
+  "title": "Delete Custom Visual Theme Preset in Settings",
+  "module": "settings",
+  "intent": "delete-custom-visual-theme-preset",
+  "targetAudience": "general",
+  "description": "Complete the delete custom visual theme preset workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for delete custom visual theme preset are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the delete custom visual theme preset entry point in the module workflow.",
+    "Enter or select the required inputs for delete custom visual theme preset.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Delete Custom Visual Theme Preset completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during delete custom visual theme preset.",
+    "Permission constraints prevent completion of delete custom visual theme preset.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun delete custom visual theme preset.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun delete custom visual theme preset?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm delete custom visual theme preset is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "delete-custom-visual-theme-preset",
+    "general",
+    "admin",
+    "delete",
+    "custom",
+    "visual",
+    "theme",
+    "preset",
+    "delete custom visual theme preset"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.267Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.267Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--delete-custom-visual-theme-preset"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

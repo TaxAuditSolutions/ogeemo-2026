@@ -1,0 +1,67 @@
+{
+  "guideId": "settings--repeat-daily-ritual-across-weekdays",
+  "title": "Repeat Daily Ritual Across Weekdays in Settings",
+  "module": "settings",
+  "intent": "repeat-daily-ritual-across-weekdays",
+  "targetAudience": "general",
+  "description": "Complete the repeat daily ritual across weekdays workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for repeat daily ritual across weekdays are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the repeat daily ritual across weekdays entry point in the module workflow.",
+    "Enter or select the required inputs for repeat daily ritual across weekdays.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Repeat Daily Ritual Across Weekdays completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during repeat daily ritual across weekdays.",
+    "Permission constraints prevent completion of repeat daily ritual across weekdays.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun repeat daily ritual across weekdays.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun repeat daily ritual across weekdays?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm repeat daily ritual across weekdays is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "repeat-daily-ritual-across-weekdays",
+    "general",
+    "admin",
+    "repeat",
+    "daily",
+    "ritual",
+    "across",
+    "weekdays",
+    "repeat daily ritual across weekdays"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.270Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.270Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--repeat-daily-ritual-across-weekdays"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

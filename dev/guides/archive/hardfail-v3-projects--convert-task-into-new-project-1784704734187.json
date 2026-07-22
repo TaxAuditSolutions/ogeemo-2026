@@ -1,0 +1,73 @@
+{
+  "guideId": "projects--convert-task-into-new-project",
+  "title": "Convert Task Into New Project in Projects",
+  "module": "projects",
+  "intent": "convert-task-into-new-project",
+  "targetAudience": "general",
+  "description": "Answer: How do I convert task into new project? This is the canonical Projects workflow for convert-task-into-new-project.",
+  "prerequisites": [
+    "You are signed in as general and can access Projects.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for convert-task-into-new-project are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Projects.",
+    "Verify active workspace/company context before running convert task into new project.",
+    "Open the exact workflow action labeled for convert task into new project.",
+    "Enter required fields for convert task into new project (entity selection, date range, and status where applicable).",
+    "Apply changes and execute convert task into new project with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The convert-task-into-new-project action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Projects lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting convert-task-into-new-project.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun convert-task-into-new-project with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I convert task into new project?",
+      "answer": "Open Projects at /projects, run convert task into new project with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot convert task into new project if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "projects",
+    "convert-task-into-new-project",
+    "convert task into new project",
+    "/projects",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "convert",
+    "task",
+    "into",
+    "new",
+    "project"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.187Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.187Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for projects--convert-task-into-new-project"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

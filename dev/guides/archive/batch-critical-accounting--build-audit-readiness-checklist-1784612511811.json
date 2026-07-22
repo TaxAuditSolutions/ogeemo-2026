@@ -1,0 +1,65 @@
+{
+  "guideId": "accounting--build-audit-readiness-checklist",
+  "title": "Build Audit Readiness Checklist in Accounting",
+  "module": "accounting",
+  "intent": "build-audit-readiness-checklist",
+  "targetAudience": "accountant",
+  "description": "Complete the build audit readiness checklist workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for build audit readiness checklist are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the build audit readiness checklist entry point in the module workflow.",
+    "Enter or select the required inputs for build audit readiness checklist.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Build Audit Readiness Checklist completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during build audit readiness checklist.",
+    "Permission constraints prevent completion of build audit readiness checklist.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun build audit readiness checklist.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun build audit readiness checklist?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm build audit readiness checklist is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "build-audit-readiness-checklist",
+    "accountant",
+    "build",
+    "audit",
+    "readiness",
+    "checklist",
+    "build audit readiness checklist"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:41:51.810Z",
+  "lastVerifiedAt": "2026-07-21T05:41:51.810Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--build-audit-readiness-checklist"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

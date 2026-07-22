@@ -1,0 +1,73 @@
+{
+  "guideId": "ledgers--bulk-delete-ledger-transactions",
+  "title": "Bulk Delete Ledger Transactions in Ledgers",
+  "module": "ledgers",
+  "intent": "bulk-delete-ledger-transactions",
+  "targetAudience": "admin",
+  "description": "Answer: How do I bulk delete ledger transactions? This is the canonical Ledgers workflow for bulk-delete-ledger-transactions.",
+  "prerequisites": [
+    "You are signed in as admin and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for bulk-delete-ledger-transactions are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running bulk delete ledger transactions.",
+    "Open the exact workflow action labeled for bulk delete ledger transactions.",
+    "Enter required fields for bulk delete ledger transactions (entity selection, date range, and status where applicable).",
+    "Apply changes and execute bulk delete ledger transactions with explicit confirmation in the UI.",
+    "Validate selection scope before delete and confirm post-delete row count is reduced.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The bulk-delete-ledger-transactions action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting bulk-delete-ledger-transactions.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun bulk-delete-ledger-transactions with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I bulk delete ledger transactions?",
+      "answer": "Open Ledgers at /accounting/ledgers, run bulk delete ledger transactions with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot bulk delete ledger transactions if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "bulk-delete-ledger-transactions",
+    "bulk delete ledger transactions",
+    "/accounting/ledgers",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "bulk",
+    "delete",
+    "ledger",
+    "transactions"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.193Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.193Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--bulk-delete-ledger-transactions"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

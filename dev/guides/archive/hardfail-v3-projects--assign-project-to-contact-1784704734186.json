@@ -1,0 +1,72 @@
+{
+  "guideId": "projects--assign-project-to-contact",
+  "title": "Assign Project To Contact in Projects",
+  "module": "projects",
+  "intent": "assign-project-to-contact",
+  "targetAudience": "general",
+  "description": "Answer: How do I assign project to contact? This is the canonical Projects workflow for assign-project-to-contact.",
+  "prerequisites": [
+    "You are signed in as general and can access Projects.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for assign-project-to-contact are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Projects.",
+    "Verify active workspace/company context before running assign project to contact.",
+    "Open the exact workflow action labeled for assign project to contact.",
+    "Enter required fields for assign project to contact (entity selection, date range, and status where applicable).",
+    "Apply changes and execute assign project to contact with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The assign-project-to-contact action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Projects lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting assign-project-to-contact.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun assign-project-to-contact with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I assign project to contact?",
+      "answer": "Open Projects at /projects, run assign project to contact with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot assign project to contact if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "projects",
+    "assign-project-to-contact",
+    "assign project to contact",
+    "/projects",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "assign",
+    "project",
+    "to",
+    "contact"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.186Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.186Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for projects--assign-project-to-contact"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

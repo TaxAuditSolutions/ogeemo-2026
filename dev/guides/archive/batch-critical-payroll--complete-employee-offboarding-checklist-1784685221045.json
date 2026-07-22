@@ -1,0 +1,65 @@
+{
+  "guideId": "payroll--complete-employee-offboarding-checklist",
+  "title": "Complete Employee Offboarding Checklist in Payroll",
+  "module": "payroll",
+  "intent": "complete-employee-offboarding-checklist",
+  "targetAudience": "admin",
+  "description": "Complete the complete employee offboarding checklist workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for complete employee offboarding checklist are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the complete employee offboarding checklist entry point in the module workflow.",
+    "Enter or select the required inputs for complete employee offboarding checklist.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Complete Employee Offboarding Checklist completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during complete employee offboarding checklist.",
+    "Permission constraints prevent completion of complete employee offboarding checklist.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun complete employee offboarding checklist.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun complete employee offboarding checklist?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm complete employee offboarding checklist is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "complete-employee-offboarding-checklist",
+    "admin",
+    "complete",
+    "employee",
+    "offboarding",
+    "checklist",
+    "complete employee offboarding checklist"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:41.045Z",
+  "lastVerifiedAt": "2026-07-22T01:53:41.045Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--complete-employee-offboarding-checklist"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

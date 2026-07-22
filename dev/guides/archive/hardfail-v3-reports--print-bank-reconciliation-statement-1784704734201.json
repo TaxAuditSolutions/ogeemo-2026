@@ -1,0 +1,73 @@
+{
+  "guideId": "reports--print-bank-reconciliation-statement",
+  "title": "Print Bank Reconciliation Statement in Reports",
+  "module": "reports",
+  "intent": "print-bank-reconciliation-statement",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I print bank reconciliation statement? This is the canonical Reports workflow for print-bank-reconciliation-statement.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Reports.",
+    "Route /reports is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for print-bank-reconciliation-statement are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports and open Reports.",
+    "Verify active workspace/company context before running print bank reconciliation statement.",
+    "Open the exact workflow action labeled for print bank reconciliation statement.",
+    "Enter required fields for print bank reconciliation statement (entity selection, date range, and status where applicable).",
+    "Apply changes and execute print bank reconciliation statement with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The print-bank-reconciliation-statement action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Reports lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting print-bank-reconciliation-statement.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports, reapply field values, and rerun print-bank-reconciliation-statement with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I print bank reconciliation statement?",
+      "answer": "Open Reports at /reports, run print bank reconciliation statement with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot print bank reconciliation statement if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "reports",
+    "print-bank-reconciliation-statement",
+    "print bank reconciliation statement",
+    "/reports",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "print",
+    "bank",
+    "reconciliation",
+    "statement"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.201Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.201Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports",
+    "workflowInstruction": "Hard-fail remediation guide for reports--print-bank-reconciliation-statement"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

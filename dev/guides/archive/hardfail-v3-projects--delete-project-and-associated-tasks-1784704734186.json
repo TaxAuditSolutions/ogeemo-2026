@@ -1,0 +1,74 @@
+{
+  "guideId": "projects--delete-project-and-associated-tasks",
+  "title": "Delete Project And Associated Tasks in Projects",
+  "module": "projects",
+  "intent": "delete-project-and-associated-tasks",
+  "targetAudience": "admin",
+  "description": "Answer: How do I delete project and associated tasks? This is the canonical Projects workflow for delete-project-and-associated-tasks.",
+  "prerequisites": [
+    "You are signed in as admin and can access Projects.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for delete-project-and-associated-tasks are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Projects.",
+    "Verify active workspace/company context before running delete project and associated tasks.",
+    "Open the exact workflow action labeled for delete project and associated tasks.",
+    "Enter required fields for delete project and associated tasks (entity selection, date range, and status where applicable).",
+    "Apply changes and execute delete project and associated tasks with explicit confirmation in the UI.",
+    "Validate selection scope before delete and confirm post-delete row count is reduced.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The delete-project-and-associated-tasks action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Projects lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting delete-project-and-associated-tasks.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun delete-project-and-associated-tasks with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I delete project and associated tasks?",
+      "answer": "Open Projects at /projects, run delete project and associated tasks with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot delete project and associated tasks if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "projects",
+    "delete-project-and-associated-tasks",
+    "delete project and associated tasks",
+    "/projects",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "delete",
+    "project",
+    "and",
+    "associated",
+    "tasks"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.186Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.186Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for projects--delete-project-and-associated-tasks"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

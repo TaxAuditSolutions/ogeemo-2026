@@ -1,0 +1,65 @@
+{
+  "guideId": "ledgers--clear-ledger-filters",
+  "title": "Clear Ledger Filters in Ledgers",
+  "module": "ledgers",
+  "intent": "clear-ledger-filters",
+  "targetAudience": "accountant",
+  "description": "Complete the clear ledger filters workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for clear ledger filters are prepared before starting."
+  ],
+  "steps": [
+    "Open the Ledgers module from the main navigation.",
+    "Locate the clear ledger filters entry point in the module workflow.",
+    "Enter or select the required inputs for clear ledger filters.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Clear Ledger Filters completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during clear ledger filters.",
+    "Permission constraints prevent completion of clear ledger filters.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun clear ledger filters.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun clear ledger filters?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm clear ledger filters is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "clear-ledger-filters",
+    "accountant",
+    "accounting",
+    "clear",
+    "ledger",
+    "filters",
+    "clear ledger filters"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.299Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.299Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--clear-ledger-filters"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,65 @@
+{
+  "guideId": "accounting--resolve-missing-audit-evidence",
+  "title": "Resolve Missing Audit Evidence in Accounting",
+  "module": "accounting",
+  "intent": "resolve-missing-audit-evidence",
+  "targetAudience": "accountant",
+  "description": "Complete the resolve missing audit evidence workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for resolve missing audit evidence are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the resolve missing audit evidence entry point in the module workflow.",
+    "Enter or select the required inputs for resolve missing audit evidence.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Missing Audit Evidence completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve missing audit evidence.",
+    "Permission constraints prevent completion of resolve missing audit evidence.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve missing audit evidence.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve missing audit evidence?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve missing audit evidence is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "resolve-missing-audit-evidence",
+    "accountant",
+    "resolve",
+    "missing",
+    "audit",
+    "evidence",
+    "resolve missing audit evidence"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:41:51.815Z",
+  "lastVerifiedAt": "2026-07-21T05:41:51.815Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--resolve-missing-audit-evidence"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

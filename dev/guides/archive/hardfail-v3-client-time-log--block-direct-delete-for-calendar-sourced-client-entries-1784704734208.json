@@ -1,0 +1,78 @@
+{
+  "guideId": "client-time-log--block-direct-delete-for-calendar-sourced-client-entries",
+  "title": "Block Direct Delete For Calendar Sourced Client Entries in Client Time Log",
+  "module": "client-time-log",
+  "intent": "block-direct-delete-for-calendar-sourced-client-entries",
+  "targetAudience": "general",
+  "description": "Answer: How do I block direct delete for calendar sourced client entries? This is the canonical Client Time Log workflow for block-direct-delete-for-calendar-sourced-client-entries.",
+  "prerequisites": [
+    "You are signed in as general and can access Client Time Log.",
+    "Route /reports/client-time-log is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for block-direct-delete-for-calendar-sourced-client-entries are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/client-time-log and open Client Time Log.",
+    "Verify active workspace/company context before running block direct delete for calendar sourced client entries.",
+    "Open the exact workflow action labeled for block direct delete for calendar sourced client entries.",
+    "Enter required fields for block direct delete for calendar sourced client entries (entity selection, date range, and status where applicable).",
+    "Apply changes and execute block direct delete for calendar sourced client entries with explicit confirmation in the UI.",
+    "Validate selection scope before delete and confirm post-delete row count is reduced.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The block-direct-delete-for-calendar-sourced-client-entries action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Client Time Log lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting block-direct-delete-for-calendar-sourced-client-entries.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/client-time-log, reapply field values, and rerun block-direct-delete-for-calendar-sourced-client-entries with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I block direct delete for calendar sourced client entries?",
+      "answer": "Open Client Time Log at /reports/client-time-log, run block direct delete for calendar sourced client entries with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot block direct delete for calendar sourced client entries if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-time-log",
+    "client time log",
+    "block-direct-delete-for-calendar-sourced-client-entries",
+    "block direct delete for calendar sourced client entries",
+    "/reports/client-time-log",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "block",
+    "direct",
+    "delete",
+    "for",
+    "calendar",
+    "sourced",
+    "client",
+    "entries"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.208Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.208Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/client-time-log",
+    "workflowInstruction": "Hard-fail remediation guide for client-time-log--block-direct-delete-for-calendar-sourced-client-entries"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

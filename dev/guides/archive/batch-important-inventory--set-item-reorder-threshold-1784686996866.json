@@ -1,0 +1,65 @@
+{
+  "guideId": "inventory--set-item-reorder-threshold",
+  "title": "Set Item Reorder Threshold in Inventory",
+  "module": "inventory",
+  "intent": "set-item-reorder-threshold",
+  "targetAudience": "admin",
+  "description": "Complete the set item reorder threshold workflow in the Inventory module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Inventory module in the current Ogeemo environment.",
+    "Required data inputs for set item reorder threshold are prepared before starting."
+  ],
+  "steps": [
+    "Open the Inventory module from the main navigation.",
+    "Locate the set item reorder threshold entry point in the module workflow.",
+    "Enter or select the required inputs for set item reorder threshold.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Set Item Reorder Threshold completes without warnings or blockers.",
+    "Resulting records are visible in the expected Inventory views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during set item reorder threshold.",
+    "Permission constraints prevent completion of set item reorder threshold.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun set item reorder threshold.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun set item reorder threshold?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm set item reorder threshold is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "inventory",
+    "set-item-reorder-threshold",
+    "admin",
+    "set",
+    "item",
+    "reorder",
+    "threshold",
+    "set item reorder threshold"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:23:16.866Z",
+  "lastVerifiedAt": "2026-07-22T02:23:16.866Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for inventory--set-item-reorder-threshold"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

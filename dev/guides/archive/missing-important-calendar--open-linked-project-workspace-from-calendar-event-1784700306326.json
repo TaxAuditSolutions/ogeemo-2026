@@ -1,0 +1,68 @@
+{
+  "guideId": "calendar--open-linked-project-workspace-from-calendar-event",
+  "title": "Open Linked Project Workspace From Calendar Event in Calendar",
+  "module": "calendar",
+  "intent": "open-linked-project-workspace-from-calendar-event",
+  "targetAudience": "general",
+  "description": "Complete the open linked project workspace from calendar event workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for open linked project workspace from calendar event are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the open linked project workspace from calendar event entry point in the module workflow.",
+    "Enter or select the required inputs for open linked project workspace from calendar event.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Open Linked Project Workspace From Calendar Event completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during open linked project workspace from calendar event.",
+    "Permission constraints prevent completion of open linked project workspace from calendar event.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun open linked project workspace from calendar event.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun open linked project workspace from calendar event?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm open linked project workspace from calendar event is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "open-linked-project-workspace-from-calendar-event",
+    "general",
+    "productivity",
+    "open",
+    "linked",
+    "project",
+    "workspace",
+    "from",
+    "event",
+    "open linked project workspace from calendar event"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.326Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.326Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--open-linked-project-workspace-from-calendar-event"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

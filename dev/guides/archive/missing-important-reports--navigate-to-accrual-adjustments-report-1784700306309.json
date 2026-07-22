@@ -1,0 +1,67 @@
+{
+  "guideId": "reports--navigate-to-accrual-adjustments-report",
+  "title": "Navigate To Accrual Adjustments Report in Reports",
+  "module": "reports",
+  "intent": "navigate-to-accrual-adjustments-report",
+  "targetAudience": "accountant",
+  "description": "Complete the navigate to accrual adjustments report workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for navigate to accrual adjustments report are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the navigate to accrual adjustments report entry point in the module workflow.",
+    "Enter or select the required inputs for navigate to accrual adjustments report.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Navigate To Accrual Adjustments Report completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during navigate to accrual adjustments report.",
+    "Permission constraints prevent completion of navigate to accrual adjustments report.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun navigate to accrual adjustments report.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun navigate to accrual adjustments report?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm navigate to accrual adjustments report is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "navigate-to-accrual-adjustments-report",
+    "accountant",
+    "reporting",
+    "navigate",
+    "to",
+    "accrual",
+    "adjustments",
+    "report",
+    "navigate to accrual adjustments report"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.309Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.309Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--navigate-to-accrual-adjustments-report"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

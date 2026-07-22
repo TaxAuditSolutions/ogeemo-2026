@@ -1,0 +1,135 @@
+# critical draft Verification Report
+
+Generated at: 2026-07-22T07:23:29.567Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 30
+Passed: 2
+Failed: 28
+
+## Results
+
+- [FAIL] backup::execute-firestore-backup-export
+  - Question: How do I execute firestore backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to execute a "firestore backup export". The guides focus on exporting analytics reports, CSV reports, and PDF reports from the Analytics or Reports module.  
+- [FAIL] backup::execute-auth-backup-export
+  - Question: How do I execute auth backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to execute "auth backup export." The available guides cover exporting various reports and generating audit reports.
+- [FAIL] user-manager::add-user-from-contact-directory
+  - Question: How do I add user from contact directory?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide specific steps on how to add a user from a contact directory based on the provided guide context.  The available guides cover: *   Creating a contact from an email. *   Creating a general contact. *   Cr
+- [FAIL] user-manager::enforce-invite-role-hierarchy-rules
+  - Question: How do I enforce invite role hierarchy rules?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to enforce invite role hierarchy rules. The available guides cover inviting team users, creating and configuring roles, and managing team authority levels, b
+- [FAIL] email-hub::link-email-activity-to-contact
+  - Question: How do I link email activity to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to link email activity to a contact.  The available guides cover: *   Linking contact activity to a time log. *   Linking a contact to a deal. *   Cre
+- [FAIL] email-hub::save-email-activity-to-contact-folder
+  - Question: How do I save email activity to contact folder?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to save email activity to a contact folder. The available guides cover creating contacts from emails, creating contact folders, creating contact subfolders, 
+- [FAIL] projects::delete-project-and-associated-tasks
+  - Question: How do I delete project and associated tasks?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a project and its associated tasks. The available guides focus on deleting individual tasks or removing task dependencies.  To answer your question
+- [PASS] project-status::add-task-to-todo-column
+  - Question: How do I add task to todo column?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide specific instructions on how to add a task to a "todo column" based on the provided guide context.  The available guides cover: *   Linking a task to a document *   Adding a task dependency *   Linking a
+- [FAIL] project-status::mark-task-as-done-from-board
+  - Question: How do I mark task as done from board?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: To mark a task as done, you can follow these steps to complete a task within the Tasks module:  1.  Open the Tasks module from the main navigation. 2.  Locate the complete task entry point in the module workflow. 3.  Ent
+- [FAIL] project-status::delete-task-from-board-card
+  - Question: How do I delete task from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a task from a board card.  The available guides provide instructions for deleting a task within the Tasks module, but they do not specify how to pe
+- [FAIL] project-status::resolve-task-status-update-failure
+  - Question: How do I resolve task status update failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information or procedures for resolving "task status update failure."  The available guides cover troubleshooting for: *   Resolve Task Assignment Error *   Bulk Updat
+- [FAIL] ledgers::open-bks-general-ledger
+  - Question: How do I open bks general ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open "bks general ledger" or any general ledger. The available guides describe how to reconcile a subledger to the general ledger, produce ledger details,
+- [FAIL] ledgers::delete-ledger-transaction
+  - Question: How do I delete ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a ledger transaction.  The available guides cover handling duplicate transactions, auditing ledger changes, and reversing journal entries. To answe
+- [FAIL] ledgers::bulk-delete-ledger-transactions
+  - Question: How do I bulk delete ledger transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to bulk delete ledger transactions. The available guides cover auditing ledger changes, preparing for CRA audits, handling duplicate transact
+- [FAIL] ledgers::open-reconciliation-wizard
+  - Question: How do I open reconciliation wizard?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information about how to open a "reconciliation wizard."  However, the guide does provide steps for starting the "Reconcile Transactions" workflow. To begin the "Reconcile Tran
+- [FAIL] ledgers::upload-bank-statement-csv-for-reconciliation
+  - Question: How do I upload bank statement csv for reconciliation?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to upload a bank statement CSV for reconciliation.  The guides mention that "Required data inputs for reconcile transactions are prepared before starting" an
+- [FAIL] ledgers::bulk-verify-reconciliation-matches
+  - Question: How do I bulk verify reconciliation matches?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to bulk verify reconciliation matches. It only details how to confirm that the "Reconcile Transactions" workflow is complete using module validation checks, 
+- [FAIL] ledgers::auto-ingest-unmatched-bank-transactions
+  - Question: How do I auto ingest unmatched bank transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to auto ingest unmatched bank transactions. The guides primarily focus on processes related to "Recover Missing Task", "Resolve Task Assignme
+- [FAIL] ledgers::resolve-ledger-batch-delete-failure
+  - Question: How do I resolve ledger batch delete failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to resolve ledger batch delete failure.  The available guides cover troubleshooting and FAQs for: *   Audit Ledger Changes *   Resolve Unbalanced Journal *  
+- [FAIL] document-manager::delete-folder-and-subtree
+  - Question: How do I delete folder and subtree?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to delete a folder and its subtree.  The available guides cover renaming, archiving, creating folders, and moving files between folders. Information r
+- [FAIL] document-manager::delete-single-file-record
+  - Question: How do I delete single file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to delete a single file record. The guides cover recovering deleted files, revoking document access, uploading documents, and rejecting documents, but
+- [FAIL] document-manager::bulk-delete-selected-file-records
+  - Question: How do I bulk delete selected file records?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to bulk delete selected file records. It includes guides for recovering deleted files, bulk uploading documents, and rejecting documents, but not for bulk de
+- [FAIL] reports::generate-client-statement-by-client-and-date
+  - Question: How do I generate client statement by client and date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to generate a client statement by client and date. The available guides describe workflows for: *   Segmenting contacts by tag *   Opening a
+- [FAIL] client-statement::generate-client-statement-ledger
+  - Question: How do I generate client statement ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to generate a client statement ledger, as the provided guide context does not contain information on this specific workflow.  The available guides cover: *   Producing ledger detail w
+- [FAIL] client-statement::resolve-client-statement-data-load-failure
+  - Question: How do I resolve client statement data load failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to resolve "client statement data load failure". The available guides focus on various processes within the Contacts module, such as resolving contact save f
+- [FAIL] client-time-log::select-client-filter-for-time-log
+  - Question: How do I select client filter for time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to select a client filter for a time log.  To answer your question, information detailing the steps to locate and apply client filters within the time log fu
+- [FAIL] client-time-log::delete-manual-client-time-log-entry
+  - Question: How do I delete manual client time log entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a manual client time log entry. The available guides focus on linking contact activity to time logs and opening the contact log time dialog.  To an
+- [FAIL] client-time-log::create-invoice-from-client-time-entry
+  - Question: How do I create invoice from client time entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context describes how to create an invoice in the Accounting module generally but does not contain specific information on how to create an invoice *from client time entry*.  The context is missing the
+- [FAIL] client-time-log::create-invoice-for-selected-client-total
+  - Question: How do I create invoice for selected client total?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: To create an invoice, follow these general steps:  1.  Open the Accounting module from the main navigation. 2.  Locate the create invoice entry point in the module workflow. 3.  Enter or select the required inputs for cr
+- [PASS] client-time-log::resolve-client-time-log-data-load-failure
+  - Question: How do I resolve client time log data load failure?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide specific guidance on how to resolve "client time log data load failure" as this information is not available in the provided guide context.  The available context includes information on: *   How to conf
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

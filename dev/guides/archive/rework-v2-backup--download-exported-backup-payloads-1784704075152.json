@@ -1,0 +1,66 @@
+{
+  "guideId": "backup--download-exported-backup-payloads",
+  "title": "Download Exported Backup Payloads in Backup",
+  "module": "backup",
+  "intent": "download-exported-backup-payloads",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete download exported backup payloads in Backup. Intent key: download-exported-backup-payloads. Module key: backup.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Backup.",
+    "Records needed for download exported backup payloads are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Backup."
+  ],
+  "steps": [
+    "Open Backup from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Download Exported Backup Payloads\" in Backup.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the download exported backup payloads action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Download Exported Backup Payloads finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Backup lists, totals, or linked records.",
+    "Output references can be traced back to backup--download-exported-backup-payloads with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing download-exported-backup-payloads.",
+    "Insufficient permissions for admin while attempting download-exported-backup-payloads.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Backup, reapply required filters, and repeat download exported backup payloads.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm download exported backup payloads completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Backup immediately after execution."
+    },
+    {
+      "question": "What should I do if download exported backup payloads returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "download-exported-backup-payloads",
+    "download exported backup payloads",
+    "admin",
+    "download",
+    "exported",
+    "payloads",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.152Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.152Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for backup--download-exported-backup-payloads from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

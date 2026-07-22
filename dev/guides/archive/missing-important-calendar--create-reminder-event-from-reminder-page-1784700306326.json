@@ -1,0 +1,67 @@
+{
+  "guideId": "calendar--create-reminder-event-from-reminder-page",
+  "title": "Create Reminder Event From Reminder Page in Calendar",
+  "module": "calendar",
+  "intent": "create-reminder-event-from-reminder-page",
+  "targetAudience": "general",
+  "description": "Complete the create reminder event from reminder page workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for create reminder event from reminder page are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the create reminder event from reminder page entry point in the module workflow.",
+    "Enter or select the required inputs for create reminder event from reminder page.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Reminder Event From Reminder Page completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create reminder event from reminder page.",
+    "Permission constraints prevent completion of create reminder event from reminder page.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create reminder event from reminder page.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create reminder event from reminder page?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create reminder event from reminder page is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "create-reminder-event-from-reminder-page",
+    "general",
+    "productivity",
+    "create",
+    "reminder",
+    "event",
+    "from",
+    "page",
+    "create reminder event from reminder page"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.326Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.326Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--create-reminder-event-from-reminder-page"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

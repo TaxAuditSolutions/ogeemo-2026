@@ -1,0 +1,72 @@
+{
+  "guideId": "ledgers--bulk-verify-reconciliation-matches",
+  "title": "Bulk Verify Reconciliation Matches in Ledgers",
+  "module": "ledgers",
+  "intent": "bulk-verify-reconciliation-matches",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I bulk verify reconciliation matches? This is the canonical Ledgers workflow for bulk-verify-reconciliation-matches.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for bulk-verify-reconciliation-matches are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running bulk verify reconciliation matches.",
+    "Open the exact workflow action labeled for bulk verify reconciliation matches.",
+    "Enter required fields for bulk verify reconciliation matches (entity selection, date range, and status where applicable).",
+    "Apply changes and execute bulk verify reconciliation matches with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The bulk-verify-reconciliation-matches action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting bulk-verify-reconciliation-matches.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun bulk-verify-reconciliation-matches with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I bulk verify reconciliation matches?",
+      "answer": "Open Ledgers at /accounting/ledgers, run bulk verify reconciliation matches with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot bulk verify reconciliation matches if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "bulk-verify-reconciliation-matches",
+    "bulk verify reconciliation matches",
+    "/accounting/ledgers",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "bulk",
+    "verify",
+    "reconciliation",
+    "matches"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.195Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.195Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--bulk-verify-reconciliation-matches"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

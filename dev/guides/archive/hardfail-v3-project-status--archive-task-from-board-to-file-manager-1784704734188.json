@@ -1,0 +1,76 @@
+{
+  "guideId": "project-status--archive-task-from-board-to-file-manager",
+  "title": "Archive Task From Board To File Manager in Project Status",
+  "module": "project-status",
+  "intent": "archive-task-from-board-to-file-manager",
+  "targetAudience": "general",
+  "description": "Answer: How do I archive task from board to file manager? This is the canonical Project Status workflow for archive-task-from-board-to-file-manager.",
+  "prerequisites": [
+    "You are signed in as general and can access Project Status.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for archive-task-from-board-to-file-manager are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Project Status.",
+    "Verify active workspace/company context before running archive task from board to file manager.",
+    "Open the exact workflow action labeled for archive task from board to file manager.",
+    "Enter required fields for archive task from board to file manager (entity selection, date range, and status where applicable).",
+    "Apply changes and execute archive task from board to file manager with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The archive-task-from-board-to-file-manager action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Project Status lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting archive-task-from-board-to-file-manager.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun archive-task-from-board-to-file-manager with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I archive task from board to file manager?",
+      "answer": "Open Project Status at /projects, run archive task from board to file manager with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot archive task from board to file manager if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "archive-task-from-board-to-file-manager",
+    "archive task from board to file manager",
+    "/projects",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "archive",
+    "task",
+    "from",
+    "board",
+    "to",
+    "file",
+    "manager"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.188Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.188Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for project-status--archive-task-from-board-to-file-manager"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

@@ -1,0 +1,66 @@
+{
+  "guideId": "contacts--resolve-contact-save-failure",
+  "title": "Resolve Contact Save Failure in Contacts",
+  "module": "contacts",
+  "intent": "resolve-contact-save-failure",
+  "targetAudience": "general",
+  "description": "Complete the resolve contact save failure workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for resolve contact save failure are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the resolve contact save failure entry point in the module workflow.",
+    "Enter or select the required inputs for resolve contact save failure.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Contact Save Failure completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve contact save failure.",
+    "Permission constraints prevent completion of resolve contact save failure.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve contact save failure.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve contact save failure?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve contact save failure is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "resolve-contact-save-failure",
+    "general",
+    "crm",
+    "resolve",
+    "contact",
+    "save",
+    "failure",
+    "resolve contact save failure"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.867Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.867Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--resolve-contact-save-failure"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

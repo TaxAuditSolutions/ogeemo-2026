@@ -1,0 +1,65 @@
+{
+  "guideId": "projects--create-blank-project",
+  "title": "Create Blank Project in Projects",
+  "module": "projects",
+  "intent": "create-blank-project",
+  "targetAudience": "general",
+  "description": "Complete the create blank project workflow in the Projects module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Projects module in the current Ogeemo environment.",
+    "Required data inputs for create blank project are prepared before starting."
+  ],
+  "steps": [
+    "Open the Projects module from the main navigation.",
+    "Locate the create blank project entry point in the module workflow.",
+    "Enter or select the required inputs for create blank project.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Blank Project completes without warnings or blockers.",
+    "Resulting records are visible in the expected Projects views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create blank project.",
+    "Permission constraints prevent completion of create blank project.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create blank project.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create blank project?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create blank project is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "projects",
+    "create-blank-project",
+    "general",
+    "productivity",
+    "create",
+    "blank",
+    "project",
+    "create blank project"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.867Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.867Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for projects--create-blank-project"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

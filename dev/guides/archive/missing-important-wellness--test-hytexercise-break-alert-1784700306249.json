@@ -1,0 +1,65 @@
+{
+  "guideId": "wellness--test-hytexercise-break-alert",
+  "title": "Test Hytexercise Break Alert in Wellness",
+  "module": "wellness",
+  "intent": "test-hytexercise-break-alert",
+  "targetAudience": "general",
+  "description": "Complete the test hytexercise break alert workflow in the Wellness module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Wellness module in the current Ogeemo environment.",
+    "Required data inputs for test hytexercise break alert are prepared before starting."
+  ],
+  "steps": [
+    "Open the Wellness module from the main navigation.",
+    "Locate the test hytexercise break alert entry point in the module workflow.",
+    "Enter or select the required inputs for test hytexercise break alert.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Test Hytexercise Break Alert completes without warnings or blockers.",
+    "Resulting records are visible in the expected Wellness views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during test hytexercise break alert.",
+    "Permission constraints prevent completion of test hytexercise break alert.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun test hytexercise break alert.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun test hytexercise break alert?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm test hytexercise break alert is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "wellness",
+    "test-hytexercise-break-alert",
+    "general",
+    "test",
+    "hytexercise",
+    "break",
+    "alert",
+    "test hytexercise break alert"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.249Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.249Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for wellness--test-hytexercise-break-alert"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

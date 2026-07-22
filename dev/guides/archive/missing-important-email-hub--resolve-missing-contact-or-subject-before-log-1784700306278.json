@@ -1,0 +1,70 @@
+{
+  "guideId": "email-hub--resolve-missing-contact-or-subject-before-log",
+  "title": "Resolve Missing Contact Or Subject Before Log in Email Hub",
+  "module": "email-hub",
+  "intent": "resolve-missing-contact-or-subject-before-log",
+  "targetAudience": "general",
+  "description": "Complete the resolve missing contact or subject before log workflow in the Email Hub module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Email Hub module in the current Ogeemo environment.",
+    "Required data inputs for resolve missing contact or subject before log are prepared before starting."
+  ],
+  "steps": [
+    "Open the Email Hub module from the main navigation.",
+    "Locate the resolve missing contact or subject before log entry point in the module workflow.",
+    "Enter or select the required inputs for resolve missing contact or subject before log.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Missing Contact Or Subject Before Log completes without warnings or blockers.",
+    "Resulting records are visible in the expected Email Hub views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve missing contact or subject before log.",
+    "Permission constraints prevent completion of resolve missing contact or subject before log.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve missing contact or subject before log.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve missing contact or subject before log?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve missing contact or subject before log is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "email-hub",
+    "resolve-missing-contact-or-subject-before-log",
+    "general",
+    "productivity",
+    "resolve",
+    "missing",
+    "contact",
+    "or",
+    "subject",
+    "before",
+    "log",
+    "email hub",
+    "resolve missing contact or subject before log"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.278Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.278Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for email-hub--resolve-missing-contact-or-subject-before-log"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

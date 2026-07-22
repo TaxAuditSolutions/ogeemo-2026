@@ -1,0 +1,195 @@
+# important draft Verification Report
+
+Generated at: 2026-07-22T07:25:36.439Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 45
+Passed: 1
+Failed: 44
+
+## Results
+
+- [FAIL] image-generator::close-image-generator-and-return-to-action-manager
+  - Question: How do I close image generator and return to action manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to close an image generator and return to an action manager. The available guides focus on managing action chips and tasks within the "Tasks" module.
+- [FAIL] settings::update-user-profile-settings
+  - Question: How do I update user profile settings?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to update user profile settings. The available guides focus on document management tasks within the Files module, such as setting retention policies, auditin
+- [FAIL] backup::select-backup-types-for-export
+  - Question: How do I select backup types for export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to select backup types for export.  The available guides describe how to export reports and mention selecting a "report type" and an "output format," but "ba
+- [FAIL] backup::download-exported-backup-payloads
+  - Question: How do I download exported backup payloads?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to download exported backup payloads. The guides focus on exporting analytics reports and report PDFs/CSVs, but there is no mention of "backup payloads" or i
+- [FAIL] backup::prepare-export-payload-for-third-party-ingestion
+  - Question: How do I prepare export payload for third party ingestion?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to prepare an export payload for third-party ingestion. The available guides describe how to export reports and validate exports.  To answer your question, i
+- [FAIL] user-manager::edit-user-profile-details
+  - Question: How do I edit user profile details?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to edit user profile details. The available guides focus on actions within the Files module, such as renaming folders, auditing or revoking document a
+- [FAIL] email-hub::open-document-manager-mirror-from-email-hub
+  - Question: How do I open document manager mirror from email hub?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open "document manager mirror" from "email hub."  The guides focus on linking documents to contacts within the Files module.
+- [FAIL] email-hub::apply-audit-ready-email-file-naming-protocol
+  - Question: How do I apply audit ready email file naming protocol?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to apply an audit-ready email file naming protocol. It mentions that files should be named according to internal standards (Guide 8) and suggests preferring 
+- [FAIL] email-hub::create-or-edit-contact-during-email-log
+  - Question: How do I create or edit contact during email log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to create or edit a contact during an email log process. The available guides cover creating a contact from an email, opening a contact log time dialog, and 
+- [FAIL] projects::assign-project-to-contact
+  - Question: How do I assign project to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to assign a project to a contact.  The available guides cover: *   Linking a contact to a deal *   Assigning a contact owner *   Reassigning a contact owner 
+- [FAIL] projects::convert-task-into-new-project
+  - Question: How do I convert task into new project?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: Based on the provided guide context, there is no information on how to "convert task into new project". The available guides cover "convert task to action chip", "start task", and "create task".  The guide context does n
+- [FAIL] project-status::reorder-task-within-status-column
+  - Question: How do I reorder task within status column?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to reorder tasks within a status column using the provided guide context. The guides do not contain information about this specific functionality.
+- [FAIL] project-status::edit-task-details-from-board-card
+  - Question: How do I edit task details from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to edit task details from a board card.  The existing guides explain how to edit a task in the Tasks module, but they do not detail an entry point o
+- [FAIL] project-status::archive-task-from-board-to-file-manager
+  - Question: How do I archive task from board to file manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to archive a task from a board to a file manager. The available guides focus on archiving folders within the Files module.  To answer your question, informat
+- [FAIL] project-status::add-board-task-to-global-todo-list
+  - Question: How do I add board task to global todo list?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain how to add a board task to a global todo list.  The available guides cover: *   Linking a task to a document *   Converting a task to an action ch
+- [FAIL] project-status::review-column-task-counts
+  - Question: How do I review column task counts?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to review column task counts using the provided guide context. The context does not contain information on this specific topic.  To answer your question, information describing the pr
+- [FAIL] idea-board::archive-idea-as-reference-file
+  - Question: How do I archive idea as reference file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to "archive idea as reference file".  The available guides describe how to "Archive Folder in Files." To answer your question, information specific to archiv
+- [FAIL] ledgers::switch-between-general-income-expense-tabs
+  - Question: How do I switch between general income expense tabs?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to switch between general income expense tabs.  To answer your question, information regarding the specific user interface or navigation within the Accountin
+- [FAIL] ledgers::edit-ledger-transaction
+  - Question: How do I edit ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am Ogeemo Assistant.  The provided guide context does not contain information on how to "edit ledger transaction." It includes guides for "Edit Invoice" and "Audit Ledger Changes," but not for directly editing a ledger
+- [FAIL] ledgers::sort-ledger-by-date-contact-category-amount
+  - Question: How do I sort ledger by date contact category amount?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to sort a ledger by date, contact, category, or amount. The guides primarily focus on producing ledger details, auditing changes, and preparing for CR
+- [FAIL] ledgers::filter-ledger-by-date-range
+  - Question: How do I filter ledger by date range?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to filter a ledger by date range. The available guides describe how to "Audit Ledger Changes" and "Produce Ledger Detail With Support Links," but they do not
+- [FAIL] ledgers::clear-ledger-filters
+  - Question: How do I clear ledger filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to clear ledger filters.  To answer your question, information describing the process for clearing ledger filters would be needed.
+- [FAIL] ledgers::export-ledger-to-csv
+  - Question: How do I export ledger to csv?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific instructions on how to export a ledger to CSV.  The available information details how to "Export Report Csv" (Guide 4) and "Export Reports from Analytics" (Guide 6), b
+- [FAIL] document-manager::open-document-manager-workspace
+  - Question: How do I open document manager workspace?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a "document manager workspace". The guides consistently instruct users to "Open the Files module from the main navigation" for various document-relat
+- [FAIL] document-manager::open-document-manager-instructions
+  - Question: How do I open document manager instructions?
+  - Reason: response was too short and lacked clear procedural structure
+  - Answer excerpt: To open the document manager, you can refer to the first step in the "Upload Documents to Evidence Folders" guide:  1.  Open the file or document manager module.
+- [FAIL] document-manager::move-folder-with-drag-and-drop
+  - Question: How do I move folder with drag and drop?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to move a folder using drag and drop. The available guides describe how to "Move File Between Folders" and "Rename Folder," but do not mention moving folders
+- [FAIL] document-manager::open-linked-google-drive-file
+  - Question: How do I open linked google drive file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain information on how to open a linked Google Drive file. The available guides focus on the process of linking a document to a contact and verifying that the link a
+- [FAIL] document-manager::rename-file-record
+  - Question: How do I rename file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to rename a file record. The guides specifically cover how to "Rename Folder" and "Replace Document Version".
+- [FAIL] document-manager::link-google-drive-url-to-file-record
+  - Question: How do I link google drive url to file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to link a Google Drive URL to a file record.  The available guides describe how to link an uploaded document to a contact record or how to generate a share l
+- [FAIL] document-manager::move-file-to-folder-with-drag-and-drop
+  - Question: How do I move file to folder with drag and drop?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to move a file to a folder using drag and drop.
+- [FAIL] document-manager::sort-folder-tree-order
+  - Question: How do I sort folder tree order?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to sort folder tree order using the provided guide context. The guides only contain information on renaming folders, creating folders, and moving files between folders.  The guide con
+- [FAIL] document-manager::sort-files-by-name-or-modified-date
+  - Question: How do I sort files by name or modified date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort files by name or modified date. Information regarding file sorting functionality would be needed to answer your question.
+- [PASS] reports::print-bank-reconciliation-statement
+  - Question: How do I print bank reconciliation statement?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to print a bank reconciliation statement using the provided context.  The guide context contains information on how to: *   Complete the "Reconcile Transactions" workflow. *   Confirm
+- [FAIL] work-activity::print-work-activity-evidence-pdf
+  - Question: How do I print work activity evidence pdf?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to print work activity evidence PDFs.  To answer your question, information regarding printing documents or PDFs would be needed.
+- [FAIL] client-statement::set-client-statement-start-date
+  - Question: How do I set client statement start date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to set the client statement start date.
+- [FAIL] client-statement::set-client-statement-end-date
+  - Question: How do I set client statement end date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to set a client statement end date. The available guides cover segmenting contacts by tag, opening a contact log time dialog, and scheduling 
+- [FAIL] client-statement::clear-client-statement-date-filters
+  - Question: How do I clear client statement date filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to clear client statement date filters. The guides available cover topics such as unlinking contacts from deals, scrubbing worker HR fields, 
+- [FAIL] client-statement::print-client-statement
+  - Question: How do I print client statement?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to print client statements. The available guides cover workflows related to contacts, such as exporting contact lists, adding notes, and atta
+- [FAIL] worker-time-log::sort-worker-time-log-by-worker-client-date-billing
+  - Question: How do I sort worker time log by worker client date billing?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to sort worker time logs by worker client date billing.  The available guides focus on: *   Linking contact activity to time logs. *   Openin
+- [FAIL] worker-time-log::open-worker-document-folder-from-time-log
+  - Question: How do I open worker document folder from time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to tell you how to open a worker document folder from a time log. The guides focus on document management within the "Files" module, including uploading, lin
+- [FAIL] client-time-log::set-client-time-log-start-date-filter
+  - Question: How do I set client time log start date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to tell you how to set a client time log start date filter. The available guides cover linking contact activity to time logs and opening the contact log time
+- [FAIL] client-time-log::set-client-time-log-end-date-filter
+  - Question: How do I set client time log end date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to set a client time log end date filter.  To answer your question, information specifically detailing the steps or functionality for setting such a filter w
+- [FAIL] client-time-log::clear-client-time-log-filters
+  - Question: How do I clear client time log filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to clear client time log filters. The guides focus on "Link Contact Activity To Time Log in Contacts" and "Open Contact Log Time Dialog in Contacts."  To ans
+- [FAIL] client-time-log::schedule-client-time-entry-in-calendar
+  - Question: How do I schedule client time entry in calendar?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to schedule client time entry in a calendar.  The available guides describe how to: *   Sync contacts with a calendar. *   Open a contact log time dialog. * 
+- [FAIL] client-time-log::block-direct-delete-for-calendar-sourced-client-entries
+  - Question: How do I block direct delete for calendar sourced client entries?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to block direct delete for calendar-sourced client entries.  The available information focuses on: *   Deleting contact folders *   Bulk deleting cont
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

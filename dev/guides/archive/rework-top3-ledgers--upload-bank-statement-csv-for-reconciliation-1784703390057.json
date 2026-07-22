@@ -1,0 +1,71 @@
+{
+  "guideId": "ledgers--upload-bank-statement-csv-for-reconciliation",
+  "title": "Upload Bank Statement Csv For Reconciliation in Ledgers",
+  "module": "ledgers",
+  "intent": "upload-bank-statement-csv-for-reconciliation",
+  "targetAudience": "accountant",
+  "description": "Use this guide to complete upload bank statement csv for reconciliation in Ledgers. Intent key: upload-bank-statement-csv-for-reconciliation. Module key: ledgers.",
+  "prerequisites": [
+    "You are signed in with accountant access and can open Ledgers.",
+    "Records needed for upload bank statement csv for reconciliation are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Ledgers."
+  ],
+  "steps": [
+    "Open Ledgers from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Upload Bank Statement Csv For Reconciliation\" in Ledgers.",
+    "Select the correct ledger tab (general, income, expense, or reconciliation) before running the action.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the upload bank statement csv for reconciliation action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Upload Bank Statement Csv For Reconciliation finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Ledgers lists, totals, or linked records.",
+    "Output references can be traced back to ledgers--upload-bank-statement-csv-for-reconciliation with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing upload-bank-statement-csv-for-reconciliation.",
+    "Insufficient permissions for accountant while attempting upload-bank-statement-csv-for-reconciliation.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Ledgers, reapply required filters, and repeat upload bank statement csv for reconciliation.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm upload bank statement csv for reconciliation completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Ledgers immediately after execution."
+    },
+    {
+      "question": "What should I do if upload bank statement csv for reconciliation returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "upload-bank-statement-csv-for-reconciliation",
+    "upload bank statement csv for reconciliation",
+    "accountant",
+    "upload",
+    "bank",
+    "statement",
+    "csv",
+    "for",
+    "reconciliation",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.2",
+  "generatedAt": "2026-07-22T06:56:30.057Z",
+  "lastVerifiedAt": "2026-07-22T06:56:30.057Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for ledgers--upload-bank-statement-csv-for-reconciliation from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

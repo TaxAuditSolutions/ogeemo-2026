@@ -1,0 +1,72 @@
+{
+  "guideId": "ledgers--delete-ledger-transaction",
+  "title": "Delete Ledger Transaction in Ledgers",
+  "module": "ledgers",
+  "intent": "delete-ledger-transaction",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I delete ledger transaction? This is the canonical Ledgers workflow for delete-ledger-transaction.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for delete-ledger-transaction are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running delete ledger transaction.",
+    "Open the exact workflow action labeled for delete ledger transaction.",
+    "Enter required fields for delete ledger transaction (entity selection, date range, and status where applicable).",
+    "Apply changes and execute delete ledger transaction with explicit confirmation in the UI.",
+    "Validate selection scope before delete and confirm post-delete row count is reduced.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The delete-ledger-transaction action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting delete-ledger-transaction.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun delete-ledger-transaction with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I delete ledger transaction?",
+      "answer": "Open Ledgers at /accounting/ledgers, run delete ledger transaction with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot delete ledger transaction if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "delete-ledger-transaction",
+    "delete ledger transaction",
+    "/accounting/ledgers",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "delete",
+    "ledger",
+    "transaction"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.192Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.192Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--delete-ledger-transaction"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

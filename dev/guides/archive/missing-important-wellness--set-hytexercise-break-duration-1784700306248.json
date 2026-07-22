@@ -1,0 +1,65 @@
+{
+  "guideId": "wellness--set-hytexercise-break-duration",
+  "title": "Set Hytexercise Break Duration in Wellness",
+  "module": "wellness",
+  "intent": "set-hytexercise-break-duration",
+  "targetAudience": "general",
+  "description": "Complete the set hytexercise break duration workflow in the Wellness module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Wellness module in the current Ogeemo environment.",
+    "Required data inputs for set hytexercise break duration are prepared before starting."
+  ],
+  "steps": [
+    "Open the Wellness module from the main navigation.",
+    "Locate the set hytexercise break duration entry point in the module workflow.",
+    "Enter or select the required inputs for set hytexercise break duration.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Set Hytexercise Break Duration completes without warnings or blockers.",
+    "Resulting records are visible in the expected Wellness views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during set hytexercise break duration.",
+    "Permission constraints prevent completion of set hytexercise break duration.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun set hytexercise break duration.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun set hytexercise break duration?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm set hytexercise break duration is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "wellness",
+    "set-hytexercise-break-duration",
+    "general",
+    "set",
+    "hytexercise",
+    "break",
+    "duration",
+    "set hytexercise break duration"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.248Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.248Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for wellness--set-hytexercise-break-duration"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

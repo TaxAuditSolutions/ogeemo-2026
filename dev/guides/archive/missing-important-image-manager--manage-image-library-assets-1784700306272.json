@@ -1,0 +1,67 @@
+{
+  "guideId": "image-manager--manage-image-library-assets",
+  "title": "Manage Image Library Assets in Image Manager",
+  "module": "image-manager",
+  "intent": "manage-image-library-assets",
+  "targetAudience": "admin",
+  "description": "Complete the manage image library assets workflow in the Image Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Image Manager module in the current Ogeemo environment.",
+    "Required data inputs for manage image library assets are prepared before starting."
+  ],
+  "steps": [
+    "Open the Image Manager module from the main navigation.",
+    "Locate the manage image library assets entry point in the module workflow.",
+    "Enter or select the required inputs for manage image library assets.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Manage Image Library Assets completes without warnings or blockers.",
+    "Resulting records are visible in the expected Image Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during manage image library assets.",
+    "Permission constraints prevent completion of manage image library assets.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun manage image library assets.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun manage image library assets?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm manage image library assets is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "image-manager",
+    "manage-image-library-assets",
+    "admin",
+    "tools",
+    "manage",
+    "image",
+    "library",
+    "assets",
+    "image manager",
+    "manage image library assets"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.272Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.272Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for image-manager--manage-image-library-assets"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

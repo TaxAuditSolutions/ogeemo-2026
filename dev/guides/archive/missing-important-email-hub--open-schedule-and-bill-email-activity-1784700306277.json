@@ -1,0 +1,69 @@
+{
+  "guideId": "email-hub--open-schedule-and-bill-email-activity",
+  "title": "Open Schedule And Bill Email Activity in Email Hub",
+  "module": "email-hub",
+  "intent": "open-schedule-and-bill-email-activity",
+  "targetAudience": "general",
+  "description": "Complete the open schedule and bill email activity workflow in the Email Hub module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Email Hub module in the current Ogeemo environment.",
+    "Required data inputs for open schedule and bill email activity are prepared before starting."
+  ],
+  "steps": [
+    "Open the Email Hub module from the main navigation.",
+    "Locate the open schedule and bill email activity entry point in the module workflow.",
+    "Enter or select the required inputs for open schedule and bill email activity.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Open Schedule And Bill Email Activity completes without warnings or blockers.",
+    "Resulting records are visible in the expected Email Hub views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during open schedule and bill email activity.",
+    "Permission constraints prevent completion of open schedule and bill email activity.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun open schedule and bill email activity.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun open schedule and bill email activity?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm open schedule and bill email activity is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "email-hub",
+    "open-schedule-and-bill-email-activity",
+    "general",
+    "productivity",
+    "open",
+    "schedule",
+    "and",
+    "bill",
+    "email",
+    "activity",
+    "email hub",
+    "open schedule and bill email activity"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.277Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.277Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for email-hub--open-schedule-and-bill-email-activity"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

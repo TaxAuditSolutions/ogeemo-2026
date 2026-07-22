@@ -1,0 +1,70 @@
+{
+  "guideId": "email-hub--link-email-activity-to-contact",
+  "title": "Link Email Activity To Contact in Email Hub",
+  "module": "email-hub",
+  "intent": "link-email-activity-to-contact",
+  "targetAudience": "general",
+  "description": "Use this guide to complete link email activity to contact in Email Hub. Intent key: link-email-activity-to-contact. Module key: email-hub.",
+  "prerequisites": [
+    "You are signed in with general access and can open Email Hub.",
+    "Records needed for link email activity to contact are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Email Hub."
+  ],
+  "steps": [
+    "Open Email Hub from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Link Email Activity To Contact\" in Email Hub.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the link email activity to contact action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Link Email Activity To Contact finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Email Hub lists, totals, or linked records.",
+    "Output references can be traced back to email-hub--link-email-activity-to-contact with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing link-email-activity-to-contact.",
+    "Insufficient permissions for general while attempting link-email-activity-to-contact.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Email Hub, reapply required filters, and repeat link email activity to contact.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm link email activity to contact completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Email Hub immediately after execution."
+    },
+    {
+      "question": "What should I do if link email activity to contact returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "email-hub",
+    "email hub",
+    "link-email-activity-to-contact",
+    "link email activity to contact",
+    "general",
+    "link",
+    "email",
+    "activity",
+    "to",
+    "contact",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.168Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.168Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for email-hub--link-email-activity-to-contact from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

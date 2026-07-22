@@ -1,0 +1,69 @@
+{
+  "guideId": "ledgers--flag-bank-records-as-orphan-or-duplicate",
+  "title": "Flag Bank Records As Orphan Or Duplicate in Ledgers",
+  "module": "ledgers",
+  "intent": "flag-bank-records-as-orphan-or-duplicate",
+  "targetAudience": "accountant",
+  "description": "Complete the flag bank records as orphan or duplicate workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for flag bank records as orphan or duplicate are prepared before starting."
+  ],
+  "steps": [
+    "Open the Ledgers module from the main navigation.",
+    "Locate the flag bank records as orphan or duplicate entry point in the module workflow.",
+    "Enter or select the required inputs for flag bank records as orphan or duplicate.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Flag Bank Records As Orphan Or Duplicate completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during flag bank records as orphan or duplicate.",
+    "Permission constraints prevent completion of flag bank records as orphan or duplicate.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun flag bank records as orphan or duplicate.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun flag bank records as orphan or duplicate?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm flag bank records as orphan or duplicate is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "flag-bank-records-as-orphan-or-duplicate",
+    "accountant",
+    "accounting",
+    "flag",
+    "bank",
+    "records",
+    "as",
+    "orphan",
+    "or",
+    "duplicate",
+    "flag bank records as orphan or duplicate"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.300Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.300Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--flag-bank-records-as-orphan-or-duplicate"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

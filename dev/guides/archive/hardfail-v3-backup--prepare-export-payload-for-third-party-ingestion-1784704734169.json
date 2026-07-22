@@ -1,0 +1,75 @@
+{
+  "guideId": "backup--prepare-export-payload-for-third-party-ingestion",
+  "title": "Prepare Export Payload For Third Party Ingestion in Backup",
+  "module": "backup",
+  "intent": "prepare-export-payload-for-third-party-ingestion",
+  "targetAudience": "admin",
+  "description": "Answer: How do I prepare export payload for third party ingestion? This is the canonical Backup workflow for prepare-export-payload-for-third-party-ingestion.",
+  "prerequisites": [
+    "You are signed in as admin and can access Backup.",
+    "Route /backup is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for prepare-export-payload-for-third-party-ingestion are available before execution."
+  ],
+  "steps": [
+    "Navigate to /backup and open Backup.",
+    "Verify active workspace/company context before running prepare export payload for third party ingestion.",
+    "Open the exact workflow action labeled for prepare export payload for third party ingestion.",
+    "Enter required fields for prepare export payload for third party ingestion (entity selection, date range, and status where applicable).",
+    "Apply changes and execute prepare export payload for third party ingestion with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The prepare-export-payload-for-third-party-ingestion action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Backup lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting prepare-export-payload-for-third-party-ingestion.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /backup, reapply field values, and rerun prepare-export-payload-for-third-party-ingestion with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I prepare export payload for third party ingestion?",
+      "answer": "Open Backup at /backup, run prepare export payload for third party ingestion with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot prepare export payload for third party ingestion if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "prepare-export-payload-for-third-party-ingestion",
+    "prepare export payload for third party ingestion",
+    "/backup",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "prepare",
+    "export",
+    "payload",
+    "for",
+    "third",
+    "party",
+    "ingestion"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.169Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.169Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/backup",
+    "workflowInstruction": "Hard-fail remediation guide for backup--prepare-export-payload-for-third-party-ingestion"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

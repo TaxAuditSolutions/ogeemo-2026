@@ -1,0 +1,74 @@
+{
+  "guideId": "ledgers--switch-between-general-income-expense-tabs",
+  "title": "Switch Between General Income Expense Tabs in Ledgers",
+  "module": "ledgers",
+  "intent": "switch-between-general-income-expense-tabs",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I switch between general income expense tabs? This is the canonical Ledgers workflow for switch-between-general-income-expense-tabs.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for switch-between-general-income-expense-tabs are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running switch between general income expense tabs.",
+    "Open the exact workflow action labeled for switch between general income expense tabs.",
+    "Enter required fields for switch between general income expense tabs (entity selection, date range, and status where applicable).",
+    "Apply changes and execute switch between general income expense tabs with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The switch-between-general-income-expense-tabs action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting switch-between-general-income-expense-tabs.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun switch-between-general-income-expense-tabs with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I switch between general income expense tabs?",
+      "answer": "Open Ledgers at /accounting/ledgers, run switch between general income expense tabs with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot switch between general income expense tabs if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "switch-between-general-income-expense-tabs",
+    "switch between general income expense tabs",
+    "/accounting/ledgers",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "switch",
+    "between",
+    "general",
+    "income",
+    "expense",
+    "tabs"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.192Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.192Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--switch-between-general-income-expense-tabs"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

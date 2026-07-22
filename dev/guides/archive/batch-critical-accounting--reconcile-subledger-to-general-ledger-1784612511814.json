@@ -1,0 +1,66 @@
+{
+  "guideId": "accounting--reconcile-subledger-to-general-ledger",
+  "title": "Reconcile Subledger To General Ledger in Accounting",
+  "module": "accounting",
+  "intent": "reconcile-subledger-to-general-ledger",
+  "targetAudience": "accountant",
+  "description": "Complete the reconcile subledger to general ledger workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for reconcile subledger to general ledger are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the reconcile subledger to general ledger entry point in the module workflow.",
+    "Enter or select the required inputs for reconcile subledger to general ledger.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Reconcile Subledger To General Ledger completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during reconcile subledger to general ledger.",
+    "Permission constraints prevent completion of reconcile subledger to general ledger.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun reconcile subledger to general ledger.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun reconcile subledger to general ledger?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm reconcile subledger to general ledger is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "reconcile-subledger-to-general-ledger",
+    "accountant",
+    "reconcile",
+    "subledger",
+    "to",
+    "general",
+    "ledger",
+    "reconcile subledger to general ledger"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:41:51.814Z",
+  "lastVerifiedAt": "2026-07-21T05:41:51.814Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--reconcile-subledger-to-general-ledger"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

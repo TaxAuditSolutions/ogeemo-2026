@@ -1,0 +1,77 @@
+{
+  "guideId": "ledgers--sort-ledger-by-date-contact-category-amount",
+  "title": "Sort Ledger By Date Contact Category Amount in Ledgers",
+  "module": "ledgers",
+  "intent": "sort-ledger-by-date-contact-category-amount",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I sort ledger by date contact category amount? This is the canonical Ledgers workflow for sort-ledger-by-date-contact-category-amount.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for sort-ledger-by-date-contact-category-amount are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running sort ledger by date contact category amount.",
+    "Open the exact workflow action labeled for sort ledger by date contact category amount.",
+    "Enter required fields for sort ledger by date contact category amount (entity selection, date range, and status where applicable).",
+    "Apply changes and execute sort ledger by date contact category amount with explicit confirmation in the UI.",
+    "Use sort controls and verify row order changes by the selected sort key.",
+    "Use date picker controls and confirm date range chips update before running the action.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The sort-ledger-by-date-contact-category-amount action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting sort-ledger-by-date-contact-category-amount.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun sort-ledger-by-date-contact-category-amount with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I sort ledger by date contact category amount?",
+      "answer": "Open Ledgers at /accounting/ledgers, run sort ledger by date contact category amount with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot sort ledger by date contact category amount if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "sort-ledger-by-date-contact-category-amount",
+    "sort ledger by date contact category amount",
+    "/accounting/ledgers",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "sort",
+    "ledger",
+    "by",
+    "date",
+    "contact",
+    "category",
+    "amount"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.193Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.193Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--sort-ledger-by-date-contact-category-amount"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

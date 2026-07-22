@@ -1,0 +1,68 @@
+{
+  "guideId": "to-do--mark-to-do-as-done",
+  "title": "Mark To Do As Done in To Do",
+  "module": "to-do",
+  "intent": "mark-to-do-as-done",
+  "targetAudience": "general",
+  "description": "Complete the mark to do as done workflow in the To Do module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the To Do module in the current Ogeemo environment.",
+    "Required data inputs for mark to do as done are prepared before starting."
+  ],
+  "steps": [
+    "Open the To Do module from the main navigation.",
+    "Locate the mark to do as done entry point in the module workflow.",
+    "Enter or select the required inputs for mark to do as done.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Mark To Do As Done completes without warnings or blockers.",
+    "Resulting records are visible in the expected To Do views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during mark to do as done.",
+    "Permission constraints prevent completion of mark to do as done.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun mark to do as done.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun mark to do as done?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm mark to do as done is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "to-do",
+    "mark-to-do-as-done",
+    "general",
+    "productivity",
+    "mark",
+    "to",
+    "do",
+    "as",
+    "done",
+    "to do",
+    "mark to do as done"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.873Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.873Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for to-do--mark-to-do-as-done"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

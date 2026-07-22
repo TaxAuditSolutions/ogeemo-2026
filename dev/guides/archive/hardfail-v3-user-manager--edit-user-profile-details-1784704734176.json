@@ -1,0 +1,72 @@
+{
+  "guideId": "user-manager--edit-user-profile-details",
+  "title": "Edit User Profile Details in User Manager",
+  "module": "user-manager",
+  "intent": "edit-user-profile-details",
+  "targetAudience": "admin",
+  "description": "Answer: How do I edit user profile details? This is the canonical User Manager workflow for edit-user-profile-details.",
+  "prerequisites": [
+    "You are signed in as admin and can access User Manager.",
+    "Route /settings is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for edit-user-profile-details are available before execution."
+  ],
+  "steps": [
+    "Navigate to /settings and open User Manager.",
+    "Verify active workspace/company context before running edit user profile details.",
+    "Open the exact workflow action labeled for edit user profile details.",
+    "Enter required fields for edit user profile details (entity selection, date range, and status where applicable).",
+    "Apply changes and execute edit user profile details with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The edit-user-profile-details action completes without permission or validation errors.",
+    "Resulting state is visible immediately in User Manager lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting edit-user-profile-details.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /settings, reapply field values, and rerun edit-user-profile-details with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I edit user profile details?",
+      "answer": "Open User Manager at /settings, run edit user profile details with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot edit user profile details if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "admin",
+    "user-manager",
+    "user manager",
+    "edit-user-profile-details",
+    "edit user profile details",
+    "/settings",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "edit",
+    "user",
+    "profile",
+    "details"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.176Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.176Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/settings",
+    "workflowInstruction": "Hard-fail remediation guide for user-manager--edit-user-profile-details"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

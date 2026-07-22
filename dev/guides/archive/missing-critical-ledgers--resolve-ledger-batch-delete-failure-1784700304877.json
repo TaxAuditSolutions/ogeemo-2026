@@ -1,0 +1,67 @@
+{
+  "guideId": "ledgers--resolve-ledger-batch-delete-failure",
+  "title": "Resolve Ledger Batch Delete Failure in Ledgers",
+  "module": "ledgers",
+  "intent": "resolve-ledger-batch-delete-failure",
+  "targetAudience": "admin",
+  "description": "Complete the resolve ledger batch delete failure workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for resolve ledger batch delete failure are prepared before starting."
+  ],
+  "steps": [
+    "Open the Ledgers module from the main navigation.",
+    "Locate the resolve ledger batch delete failure entry point in the module workflow.",
+    "Enter or select the required inputs for resolve ledger batch delete failure.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Ledger Batch Delete Failure completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve ledger batch delete failure.",
+    "Permission constraints prevent completion of resolve ledger batch delete failure.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve ledger batch delete failure.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve ledger batch delete failure?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve ledger batch delete failure is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "resolve-ledger-batch-delete-failure",
+    "admin",
+    "accounting",
+    "resolve",
+    "ledger",
+    "batch",
+    "delete",
+    "failure",
+    "resolve ledger batch delete failure"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.877Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.877Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--resolve-ledger-batch-delete-failure"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

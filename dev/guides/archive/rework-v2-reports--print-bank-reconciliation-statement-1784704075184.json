@@ -1,0 +1,68 @@
+{
+  "guideId": "reports--print-bank-reconciliation-statement",
+  "title": "Print Bank Reconciliation Statement in Reports",
+  "module": "reports",
+  "intent": "print-bank-reconciliation-statement",
+  "targetAudience": "accountant",
+  "description": "Use this guide to complete print bank reconciliation statement in Reports. Intent key: print-bank-reconciliation-statement. Module key: reports.",
+  "prerequisites": [
+    "You are signed in with accountant access and can open Reports.",
+    "Records needed for print bank reconciliation statement are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Reports."
+  ],
+  "steps": [
+    "Open Reports from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Print Bank Reconciliation Statement\" in Reports.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the print bank reconciliation statement action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Print Bank Reconciliation Statement finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Reports lists, totals, or linked records.",
+    "Output references can be traced back to reports--print-bank-reconciliation-statement with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing print-bank-reconciliation-statement.",
+    "Insufficient permissions for accountant while attempting print-bank-reconciliation-statement.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Reports, reapply required filters, and repeat print bank reconciliation statement.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm print bank reconciliation statement completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Reports immediately after execution."
+    },
+    {
+      "question": "What should I do if print bank reconciliation statement returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "reports",
+    "print-bank-reconciliation-statement",
+    "print bank reconciliation statement",
+    "accountant",
+    "print",
+    "bank",
+    "reconciliation",
+    "statement",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.184Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.184Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for reports--print-bank-reconciliation-statement from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

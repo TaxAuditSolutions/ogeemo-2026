@@ -1,0 +1,69 @@
+{
+  "guideId": "project-status--create-task-from-project-step-drop",
+  "title": "Create Task From Project Step Drop in Project Status",
+  "module": "project-status",
+  "intent": "create-task-from-project-step-drop",
+  "targetAudience": "general",
+  "description": "Complete the create task from project step drop workflow in the Project Status module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Project Status module in the current Ogeemo environment.",
+    "Required data inputs for create task from project step drop are prepared before starting."
+  ],
+  "steps": [
+    "Open the Project Status module from the main navigation.",
+    "Locate the create task from project step drop entry point in the module workflow.",
+    "Enter or select the required inputs for create task from project step drop.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Task From Project Step Drop completes without warnings or blockers.",
+    "Resulting records are visible in the expected Project Status views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create task from project step drop.",
+    "Permission constraints prevent completion of create task from project step drop.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create task from project step drop.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create task from project step drop?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create task from project step drop is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "project-status",
+    "create-task-from-project-step-drop",
+    "general",
+    "productivity",
+    "create",
+    "task",
+    "from",
+    "project",
+    "step",
+    "drop",
+    "project status",
+    "create task from project step drop"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.285Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.285Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for project-status--create-task-from-project-step-drop"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

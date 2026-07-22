@@ -1,0 +1,67 @@
+{
+  "guideId": "accounting--map-audit-request-to-source-documents",
+  "title": "Map Audit Request To Source Documents in Accounting",
+  "module": "accounting",
+  "intent": "map-audit-request-to-source-documents",
+  "targetAudience": "accountant",
+  "description": "Complete the map audit request to source documents workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for map audit request to source documents are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the map audit request to source documents entry point in the module workflow.",
+    "Enter or select the required inputs for map audit request to source documents.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Map Audit Request To Source Documents completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during map audit request to source documents.",
+    "Permission constraints prevent completion of map audit request to source documents.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun map audit request to source documents.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun map audit request to source documents?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm map audit request to source documents is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "map-audit-request-to-source-documents",
+    "accountant",
+    "map",
+    "audit",
+    "request",
+    "to",
+    "source",
+    "documents",
+    "map audit request to source documents"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:41:51.813Z",
+  "lastVerifiedAt": "2026-07-21T05:41:51.813Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--map-audit-request-to-source-documents"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

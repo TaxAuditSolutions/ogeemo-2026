@@ -1,0 +1,69 @@
+{
+  "guideId": "worker-time-log--set-time-log-end-date-filter",
+  "title": "Set Time Log End Date Filter in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "set-time-log-end-date-filter",
+  "targetAudience": "admin",
+  "description": "Complete the set time log end date filter workflow in the Worker Time Log module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Worker Time Log module in the current Ogeemo environment.",
+    "Required data inputs for set time log end date filter are prepared before starting."
+  ],
+  "steps": [
+    "Open the Worker Time Log module from the main navigation.",
+    "Locate the set time log end date filter entry point in the module workflow.",
+    "Enter or select the required inputs for set time log end date filter.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Set Time Log End Date Filter completes without warnings or blockers.",
+    "Resulting records are visible in the expected Worker Time Log views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during set time log end date filter.",
+    "Permission constraints prevent completion of set time log end date filter.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun set time log end date filter.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun set time log end date filter?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm set time log end date filter is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "worker-time-log",
+    "set-time-log-end-date-filter",
+    "admin",
+    "reporting",
+    "set",
+    "time",
+    "log",
+    "end",
+    "date",
+    "filter",
+    "worker time log",
+    "set time log end date filter"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.318Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.318Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for worker-time-log--set-time-log-end-date-filter"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

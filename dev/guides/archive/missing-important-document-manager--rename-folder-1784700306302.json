@@ -1,0 +1,65 @@
+{
+  "guideId": "document-manager--rename-folder",
+  "title": "Rename Folder in Document Manager",
+  "module": "document-manager",
+  "intent": "rename-folder",
+  "targetAudience": "general",
+  "description": "Complete the rename folder workflow in the Document Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Document Manager module in the current Ogeemo environment.",
+    "Required data inputs for rename folder are prepared before starting."
+  ],
+  "steps": [
+    "Open the Document Manager module from the main navigation.",
+    "Locate the rename folder entry point in the module workflow.",
+    "Enter or select the required inputs for rename folder.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Rename Folder completes without warnings or blockers.",
+    "Resulting records are visible in the expected Document Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during rename folder.",
+    "Permission constraints prevent completion of rename folder.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun rename folder.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun rename folder?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm rename folder is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "document-manager",
+    "rename-folder",
+    "general",
+    "files",
+    "rename",
+    "folder",
+    "document manager",
+    "rename folder"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.301Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.301Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for document-manager--rename-folder"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

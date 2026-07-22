@@ -1,0 +1,68 @@
+{
+  "guideId": "to-do--reopen-done-to-do-to-todo",
+  "title": "Reopen Done To Do To Todo in To Do",
+  "module": "to-do",
+  "intent": "reopen-done-to-do-to-todo",
+  "targetAudience": "general",
+  "description": "Complete the reopen done to do to todo workflow in the To Do module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the To Do module in the current Ogeemo environment.",
+    "Required data inputs for reopen done to do to todo are prepared before starting."
+  ],
+  "steps": [
+    "Open the To Do module from the main navigation.",
+    "Locate the reopen done to do to todo entry point in the module workflow.",
+    "Enter or select the required inputs for reopen done to do to todo.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Reopen Done To Do To Todo completes without warnings or blockers.",
+    "Resulting records are visible in the expected To Do views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during reopen done to do to todo.",
+    "Permission constraints prevent completion of reopen done to do to todo.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun reopen done to do to todo.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun reopen done to do to todo?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm reopen done to do to todo is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "to-do",
+    "reopen-done-to-do-to-todo",
+    "general",
+    "productivity",
+    "reopen",
+    "done",
+    "to",
+    "do",
+    "todo",
+    "to do",
+    "reopen done to do to todo"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.294Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.294Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for to-do--reopen-done-to-do-to-todo"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

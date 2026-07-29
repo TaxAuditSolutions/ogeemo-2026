@@ -1,0 +1,65 @@
+{
+  "guideId": "ledgers--edit-ledger-transaction",
+  "title": "Edit Ledger Transaction in Ledgers",
+  "module": "ledgers",
+  "intent": "edit-ledger-transaction",
+  "targetAudience": "accountant",
+  "description": "Complete the edit ledger transaction workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for edit ledger transaction are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Use account and date filters to load the target ledger view.",
+    "Perform the requested ledger action for the selected records.",
+    "Validate resulting balances, transaction state, and posting status.",
+    "Capture change references and audit evidence.",
+    "Escalate any permission or lock errors through ledger recovery steps."
+  ],
+  "validations": [
+    "Edit Ledger Transaction completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during edit ledger transaction.",
+    "Permission constraints prevent completion of edit ledger transaction.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun edit ledger transaction.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun edit ledger transaction?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm edit ledger transaction is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "edit-ledger-transaction",
+    "accountant",
+    "accounting",
+    "edit",
+    "ledger",
+    "transaction",
+    "edit ledger transaction"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.912Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.912Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--edit-ledger-transaction"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

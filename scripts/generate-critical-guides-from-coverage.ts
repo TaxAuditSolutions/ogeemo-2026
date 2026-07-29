@@ -41,6 +41,10 @@ const VERSION = process.env.GUIDE_VERSION ?? "1.0.1";
 const CRITICALITY_FILTER = (process.env.GUIDE_CRITICALITY ?? "critical").toLowerCase();
 const STATUS_FILTER = (process.env.GUIDE_STATUS ?? "missing").toLowerCase();
 const FILE_PREFIX = process.env.GUIDE_FILE_PREFIX ?? CRITICALITY_FILTER;
+const MODULE_FILTER = (process.env.GUIDE_MODULES ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0);
 
 function parseCsvLine(line: string): string[] {
     const values: string[] = [];
@@ -118,6 +122,76 @@ function uniqueStrings(values: string[]) {
     return Array.from(new Set(values.filter((value) => value.trim().length > 0)));
 }
 
+function hasIntentToken(row: CoverageRow, token: string): boolean {
+    return row.intent.toLowerCase().includes(token);
+}
+
+function buildTargetedSteps(row: CoverageRow, moduleLabel: string, intentLabel: string): string[] {
+    const baseSteps = [
+        `Open the ${moduleLabel} module from the main navigation.`,
+        `Locate the ${intentLabel.toLowerCase()} entry point in the module workflow.`,
+        `Enter or select the required inputs for ${intentLabel.toLowerCase()}.`,
+        "Review the configuration and confirm all required fields are complete.",
+        "Run or save the workflow and wait for confirmation feedback.",
+        "Record output artifacts and references for audit and follow-up tasks.",
+    ];
+
+    if (row.module.toLowerCase() === "ledgers") {
+        if (hasIntentToken(row, "reconciliation")) {
+            return [
+                "Open Accounting and select BKS General Ledger.",
+                "Go to Reconciliation and launch the reconciliation workspace.",
+                "Set account and statement period before importing or matching transactions.",
+                "Load bank statement data, then review unmatched and suggested matches.",
+                "Bulk verify valid matches and flag exceptions for manual review.",
+                "Complete reconciliation, then confirm status and saved audit trail.",
+            ];
+        }
+        if (hasIntentToken(row, "delete")) {
+            return [
+                "Open Accounting and select BKS General Ledger.",
+                "Filter to the target account, period, and transaction set.",
+                "Select the transaction or transaction batch intended for deletion.",
+                "Run delete and confirm impact preview before finalizing.",
+                "Verify balances and dependent reports after deletion completes.",
+                "If rollback is required, restore from audit history or reversal workflow.",
+            ];
+        }
+        return [
+            "Open Accounting and select BKS General Ledger.",
+            "Use account and date filters to load the target ledger view.",
+            "Perform the requested ledger action for the selected records.",
+            "Validate resulting balances, transaction state, and posting status.",
+            "Capture change references and audit evidence.",
+            "Escalate any permission or lock errors through ledger recovery steps.",
+        ];
+    }
+
+    if (row.module.toLowerCase() === "client-time-log") {
+        return [
+            "Open Reporting and navigate to Client Time Log.",
+            "Apply client and date filters for the target time entries.",
+            "Select the specific time entry or grouped total required by the workflow.",
+            "Run the requested action (delete, invoice creation, or filter confirmation).",
+            "Validate that billing totals and linked records update correctly.",
+            "Save the result and verify the updated log state in reporting views.",
+        ];
+    }
+
+    if (row.module.toLowerCase() === "knowledge") {
+        return [
+            "Open Ogeemo Assistant and load the knowledge workflow context.",
+            "Identify the exact question scope, including module and user goal.",
+            "Use canonical Ogeemo terms for left-sidebar items and action chips.",
+            "Provide a direct numbered answer with module path and expected outcome.",
+            "Include troubleshooting for missing sidebar items or permission visibility.",
+            "Confirm final answer avoids missing-context language and remains actionable.",
+        ];
+    }
+
+    return baseSteps;
+}
+
 function buildGuideFromRow(row: CoverageRow): GuideRecord {
     const guideId = `${row.module}--${row.intent}`;
     const intentLabel = humanize(row.intent);
@@ -133,14 +207,7 @@ function buildGuideFromRow(row: CoverageRow): GuideRecord {
         `Required data inputs for ${intentLabel.toLowerCase()} are prepared before starting.`,
     ];
 
-    const steps = [
-        `Open the ${moduleLabel} module from the main navigation.`,
-        `Locate the ${intentLabel.toLowerCase()} entry point in the module workflow.`,
-        `Enter or select the required inputs for ${intentLabel.toLowerCase()}.`,
-        `Review the configuration and confirm all required fields are complete.`,
-        `Run or save the workflow and wait for confirmation feedback.`,
-        `Record output artifacts and references for audit and follow-up tasks.`,
-    ];
+    const steps = buildTargetedSteps(row, moduleLabel, intentLabel);
 
     const validations = [
         `${intentLabel} completes without warnings or blockers.`,
@@ -217,11 +284,15 @@ async function main() {
     const targets = rows.filter(
         (row) =>
             row.criticality.toLowerCase() === CRITICALITY_FILTER &&
-            row.status.toLowerCase() === STATUS_FILTER
+            row.status.toLowerCase() === STATUS_FILTER &&
+            (MODULE_FILTER.length === 0 || MODULE_FILTER.includes(row.module.toLowerCase()))
     );
 
     if (targets.length === 0) {
-        console.log(`No rows found for criticality='${CRITICALITY_FILTER}' and status='${STATUS_FILTER}'. Nothing to generate.`);
+        console.log(
+            `No rows found for criticality='${CRITICALITY_FILTER}', status='${STATUS_FILTER}', modules='${MODULE_FILTER.join(",") || "all"
+            }'. Nothing to generate.`
+        );
         return;
     }
 
@@ -235,7 +306,9 @@ async function main() {
         console.log(`Created ${fileName}`);
     }
 
-    console.log(`Generated ${targets.length} guide file(s) for criticality='${CRITICALITY_FILTER}'.`);
+    console.log(
+        `Generated ${targets.length} guide file(s) for criticality='${CRITICALITY_FILTER}' and modules='${MODULE_FILTER.join(",") || "all"}'.`
+    );
 }
 
 main().catch((error) => {

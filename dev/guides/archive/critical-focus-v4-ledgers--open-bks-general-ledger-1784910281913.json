@@ -1,0 +1,66 @@
+{
+  "guideId": "ledgers--open-bks-general-ledger",
+  "title": "Open Bks General Ledger in Ledgers",
+  "module": "ledgers",
+  "intent": "open-bks-general-ledger",
+  "targetAudience": "accountant",
+  "description": "Complete the open bks general ledger workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for open bks general ledger are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Use account and date filters to load the target ledger view.",
+    "Perform the requested ledger action for the selected records.",
+    "Validate resulting balances, transaction state, and posting status.",
+    "Capture change references and audit evidence.",
+    "Escalate any permission or lock errors through ledger recovery steps."
+  ],
+  "validations": [
+    "Open Bks General Ledger completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during open bks general ledger.",
+    "Permission constraints prevent completion of open bks general ledger.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun open bks general ledger.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun open bks general ledger?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm open bks general ledger is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "open-bks-general-ledger",
+    "accountant",
+    "accounting",
+    "open",
+    "bks",
+    "general",
+    "ledger",
+    "open bks general ledger"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:24:41.909Z",
+  "lastVerifiedAt": "2026-07-24T16:24:41.909Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--open-bks-general-ledger"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,67 @@
+{
+  "guideId": "document-manager--open-document-manager-instructions",
+  "title": "Open Document Manager Instructions in Document Manager",
+  "module": "document-manager",
+  "intent": "open-document-manager-instructions",
+  "targetAudience": "general",
+  "description": "Complete the open document manager instructions workflow in the Document Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Document Manager module in the current Ogeemo environment.",
+    "Required data inputs for open document manager instructions are prepared before starting."
+  ],
+  "steps": [
+    "Open the Document Manager module from the main navigation.",
+    "Locate the open document manager instructions entry point in the module workflow.",
+    "Enter or select the required inputs for open document manager instructions.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Open Document Manager Instructions completes without warnings or blockers.",
+    "Resulting records are visible in the expected Document Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during open document manager instructions.",
+    "Permission constraints prevent completion of open document manager instructions.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun open document manager instructions.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun open document manager instructions?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm open document manager instructions is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "document-manager",
+    "open-document-manager-instructions",
+    "general",
+    "files",
+    "open",
+    "document",
+    "manager",
+    "instructions",
+    "document manager",
+    "open document manager instructions"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.914Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.914Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for document-manager--open-document-manager-instructions"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

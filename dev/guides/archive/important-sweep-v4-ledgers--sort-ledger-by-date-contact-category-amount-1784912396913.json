@@ -1,0 +1,69 @@
+{
+  "guideId": "ledgers--sort-ledger-by-date-contact-category-amount",
+  "title": "Sort Ledger By Date Contact Category Amount in Ledgers",
+  "module": "ledgers",
+  "intent": "sort-ledger-by-date-contact-category-amount",
+  "targetAudience": "accountant",
+  "description": "Complete the sort ledger by date contact category amount workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for sort ledger by date contact category amount are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Use account and date filters to load the target ledger view.",
+    "Perform the requested ledger action for the selected records.",
+    "Validate resulting balances, transaction state, and posting status.",
+    "Capture change references and audit evidence.",
+    "Escalate any permission or lock errors through ledger recovery steps."
+  ],
+  "validations": [
+    "Sort Ledger By Date Contact Category Amount completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during sort ledger by date contact category amount.",
+    "Permission constraints prevent completion of sort ledger by date contact category amount.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun sort ledger by date contact category amount.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun sort ledger by date contact category amount?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm sort ledger by date contact category amount is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "sort-ledger-by-date-contact-category-amount",
+    "accountant",
+    "accounting",
+    "sort",
+    "ledger",
+    "by",
+    "date",
+    "contact",
+    "category",
+    "amount",
+    "sort ledger by date contact category amount"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.913Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.913Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--sort-ledger-by-date-contact-category-amount"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

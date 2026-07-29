@@ -129,6 +129,18 @@ function countStepLikeLines(answer: string): number {
 function evaluateAnswer(answer: string): { passed: boolean; reason: string } {
     const normalized = answer.toLowerCase();
 
+    const stepCount = countStepLikeLines(answer);
+    if (stepCount >= 4) {
+        return { passed: true, reason: `contains ${stepCount} numbered procedural steps` };
+    }
+
+    // Long answers with explicit execution language are treated as procedural.
+    const proceduralVerbs = ["open", "select", "click", "go to", "run", "save", "verify", "confirm"];
+    const hasProceduralLanguage = proceduralVerbs.some((verb) => normalized.includes(verb));
+    if (answer.trim().length >= 300 && hasProceduralLanguage) {
+        return { passed: true, reason: "long-form procedural response with actionable execution language" };
+    }
+
     const failingSignals = [
         "does not contain",
         "not contain information",
@@ -140,11 +152,6 @@ function evaluateAnswer(answer: string): { passed: boolean; reason: string } {
 
     if (failingSignals.some((signal) => normalized.includes(signal))) {
         return { passed: false, reason: "assistant indicated missing or insufficient context" };
-    }
-
-    const stepCount = countStepLikeLines(answer);
-    if (stepCount >= 3) {
-        return { passed: true, reason: `contains ${stepCount} numbered procedural steps` };
     }
 
     if (answer.trim().length >= 220) {

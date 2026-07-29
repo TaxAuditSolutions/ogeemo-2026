@@ -1,0 +1,67 @@
+{
+  "guideId": "knowledge--describe-bks-ledger-module-overview",
+  "title": "Describe Bks Ledger Module Overview in Knowledge",
+  "module": "knowledge",
+  "intent": "describe-bks-ledger-module-overview",
+  "targetAudience": "general",
+  "description": "Complete the describe bks ledger module overview workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for describe bks ledger module overview are prepared before starting."
+  ],
+  "steps": [
+    "Open Ogeemo Assistant and load the knowledge workflow context.",
+    "Identify the exact question scope, including module and user goal.",
+    "Use canonical Ogeemo terms for left-sidebar items and action chips.",
+    "Provide a direct numbered answer with module path and expected outcome.",
+    "Include troubleshooting for missing sidebar items or permission visibility.",
+    "Confirm final answer avoids missing-context language and remains actionable."
+  ],
+  "validations": [
+    "Describe Bks Ledger Module Overview completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during describe bks ledger module overview.",
+    "Permission constraints prevent completion of describe bks ledger module overview.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun describe bks ledger module overview.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun describe bks ledger module overview?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm describe bks ledger module overview is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "describe-bks-ledger-module-overview",
+    "general",
+    "assistant",
+    "describe",
+    "bks",
+    "ledger",
+    "module",
+    "overview",
+    "describe bks ledger module overview"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.964Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.964Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--describe-bks-ledger-module-overview"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

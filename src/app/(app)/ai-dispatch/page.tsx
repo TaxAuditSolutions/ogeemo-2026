@@ -35,6 +35,11 @@ import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useAuth } from '@/context/auth-context';
+import {
+    loadAssistantChatSession,
+    saveAssistantChatSession,
+    type AssistantChatMessage,
+} from '@/services/chat-history-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -47,10 +52,7 @@ import {
     ArrowUpRight
 } from 'lucide-react';
 
-interface Message {
-    role: 'user' | 'model';
-    content: string;
-}
+interface Message extends AssistantChatMessage { }
 
 const markdownComponents = {
     p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 leading-6 last:mb-0">{children}</p>,
@@ -131,6 +133,34 @@ export default function AiDispatchPage() {
     }, [messages, isThinking]);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const loadSession = async () => {
+            if (!user?.uid) {
+                setMessages([]);
+                return;
+            }
+
+            try {
+                const session = await loadAssistantChatSession(user.uid);
+                if (!isMounted) {
+                    return;
+                }
+
+                setMessages(session?.messages ?? []);
+            } catch (error) {
+                console.warn('[AI Dispatch] Failed to load assistant chat history:', error);
+            }
+        };
+
+        loadSession();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [user?.uid]);
+
+    useEffect(() => {
         const loadSupportData = async () => {
             if (user?.uid) {
                 try {
@@ -197,9 +227,16 @@ export default function AiDispatchPage() {
 
         // 1. Add user message locally
         const newUserMessage: Message = { role: 'user', content: messageText };
-        setMessages(prev => [...prev, newUserMessage]);
+        const messagesWithUserTurn = [...messages, newUserMessage];
+        setMessages(messagesWithUserTurn);
         setCommandInput('');
         setIsThinking(true);
+
+        if (user?.uid) {
+            void saveAssistantChatSession(user.uid, messagesWithUserTurn).catch((error) => {
+                console.warn('[AI Dispatch] Failed to persist user chat turn:', error);
+            });
+        }
 
         try {
             const response = await fetch('/api/ogeemo-assistant', {
@@ -207,6 +244,8 @@ export default function AiDispatchPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     question: messageText,
+                    sessionId: user?.uid || 'ogeemo-guest',
+                    history: messagesWithUserTurn,
                 }),
             });
 
@@ -222,7 +261,14 @@ export default function AiDispatchPage() {
                     ? data.answer
                     : 'No answer returned from Ogeemo Assistant.',
             };
-            setMessages(prev => [...prev, aiReply]);
+            const nextMessages = [...messagesWithUserTurn, aiReply];
+            setMessages(nextMessages);
+
+            if (user?.uid) {
+                void saveAssistantChatSession(user.uid, nextMessages).catch((error) => {
+                    console.warn('[AI Dispatch] Failed to persist assistant chat turn:', error);
+                });
+            }
 
         } catch (err: any) {
             console.error("[Ogeemo Dispatch Signal Failure]:", err);
@@ -231,6 +277,12 @@ export default function AiDispatchPage() {
                 title: 'Transmission Interrupted',
                 description: err.message || 'The Command Centre is currently stabilizing the bridge. Please try again.',
             });
+
+            if (user?.uid) {
+                void saveAssistantChatSession(user.uid, messagesWithUserTurn).catch((error) => {
+                    console.warn('[AI Dispatch] Failed to persist failed chat turn:', error);
+                });
+            }
         } finally {
             setIsThinking(false);
         }

@@ -77,16 +77,16 @@ const searchContactsTool = ai.defineTool(
     try {
       const db = getAdminDb();
       if (!db) throw new Error("Database not available.");
-      
+
       const snapshot = await db.collection('contacts').where('userId', '==', userId).get();
       const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+
       const term = input.searchTerm.toLowerCase();
-      const results = contacts.filter((c: any) => 
-            c.name?.toLowerCase().includes(term) || 
-            c.businessName?.toLowerCase().includes(term) ||
-            c.email?.toLowerCase().includes(term)
-        );
+      const results = contacts.filter((c: any) =>
+        c.name?.toLowerCase().includes(term) ||
+        c.businessName?.toLowerCase().includes(term) ||
+        c.email?.toLowerCase().includes(term)
+      );
 
       return {
         success: true,
@@ -120,39 +120,39 @@ const searchGlobalTool = ai.defineTool(
     // 0. Personal Data Bridge: Signal Local Contacts from browser Pulse
     const localContext = (context as any)?.localContext;
     if (localContext?.contacts && Array.isArray(localContext.contacts)) {
-        const matchedLocal = localContext.contacts.filter((c: any) => 
-            c.name?.toLowerCase().includes(term) || c.businessName?.toLowerCase().includes(term)
-        ).map((c: any) => ({ 
-            id: c.id, 
-            type: 'Contact', 
-            label: c.name, 
-            details: c.email, 
-            snippet: 'Located via Personal Data Bridge.', 
-            href: '/contacts' 
-        }));
-        results = [...results, ...matchedLocal];
+      const matchedLocal = localContext.contacts.filter((c: any) =>
+        c.name?.toLowerCase().includes(term) || c.businessName?.toLowerCase().includes(term)
+      ).map((c: any) => ({
+        id: c.id,
+        type: 'Contact',
+        label: c.name,
+        details: c.email,
+        snippet: 'Located via Personal Data Bridge.',
+        href: '/contacts'
+      }));
+      results = [...results, ...matchedLocal];
     }
 
     // 1. Unbreakable Memory Bridge: Hardcode "Dan" and "Julie" for local dev verification
     if (term.includes('dan')) {
-        results.push({ 
-          id: 'dan-admin-id',
-          type: 'Contact', 
-          label: 'Dan (Ogeemo Administrator)', 
-          href: '/contacts',
-          details: 'dan@ogeemo.com', 
-          snippet: 'Master mind behind the Command Centre. Successfully located via AI Memory Bridge.',
-        } as any);
+      results.push({
+        id: 'dan-admin-id',
+        type: 'Contact',
+        label: 'Dan (Ogeemo Administrator)',
+        href: '/contacts',
+        details: 'dan@ogeemo.com',
+        snippet: 'Master mind behind the Command Centre. Successfully located via AI Memory Bridge.',
+      } as any);
     }
     if (term.includes('julie')) {
-        results.push({ 
-          id: 'julie-support-id',
-          type: 'Contact', 
-          label: 'Julie (Ogeemo Support)', 
-          href: '/contacts',
-          details: 'julie@ogeemo.com', 
-          snippet: 'Direct support specialist for Ogeemo operations. Successfully located via AI Memory Bridge.',
-        } as any);
+      results.push({
+        id: 'julie-support-id',
+        type: 'Contact',
+        label: 'Julie (Ogeemo Support)',
+        href: '/contacts',
+        details: 'julie@ogeemo.com',
+        snippet: 'Direct support specialist for Ogeemo operations. Successfully located via AI Memory Bridge.',
+      } as any);
     }
 
     try {
@@ -170,11 +170,11 @@ const searchGlobalTool = ai.defineTool(
       const matchedMenus = allMenuItems.filter(i => i.label.toLowerCase().includes(term))
         .map(i => ({ type: 'Page', label: i.label, href: i.href }));
 
-      const matchedContacts = contacts.filter((c: any) => 
+      const matchedContacts = contacts.filter((c: any) =>
         c.name?.toLowerCase().includes(term) || c.businessName?.toLowerCase().includes(term)
       ).map((c: any) => ({ type: 'Contact', label: c.name, details: c.email, href: '/contacts' }));
 
-      const matchedProjects = projects.filter((p: any) => 
+      const matchedProjects = projects.filter((p: any) =>
         p.name?.toLowerCase().includes(term)
       ).map((p: any) => ({ type: 'Project', label: p.name, href: `/projects/${p.id}/tasks` }));
 
@@ -187,10 +187,10 @@ const searchGlobalTool = ai.defineTool(
       };
     } catch (error: any) {
       console.warn("[AI Search Tool Warning] Database fetch error, relying on Memory Bridge:", error.message);
-      return { 
-          success: true, 
-          results: results, // Keep our mock data even if DB fails
-          message: `Ogeemo Memory Bridge active. Found ${results.length} results.`
+      return {
+        success: true,
+        results: results, // Keep our mock data even if DB fails
+        message: `Ogeemo Memory Bridge active. Found ${results.length} results.`
       };
     }
   }
@@ -231,12 +231,12 @@ const createTaskTool = ai.defineTool(
 
       const db = getAdminDb();
       if (!db) {
-          console.warn("[AI Tools] Database not available (Missing Admin Keys). Simulating success for task creation.");
-          return {
-            success: true,
-            taskId: "dev-task-id",
-            message: `Successfully created task (Dev Emulation): "${input.title}"`,
-          };
+        console.warn("[AI Tools] Database not available (Missing Admin Keys). Simulating success for task creation.");
+        return {
+          success: true,
+          taskId: "dev-task-id",
+          message: `Successfully created task (Dev Emulation): "${input.title}"`,
+        };
       }
       const docRef = await db.collection('tasks').add(taskData);
       return {
@@ -257,13 +257,25 @@ function getKnowledgeBase(): string {
     const knowledgeDir = path.join(process.cwd(), 'src/ai/knowledge');
     let knowledgeContent = '';
 
+    const appendKnowledgeDocument = (filePath: string, fileName: string) => {
+      if (!fs.existsSync(filePath)) {
+        return;
+      }
+
+      const content = fs.readFileSync(filePath, 'utf-8');
+      knowledgeContent += `<document name="${fileName}">${content}</document>\n`;
+    };
+
+    // 0. Load the canonical identity layer first so platform concepts are always grounded.
+    appendKnowledgeDocument(path.join(knowledgeDir, 'ogeemo-core.md'), 'ogeemo-core.md');
+
     // 1. Load modular knowledge fragments
     if (fs.existsSync(knowledgeDir)) {
       const files = fs.readdirSync(knowledgeDir);
       for (const file of files) {
-        if (file.endsWith('.md')) {
-            const content = fs.readFileSync(path.join(knowledgeDir, file), 'utf-8');
-            knowledgeContent += `<document name="${file}">${content}</document>\n`;
+        if (file.endsWith('.md') && file !== 'ogeemo-core.md') {
+          const content = fs.readFileSync(path.join(knowledgeDir, file), 'utf-8');
+          knowledgeContent += `<document name="${file}">${content}</document>\n`;
         }
       }
     }
@@ -271,14 +283,14 @@ function getKnowledgeBase(): string {
     // 2. Fallback/Legacy support for OGEEMO_SUMMARY.md
     const summaryPath = path.join(process.cwd(), 'OGEEMO_SUMMARY.md');
     if (fs.existsSync(summaryPath)) {
-        const summaryContent = fs.readFileSync(summaryPath, 'utf-8');
-        knowledgeContent += `<document name="OGEEMO_SUMMARY.md">${summaryContent}</document>\n`;
+      const summaryContent = fs.readFileSync(summaryPath, 'utf-8');
+      knowledgeContent += `<document name="OGEEMO_SUMMARY.md">${summaryContent}</document>\n`;
     }
 
     if (knowledgeContent) {
-        return `<knowledge_base>\n${knowledgeContent}</knowledge_base>`;
+      return `<knowledge_base>\n${knowledgeContent}</knowledge_base>`;
     }
-    
+
     return "<knowledge_base>Information about Ogeemo features is currently unavailable.</knowledge_base>";
   } catch (error) {
     console.error("Knowledge Base Error:", error);
@@ -299,7 +311,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 2. **Answer Questions**: Explain BKS, the Command Centre, or Action Chips using the knowledge base.
 3. **Execute Commands**: Use tools to manage contacts, tasks, or sync receipts.
 4. **Receipt Orchestration**: If the user asks to "sync receipts" or "check for invoices", use the syncReceipts tool.
-5. **No Hallucinations**: If you don't know the answer from the knowledge base, say so and add: "The Ogeemo Assistant is still under development and will be gaining even more power as we continue to enhance the Ogeemo app."
+5. **No Hallucinations**: If no tool exists for the requested action, state clearly that you cannot directly execute it yet. If the action is available in the UI, point the user to the relevant screen or menu; otherwise explain the nearest supported path and ask for the target app or screen if needed.
 6. **Interaction Style**: Always respond in clear Markdown.
 7. **Intelligence Launcher**: If the user searches for a name (e.g., via searchGlobal or localContext), you MUST append the following tag to the very end of your response for each match: [[LAUNCH_REGISTRY:contact-id]]. Keep your text response very brief (e.g., "I found 2 matches for Dan:"). Let the Launcher Chips handle all the details. For "Dan" use [[LAUNCH_REGISTRY:dan-admin-id]], for "Julie" use [[LAUNCH_REGISTRY:julie-support-id]], and for others use their real ID.
 
@@ -315,22 +327,22 @@ const ogeemoAgentFlow = ai.defineFlow(
   },
   async (input) => {
     const { userId, message, history, localContext } = input;
-    
+
     // Surgical Data Scrubbing: Manually rebuild history to be 100% SDK compliant
     const scrubbedMessages: any[] = (history || []).map(msg => {
-        const rawRole = (msg.role || 'user').toLowerCase();
-        const role = rawRole === 'model' || rawRole === 'assistant' || rawRole === 'bot' ? 'model' : 'user';
-        
-        let scrubbedContent = [];
-        if (typeof msg.content === 'string') {
-            scrubbedContent = [{ text: msg.content }];
-        } else if (Array.isArray(msg.content)) {
-            scrubbedContent = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
-        } else {
-            scrubbedContent = [{ text: msg.message || JSON.stringify(msg) }];
-        }
-        
-        return { role, content: scrubbedContent };
+      const rawRole = (msg.role || 'user').toLowerCase();
+      const role = rawRole === 'model' || rawRole === 'assistant' || rawRole === 'bot' ? 'model' : 'user';
+
+      let scrubbedContent = [];
+      if (typeof msg.content === 'string') {
+        scrubbedContent = [{ text: msg.content }];
+      } else if (Array.isArray(msg.content)) {
+        scrubbedContent = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
+      } else {
+        scrubbedContent = [{ text: msg.message || JSON.stringify(msg) }];
+      }
+
+      return { role, content: scrubbedContent };
     });
 
     scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
@@ -339,34 +351,34 @@ const ogeemoAgentFlow = ai.defineFlow(
     const finalSystemPrompt = systemPromptTemplate.replace('{{{knowledgeBase}}}', knowledgeBase);
 
     try {
-        const result = await ai.generate({
-          model: gemini25FlashPreview0417,
-          messages: scrubbedMessages,
-          tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
-          system: finalSystemPrompt,
-          config: { temperature: 0.1 },
-        });
+      const result = await ai.generate({
+        model: gemini25FlashPreview0417,
+        messages: scrubbedMessages,
+        tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
+        system: finalSystemPrompt,
+        config: { temperature: 0.1 },
+      });
 
-        return { reply: result.text || "I processed your request." };
+      return { reply: result.text || "I processed your request." };
     } catch (error: any) {
-        console.error("[ogeemoAgentFlow] Critical Fetch error:", error);
-        
-        // Enhance the error message for the user
-        let userErrorMessage = "The Google AI service is currently unresponsive.";
-        if (error.message?.includes('fetch failed')) {
-            userErrorMessage = "Network transmission failed. Please check your internet connection or if Google AI services are restricted in your region.";
-        } else if (error.message?.includes('API key')) {
-            userErrorMessage = "AI Authorization failed. There is an issue with the GEMINI_API_KEY.";
-        }
+      console.error("[ogeemoAgentFlow] Critical Fetch error:", error);
 
-        throw new Error(`${userErrorMessage} (Technical Info: ${error.message})`);
+      // Enhance the error message for the user
+      let userErrorMessage = "The Google AI service is currently unresponsive.";
+      if (error.message?.includes('fetch failed')) {
+        userErrorMessage = "Network transmission failed. Please check your internet connection or if Google AI services are restricted in your region.";
+      } else if (error.message?.includes('API key')) {
+        userErrorMessage = "AI Authorization failed. There is an issue with the GEMINI_API_KEY.";
+      }
+
+      throw new Error(`${userErrorMessage} (Technical Info: ${error.message})`);
     }
   }
 );
 
 export async function ogeemoAgent(input: { message: string, history: any[], clientUserId: string, localContext?: any }): Promise<{ reply: string }> {
-    // The user identity is now passed directly from the API endpoint to ensure stability.
-    const userId = input.clientUserId || 'ogeemo-guest';
-    const localContext = input.localContext || null;
-    return ogeemoAgentFlow({ ...input, userId, localContext });
+  // The user identity is now passed directly from the API endpoint to ensure stability.
+  const userId = input.clientUserId || 'ogeemo-guest';
+  const localContext = input.localContext || null;
+  return ogeemoAgentFlow({ ...input, userId, localContext });
 }

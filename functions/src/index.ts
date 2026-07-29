@@ -40,6 +40,61 @@ const CHUNK_TYPE_ORDER: Record<string, number> = {
     faq: 6,
 };
 
+const IDENTITY_NAVIGATION_HINTS = [
+    "what is",
+    "who is",
+    "left sidebar",
+    "sidebar",
+    "menu",
+    "navigation",
+    "navigate",
+    "where do i find",
+    "where can i find",
+    "where is",
+    "action chip",
+    "command centre",
+    "command center",
+    "bks",
+    "ogeemo assistant",
+    "ogeemo",
+];
+
+const PROCEDURAL_HINTS = [
+    "how to",
+    "steps",
+    "fix",
+    "error",
+    "troubleshoot",
+    "configure",
+    "create",
+    "update",
+    "delete",
+    "export",
+    "import",
+    "reconcile",
+    "schedule",
+    "link",
+    "payment",
+    "run",
+    "validate",
+];
+
+const CANONICAL_NAVIGATION_MAP = [
+    "Action Manager -> /action-manager",
+    "Action Chip Magic -> /action-chips-info",
+    "Command Centre -> /master-mind",
+    "AI Dispatch -> /ai-dispatch",
+    "Accounting Hub -> /accounting",
+    "Reports Hub -> /reports",
+    "Contacts Hub -> /contacts",
+    "Projects -> /projects/all",
+    "Calendar -> /calendar",
+    "Document Manager -> /document-manager",
+    "Email Hub -> /email-hub",
+    "HR Hub -> /hr-manager",
+    "Settings -> /settings",
+].join("\n");
+
 function isMissingVectorIndexError(error: unknown): boolean {
     if (typeof error !== "object" || error === null) {
         return false;
@@ -169,8 +224,39 @@ function getQueryPhrases(question: string): string[] {
     if (normalized.includes("permission") && normalized.includes("denied")) {
         phrases.push("permission denied");
     }
+    if (normalized.includes("left sidebar")) {
+        phrases.push("left sidebar");
+    }
+    if (normalized.includes("sidebar menu") || normalized.includes("side menu")) {
+        phrases.push("sidebar menu");
+    }
+    if (normalized.includes("where do i find") || normalized.includes("where can i find")) {
+        phrases.push("where do i find");
+    }
+    if (normalized.includes("navigation")) {
+        phrases.push("navigation");
+    }
+    if (normalized.includes("command centre") || normalized.includes("command center")) {
+        phrases.push("command centre");
+    }
 
     return phrases;
+}
+
+function classifyQuestionType(question: string): "identity_or_navigation" | "procedural_or_other" {
+    const normalized = question.toLowerCase();
+
+    const proceduralHit = PROCEDURAL_HINTS.some((hint) => normalized.includes(hint));
+    if (proceduralHit) {
+        return "procedural_or_other";
+    }
+
+    const identityNavigationHit = IDENTITY_NAVIGATION_HINTS.some((hint) => normalized.includes(hint));
+    if (identityNavigationHit) {
+        return "identity_or_navigation";
+    }
+
+    return "procedural_or_other";
 }
 
 function scorePhraseMatch(phrases: string[], data: { title?: string; intent?: string; keywords?: string[]; chunkText?: string }): number {
@@ -413,6 +499,7 @@ export const ogeemoAssistant = onRequest(
 
             // 3) Build context from retrieved docs
             const queryPhrases = getQueryPhrases(question);
+            const questionType = classifyQuestionType(question);
 
             const scoredDocs = [...snapshot.docs]
                 .map((doc) => {
@@ -575,9 +662,32 @@ export const ogeemoAssistant = onRequest(
             // 4) Ask Gemini to answer using only retrieved context
             const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+            const identityPreamble = [
+                "You are Ogeemo Assistant, the conversational entry point to the Ogeemo platform.",
+                "Ogeemo is a business operating system for bookkeeping, contacts, projects, documents, tasks, and AI-assisted workflows.",
+                "Action Chips are compact action controls that launch common workflows or navigation shortcuts.",
+                "BKS means Bookkeeping Kept Simple and is Ogeemo's bookkeeping approach for organized, audit-ready records.",
+                "The Command Centre is the main operational workspace, and the left sidebar is the primary navigation model into major Ogeemo hubs.",
+                "When answering platform-level questions, use this identity framing before relying on the retrieved guide context.",
+            ].join("\n");
+
+            const navigationContext = [
+                "Canonical Navigation Map:",
+                CANONICAL_NAVIGATION_MAP,
+            ].join("\n");
+
+            const isIdentityNavigationQuery = responseMode === "chat" && questionType === "identity_or_navigation";
+            logger.info("ogeemoAssistant query classification", {
+                responseMode,
+                questionType,
+                usedIdentityNavigationBranch: isIdentityNavigationQuery,
+                contextChunkCount: contextChunks.length,
+                hasExactIntentAnswer: exactIntentStructuredAnswer.length > 0,
+            });
+
             const prompt = responseMode === "verification"
                 ? [
-                    "You are Ogeemo Assistant.",
+                    identityPreamble,
                     "Answer the user's question using ONLY the provided guide context.",
                     "Provide clear procedural guidance with numbered steps when possible.",
                     "If the context does not contain enough information, say that clearly and suggest what is missing.",
@@ -587,20 +697,36 @@ export const ogeemoAssistant = onRequest(
                     "",
                     `User question: ${question}`,
                 ].join("\n")
-                : [
-                    "You are Ogeemo Assistant.",
-                    "Answer the user's question using ONLY the provided guide context.",
-                    "Use a natural, conversational tone suitable for chat.",
-                    "Start with a short direct answer sentence, then provide practical next steps.",
-                    "Do not use rigid headings like 'Prerequisites', 'Validation', or 'Reference' unless the user explicitly asks for checklist format.",
-                    "Keep the response concise but actionable.",
-                    "If context is insufficient, say what is missing in plain language.",
-                    "",
-                    "Guide context:",
-                    context,
-                    "",
-                    `User question: ${question}`,
-                ].join("\n");
+                : isIdentityNavigationQuery
+                    ? [
+                        identityPreamble,
+                        navigationContext,
+                        "For identity and navigation questions, answer using the identity framing and canonical navigation map first, then use guide context when helpful.",
+                        "Do not invent screens, routes, or product labels that are not present in the canonical map or guide context.",
+                        "If a destination is ambiguous or missing, provide the closest known hub and ask a short clarification question.",
+                        "Use a natural, conversational tone suitable for chat.",
+                        "Start with a short direct answer sentence, then provide practical next steps.",
+                        "Keep the response concise but actionable.",
+                        "",
+                        "Guide context:",
+                        context,
+                        "",
+                        `User question: ${question}`,
+                    ].join("\n")
+                    : [
+                        identityPreamble,
+                        "Answer the user's question using ONLY the provided guide context.",
+                        "Use a natural, conversational tone suitable for chat.",
+                        "Start with a short direct answer sentence, then provide practical next steps.",
+                        "Do not use rigid headings like 'Prerequisites', 'Validation', or 'Reference' unless the user explicitly asks for checklist format.",
+                        "Keep the response concise but actionable.",
+                        "If context is insufficient, say what is missing in plain language.",
+                        "",
+                        "Guide context:",
+                        context,
+                        "",
+                        `User question: ${question}`,
+                    ].join("\n");
 
             const answerResult = await textModel.generateContent(prompt);
             const answer = answerResult.response.text().trim();

@@ -1,0 +1,67 @@
+{
+  "guideId": "knowledge--describe-left-sidebar-menu-structure",
+  "title": "Describe Left Sidebar Menu Structure in Knowledge",
+  "module": "knowledge",
+  "intent": "describe-left-sidebar-menu-structure",
+  "targetAudience": "general",
+  "description": "Complete the describe left sidebar menu structure workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for describe left sidebar menu structure are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the describe left sidebar menu structure entry point in the module workflow.",
+    "Enter or select the required inputs for describe left sidebar menu structure.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Describe Left Sidebar Menu Structure completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during describe left sidebar menu structure.",
+    "Permission constraints prevent completion of describe left sidebar menu structure.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun describe left sidebar menu structure.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun describe left sidebar menu structure?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm describe left sidebar menu structure is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "describe-left-sidebar-menu-structure",
+    "general",
+    "assistant",
+    "describe",
+    "left",
+    "sidebar",
+    "menu",
+    "structure",
+    "describe left sidebar menu structure"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:39.234Z",
+  "lastVerifiedAt": "2026-07-23T06:06:39.234Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--describe-left-sidebar-menu-structure"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

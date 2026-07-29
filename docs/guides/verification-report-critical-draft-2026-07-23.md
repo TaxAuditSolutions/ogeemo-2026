@@ -1,0 +1,195 @@
+# critical draft Verification Report
+
+Generated at: 2026-07-23T06:21:36.026Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 45
+Passed: 10
+Failed: 35
+
+## Results
+
+- [FAIL] backup::execute-firestore-backup-export
+  - Question: How do I execute firestore backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain information on how to execute a firestore backup export. The available guides focus on exporting various reports from Analytics or the Reports module.
+- [FAIL] backup::execute-auth-backup-export
+  - Question: How do I execute auth backup export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to execute "auth backup export".  To assist you further, please provide more context regarding "auth backup export," such as: *   Which module or syst
+- [FAIL] user-manager::add-user-from-contact-directory
+  - Question: How do I add user from contact directory?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to add a user from a contact directory. The available guides describe how to create a contact, create a contact from an email, create a contact with worker H
+- [FAIL] user-manager::enforce-invite-role-hierarchy-rules
+  - Question: How do I enforce invite role hierarchy rules?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to enforce invite role hierarchy rules.  To answer your question, the guide would need to include details on: *   Specific "invite role hierarchy rule
+- [FAIL] email-hub::link-email-activity-to-contact
+  - Question: How do I link email activity to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to link email activity to a contact.  The available guides cover: *   How to link contact activity to a time log. *   How to link a contact to a deal. *   Ho
+- [FAIL] email-hub::save-email-activity-to-contact-folder
+  - Question: How do I save email activity to contact folder?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to save email activity to a contact folder. The available guides focus on creating contact folders, creating contacts from emails, and opening contact eviden
+- [FAIL] projects::delete-project-and-associated-tasks
+  - Question: How do I delete project and associated tasks?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a project or associated tasks. The available guides focus on how to delete a single task or remove a task dependency.  To answer your question, inf
+- [FAIL] project-status::mark-task-as-done-from-board
+  - Question: How do I mark task as done from board?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to mark a task as done from a board. The available guides describe how to complete a task within the Tasks module's general workflow, but do not specify inte
+- [FAIL] project-status::delete-task-from-board-card
+  - Question: How do I delete task from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: Based on the provided guide context, here are the steps to delete a task:  To delete a task in the Tasks module: 1.  Open the Tasks module from the main navigation. 2.  Locate the delete task entry point in the module wo
+- [FAIL] project-status::resolve-task-status-update-failure
+  - Question: How do I resolve task status update failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to resolve a "task status update failure".  The available guides cover: *   Resolving task assignment errors *   Bulk updating tasks *   Completing 
+- [FAIL] ledgers::open-bks-general-ledger
+  - Question: How do I open bks general ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to "open bks general ledger."  It includes information on how to: *   Reconcile Subledger To General Ledger *   Open Accounting Period *   Produce Ledger Det
+- [FAIL] ledgers::delete-ledger-transaction
+  - Question: How do I delete ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a ledger transaction. The available guides cover handling duplicate transactions, auditing ledger changes, and reversing journal entries.
+- [FAIL] ledgers::bulk-delete-ledger-transactions
+  - Question: How do I bulk delete ledger transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to bulk delete ledger transactions because the provided guide context does not contain information on this specific procedure.  The available guides cover: *   Auditing ledger changes
+- [FAIL] ledgers::open-reconciliation-wizard
+  - Question: How do I open reconciliation wizard?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a "reconciliation wizard." The context describes how to perform "reconcile transactions" and "reconcile subledger to general ledger" workflows, but i
+- [FAIL] ledgers::upload-bank-statement-csv-for-reconciliation
+  - Question: How do I upload bank statement csv for reconciliation?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to upload bank statement CSV files for reconciliation. It only mentions that "Required data inputs for reconcile transactions are prepared before starting" a
+- [FAIL] ledgers::bulk-verify-reconciliation-matches
+  - Question: How do I bulk verify reconciliation matches?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to bulk verify reconciliation matches.  The context provides guidance on how to confirm that the "reconcile transactions" workflow is complete, which involve
+- [FAIL] ledgers::auto-ingest-unmatched-bank-transactions
+  - Question: How do I auto ingest unmatched bank transactions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to auto ingest unmatched bank transactions.  To answer your question, information related to "auto ingest unmatched bank transactions" would be needed.
+- [FAIL] ledgers::resolve-ledger-batch-delete-failure
+  - Question: How do I resolve ledger batch delete failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to resolve ledger batch delete failure.  The available guides cover: *   Troubleshooting "Audit Ledger Changes" and "Resolve Unbalanced Journal". *   When to
+- [FAIL] document-manager::delete-folder-and-subtree
+  - Question: How do I delete folder and subtree?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a folder and its subtree. It only covers renaming, archiving, creating folders, and moving files between folders.
+- [FAIL] document-manager::delete-single-file-record
+  - Question: How do I delete single file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain enough information to tell you how to delete a single file record. The guides focus on recovering deleted files, revoking document access, uploading documents, o
+- [FAIL] document-manager::bulk-delete-selected-file-records
+  - Question: How do I bulk delete selected file records?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to bulk delete selected file records. The provided guide context does not contain information about "bulk delete" functionality for files.  The missing information would be a guide or
+- [FAIL] reports::generate-client-statement-by-client-and-date
+  - Question: How do I generate client statement by client and date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to generate a client statement by client and date. The available guides cover "Segment Contacts By Tag," "Open Contact Evidence Folder," and "Export C
+- [FAIL] client-statement::generate-client-statement-ledger
+  - Question: How do I generate client statement ledger?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to generate a client statement ledger based on the provided guide context.  The available guides describe how to: *   Produce Ledger Detail With Support Links *   Audit Ledger Changes
+- [FAIL] client-statement::resolve-client-statement-data-load-failure
+  - Question: How do I resolve client statement data load failure?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to resolve client statement data load failure.
+- [FAIL] client-time-log::select-client-filter-for-time-log
+  - Question: How do I select client filter for time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to select a client filter for a time log. The guides discuss workflows related to "Link Contact Activity To Time Log" and "Open Contact Log Time Dialo
+- [FAIL] client-time-log::delete-manual-client-time-log-entry
+  - Question: How do I delete manual client time log entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to delete a manual client time log entry. The available guides describe how to link contact activity to a time log and open the contact log time dialog.  To 
+- [FAIL] client-time-log::create-invoice-from-client-time-entry
+  - Question: How do I create invoice from client time entry?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context explains how to create an invoice in the Accounting module, but it does not contain information on how to create an invoice specifically "from client time entry."  The existing guides mention g
+- [FAIL] client-time-log::create-invoice-for-selected-client-total
+  - Question: How do I create invoice for selected client total?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to create an invoice for a "selected client total" or what inputs are required for that particular scenario.  However, based on the available inform
+- [PASS] knowledge::define-ogeemo-assistant
+  - Question: How do I define ogeemo assistant?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To define Ogeemo Assistant, follow these steps in the Knowledge module:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the current Ogeemo
+- [PASS] knowledge::describe-ogeemo-platform-overview
+  - Question: How do I describe ogeemo platform overview?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To describe the Ogeemo Platform Overview in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "describe ogeemo platform overview" entry point in the module 
+- [PASS] knowledge::list-ogeemo-feature-categories
+  - Question: How do I list ogeemo feature categories?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo feature categories, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list ogeemo feature categories entry point in the module workflow. 3.  Enter or select the re
+- [PASS] knowledge::list-ogeemo-apps
+  - Question: How do I list ogeemo apps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo apps in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list ogeemo apps entry point in the module workflow. 3.  Enter or select the requir
+- [PASS] knowledge::describe-ogeemo-app-suite-overview
+  - Question: How do I describe ogeemo app suite overview?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To describe the Ogeemo App Suite Overview in the Knowledge module, follow these steps:  **Prerequisites:** 1.  Ensure you are signed in with general access or equivalent permissions. 2.  Be able to open the Knowledge mod
+- [FAIL] knowledge::list-left-sidebar-menu-actions
+  - Question: How do I list left sidebar menu actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to list left sidebar menu actions. The guides available focus on creating, editing, fixing permission errors, and troubleshooting action chip
+- [PASS] knowledge::describe-left-sidebar-menu-structure
+  - Question: How do I describe left sidebar menu structure?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To describe the left sidebar menu structure in the Knowledge module, follow these steps:  **Prerequisites:**  1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in 
+- [FAIL] knowledge::troubleshoot-missing-left-sidebar-menu-action
+  - Question: How do I troubleshoot missing left sidebar menu action?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to troubleshoot a "missing left sidebar menu action".  The available guides are focused on troubleshooting "Action Chip Not Saving" issues within the "Tasks"
+- [FAIL] knowledge::define-action-chip
+  - Question: How do I define action chip?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain a definition for "action chip". It describes how to create, edit, or assign an action chip, but does not explain what an action chip is.
+- [FAIL] knowledge::explain-what-action-chips-do
+  - Question: How do I explain what action chips do?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain what action chips do. The guides describe how to create, edit, or assign action chips and how to confirm their completion, but they do not define 
+- [FAIL] knowledge::troubleshoot-action-chip-not-saving-or-permission-errors
+  - Question: How do I troubleshoot action chip not saving or permission errors?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to troubleshoot "action chip not saving".  However, the guides do provide troubleshooting steps for permission errors encountered during various workflows in
+- [PASS] knowledge::explain-left-sidebar-favorites-overview
+  - Question: How do I explain left sidebar favorites overview?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To explain the left sidebar favorites overview in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the explain left sidebar favorites overview entry point in t
+- [FAIL] knowledge::explain-left-sidebar-role-based-item-visibility
+  - Question: How do I explain left sidebar role based item visibility?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain left sidebar role based item visibility.  The available information focuses on: *   Configuring role permissions. *   Assigning roles to users. * 
+- [PASS] knowledge::troubleshoot-left-sidebar-favorites-not-saving
+  - Question: How do I troubleshoot left sidebar favorites not saving?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To troubleshoot left sidebar favorites not saving, follow these steps in the Knowledge module:  1.  Open the Knowledge module from the main navigation. 2.  Locate the troubleshoot left sidebar favorites not saving entry 
+- [PASS] knowledge::troubleshoot-missing-left-sidebar-menu-items
+  - Question: How do I troubleshoot missing left sidebar menu items?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To troubleshoot missing left sidebar menu items in the Knowledge module, follow these steps:  **Procedural Steps:** 1.  Open the Knowledge module from the main navigation. 2.  Locate the troubleshoot missing left sidebar
+- [PASS] knowledge::define-bks-in-ogeemo
+  - Question: How do I define bks in ogeemo?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To define BKS in Ogeemo, follow these steps in the Knowledge module:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "define bks in ogeemo" entry point in the module workflow. 3.  Enter or select 
+- [FAIL] knowledge::expand-bks-acronym-and-meaning
+  - Question: How do I expand bks acronym and meaning?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific numbered steps for how to expand the bks acronym and meaning.  To provide procedural guidance, the following information would be needed: *   A guide chunk of type "st
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

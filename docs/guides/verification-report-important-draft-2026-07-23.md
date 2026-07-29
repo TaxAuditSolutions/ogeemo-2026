@@ -1,0 +1,479 @@
+# important draft Verification Report
+
+Generated at: 2026-07-23T06:26:32.081Z
+Assistant endpoint: https://ogeemoassistant-qsckasljxq-uc.a.run.app
+
+Total checked: 116
+Passed: 45
+Failed: 71
+
+## Results
+
+- [FAIL] image-generator::close-image-generator-and-return-to-action-manager
+  - Question: How do I close image generator and return to action manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to close "image generator" or return to "action manager". The available guides focus on actions within the "Tasks" module.
+- [FAIL] settings::update-user-profile-settings
+  - Question: How do I update user profile settings?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to update user profile settings. The provided guide context does not contain information on this topic.
+- [FAIL] backup::select-backup-types-for-export
+  - Question: How do I select backup types for export?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to select backup types for export.  The available information describes how to export reports and select an output format for them. If you are looking to sel
+- [FAIL] backup::download-exported-backup-payloads
+  - Question: How do I download exported backup payloads?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to download exported backup payloads. The guides focus on exporting reports (such as general analytics reports, PDF reports, or CSV reports) from the Analyti
+- [FAIL] backup::prepare-export-payload-for-third-party-ingestion
+  - Question: How do I prepare export payload for third party ingestion?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to prepare an export payload for third-party ingestion.  The guides offer steps on how to export reports from Analytics: 1.  Open the Analytics or R
+- [FAIL] user-manager::edit-user-profile-details
+  - Question: How do I edit user profile details?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to edit user profile details. The available guides focus on tasks within the Files module such as renaming folders, auditing document access,
+- [FAIL] email-hub::open-document-manager-mirror-from-email-hub
+  - Question: How do I open document manager mirror from email hub?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open "document manager mirror from email hub." The available guides focus on linking documents to contacts within the Files module.
+- [FAIL] email-hub::apply-audit-ready-email-file-naming-protocol
+  - Question: How do I apply audit ready email file naming protocol?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to apply an audit-ready email file naming protocol.  The context mentions "Files are named according to internal standards" as a prerequisite for uploading d
+- [FAIL] email-hub::create-or-edit-contact-during-email-log
+  - Question: How do I create or edit contact during email log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: To create a contact from an email in the Contacts module, follow these steps:  1.  Open the Contacts module from the main navigation. 2.  Locate the create contact from email entry point in the module workflow. 3.  Enter
+- [FAIL] projects::assign-project-to-contact
+  - Question: How do I assign project to contact?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to assign a project to a contact using the provided guide context. The guides only contain information on linking a contact to a deal, assigning a contact owner, and reassigning a con
+- [FAIL] projects::convert-task-into-new-project
+  - Question: How do I convert task into new project?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to convert a task into a new project based on the provided guide context. The guides describe how to "Convert Task To Action Chip", "Start Task", and "Create Task".  The context does 
+- [PASS] project-status::reorder-task-within-status-column
+  - Question: How do I reorder task within status column?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to reorder tasks within a status column based on the provided guide context.  The available guides cover the following topics in the Tasks module: *   Setting Task Priority *   Reassi
+- [FAIL] project-status::edit-task-details-from-board-card
+  - Question: How do I edit task details from board card?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to edit task details *specifically from a board card*. The guides outline the general process for editing a task within the Tasks module, but they do not spe
+- [FAIL] project-status::archive-task-from-board-to-file-manager
+  - Question: How do I archive task from board to file manager?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to archive a **task** from a **board** to the file manager.  The available guides primarily describe how to: *   Archive a **folder** in the Files module. * 
+- [FAIL] project-status::add-board-task-to-global-todo-list
+  - Question: How do I add board task to global todo list?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to add a board task to a global todo list. The guides available focus on workflows such as linking tasks to documents or contacts, convertin
+- [FAIL] project-status::review-column-task-counts
+  - Question: How do I review column task counts?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The guide context does not contain enough information to tell you how to review column task counts.  The available guides cover the following topics in the Tasks module: *   Auditing Task History *   Recovering Missing T
+- [FAIL] idea-board::archive-idea-as-reference-file
+  - Question: How do I archive idea as reference file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to "archive idea as reference file". The available guides only describe the process for "Archive Folder in Files".  To answer your question, the guide would 
+- [PASS] ledgers::switch-between-general-income-expense-tabs
+  - Question: How do I switch between general income expense tabs?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot find information on how to switch between general income expense tabs in the provided guide context. The available guides describe how to categorize expenses, prepare profit and loss statements, run trial balanc
+- [FAIL] ledgers::edit-ledger-transaction
+  - Question: How do I edit ledger transaction?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to edit a ledger transaction. The available guides cover how to 'Edit Invoice' and 'Audit Ledger Changes', but not the specific steps for 'Edit Ledger
+- [FAIL] ledgers::sort-ledger-by-date-contact-category-amount
+  - Question: How do I sort ledger by date contact category amount?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort the ledger by date, contact, category, or amount.  To answer your question, information detailing ledger sorting functionalities, available fields fo
+- [FAIL] ledgers::filter-ledger-by-date-range
+  - Question: How do I filter ledger by date range?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to filter a ledger by date range.  The available guides cover: *   Auditing ledger changes *   Producing ledger detail with support links *  
+- [FAIL] ledgers::clear-ledger-filters
+  - Question: How do I clear ledger filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to clear ledger filters.  To answer this question, I would need additional guide context specifically detailing ledger filtering options and procedures withi
+- [FAIL] ledgers::export-ledger-to-csv
+  - Question: How do I export ledger to csv?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain specific instructions on how to export "ledger to csv".  The available information describes how to: *   Export report csv in the Reports module. *   Export re
+- [FAIL] document-manager::open-document-manager-workspace
+  - Question: How do I open document manager workspace?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a "document manager workspace."  The guides describe various workflows within the "Files module," and each workflow begins with "1. Open the Files mo
+- [FAIL] document-manager::open-document-manager-instructions
+  - Question: How do I open document manager instructions?
+  - Reason: response was too short and lacked clear procedural structure
+  - Answer excerpt: To open the document manager module, follow these steps:  1.  Open the file or document manager module.
+- [FAIL] document-manager::move-folder-with-drag-and-drop
+  - Question: How do I move folder with drag and drop?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to move a folder using drag and drop based on the provided guide context.  The available guides describe how to "Move File Between Folders" and "Rename Folder" but do not contain info
+- [FAIL] document-manager::open-linked-google-drive-file
+  - Question: How do I open linked google drive file?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a linked Google Drive file.  The available information focuses on the process of linking documents to contact records within the Files module, auditi
+- [PASS] document-manager::rename-file-record
+  - Question: How do I rename file record?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide specific steps on how to rename a file record using the provided guide context. The available guides focus on renaming folders or replacing document versions.  The missing information would be a guide ch
+- [FAIL] document-manager::link-google-drive-url-to-file-record
+  - Question: How do I link google drive url to file record?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to link a Google Drive URL to a file record. The guides focus on linking documents that are already uploaded or available to be uploaded within the system to
+- [PASS] document-manager::move-file-to-folder-with-drag-and-drop
+  - Question: How do I move file to folder with drag and drop?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to move a file to a folder using "drag and drop" based on the provided guide context.  The available guides describe a process involving locating an entry point, entering/selecting re
+- [FAIL] document-manager::sort-folder-tree-order
+  - Question: How do I sort folder tree order?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort folder tree order.
+- [FAIL] document-manager::sort-files-by-name-or-modified-date
+  - Question: How do I sort files by name or modified date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to sort files by name or modified date, as the provided guide context does not contain information about this topic.  The available information covers: *   Renaming folders *   Moving
+- [PASS] work-activity::print-work-activity-evidence-pdf
+  - Question: How do I print work activity evidence pdf?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: I cannot provide instructions on how to print work activity evidence PDFs using the provided guide context. The guides contain information on uploading documents, auditing document access, sharing documents, and linking 
+- [FAIL] client-statement::set-client-statement-start-date
+  - Question: How do I set client statement start date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to set the client statement start date.  The available guides cover: *   Opening the Contact Log Time Dialog *   Segmenting Contacts By Tag *
+- [FAIL] client-statement::set-client-statement-end-date
+  - Question: How do I set client statement end date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to set the client statement end date.  The available guides cover the following topics in the Contacts module: *   Segment Contacts By Tag *
+- [FAIL] client-statement::clear-client-statement-date-filters
+  - Question: How do I clear client statement date filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I apologize, but the provided guide context does not contain information on how to clear client statement date filters. The available guides cover topics such as unlinking contacts from deals, scrubbing worker HR fields,
+- [FAIL] client-statement::print-client-statement
+  - Question: How do I print client statement?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to print a client statement. The available guides focus on tasks such as opening contact evidence folders, exporting contact lists, attaching
+- [FAIL] worker-time-log::sort-worker-time-log-by-worker-client-date-billing
+  - Question: How do I sort worker time log by worker client date billing?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to sort worker time logs by worker client date billing.
+- [FAIL] worker-time-log::open-worker-document-folder-from-time-log
+  - Question: How do I open worker document folder from time log?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to open a worker document folder from a time log.  To answer your question, information would be needed about: *   How the "time log" module integrates with 
+- [FAIL] client-time-log::set-client-time-log-start-date-filter
+  - Question: How do I set client time log start date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to set a "client time log start date filter." The available guides focus on linking contact activity to time logs and opening the contact log
+- [FAIL] client-time-log::set-client-time-log-end-date-filter
+  - Question: How do I set client time log end date filter?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to set a client time log end date filter.  To answer your question, information specifically detailing the steps or process for "setting client time l
+- [FAIL] client-time-log::clear-client-time-log-filters
+  - Question: How do I clear client time log filters?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to clear client time log filters.
+- [FAIL] client-time-log::schedule-client-time-entry-in-calendar
+  - Question: How do I schedule client time entry in calendar?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I cannot provide instructions on how to schedule client time entry in calendar as the provided guide context does not contain information on this specific workflow.  The available guides cover: *   Sync Contacts With Cal
+- [FAIL] client-time-log::block-direct-delete-for-calendar-sourced-client-entries
+  - Question: How do I block direct delete for calendar sourced client entries?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to block direct delete for calendar-sourced client entries. The available guides focus on the processes for deleting contact folders and bulk deleting contac
+- [PASS] knowledge::explain-ogeemo-assistant-capabilities
+  - Question: How do I explain ogeemo assistant capabilities?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To explain Ogeemo Assistant capabilities, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "explain ogeemo assistant capabilities" entry point in the module workflow. 3.  Enter 
+- [PASS] knowledge::explain-ogeemo-assistant-limitations
+  - Question: How do I explain ogeemo assistant limitations?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To explain Ogeemo Assistant limitations, follow these steps in the Knowledge module:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  Yo
+- [FAIL] knowledge::describe-ogeemo-crm-features
+  - Question: How do I describe ogeemo crm features?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to describe Ogeemo CRM features. The available information outlines prerequisites for specific tasks within the Contacts module, such as creating a contact, 
+- [PASS] knowledge::describe-ogeemo-document-and-file-features
+  - Question: How do I describe ogeemo document and file features?
+  - Reason: contains 8 numbered procedural steps
+  - Answer excerpt: Based on the provided guide context, the Ogeemo Files module includes the following document and file features:  1.  **Upload Document**: Complete the upload document workflow. 2.  **Share Document With Team**: Complete 
+- [FAIL] knowledge::describe-ogeemo-accounting-features
+  - Question: How do I describe ogeemo accounting features?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to describe Ogeemo accounting features. The context only outlines the prerequisites for specific workflows within the Accounting module, such as opening an a
+- [FAIL] knowledge::describe-ogeemo-payroll-and-hr-features
+  - Question: How do I describe ogeemo payroll and hr features?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context focuses on the prerequisites for various workflows within the Payroll module, such as "Run Hr Compliance Audit," "Run Payroll," "Onboard Payroll Employee," and others. It does not contain a gen
+- [PASS] knowledge::describe-ogeemo-reporting-features
+  - Question: How do I describe ogeemo reporting features?
+  - Reason: long-form procedural response without missing-context signals
+  - Answer excerpt: Ogeemo reporting features allow you to perform the following actions:  *   **Create custom reports** in the Reports module. *   **Run compliance reports** in the Reports module. *   **Compare period over period** in the 
+- [FAIL] knowledge::describe-ogeemo-task-project-and-calendar-features
+  - Question: How do I describe ogeemo task project and calendar features?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information describing Ogeemo task project and calendar features. The context only details the prerequisites for various task-related actions within the Tasks module, such as c
+- [PASS] knowledge::describe-ogeemo-idea-and-planning-features
+  - Question: How do I describe ogeemo idea and planning features?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo Idea and Planning Features, follow these steps in the Knowledge module:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "describe ogeemo idea and planning features" entry point 
+- [PASS] knowledge::describe-ogeemo-admin-and-security-features
+  - Question: How do I describe ogeemo admin and security features?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo Admin and Security Features in the Knowledge module, follow these steps:  **Prerequisites:** 1. You are signed in with general access or equivalent permissions. 2. You can open the Knowledge module in 
+- [PASS] knowledge::describe-ogeemo-backup-and-recovery-features
+  - Question: How do I describe ogeemo backup and recovery features?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo backup and recovery features, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the current Ogeemo en
+- [PASS] knowledge::describe-ogeemo-ai-assistant-features
+  - Question: How do I describe ogeemo ai assistant features?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo AI Assistant features, follow these steps:  First, ensure you meet the following prerequisites: *   You are signed in with general access or equivalent permissions. *   You can open the Knowledge modul
+- [PASS] knowledge::describe-ogeemo-image-and-creative-tools
+  - Question: How do I describe ogeemo image and creative tools?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo Image And Creative Tools in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the describe ogeemo image and creative tools entry point in the
+- [PASS] knowledge::describe-ogeemo-wellness-features
+  - Question: How do I describe ogeemo wellness features?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To describe Ogeemo wellness features, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the describe ogeemo wellness features entry point in the module workflow. 3.  Enter or select 
+- [FAIL] knowledge::summarize-ogeemo-features-by-user-role
+  - Question: How do I summarize ogeemo features by user role?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to summarize Ogeemo features by user role. The available guides focus on prerequisites for managing roles, permissions, module access, and feature flags with
+- [PASS] knowledge::map-ogeemo-apps-by-category
+  - Question: How do I map ogeemo apps by category?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To map Ogeemo apps by category, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the map ogeemo apps by category entry point in the module workflow. 3.  Enter or select the required
+- [PASS] knowledge::list-ogeemo-core-business-apps
+  - Question: How do I list ogeemo core business apps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo core business apps, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "list ogeemo core business apps" entry point in the module workflow. 3.  Enter or select the 
+- [PASS] knowledge::list-ogeemo-productivity-apps
+  - Question: How do I list ogeemo productivity apps?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To list Ogeemo productivity apps, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module
+- [PASS] knowledge::list-ogeemo-finance-and-payroll-apps
+  - Question: How do I list ogeemo finance and payroll apps?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To list Ogeemo finance and payroll apps, follow these steps in the Knowledge module:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  Yo
+- [FAIL] knowledge::list-ogeemo-reporting-apps
+  - Question: How do I list ogeemo reporting apps?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context describes various workflows and capabilities within the **Reports module** of Ogeemo, rather than listing separate Ogeemo reporting apps.  Within the Reports module, the following reporting fun
+- [PASS] knowledge::list-ogeemo-admin-and-governance-apps
+  - Question: How do I list ogeemo admin and governance apps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo admin and governance apps, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list ogeemo admin and governance apps entry point in the module workflow. 3.  Enter or
+- [PASS] knowledge::list-ogeemo-ai-and-creative-apps
+  - Question: How do I list ogeemo ai and creative apps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo AI and creative apps, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "list ogeemo ai and creative apps" entry point in the module workflow. 3.  Enter or select 
+- [PASS] knowledge::list-ogeemo-wellness-and-ritual-apps
+  - Question: How do I list ogeemo wellness and ritual apps?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Ogeemo wellness and ritual apps, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list ogeemo wellness and ritual apps entry point in the module workflow. 3.  Enter or s
+- [PASS] knowledge::explain-what-counts-as-an-ogeemo-app
+  - Question: How do I explain what counts as an ogeemo app?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To explain what counts as an Ogeemo app in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the "explain what counts as an ogeemo app" entry point in the modul
+- [FAIL] knowledge::summarize-ogeemo-apps-by-user-role
+  - Question: How do I summarize ogeemo apps by user role?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to summarize Ogeemo apps by user role.  The available guides cover: *   Assigning a role to a user. *   Removing a role from a user. *   Configuring role per
+- [FAIL] knowledge::recommend-which-ogeemo-app-to-use-for-a-task
+  - Question: How do I recommend which ogeemo app to use for a task?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to recommend which Ogeemo app to use for a task.  The available guides focus on specific actions within the Tasks module, such as: *   Assign
+- [PASS] knowledge::compare-ogeemo-apps-and-how-they-work-together
+  - Question: How do I compare ogeemo apps and how they work together?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: To compare Ogeemo apps and how they work together, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the
+- [FAIL] knowledge::map-left-sidebar-actions-by-category
+  - Question: How do I map left sidebar actions by category?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to map left sidebar actions by category. The available guides focus on creating, assigning, troubleshooting, and fixing permission errors related to Action C
+- [FAIL] knowledge::list-left-sidebar-crm-actions
+  - Question: How do I list left sidebar crm actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information on how to list left sidebar CRM actions. The guides available describe specific workflows within the Contacts module, but do not detail UI elements 
+- [FAIL] knowledge::list-left-sidebar-files-and-document-actions
+  - Question: How do I list left sidebar files and document actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to list left sidebar files and document actions.  The guides offer procedural steps for specific document actions within the Files module, such as: *   Audit
+- [FAIL] knowledge::list-left-sidebar-accounting-actions
+  - Question: How do I list left sidebar accounting actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to list accounting actions from a "left sidebar". The guides refer to locating entry points within the "module workflow" after opening the Accounting module 
+- [FAIL] knowledge::list-left-sidebar-payroll-and-hr-actions
+  - Question: How do I list left sidebar payroll and hr actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: Based on the provided guide context, here are the payroll and HR actions available in the Payroll module:  **Payroll Actions:** *   Run Payroll *   Audit Payroll Changes *   Run Off Cycle Payroll  **HR Actions (performed
+- [FAIL] knowledge::list-left-sidebar-reporting-actions
+  - Question: How do I list left sidebar reporting actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to list left sidebar reporting actions. The guides describe workflows within the Reports module, but do not mention a "left sidebar" or specific reporting ac
+- [FAIL] knowledge::list-left-sidebar-productivity-actions
+  - Question: How do I list left sidebar productivity actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to list left sidebar productivity actions. The available guides cover creating, editing, and troubleshooting action chips in the Tasks module, but they do no
+- [PASS] knowledge::list-left-sidebar-admin-and-settings-actions
+  - Question: How do I list left sidebar admin and settings actions?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list left sidebar admin and settings actions, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list left sidebar admin and settings actions entry point in the module workflow
+- [PASS] knowledge::list-left-sidebar-assistant-and-tools-actions
+  - Question: How do I list left sidebar assistant and tools actions?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list left sidebar assistant and tools actions, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list left sidebar assistant and tools actions entry point in the module workfl
+- [FAIL] knowledge::explain-left-sidebar-action-visibility-by-role
+  - Question: How do I explain left sidebar action visibility by role?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I'm sorry, but the provided guide context does not contain information on how to explain left sidebar action visibility by role.  The available guides focus on: *   Configuring role permissions in the Settings module. * 
+- [FAIL] knowledge::find-left-sidebar-action-for-user-goal
+  - Question: How do I find left sidebar action for user goal?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information on how to find a "left sidebar action for user goal." The guides focus on Action Chips within the Tasks module, including creating, assigning, and fixing per
+- [FAIL] knowledge::summarize-left-sidebar-quick-start-actions
+  - Question: How do I summarize left sidebar quick start actions?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to summarize left sidebar quick start actions. The available guides focus on starting lead work from email using Action Chips, creating Action Chips in the T
+- [FAIL] knowledge::describe-action-chip-lifecycle
+  - Question: How do I describe action chip lifecycle?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context describes individual workflows related to an action chip, such as creating, editing, and completing it. However, it does not contain information that describes the overall "action chip lifecycl
+- [FAIL] knowledge::explain-action-chip-fields-and-metadata
+  - Question: How do I explain action chip fields and metadata?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain action chip fields and metadata.  The guides mention "required inputs," "required fields," and "traceable metadata," but they do not define or ela
+- [PASS] knowledge::create-and-edit-action-chip-workflow
+  - Question: How do I create and edit action chip workflow?
+  - Reason: contains 12 numbered procedural steps
+  - Answer excerpt: Here's how to create and edit an action chip workflow in the Tasks module:  **To Create an Action Chip Workflow:** 1.  Open the Tasks module from the main navigation. 2.  Locate the create action chip entry point in the 
+- [PASS] knowledge::assign-action-chip-and-manage-ownership
+  - Question: How do I assign action chip and manage ownership?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To assign action chip and manage ownership in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the assign action chip and manage ownership entry point in the m
+- [FAIL] knowledge::set-action-chip-priority-and-due-date
+  - Question: How do I set action chip priority and due date?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information on how to set action chip priority or due date.  The guides mention "Enter or select the required inputs" for creating, assigning, or editing an action chi
+- [FAIL] knowledge::link-action-chip-to-projects-contacts-and-files
+  - Question: How do I link action chip to projects contacts and files?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to link an action chip to projects, contacts, and files.
+- [FAIL] knowledge::convert-between-action-chip-task-and-project
+  - Question: How do I convert between action chip task and project?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to convert between an action chip task and a project. The available guides focus on the process of converting a task to an action chip.  To answer your quest
+- [FAIL] knowledge::complete-reopen-and-archive-action-chip
+  - Question: How do I complete reopen and archive action chip?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to complete "reopen action chip" or "archive action chip".  Information regarding "reopen action chip" and "archive action chip" is missing from the availabl
+- [FAIL] knowledge::find-action-chip-from-left-sidebar-and-modules
+  - Question: How do I find action chip from left sidebar and modules?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to find an action chip from the left sidebar or modules.  The context explains how to open the **Tasks module from the main navigation** to perform actions l
+- [FAIL] knowledge::explain-action-chip-automation-and-reminders
+  - Question: How do I explain action chip automation and reminders?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain action chip automation and reminders. The available guides focus on the creation, editing, conversion, and completion of action chips. Information
+- [FAIL] knowledge::summarize-action-chip-best-practices
+  - Question: How do I summarize action chip best practices?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain specific information summarizing "action chip best practices." The guides provide procedural steps, validation checks, and troubleshooting for creating, editing, and completing
+- [PASS] knowledge::add-item-to-left-sidebar-favorites
+  - Question: How do I add item to left sidebar favorites?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To add an item to the left sidebar favorites in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the add item to left sidebar favorites entry point in the modu
+- [PASS] knowledge::remove-item-from-left-sidebar-favorites
+  - Question: How do I remove item from left sidebar favorites?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To remove an item from left sidebar favorites in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the remove item from left sidebar favorites entry point in th
+- [PASS] knowledge::reorder-left-sidebar-favorites
+  - Question: How do I reorder left sidebar favorites?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To reorder left sidebar favorites in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the reorder left sidebar favorites entry point in the module workflow. 3.
+- [PASS] knowledge::pin-and-unpin-left-sidebar-sections
+  - Question: How do I pin and unpin left sidebar sections?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To pin and unpin left sidebar sections, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the pin and unpin left sidebar sections entry point in the module workflow. 3.  Enter or sel
+- [PASS] knowledge::expand-and-collapse-left-sidebar-groups
+  - Question: How do I expand and collapse left sidebar groups?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To expand and collapse left sidebar groups, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the expand and collapse left sidebar groups entry point in the module workflow. 3.  Ente
+- [PASS] knowledge::explain-left-sidebar-default-vs-custom-order
+  - Question: How do I explain left sidebar default vs custom order?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To explain the left sidebar default vs. custom order in the Knowledge module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge mo
+- [PASS] knowledge::explain-left-sidebar-context-sensitive-items
+  - Question: How do I explain left sidebar context sensitive items?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To explain left sidebar context sensitive items, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the explain left sidebar context sensitive items entry point in the module workflow
+- [FAIL] knowledge::search-and-locate-action-from-left-sidebar
+  - Question: How do I search and locate action from left sidebar?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information on how to search and locate an action from a left sidebar.  The guides describe how to "Locate the [specific action] entry point in the module workflow" after openi
+- [PASS] knowledge::restore-left-sidebar-default-layout
+  - Question: How do I restore left sidebar default layout?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To restore the left sidebar default layout in the Knowledge module, follow these steps:  **Prerequisites:** 1. You are signed in with general access or equivalent permissions. 2. You can open the Knowledge module in the 
+- [PASS] knowledge::sync-left-sidebar-preferences-across-sessions
+  - Question: How do I sync left sidebar preferences across sessions?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To sync left sidebar preferences across sessions in the Knowledge module, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the sync left sidebar preferences across sessions entry po
+- [PASS] knowledge::explain-left-sidebar-behavior-on-mobile-vs-desktop
+  - Question: How do I explain left sidebar behavior on mobile vs desktop?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To explain left sidebar behavior on mobile vs desktop, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the current Oge
+- [PASS] knowledge::summarize-left-sidebar-best-practices
+  - Question: How do I summarize left sidebar best practices?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To summarize left sidebar best practices in the Knowledge module, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the 
+- [PASS] knowledge::explain-why-bks-is-used-in-ogeemo
+  - Question: How do I explain why bks is used in ogeemo?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To explain why BKS is used in Ogeemo, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the current Ogeemo environment. 
+- [FAIL] knowledge::describe-bks-ledger-module-overview
+  - Question: How do I describe bks ledger module overview?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to describe a "bks ledger module overview" in a general sense. The available overview chunks describe specific workflows within the Accounting module, such a
+- [PASS] knowledge::map-bks-to-bookkeeping-workflows
+  - Question: How do I map bks to bookkeeping workflows?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To map bks to bookkeeping workflows, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the map bks to bookkeeping workflows entry point in the module workflow. 3.  Enter or select th
+- [PASS] knowledge::list-bks-features-and-capabilities
+  - Question: How do I list bks features and capabilities?
+  - Reason: contains 6 numbered procedural steps
+  - Answer excerpt: To list Bks features and capabilities, follow these steps:  1.  Open the Knowledge module from the main navigation. 2.  Locate the list bks features and capabilities entry point in the module workflow. 3.  Enter or selec
+- [FAIL] knowledge::explain-bks-general-income-expense-tabs
+  - Question: How do I explain bks general income expense tabs?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain information about "bks general income expense tabs."  To answer this question, I would need context that describes specific user interface elements or functionalities related t
+- [FAIL] knowledge::explain-how-bks-connects-to-reports
+  - Question: How do I explain how bks connects to reports?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: The provided guide context does not contain enough information to explain how "bks" connects to "reports." The term "bks" is not mentioned in the provided guides.
+- [FAIL] knowledge::explain-how-bks-differs-from-other-accounting-sections
+  - Question: How do I explain how bks differs from other accounting sections?
+  - Reason: assistant indicated missing or insufficient context
+  - Answer excerpt: I am sorry, but the provided guide context does not contain information about "bks" or how it differs from other accounting sections.  The context covers workflows such as: *   Preparing Balance Sheets *   Producing Ledg
+- [PASS] knowledge::identify-who-should-use-bks-and-when
+  - Question: How do I identify who should use bks and when?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To identify who should use Bks and when, follow these steps:  **Prerequisites:** Before you begin, ensure the following: 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge
+- [PASS] knowledge::provide-bks-quick-start-explanation
+  - Question: How do I provide bks quick start explanation?
+  - Reason: contains 9 numbered procedural steps
+  - Answer excerpt: To provide the Bks Quick Start Explanation, follow these steps:  **Prerequisites:** 1.  You are signed in with general access or equivalent permissions. 2.  You can open the Knowledge module in the current Ogeemo environ
+- [PASS] knowledge::troubleshoot-common-bks-confusion
+  - Question: How do I troubleshoot common bks confusion?
+  - Reason: contains 3 numbered procedural steps
+  - Answer excerpt: To troubleshoot common Bks confusion, follow these recovery steps for common errors:  1.  **If required fields are missing:**     *   Validate the required field inputs.     *   Rerun the "troubleshoot common bks confusi
+
+## Policy
+- Status is promoted to verified only when the answer is procedural and does not signal missing context.
+- Failed rows remain in draft for further guide refinement.

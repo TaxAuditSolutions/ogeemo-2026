@@ -5,7 +5,9 @@ const DEFAULT_ASSISTANT_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const question = (body?.question ?? "").toString().trim();
+        const question = (body?.question ?? body?.message ?? "").toString().trim();
+        const history = Array.isArray(body?.history) ? body.history : [];
+        const sessionId = typeof body?.sessionId === 'string' ? body.sessionId : undefined;
 
         if (!question) {
             return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ question }),
+            body: JSON.stringify({ question, history, sessionId }),
             cache: "no-store",
         });
 

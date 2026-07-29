@@ -1,0 +1,68 @@
+{
+  "guideId": "reports--generate-client-statement-by-client-and-date",
+  "title": "Generate Client Statement By Client And Date in Reports",
+  "module": "reports",
+  "intent": "generate-client-statement-by-client-and-date",
+  "targetAudience": "general",
+  "description": "Complete the generate client statement by client and date workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for generate client statement by client and date are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the generate client statement by client and date entry point in the module workflow.",
+    "Enter or select the required inputs for generate client statement by client and date.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Generate Client Statement By Client And Date completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during generate client statement by client and date.",
+    "Permission constraints prevent completion of generate client statement by client and date.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun generate client statement by client and date.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun generate client statement by client and date?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm generate client statement by client and date is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "generate-client-statement-by-client-and-date",
+    "general",
+    "reporting",
+    "generate",
+    "client",
+    "statement",
+    "by",
+    "and",
+    "date",
+    "generate client statement by client and date"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:24:15.255Z",
+  "lastVerifiedAt": "2026-07-23T07:24:15.255Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--generate-client-statement-by-client-and-date"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,68 @@
+{
+  "guideId": "knowledge--explain-left-sidebar-context-sensitive-items",
+  "title": "Explain Left Sidebar Context Sensitive Items in Knowledge",
+  "module": "knowledge",
+  "intent": "explain-left-sidebar-context-sensitive-items",
+  "targetAudience": "general",
+  "description": "Complete the explain left sidebar context sensitive items workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for explain left sidebar context sensitive items are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the explain left sidebar context sensitive items entry point in the module workflow.",
+    "Enter or select the required inputs for explain left sidebar context sensitive items.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Explain Left Sidebar Context Sensitive Items completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during explain left sidebar context sensitive items.",
+    "Permission constraints prevent completion of explain left sidebar context sensitive items.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun explain left sidebar context sensitive items.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun explain left sidebar context sensitive items?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm explain left sidebar context sensitive items is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "explain-left-sidebar-context-sensitive-items",
+    "general",
+    "assistant",
+    "explain",
+    "left",
+    "sidebar",
+    "context",
+    "sensitive",
+    "items",
+    "explain left sidebar context sensitive items"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:40.692Z",
+  "lastVerifiedAt": "2026-07-23T06:06:40.692Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--explain-left-sidebar-context-sensitive-items"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

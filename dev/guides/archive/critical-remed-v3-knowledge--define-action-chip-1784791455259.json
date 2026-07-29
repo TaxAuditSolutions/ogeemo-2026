@@ -1,0 +1,65 @@
+{
+  "guideId": "knowledge--define-action-chip",
+  "title": "Define Action Chip in Knowledge",
+  "module": "knowledge",
+  "intent": "define-action-chip",
+  "targetAudience": "general",
+  "description": "Complete the define action chip workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for define action chip are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the define action chip entry point in the module workflow.",
+    "Enter or select the required inputs for define action chip.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Define Action Chip completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during define action chip.",
+    "Permission constraints prevent completion of define action chip.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun define action chip.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun define action chip?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm define action chip is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "define-action-chip",
+    "general",
+    "assistant",
+    "define",
+    "action",
+    "chip",
+    "define action chip"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:24:15.259Z",
+  "lastVerifiedAt": "2026-07-23T07:24:15.259Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--define-action-chip"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

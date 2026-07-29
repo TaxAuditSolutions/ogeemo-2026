@@ -1,0 +1,67 @@
+{
+  "guideId": "knowledge--explain-what-action-chips-do",
+  "title": "Explain What Action Chips Do in Knowledge",
+  "module": "knowledge",
+  "intent": "explain-what-action-chips-do",
+  "targetAudience": "general",
+  "description": "Complete the explain what action chips do workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for explain what action chips do are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the explain what action chips do entry point in the module workflow.",
+    "Enter or select the required inputs for explain what action chips do.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Explain What Action Chips Do completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during explain what action chips do.",
+    "Permission constraints prevent completion of explain what action chips do.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun explain what action chips do.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun explain what action chips do?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm explain what action chips do is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "explain-what-action-chips-do",
+    "general",
+    "assistant",
+    "explain",
+    "what",
+    "action",
+    "chips",
+    "do",
+    "explain what action chips do"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:39.244Z",
+  "lastVerifiedAt": "2026-07-23T06:06:39.244Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--explain-what-action-chips-do"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

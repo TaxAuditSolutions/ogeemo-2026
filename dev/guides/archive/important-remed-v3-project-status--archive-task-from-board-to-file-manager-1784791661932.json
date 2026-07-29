@@ -1,0 +1,70 @@
+{
+  "guideId": "project-status--archive-task-from-board-to-file-manager",
+  "title": "Archive Task From Board To File Manager in Project Status",
+  "module": "project-status",
+  "intent": "archive-task-from-board-to-file-manager",
+  "targetAudience": "general",
+  "description": "Complete the archive task from board to file manager workflow in the Project Status module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Project Status module in the current Ogeemo environment.",
+    "Required data inputs for archive task from board to file manager are prepared before starting."
+  ],
+  "steps": [
+    "Open the Project Status module from the main navigation.",
+    "Locate the archive task from board to file manager entry point in the module workflow.",
+    "Enter or select the required inputs for archive task from board to file manager.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Archive Task From Board To File Manager completes without warnings or blockers.",
+    "Resulting records are visible in the expected Project Status views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during archive task from board to file manager.",
+    "Permission constraints prevent completion of archive task from board to file manager.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun archive task from board to file manager.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun archive task from board to file manager?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm archive task from board to file manager is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "project-status",
+    "archive-task-from-board-to-file-manager",
+    "general",
+    "productivity",
+    "archive",
+    "task",
+    "from",
+    "board",
+    "to",
+    "file",
+    "manager",
+    "project status",
+    "archive task from board to file manager"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:27:41.932Z",
+  "lastVerifiedAt": "2026-07-23T07:27:41.932Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for project-status--archive-task-from-board-to-file-manager"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

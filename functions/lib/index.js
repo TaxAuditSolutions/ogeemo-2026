@@ -37,6 +37,100 @@ const CHUNK_TYPE_ORDER = {
     troubleshooting: 5,
     faq: 6,
 };
+const IDENTITY_NAVIGATION_HINTS = [
+    "what is",
+    "who is",
+    "left sidebar",
+    "sidebar",
+    "menu",
+    "navigation",
+    "navigate",
+    "where do i find",
+    "where can i find",
+    "where is",
+    "action chip",
+    "command centre",
+    "command center",
+    "bks",
+    "ogeemo assistant",
+    "ogeemo",
+];
+const PROCEDURAL_HINTS = [
+    "how to",
+    "steps",
+    "fix",
+    "error",
+    "troubleshoot",
+    "configure",
+    "create",
+    "update",
+    "delete",
+    "export",
+    "import",
+    "reconcile",
+    "schedule",
+    "link",
+    "payment",
+    "run",
+    "validate",
+];
+const CANONICAL_NAVIGATION_MAP = [
+    "Action Manager -> /action-manager",
+    "Action Chip Magic -> /action-chips-info",
+    "Command Centre -> /master-mind",
+    "AI Dispatch -> /ai-dispatch",
+    "Accounting Hub -> /accounting",
+    "Reports Hub -> /reports",
+    "Contacts Hub -> /contacts",
+    "Projects -> /projects/all",
+    "Calendar -> /calendar",
+    "Document Manager -> /document-manager",
+    "Email Hub -> /email-hub",
+    "HR Hub -> /hr-manager",
+    "Settings -> /settings",
+].join("\n");
+const MODULE_TO_USER_HUB_LABEL = {
+    knowledge: "AI Dispatch",
+    "assistant-knowledge": "AI Dispatch",
+    reports: "Reports Hub",
+    accounting: "Accounting Hub",
+    contacts: "Contacts Hub",
+    projects: "Projects",
+    calendar: "Calendar",
+    files: "Document Manager",
+    "document-manager": "Document Manager",
+    hr: "HR Hub",
+    "hr-manager": "HR Hub",
+    tasks: "Command Centre",
+    "master-mind": "Command Centre",
+    general: "General",
+};
+const DETERMINISTIC_IDENTITY_ANSWERS = {
+    "what-is-ogeemo": [
+        "Ogeemo is a business operating system for bookkeeping, contacts, projects, documents, tasks, and AI-assisted workflows.",
+        "It connects daily operations into a single platform so teams can stay organized, actionable, and audit-ready.",
+    ].join(" "),
+    "what-is-ogeemo-assistant": [
+        "Ogeemo Assistant is the conversational entry point to the Ogeemo platform.",
+        "It explains platform concepts, helps with navigation, and executes supported actions when tools and context are available.",
+    ].join(" "),
+    "what-is-action-chips": [
+        "Action Chips are compact action controls that launch common workflows or shortcuts across Ogeemo.",
+        "They are used to quickly access areas like Command Centre, ledgers, and AI-driven workflows.",
+    ].join(" "),
+    "what-is-bks": [
+        "BKS stands for Bookkeeping Kept Simple.",
+        "It is Ogeemo's bookkeeping approach for structured, audit-ready records that are easier to maintain and review.",
+    ].join(" "),
+    "what-is-command-centre": [
+        "The Command Centre is Ogeemo's main operational workspace for coordinating tasks, events, and day-to-day workflow execution.",
+        "In the app, it maps to /master-mind.",
+    ].join(" "),
+    "assistant-capabilities": [
+        "As Ogeemo Assistant, I can explain Ogeemo concepts, guide navigation to major hubs, and provide step-by-step workflow guidance from verified operational context.",
+        "I can also help with tasks like assistant-supported identity questions and procedural troubleshooting, and I will ask for clarification when a route or action is ambiguous.",
+    ].join(" "),
+};
 function isMissingVectorIndexError(error) {
     if (typeof error !== "object" || error === null) {
         return false;
@@ -135,7 +229,90 @@ function getQueryPhrases(question) {
     if (normalized.includes("permission") && normalized.includes("denied")) {
         phrases.push("permission denied");
     }
+    if (normalized.includes("left sidebar")) {
+        phrases.push("left sidebar");
+    }
+    if (normalized.includes("sidebar menu") || normalized.includes("side menu")) {
+        phrases.push("sidebar menu");
+    }
+    if (normalized.includes("where do i find") || normalized.includes("where can i find")) {
+        phrases.push("where do i find");
+    }
+    if (normalized.includes("navigation")) {
+        phrases.push("navigation");
+    }
+    if (normalized.includes("command centre") || normalized.includes("command center")) {
+        phrases.push("command centre");
+    }
     return phrases;
+}
+function classifyQuestionType(question) {
+    const normalized = question.toLowerCase();
+    const proceduralHit = PROCEDURAL_HINTS.some((hint) => normalized.includes(hint));
+    if (proceduralHit) {
+        return "procedural_or_other";
+    }
+    const identityNavigationHit = IDENTITY_NAVIGATION_HINTS.some((hint) => normalized.includes(hint));
+    if (identityNavigationHit) {
+        return "identity_or_navigation";
+    }
+    return "procedural_or_other";
+}
+function normalizeQuestionForIntent(question) {
+    return question
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+function resolveDeterministicIdentityIntent(question) {
+    const normalized = normalizeQuestionForIntent(question);
+    const rules = [
+        {
+            intent: "what-is-ogeemo-assistant",
+            patterns: ["what is ogeemo assistant", "who is ogeemo assistant", "define ogeemo assistant"],
+        },
+        {
+            intent: "what-is-action-chips",
+            patterns: ["what are action chips", "what is action chip", "define action chips", "action chips"],
+        },
+        {
+            intent: "what-is-bks",
+            patterns: ["what is bks", "what does bks stand for", "define bks", "bookkeeping kept simple"],
+        },
+        {
+            intent: "what-is-command-centre",
+            patterns: ["what is command centre", "what is command center", "define command centre", "define command center"],
+        },
+        {
+            intent: "assistant-capabilities",
+            patterns: [
+                "what can you do",
+                "what are you capable of doing",
+                "what are your capabilities",
+                "assistant capabilities",
+                "as our agent what are you capable of doing",
+            ],
+        },
+        {
+            intent: "what-is-ogeemo",
+            patterns: ["what is ogeemo", "who is ogeemo", "define ogeemo"],
+        },
+    ];
+    for (const rule of rules) {
+        if (rule.patterns.some((pattern) => normalized.includes(pattern))) {
+            return rule.intent;
+        }
+    }
+    return undefined;
+}
+function sanitizeModuleForUserDisplay(rawModule) {
+    var _a;
+    const normalized = rawModule
+        .toLowerCase()
+        .trim()
+        .replace(/[_\s]+/g, "-");
+    return (_a = MODULE_TO_USER_HUB_LABEL[normalized]) !== null && _a !== void 0 ? _a : "General";
 }
 function scorePhraseMatch(phrases, data) {
     var _a, _b, _c, _d;
@@ -263,6 +440,22 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
         const responseMode = requestedMode === "verification"
             ? "verification"
             : "chat";
+        // Deterministic identity fast-path for explicit platform-definition questions.
+        if (responseMode === "chat") {
+            const deterministicIdentityIntent = resolveDeterministicIdentityIntent(question);
+            if (deterministicIdentityIntent) {
+                const deterministicAnswer = DETERMINISTIC_IDENTITY_ANSWERS[deterministicIdentityIntent];
+                if (deterministicAnswer) {
+                    logger.info("ogeemoAssistant identity handler matched", {
+                        resolvedIdentityIntent: deterministicIdentityIntent,
+                        questionType: "identity_or_navigation",
+                        usedDeterministicIdentityHandler: true,
+                    });
+                    res.status(200).json({ answer: deterministicAnswer });
+                    return;
+                }
+            }
+        }
         const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
         // 1) Embed user question
         const embeddingModel = genAI.getGenerativeModel({
@@ -335,6 +528,7 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
         }
         // 3) Build context from retrieved docs
         const queryPhrases = getQueryPhrases(question);
+        const questionType = classifyQuestionType(question);
         const scoredDocs = [...snapshot.docs]
             .map((doc) => {
             const data = doc.data();
@@ -421,7 +615,7 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
             var _a, _b, _c, _d, _e, _f;
             const data = doc.data();
             const title = (_a = data.title) !== null && _a !== void 0 ? _a : "Untitled Guide";
-            const module = (_b = data.module) !== null && _b !== void 0 ? _b : "general";
+            const module = sanitizeModuleForUserDisplay((_b = data.module) !== null && _b !== void 0 ? _b : "general");
             const intent = (_c = data.intent) !== null && _c !== void 0 ? _c : "general-workflow";
             const targetAudience = (_d = data.targetAudience) !== null && _d !== void 0 ? _d : "General";
             const description = (_e = data.description) !== null && _e !== void 0 ? _e : "";
@@ -452,9 +646,29 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 : "No relevant guide context found.");
         // 4) Ask Gemini to answer using only retrieved context
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const identityPreamble = [
+            "You are Ogeemo Assistant, the conversational entry point to the Ogeemo platform.",
+            "Ogeemo is a business operating system for bookkeeping, contacts, projects, documents, tasks, and AI-assisted workflows.",
+            "Action Chips are compact action controls that launch common workflows or navigation shortcuts.",
+            "BKS means Bookkeeping Kept Simple and is Ogeemo's bookkeeping approach for organized, audit-ready records.",
+            "The Command Centre is the main operational workspace, and the left sidebar is the primary navigation model into major Ogeemo hubs.",
+            "When answering platform-level questions, use this identity framing before relying on the retrieved guide context.",
+        ].join("\n");
+        const navigationContext = [
+            "Canonical Navigation Map:",
+            CANONICAL_NAVIGATION_MAP,
+        ].join("\n");
+        const isIdentityNavigationQuery = responseMode === "chat" && questionType === "identity_or_navigation";
+        logger.info("ogeemoAssistant query classification", {
+            responseMode,
+            questionType,
+            usedIdentityNavigationBranch: isIdentityNavigationQuery,
+            contextChunkCount: contextChunks.length,
+            hasExactIntentAnswer: exactIntentStructuredAnswer.length > 0,
+        });
         const prompt = responseMode === "verification"
             ? [
-                "You are Ogeemo Assistant.",
+                identityPreamble,
                 "Answer the user's question using ONLY the provided guide context.",
                 "Provide clear procedural guidance with numbered steps when possible.",
                 "If the context does not contain enough information, say that clearly and suggest what is missing.",
@@ -464,20 +678,39 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 "",
                 `User question: ${question}`,
             ].join("\n")
-            : [
-                "You are Ogeemo Assistant.",
-                "Answer the user's question using ONLY the provided guide context.",
-                "Use a natural, conversational tone suitable for chat.",
-                "Start with a short direct answer sentence, then provide practical next steps.",
-                "Do not use rigid headings like 'Prerequisites', 'Validation', or 'Reference' unless the user explicitly asks for checklist format.",
-                "Keep the response concise but actionable.",
-                "If context is insufficient, say what is missing in plain language.",
-                "",
-                "Guide context:",
-                context,
-                "",
-                `User question: ${question}`,
-            ].join("\n");
+            : isIdentityNavigationQuery
+                ? [
+                    identityPreamble,
+                    navigationContext,
+                    "For identity and navigation questions, answer using the identity framing and canonical navigation map first, then use guide context when helpful.",
+                    "Never reference internal or non-user-facing module names (for example, 'Knowledge module').",
+                    "Do not invent screens, routes, or product labels that are not present in the canonical map or guide context.",
+                    "If a destination is ambiguous or missing, provide the closest known hub and ask a short clarification question.",
+                    "Use a natural, conversational tone suitable for chat.",
+                    "Start with a short direct answer sentence, then provide practical next steps.",
+                    "Keep the response concise but actionable.",
+                    "",
+                    "Guide context:",
+                    context,
+                    "",
+                    `User question: ${question}`,
+                ].join("\n")
+                : [
+                    identityPreamble,
+                    "Answer the user's question using ONLY the provided guide context.",
+                    "Never reference internal or non-user-facing module names (for example, 'Knowledge module').",
+                    "If a retrieved guide uses an internal module label, translate it to the closest canonical hub from the navigation map.",
+                    "Use a natural, conversational tone suitable for chat.",
+                    "Start with a short direct answer sentence, then provide practical next steps.",
+                    "Do not use rigid headings like 'Prerequisites', 'Validation', or 'Reference' unless the user explicitly asks for checklist format.",
+                    "Keep the response concise but actionable.",
+                    "If context is insufficient, say what is missing in plain language.",
+                    "",
+                    "Guide context:",
+                    context,
+                    "",
+                    `User question: ${question}`,
+                ].join("\n");
         const answerResult = await textModel.generateContent(prompt);
         const answer = answerResult.response.text().trim();
         res.status(200).json({ answer });

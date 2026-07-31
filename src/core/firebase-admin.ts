@@ -13,17 +13,25 @@ let storageInstance: admin.storage.Storage;
 
 function getAdminApp() {
   if (getApps().length === 0) {
-    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    
+    const primaryServiceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const secondaryServiceAccountKey = process.env.SERVICE_ACCOUNT_KEY;
+    const serviceAccountKey = primaryServiceAccountKey || secondaryServiceAccountKey;
+    const credentialSource = primaryServiceAccountKey
+      ? 'firebase_service_account_key_env'
+      : secondaryServiceAccountKey
+        ? 'service_account_key_env'
+        : 'adc_default_credentials';
+
     if (!serviceAccountKey) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn("[Firebase Admin] WARNING: FIREBASE_SERVICE_ACCOUNT_KEY is missing. Admin features (Server-side Auth) are disabled in development.");
+        console.warn("[Firebase Admin] WARNING: FIREBASE_SERVICE_ACCOUNT_KEY and SERVICE_ACCOUNT_KEY are missing. Admin features (Server-side Auth) are disabled in development.");
         return null;
       }
-      
+
       // Fallback for Firebase Functions / Cloud Run (production)
       // Provides Application Default Credentials automatically.
       try {
+        console.info("[Firebase Admin] Credential source: adc_default_credentials");
         return admin.initializeApp({
           storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
@@ -33,6 +41,7 @@ function getAdminApp() {
     }
 
     try {
+      console.info(`[Firebase Admin] Credential source: ${credentialSource}`);
       let cleanKey = serviceAccountKey.trim();
       if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
         cleanKey = cleanKey.slice(1, -1);
@@ -43,7 +52,7 @@ function getAdminApp() {
       if (serviceAccount.private_key) {
         serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
       }
-      
+
       return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -89,26 +98,26 @@ export function getAdminStorage() {
 export { getAdminApp };
 
 export async function getAdminFileContentFromStorage(storagePath: string): Promise<string> {
-    if (!storagePath) {
-        console.warn("Admin Storage: Storage path is empty, returning empty content.");
-        return '';
+  if (!storagePath) {
+    console.warn("Admin Storage: Storage path is empty, returning empty content.");
+    return '';
+  }
+  try {
+    const adminStorage = getAdminStorage();
+    if (!adminStorage) {
+      console.warn("Admin Storage: SDK not initialized, returning empty content.");
+      return '';
     }
-    try {
-        const adminStorage = getAdminStorage();
-        if (!adminStorage) {
-            console.warn("Admin Storage: SDK not initialized, returning empty content.");
-            return '';
-        }
-        const bucket = adminStorage.bucket();
-        const file = bucket.file(storagePath);
-        const [exists] = await file.exists();
-        if (!exists) {
-            throw new Error(`File does not exist at path: ${storagePath}`);
-        }
-        const contents = await file.download();
-        return contents.toString('utf-8');
-    } catch (error: any) {
-        console.error(`Admin Storage: Failed to fetch content from ${storagePath}:`, error);
-        return ''; // Silent fail for content fetching in dev
+    const bucket = adminStorage.bucket();
+    const file = bucket.file(storagePath);
+    const [exists] = await file.exists();
+    if (!exists) {
+      throw new Error(`File does not exist at path: ${storagePath}`);
     }
+    const [contents] = await file.download();
+    return contents.toString('utf-8');
+  } catch (error: any) {
+    console.error(`Admin Storage: Failed to fetch content from ${storagePath}:`, error);
+    return ''; // Silent fail for content fetching in dev
+  }
 }

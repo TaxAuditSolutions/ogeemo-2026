@@ -131,6 +131,51 @@ const DETERMINISTIC_IDENTITY_ANSWERS = {
         "I can also help with tasks like assistant-supported identity questions and procedural troubleshooting, and I will ask for clarification when a route or action is ambiguous.",
     ].join(" "),
 };
+const REFUSAL_PATTERNS = [
+    "provided guide context does not contain",
+    "does not contain a direct definition",
+    "cannot tell you based on the information provided",
+    "the provided context does not contain",
+    "the provided guide context does not contain",
+    "i cannot tell you what",
+    "i cannot answer",
+    "can't answer",
+    "outside the provided guide context",
+    "outside the guide context",
+    "no relevant guide context",
+    "not in the provided context",
+    "i do not have enough context",
+    "insufficient context",
+];
+const POLICY_REFUSAL_PATTERNS = [
+    "i cannot help with that",
+    "i can't help with that",
+    "i cannot assist with that",
+    "i can't assist with that",
+    "not able to assist with that request",
+];
+function normalizeAnswerText(value) {
+    return typeof value === "string" ? value.trim() : "";
+}
+function assessRefusal(answer, answeredFromGuides) {
+    const normalized = answer.toLowerCase();
+    if (!normalized) {
+        return {
+            refusal: true,
+            refusalReason: answeredFromGuides ? "insufficient_guide_detail" : "no_guide_match",
+        };
+    }
+    if (POLICY_REFUSAL_PATTERNS.some((pattern) => normalized.includes(pattern))) {
+        return { refusal: true, refusalReason: "policy_refusal" };
+    }
+    if (REFUSAL_PATTERNS.some((pattern) => normalized.includes(pattern))) {
+        return {
+            refusal: true,
+            refusalReason: answeredFromGuides ? "insufficient_guide_detail" : "no_guide_match",
+        };
+    }
+    return { refusal: false, refusalReason: "none" };
+}
 function isMissingVectorIndexError(error) {
     if (typeof error !== "object" || error === null) {
         return false;
@@ -440,18 +485,28 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
         const responseMode = requestedMode === "verification"
             ? "verification"
             : "chat";
+        const questionType = classifyQuestionType(question);
         // Deterministic identity fast-path for explicit platform-definition questions.
         if (responseMode === "chat") {
             const deterministicIdentityIntent = resolveDeterministicIdentityIntent(question);
             if (deterministicIdentityIntent) {
                 const deterministicAnswer = DETERMINISTIC_IDENTITY_ANSWERS[deterministicIdentityIntent];
                 if (deterministicAnswer) {
+                    const metadata = {
+                        answeredFromGuides: true,
+                        refusal: false,
+                        refusalReason: "none",
+                        answerSource: "deterministic_identity",
+                        questionType,
+                        contextChunkCount: 0,
+                        responseMode,
+                    };
                     logger.info("ogeemoAssistant identity handler matched", {
                         resolvedIdentityIntent: deterministicIdentityIntent,
                         questionType: "identity_or_navigation",
                         usedDeterministicIdentityHandler: true,
                     });
-                    res.status(200).json({ answer: deterministicAnswer });
+                    res.status(200).json({ answer: deterministicAnswer, _metadata: metadata });
                     return;
                 }
             }
@@ -528,7 +583,6 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
         }
         // 3) Build context from retrieved docs
         const queryPhrases = getQueryPhrases(question);
-        const questionType = classifyQuestionType(question);
         const scoredDocs = [...snapshot.docs]
             .map((doc) => {
             const data = doc.data();
@@ -602,7 +656,16 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                 .trim();
             if (deterministicAnswer.length > 0) {
                 if (responseMode === "verification") {
-                    res.status(200).json({ answer: deterministicAnswer });
+                    const metadata = {
+                        answeredFromGuides: true,
+                        refusal: false,
+                        refusalReason: "none",
+                        answerSource: "exact_intent_structured",
+                        questionType,
+                        contextChunkCount: exactIntentDocs.length,
+                        responseMode,
+                    };
+                    res.status(200).json({ answer: deterministicAnswer, _metadata: metadata });
                     return;
                 }
                 // Reuse the exact-intent grounded answer as context input for natural chat phrasing.
@@ -712,8 +775,19 @@ exports.ogeemoAssistant = (0, https_1.onRequest)({ cors: true, region: "us-centr
                     `User question: ${question}`,
                 ].join("\n");
         const answerResult = await textModel.generateContent(prompt);
-        const answer = answerResult.response.text().trim();
-        res.status(200).json({ answer });
+        const answer = normalizeAnswerText(answerResult.response.text());
+        const answeredFromGuides = exactIntentStructuredAnswer.length > 0 || contextChunks.length > 0;
+        const refusalAssessment = assessRefusal(answer, answeredFromGuides);
+        const metadata = {
+            answeredFromGuides,
+            refusal: refusalAssessment.refusal,
+            refusalReason: refusalAssessment.refusalReason,
+            answerSource: "gemini_generated",
+            questionType,
+            contextChunkCount: contextChunks.length,
+            responseMode,
+        };
+        res.status(200).json({ answer, _metadata: metadata });
     }
     catch (error) {
         logger.error("ogeemoAssistant error", error);

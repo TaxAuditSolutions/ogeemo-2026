@@ -139,6 +139,72 @@ const DETERMINISTIC_IDENTITY_ANSWERS: Record<string, string> = {
     ].join(" "),
 };
 
+type AssistantRefusalReason = "none" | "no_guide_match" | "insufficient_guide_detail" | "policy_refusal";
+type AssistantAnswerSource = "deterministic_identity" | "exact_intent_structured" | "gemini_generated";
+
+interface AssistantResponseMetadata {
+    answeredFromGuides: boolean;
+    refusal: boolean;
+    refusalReason: AssistantRefusalReason;
+    answerSource: AssistantAnswerSource;
+    questionType: "identity_or_navigation" | "procedural_or_other";
+    contextChunkCount: number;
+    responseMode: "chat" | "verification";
+}
+
+const REFUSAL_PATTERNS = [
+    "provided guide context does not contain",
+    "does not contain a direct definition",
+    "cannot tell you based on the information provided",
+    "the provided context does not contain",
+    "the provided guide context does not contain",
+    "i cannot tell you what",
+    "i cannot answer",
+    "can't answer",
+    "outside the provided guide context",
+    "outside the guide context",
+    "no relevant guide context",
+    "not in the provided context",
+    "i do not have enough context",
+    "insufficient context",
+];
+
+const POLICY_REFUSAL_PATTERNS = [
+    "i cannot help with that",
+    "i can't help with that",
+    "i cannot assist with that",
+    "i can't assist with that",
+    "not able to assist with that request",
+];
+
+function normalizeAnswerText(value: unknown): string {
+    return typeof value === "string" ? value.trim() : "";
+}
+
+function assessRefusal(answer: string, answeredFromGuides: boolean): { refusal: boolean; refusalReason: AssistantRefusalReason } {
+    const normalized = answer.toLowerCase();
+
+    if (!normalized) {
+        return {
+            refusal: true,
+            refusalReason: answeredFromGuides ? "insufficient_guide_detail" : "no_guide_match",
+        };
+    }
+
+    if (POLICY_REFUSAL_PATTERNS.some((pattern) => normalized.includes(pattern))) {
+        return { refusal: true, refusalReason: "policy_refusal" };
+    }
+
+    if (REFUSAL_PATTERNS.some((pattern) => normalized.includes(pattern))) {
+        return {
+            refusal: true,
+            refusalReason: answeredFromGuides ? "insufficient_guide_detail" : "no_guide_match",
+        };
+    }
+
+    return { refusal: false, refusalReason: "none" };
+}
+
 function isMissingVectorIndexError(error: unknown): boolean {
     if (typeof error !== "object" || error === null) {
         return false;
@@ -509,6 +575,7 @@ export const ogeemoAssistant = onRequest(
             const responseMode: "chat" | "verification" = requestedMode === "verification"
                 ? "verification"
                 : "chat";
+            const questionType = classifyQuestionType(question);
 
             // Deterministic identity fast-path for explicit platform-definition questions.
             if (responseMode === "chat") {
@@ -516,12 +583,21 @@ export const ogeemoAssistant = onRequest(
                 if (deterministicIdentityIntent) {
                     const deterministicAnswer = DETERMINISTIC_IDENTITY_ANSWERS[deterministicIdentityIntent];
                     if (deterministicAnswer) {
+                        const metadata: AssistantResponseMetadata = {
+                            answeredFromGuides: true,
+                            refusal: false,
+                            refusalReason: "none",
+                            answerSource: "deterministic_identity",
+                            questionType,
+                            contextChunkCount: 0,
+                            responseMode,
+                        };
                         logger.info("ogeemoAssistant identity handler matched", {
                             resolvedIdentityIntent: deterministicIdentityIntent,
                             questionType: "identity_or_navigation",
                             usedDeterministicIdentityHandler: true,
                         });
-                        res.status(200).json({ answer: deterministicAnswer });
+                        res.status(200).json({ answer: deterministicAnswer, _metadata: metadata });
                         return;
                     }
                 }
@@ -622,7 +698,6 @@ export const ogeemoAssistant = onRequest(
 
             // 3) Build context from retrieved docs
             const queryPhrases = getQueryPhrases(question);
-            const questionType = classifyQuestionType(question);
 
             const scoredDocs = [...snapshot.docs]
                 .map((doc) => {
@@ -718,7 +793,16 @@ export const ogeemoAssistant = onRequest(
 
                 if (deterministicAnswer.length > 0) {
                     if (responseMode === "verification") {
-                        res.status(200).json({ answer: deterministicAnswer });
+                        const metadata: AssistantResponseMetadata = {
+                            answeredFromGuides: true,
+                            refusal: false,
+                            refusalReason: "none",
+                            answerSource: "exact_intent_structured",
+                            questionType,
+                            contextChunkCount: exactIntentDocs.length,
+                            responseMode,
+                        };
+                        res.status(200).json({ answer: deterministicAnswer, _metadata: metadata });
                         return;
                     }
 
@@ -855,9 +939,20 @@ export const ogeemoAssistant = onRequest(
                     ].join("\n");
 
             const answerResult = await textModel.generateContent(prompt);
-            const answer = answerResult.response.text().trim();
+            const answer = normalizeAnswerText(answerResult.response.text());
+            const answeredFromGuides = exactIntentStructuredAnswer.length > 0 || contextChunks.length > 0;
+            const refusalAssessment = assessRefusal(answer, answeredFromGuides);
+            const metadata: AssistantResponseMetadata = {
+                answeredFromGuides,
+                refusal: refusalAssessment.refusal,
+                refusalReason: refusalAssessment.refusalReason,
+                answerSource: "gemini_generated",
+                questionType,
+                contextChunkCount: contextChunks.length,
+                responseMode,
+            };
 
-            res.status(200).json({ answer });
+            res.status(200).json({ answer, _metadata: metadata });
         } catch (error) {
             logger.error("ogeemoAssistant error", error);
             res.status(500).json({

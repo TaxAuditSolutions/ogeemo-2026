@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ogeemoAgent } from '@/ai/flows/ogeemo-chat';
+import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent } from '@/ai/flows/ogeemo-chat';
 
 const DEFAULT_ASSISTANT_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
             console.info('/api/ogeemo-assistant source', {
                 source: 'functions_primary',
                 reason: fallbackDecision.reason,
-                decisionPath: 'metadata_or_legacy_primary',
+                decisionPath: 'functions_primary',
                 functionsRefusal: functionsMetadata?.refusal ?? null,
                 refusalReason: functionsMetadata?.refusalReason ?? null,
                 genkitAttempted: false,
@@ -153,7 +153,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
         }
 
+        console.info('/api/ogeemo-assistant fallback-triggered', {
+            reason: fallbackDecision.reason,
+            decisionPath: 'functions_miss_trigger_fallback',
+            functionsRefusal: functionsMetadata?.refusal ?? null,
+            refusalReason: functionsMetadata?.refusalReason ?? null,
+        });
+
+        let operationalOutcome: 'accepted' | 'empty_reply' | 'refusal_pattern' | 'error' = 'error';
         try {
+            console.info('/api/ogeemo-assistant genkit-operational-attempt', {
+                decisionPath: 'genkit_operational_attempt',
+                reason: fallbackDecision.reason,
+            });
+
             const genkitResult = await ogeemoAgent({
                 message: question,
                 history,
@@ -163,26 +176,76 @@ export async function POST(request: NextRequest) {
             const genkitAnswer = normalizeAnswerText(genkitResult?.reply);
             if (genkitAnswer && !hasLegacyRefusalPattern(genkitAnswer)) {
                 console.info('/api/ogeemo-assistant source', {
-                    source: 'genkit_fallback',
+                    source: 'genkit_operational_accepted',
                     reason: fallbackDecision.reason,
-                    decisionPath: 'genkit_fallback_accepted',
+                    decisionPath: 'functions_miss->genkit_operational_accepted',
                     functionsRefusal: functionsMetadata?.refusal ?? null,
                     refusalReason: functionsMetadata?.refusalReason ?? null,
                     genkitAttempted: true,
+                    genkitOperationalOutcome: 'accepted',
                 });
                 return NextResponse.json({ answer: genkitAnswer }, { status: 200 });
             }
+
+            operationalOutcome = genkitAnswer ? 'refusal_pattern' : 'empty_reply';
+            console.info('/api/ogeemo-assistant genkit-operational-miss', {
+                decisionPath: 'functions_miss->genkit_operational_miss',
+                reason: fallbackDecision.reason,
+                genkitOperationalOutcome: operationalOutcome,
+            });
         } catch (fallbackError) {
+            operationalOutcome = 'error';
             console.warn('/api/ogeemo-assistant genkit fallback failed', fallbackError);
         }
 
+        let generalOutcome: 'accepted' | 'empty_reply' | 'refusal_pattern' | 'error' = 'error';
+        try {
+            console.info('/api/ogeemo-assistant genkit-general-knowledge-attempt', {
+                decisionPath: 'genkit_general_knowledge_attempt',
+                reason: fallbackDecision.reason,
+            });
+
+            const generalResult = await ogeemoGeneralKnowledgeFallbackAgent({
+                message: question,
+                history,
+                clientUserId: sessionId || 'ogeemo-guest',
+            });
+
+            const generalAnswer = normalizeAnswerText(generalResult?.reply);
+            if (generalAnswer && !hasLegacyRefusalPattern(generalAnswer)) {
+                console.info('/api/ogeemo-assistant source', {
+                    source: 'genkit_general_knowledge_accepted',
+                    reason: fallbackDecision.reason,
+                    decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_accepted',
+                    functionsRefusal: functionsMetadata?.refusal ?? null,
+                    refusalReason: functionsMetadata?.refusalReason ?? null,
+                    genkitAttempted: true,
+                    genkitOperationalOutcome: operationalOutcome,
+                    genkitGeneralKnowledgeOutcome: 'accepted',
+                });
+                return NextResponse.json({ answer: generalAnswer }, { status: 200 });
+            }
+
+            generalOutcome = generalAnswer ? 'refusal_pattern' : 'empty_reply';
+            console.info('/api/ogeemo-assistant genkit-general-knowledge-miss', {
+                decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_miss',
+                reason: fallbackDecision.reason,
+                genkitGeneralKnowledgeOutcome: generalOutcome,
+            });
+        } catch (fallbackError) {
+            generalOutcome = 'error';
+            console.warn('/api/ogeemo-assistant genkit general knowledge fallback failed', fallbackError);
+        }
+
         console.info('/api/ogeemo-assistant source', {
-            source: 'functions_fallback_after_genkit_miss',
+            source: 'functions_fallback_both_miss',
             reason: functionsAnswer ? 'genkit_no_better_answer' : fallbackDecision.reason,
-            decisionPath: 'genkit_fallback_miss_return_functions',
+            decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_miss->return_functions',
             functionsRefusal: functionsMetadata?.refusal ?? null,
             refusalReason: functionsMetadata?.refusalReason ?? null,
             genkitAttempted: true,
+            genkitOperationalOutcome: operationalOutcome,
+            genkitGeneralKnowledgeOutcome: generalOutcome,
         });
 
         return NextResponse.json({ answer: functionsAnswer }, { status: 200 });

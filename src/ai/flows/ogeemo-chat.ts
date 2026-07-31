@@ -4,7 +4,6 @@
  * This agent can answer questions about Ogeemo and execute operational commands via tools.
  */
 import { ai } from '@/ai/genkit';
-import { gemini25FlashPreview0417 } from '@genkit-ai/googleai';
 import { z } from 'zod';
 import { getAdminDb } from '@/core/firebase-admin';
 import { getCurrentUserId } from '@/app/actions';
@@ -24,6 +23,8 @@ const OgeemoAgentInputSchema = z.object({
   localContext: z.any().optional(),
 });
 export type OgeemoAgentInput = z.infer<typeof OgeemoAgentInputSchema>;
+
+const STABLE_GEMINI_MODEL = 'googleai/gemini-2.5-flash';
 
 // --- Tools ---
 
@@ -319,6 +320,35 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 {{{knowledgeBase}}}
 `;
 
+const generalKnowledgeFallbackPrompt = `
+You are Ogeemo Assistant.
+Ogeemo is a business operating system for bookkeeping, contacts, projects, documents, tasks, and AI-assisted workflows.
+When invoked in fallback mode, answer the user's question using your general knowledge instead of relying on Ogeemo guide documents.
+Respond conversationally in Markdown.
+If you are genuinely uncertain, say so briefly and suggest the closest practical next step.
+`;
+
+function buildScrubbedMessages(history: any[] | undefined, message: string): any[] {
+  const scrubbedMessages: any[] = (history || []).map(msg => {
+    const rawRole = (msg.role || 'user').toLowerCase();
+    const role = rawRole === 'model' || rawRole === 'assistant' || rawRole === 'bot' ? 'model' : 'user';
+
+    let scrubbedContent = [];
+    if (typeof msg.content === 'string') {
+      scrubbedContent = [{ text: msg.content }];
+    } else if (Array.isArray(msg.content)) {
+      scrubbedContent = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
+    } else {
+      scrubbedContent = [{ text: msg.message || JSON.stringify(msg) }];
+    }
+
+    return { role, content: scrubbedContent };
+  });
+
+  scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
+  return scrubbedMessages;
+}
+
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
@@ -327,32 +357,14 @@ const ogeemoAgentFlow = ai.defineFlow(
   },
   async (input) => {
     const { userId, message, history, localContext } = input;
-
-    // Surgical Data Scrubbing: Manually rebuild history to be 100% SDK compliant
-    const scrubbedMessages: any[] = (history || []).map(msg => {
-      const rawRole = (msg.role || 'user').toLowerCase();
-      const role = rawRole === 'model' || rawRole === 'assistant' || rawRole === 'bot' ? 'model' : 'user';
-
-      let scrubbedContent = [];
-      if (typeof msg.content === 'string') {
-        scrubbedContent = [{ text: msg.content }];
-      } else if (Array.isArray(msg.content)) {
-        scrubbedContent = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
-      } else {
-        scrubbedContent = [{ text: msg.message || JSON.stringify(msg) }];
-      }
-
-      return { role, content: scrubbedContent };
-    });
-
-    scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
+    const scrubbedMessages = buildScrubbedMessages(history, message);
 
     const knowledgeBase = getKnowledgeBase();
     const finalSystemPrompt = systemPromptTemplate.replace('{{{knowledgeBase}}}', knowledgeBase);
 
     try {
       const result = await ai.generate({
-        model: gemini25FlashPreview0417,
+        model: STABLE_GEMINI_MODEL,
         messages: scrubbedMessages,
         tools: [searchGlobalTool, searchContactsTool, createTaskTool, syncReceiptsTool],
         system: finalSystemPrompt,
@@ -376,9 +388,48 @@ const ogeemoAgentFlow = ai.defineFlow(
   }
 );
 
+const ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow(
+  {
+    name: 'ogeemoGeneralKnowledgeFallbackFlow',
+    inputSchema: OgeemoAgentInputSchema.extend({ userId: z.string() }),
+    outputSchema: z.object({ reply: z.string() }),
+  },
+  async (input) => {
+    const { message, history } = input;
+    const scrubbedMessages = buildScrubbedMessages(history, message);
+
+    try {
+      const result = await ai.generate({
+        model: STABLE_GEMINI_MODEL,
+        messages: scrubbedMessages,
+        system: generalKnowledgeFallbackPrompt,
+        config: { temperature: 0.1 },
+      });
+
+      return { reply: result.text || "I processed your request." };
+    } catch (error: any) {
+      console.error("[ogeemoGeneralKnowledgeFallbackFlow] Critical Fetch error:", error);
+
+      let userErrorMessage = "The Google AI service is currently unresponsive.";
+      if (error.message?.includes('fetch failed')) {
+        userErrorMessage = "Network transmission failed. Please check your internet connection or if Google AI services are restricted in your region.";
+      } else if (error.message?.includes('API key')) {
+        userErrorMessage = "AI Authorization failed. There is an issue with the GEMINI_API_KEY.";
+      }
+
+      throw new Error(`${userErrorMessage} (Technical Info: ${error.message})`);
+    }
+  }
+);
+
 export async function ogeemoAgent(input: { message: string, history: any[], clientUserId: string, localContext?: any }): Promise<{ reply: string }> {
   // The user identity is now passed directly from the API endpoint to ensure stability.
   const userId = input.clientUserId || 'ogeemo-guest';
   const localContext = input.localContext || null;
   return ogeemoAgentFlow({ ...input, userId, localContext });
+}
+
+export async function ogeemoGeneralKnowledgeFallbackAgent(input: { message: string, history: any[], clientUserId: string }): Promise<{ reply: string }> {
+  const userId = input.clientUserId || 'ogeemo-guest';
+  return ogeemoGeneralKnowledgeFallbackFlow({ ...input, userId });
 }

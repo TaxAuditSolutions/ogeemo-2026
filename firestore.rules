@@ -150,6 +150,7 @@ service cloud.firestore {
     match /hrQuickNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     match /availableHrNavItems/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     match /dialogSettings/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
+    match /userAssistantChatSessions/{userId} { allow read, write: if isSignedIn() && request.auth.uid == userId; }
     
     // ---------------------------------------------------------
     // Public/System collections

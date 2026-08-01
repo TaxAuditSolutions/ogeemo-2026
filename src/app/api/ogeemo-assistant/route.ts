@@ -106,42 +106,70 @@ export async function POST(request: NextRequest) {
 
         const assistantUrl = process.env.OGEEMO_ASSISTANT_URL || DEFAULT_ASSISTANT_URL;
 
-        const upstreamResponse = await fetch(assistantUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ question, history, sessionId }),
-            cache: "no-store",
-        });
-
+        let upstreamResponse: Response | null = null;
         let upstreamJson: any = null;
-        try {
-            upstreamJson = await upstreamResponse.json();
-        } catch {
-            return NextResponse.json(
-                { error: "Ogeemo Assistant returned a non-JSON response." },
-                { status: 502 }
-            );
-        }
+        let upstreamStatus: number | null = null;
+        let upstreamContentType: string | null = null;
+        let upstreamFailureKind: 'none' | 'fetch_error' | 'non_json' | 'http_error' = 'none';
 
-        if (!upstreamResponse.ok) {
-            return NextResponse.json(
-                {
-                    error:
-                        upstreamJson?.error ||
-                        upstreamJson?.details ||
-                        "Ogeemo Assistant request failed.",
+        try {
+            const controller = new AbortController();
+            const timeoutMs = 10000;
+            const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+            upstreamResponse = await fetch(assistantUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-                { status: upstreamResponse.status }
-            );
+                body: JSON.stringify({ question, history, sessionId }),
+                cache: "no-store",
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeout);
+
+            upstreamStatus = upstreamResponse.status;
+            upstreamContentType = upstreamResponse.headers.get('content-type');
+
+            const upstreamText = await upstreamResponse.text();
+            if (upstreamText) {
+                try {
+                    upstreamJson = JSON.parse(upstreamText);
+                } catch {
+                    upstreamFailureKind = 'non_json';
+                    console.warn('/api/ogeemo-assistant upstream-non-json', {
+                        upstreamStatus,
+                        upstreamContentType,
+                        bodyPreview: upstreamText.slice(0, 200),
+                    });
+                }
+            }
+
+            if (!upstreamResponse.ok && upstreamFailureKind === 'none') {
+                upstreamFailureKind = 'http_error';
+                console.warn('/api/ogeemo-assistant upstream-http-error', {
+                    upstreamStatus,
+                    upstreamContentType,
+                    upstreamError: upstreamJson?.error ?? upstreamJson?.details ?? null,
+                });
+            }
+        } catch (upstreamError) {
+            upstreamFailureKind = 'fetch_error';
+            const message = upstreamError instanceof Error ? upstreamError.message : String(upstreamError);
+            console.warn('/api/ogeemo-assistant upstream-fetch-error', {
+                message,
+                assistantUrl,
+            });
         }
 
         const functionsAnswer = normalizeAnswerText(upstreamJson?.answer);
         const functionsMetadata = parseUpstreamMetadata(upstreamJson?._metadata);
         const fallbackDecision = determineFallbackDecision(functionsAnswer, functionsMetadata);
 
-        if (functionsAnswer && !fallbackDecision.shouldFallback) {
+        const shouldForceFallbackFromUpstreamFailure = upstreamFailureKind !== 'none';
+
+        if (functionsAnswer && !fallbackDecision.shouldFallback && !shouldForceFallbackFromUpstreamFailure) {
             console.info('/api/ogeemo-assistant source', {
                 source: 'functions_primary',
                 reason: fallbackDecision.reason,
@@ -149,15 +177,19 @@ export async function POST(request: NextRequest) {
                 functionsRefusal: functionsMetadata?.refusal ?? null,
                 refusalReason: functionsMetadata?.refusalReason ?? null,
                 genkitAttempted: false,
+                upstreamFailureKind,
             });
             return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
         }
 
         console.info('/api/ogeemo-assistant fallback-triggered', {
-            reason: fallbackDecision.reason,
+            reason: shouldForceFallbackFromUpstreamFailure ? upstreamFailureKind : fallbackDecision.reason,
             decisionPath: 'functions_miss_trigger_fallback',
             functionsRefusal: functionsMetadata?.refusal ?? null,
             refusalReason: functionsMetadata?.refusalReason ?? null,
+            upstreamStatus,
+            upstreamContentType,
+            upstreamFailureKind,
         });
 
         let operationalOutcome: 'accepted' | 'empty_reply' | 'refusal_pattern' | 'error' = 'error';
@@ -183,6 +215,7 @@ export async function POST(request: NextRequest) {
                     refusalReason: functionsMetadata?.refusalReason ?? null,
                     genkitAttempted: true,
                     genkitOperationalOutcome: 'accepted',
+                    upstreamFailureKind,
                 });
                 return NextResponse.json({ answer: genkitAnswer }, { status: 200 });
             }
@@ -222,6 +255,7 @@ export async function POST(request: NextRequest) {
                     genkitAttempted: true,
                     genkitOperationalOutcome: operationalOutcome,
                     genkitGeneralKnowledgeOutcome: 'accepted',
+                    upstreamFailureKind,
                 });
                 return NextResponse.json({ answer: generalAnswer }, { status: 200 });
             }
@@ -246,9 +280,35 @@ export async function POST(request: NextRequest) {
             genkitAttempted: true,
             genkitOperationalOutcome: operationalOutcome,
             genkitGeneralKnowledgeOutcome: generalOutcome,
+            upstreamFailureKind,
+            upstreamStatus,
         });
 
-        return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
+        if (functionsAnswer) {
+            return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
+        }
+
+        const terminalError =
+            upstreamFailureKind === 'non_json'
+                ? 'Ogeemo Assistant returned a non-JSON response and fallback could not provide an answer.'
+                : upstreamFailureKind === 'http_error'
+                    ? 'Ogeemo Assistant upstream error and fallback could not provide an answer.'
+                    : upstreamFailureKind === 'fetch_error'
+                        ? 'Could not reach Ogeemo Assistant upstream and fallback could not provide an answer.'
+                        : 'No answer returned from Ogeemo Assistant or fallback.';
+
+        return NextResponse.json(
+            {
+                error: terminalError,
+                details: {
+                    upstreamFailureKind,
+                    upstreamStatus,
+                    genkitOperationalOutcome: operationalOutcome,
+                    genkitGeneralKnowledgeOutcome: generalOutcome,
+                },
+            },
+            { status: 502 }
+        );
     } catch (error) {
         console.error("/api/ogeemo-assistant error", error);
         return NextResponse.json(

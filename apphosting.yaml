@@ -9,8 +9,10 @@ run:
 # and make it available as an environment variable to the running server.
 secretEnvironmentVariables:
   - key: FIREBASE_SERVICE_ACCOUNT_KEY
-    secret: firebase-service-account-key
+    secret: SERVICE_ACCOUNT_KEY
   - key: GEMINI_API_KEY
-    secret: gemini-api-key
+    secret: GEMINI_API_KEY
+  - key: OGEEMO_ASSISTANT_URL
+    secret: OGEEMO_ASSISTANT_URL
 # Pin to a specific version of Node.js
 runtime: nodejs20

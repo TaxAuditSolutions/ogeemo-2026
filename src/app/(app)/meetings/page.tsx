@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AgendaForm } from '@/components/meetings/agenda-form';
 import { getMeetings } from '@/services/meetings-service';
 import { type Meeting } from '@/types/meetings';
@@ -12,6 +12,14 @@ import { useAuth } from '@/context/auth-context';
 import { useSearchParams } from 'next/navigation';
 
 export default function MeetingsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <MeetingsPageContent />
+        </Suspense>
+    );
+}
+
+function MeetingsPageContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const [meetings, setMeetings] = useState<Meeting[]>([]);

@@ -805,7 +805,13 @@ export function LedgersView() {
                                 <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
                                 <h3 className="text-2xl font-bold">7. The Result: Total Defense</h3>
                             </div>
-                                </Card>
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-base">
+                                <p>
+                                    By maintaining a reconciled ledger with clear audit rationales, you build an impenetrable defense against any tax inquiry. Every entry is backed by physical bank evidence and a documented business purpose.
+                                </p>
+                                <p className="font-semibold text-foreground border-l-4 border-primary pl-4 my-6">
+                                    The result is a Black Box of Evidence: a complete, chronological, and legally defensible record of your business financial activity.
+                                </p>
                             </div>
                         </section>
                         <div className="bg-muted p-10 rounded-3xl border-2 border-dashed text-center space-y-4">

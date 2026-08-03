@@ -805,24 +805,6 @@ export function LedgersView() {
                                 <div className="p-2 bg-primary/10 rounded-lg"><Scale className="h-5 w-5 text-primary" /></div>
                                 <h3 className="text-2xl font-bold">7. The Result: Total Defense</h3>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
-                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
-                                        <ShieldCheck className="h-5 w-5 text-primary" />
-                                        The Audit Shield
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        A reconciled transaction is <strong>pre-verified</strong> by your financial institution. This protects you from the auditor's default assumption that undocumented expenses are personal.
-                                    </p>
-                                </Card>
-                                <Card className="border-primary/10 bg-primary/5 shadow-none p-6">
-                                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
-                                        <Bot className="h-5 w-5 text-primary" />
-                                        Operational Intelligence
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Reconciliation ensures your <strong>Financial Snapshot</strong> is a high-fidelity mirror of reality, with zero administrative gaps in your cash position.
-                                    </p>
                                 </Card>
                             </div>
                         </section>

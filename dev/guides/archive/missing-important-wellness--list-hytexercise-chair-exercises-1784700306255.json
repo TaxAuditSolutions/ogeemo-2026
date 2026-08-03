@@ -1,0 +1,65 @@
+{
+  "guideId": "wellness--list-hytexercise-chair-exercises",
+  "title": "List Hytexercise Chair Exercises in Wellness",
+  "module": "wellness",
+  "intent": "list-hytexercise-chair-exercises",
+  "targetAudience": "general",
+  "description": "Complete the list hytexercise chair exercises workflow in the Wellness module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Wellness module in the current Ogeemo environment.",
+    "Required data inputs for list hytexercise chair exercises are prepared before starting."
+  ],
+  "steps": [
+    "Open the Wellness module from the main navigation.",
+    "Locate the list hytexercise chair exercises entry point in the module workflow.",
+    "Enter or select the required inputs for list hytexercise chair exercises.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "List Hytexercise Chair Exercises completes without warnings or blockers.",
+    "Resulting records are visible in the expected Wellness views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during list hytexercise chair exercises.",
+    "Permission constraints prevent completion of list hytexercise chair exercises.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun list hytexercise chair exercises.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun list hytexercise chair exercises?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm list hytexercise chair exercises is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "wellness",
+    "list-hytexercise-chair-exercises",
+    "general",
+    "list",
+    "hytexercise",
+    "chair",
+    "exercises",
+    "list hytexercise chair exercises"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.254Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.254Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for wellness--list-hytexercise-chair-exercises"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

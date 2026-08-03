@@ -1,0 +1,66 @@
+{
+  "guideId": "user-manager--revoke-user-access-level",
+  "title": "Revoke User Access Level in User Manager",
+  "module": "user-manager",
+  "intent": "revoke-user-access-level",
+  "targetAudience": "admin",
+  "description": "Complete the revoke user access level workflow in the User Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the User Manager module in the current Ogeemo environment.",
+    "Required data inputs for revoke user access level are prepared before starting."
+  ],
+  "steps": [
+    "Open the User Manager module from the main navigation.",
+    "Locate the revoke user access level entry point in the module workflow.",
+    "Enter or select the required inputs for revoke user access level.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Revoke User Access Level completes without warnings or blockers.",
+    "Resulting records are visible in the expected User Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during revoke user access level.",
+    "Permission constraints prevent completion of revoke user access level.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun revoke user access level.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun revoke user access level?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm revoke user access level is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "user-manager",
+    "revoke-user-access-level",
+    "admin",
+    "revoke",
+    "user",
+    "access",
+    "level",
+    "user manager",
+    "revoke user access level"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.863Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.863Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for user-manager--revoke-user-access-level"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

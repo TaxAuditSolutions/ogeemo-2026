@@ -1,0 +1,66 @@
+{
+  "guideId": "accounting--perform-variance-analysis-for-audit",
+  "title": "Perform Variance Analysis For Audit in Accounting",
+  "module": "accounting",
+  "intent": "perform-variance-analysis-for-audit",
+  "targetAudience": "accountant",
+  "description": "Complete the perform variance analysis for audit workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for perform variance analysis for audit are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the perform variance analysis for audit entry point in the module workflow.",
+    "Enter or select the required inputs for perform variance analysis for audit.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Perform Variance Analysis For Audit completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during perform variance analysis for audit.",
+    "Permission constraints prevent completion of perform variance analysis for audit.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun perform variance analysis for audit.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun perform variance analysis for audit?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm perform variance analysis for audit is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "perform-variance-analysis-for-audit",
+    "accountant",
+    "perform",
+    "variance",
+    "analysis",
+    "for",
+    "audit",
+    "perform variance analysis for audit"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:51:57.953Z",
+  "lastVerifiedAt": "2026-07-21T05:51:57.953Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--perform-variance-analysis-for-audit"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

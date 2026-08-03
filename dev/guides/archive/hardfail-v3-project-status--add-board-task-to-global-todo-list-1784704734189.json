@@ -1,0 +1,77 @@
+{
+  "guideId": "project-status--add-board-task-to-global-todo-list",
+  "title": "Add Board Task To Global Todo List in Project Status",
+  "module": "project-status",
+  "intent": "add-board-task-to-global-todo-list",
+  "targetAudience": "general",
+  "description": "Answer: How do I add board task to global todo list? This is the canonical Project Status workflow for add-board-task-to-global-todo-list.",
+  "prerequisites": [
+    "You are signed in as general and can access Project Status.",
+    "Route /projects is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for add-board-task-to-global-todo-list are available before execution."
+  ],
+  "steps": [
+    "Navigate to /projects and open Project Status.",
+    "Verify active workspace/company context before running add board task to global todo list.",
+    "Open the exact workflow action labeled for add board task to global todo list.",
+    "Enter required fields for add board task to global todo list (entity selection, date range, and status where applicable).",
+    "Apply changes and execute add board task to global todo list with explicit confirmation in the UI.",
+    "Complete required fields and verify newly created record appears in the target list.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The add-board-task-to-global-todo-list action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Project Status lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting add-board-task-to-global-todo-list.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /projects, reapply field values, and rerun add-board-task-to-global-todo-list with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I add board task to global todo list?",
+      "answer": "Open Project Status at /projects, run add board task to global todo list with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot add board task to global todo list if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "add-board-task-to-global-todo-list",
+    "add board task to global todo list",
+    "/projects",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "add",
+    "board",
+    "task",
+    "to",
+    "global",
+    "todo",
+    "list"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.189Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.189Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/projects",
+    "workflowInstruction": "Hard-fail remediation guide for project-status--add-board-task-to-global-todo-list"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

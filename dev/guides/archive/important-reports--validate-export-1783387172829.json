@@ -1,0 +1,64 @@
+{
+  "guideId": "reports--validate-export",
+  "title": "Validate Export in Reports",
+  "module": "reports",
+  "intent": "validate-export",
+  "targetAudience": "general",
+  "description": "Complete the validate export workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for validate export are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the validate export entry point in the module workflow.",
+    "Enter or select the required inputs for validate export.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Validate Export completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during validate export.",
+    "Permission constraints prevent completion of validate export.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun validate export.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun validate export?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm validate export is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "validate-export",
+    "general",
+    "reporting",
+    "validate",
+    "export",
+    "validate export"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T01:19:32.829Z",
+  "lastVerifiedAt": "2026-07-07T01:19:32.829Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--validate-export"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

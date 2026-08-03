@@ -1,0 +1,70 @@
+{
+  "guideId": "work-activity--print-work-activity-evidence-pdf",
+  "title": "Print Work Activity Evidence Pdf in Work Activity",
+  "module": "work-activity",
+  "intent": "print-work-activity-evidence-pdf",
+  "targetAudience": "general",
+  "description": "Use this guide to complete print work activity evidence pdf in Work Activity. Intent key: print-work-activity-evidence-pdf. Module key: work-activity.",
+  "prerequisites": [
+    "You are signed in with general access and can open Work Activity.",
+    "Records needed for print work activity evidence pdf are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Work Activity."
+  ],
+  "steps": [
+    "Open Work Activity from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Print Work Activity Evidence Pdf\" in Work Activity.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the print work activity evidence pdf action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Print Work Activity Evidence Pdf finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Work Activity lists, totals, or linked records.",
+    "Output references can be traced back to work-activity--print-work-activity-evidence-pdf with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing print-work-activity-evidence-pdf.",
+    "Insufficient permissions for general while attempting print-work-activity-evidence-pdf.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Work Activity, reapply required filters, and repeat print work activity evidence pdf.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm print work activity evidence pdf completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Work Activity immediately after execution."
+    },
+    {
+      "question": "What should I do if print work activity evidence pdf returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "work-activity",
+    "work activity",
+    "print-work-activity-evidence-pdf",
+    "print work activity evidence pdf",
+    "general",
+    "print",
+    "work",
+    "activity",
+    "evidence",
+    "pdf",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.185Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.185Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for work-activity--print-work-activity-evidence-pdf from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

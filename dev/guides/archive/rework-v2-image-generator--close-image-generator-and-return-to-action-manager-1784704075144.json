@@ -1,0 +1,73 @@
+{
+  "guideId": "image-generator--close-image-generator-and-return-to-action-manager",
+  "title": "Close Image Generator And Return To Action Manager in Image Generator",
+  "module": "image-generator",
+  "intent": "close-image-generator-and-return-to-action-manager",
+  "targetAudience": "general",
+  "description": "Use this guide to complete close image generator and return to action manager in Image Generator. Intent key: close-image-generator-and-return-to-action-manager. Module key: image-generator.",
+  "prerequisites": [
+    "You are signed in with general access and can open Image Generator.",
+    "Records needed for close image generator and return to action manager are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Image Generator."
+  ],
+  "steps": [
+    "Open Image Generator from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Close Image Generator And Return To Action Manager\" in Image Generator.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the close image generator and return to action manager action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Close Image Generator And Return To Action Manager finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Image Generator lists, totals, or linked records.",
+    "Output references can be traced back to image-generator--close-image-generator-and-return-to-action-manager with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing close-image-generator-and-return-to-action-manager.",
+    "Insufficient permissions for general while attempting close-image-generator-and-return-to-action-manager.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Image Generator, reapply required filters, and repeat close image generator and return to action manager.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm close image generator and return to action manager completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Image Generator immediately after execution."
+    },
+    {
+      "question": "What should I do if close image generator and return to action manager returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "tools",
+    "image-generator",
+    "image generator",
+    "close-image-generator-and-return-to-action-manager",
+    "close image generator and return to action manager",
+    "general",
+    "close",
+    "image",
+    "generator",
+    "and",
+    "return",
+    "to",
+    "action",
+    "manager",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.136Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.136Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for image-generator--close-image-generator-and-return-to-action-manager from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

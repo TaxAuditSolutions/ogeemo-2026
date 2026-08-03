@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--unlock-pay-period",
+  "title": "Unlock Pay Period in Payroll",
+  "module": "payroll",
+  "intent": "unlock-pay-period",
+  "targetAudience": "admin",
+  "description": "Complete the unlock pay period workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for unlock pay period are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the unlock pay period entry point in the module workflow.",
+    "Enter or select the required inputs for unlock pay period.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Unlock Pay Period completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during unlock pay period.",
+    "Permission constraints prevent completion of unlock pay period.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun unlock pay period.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun unlock pay period?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm unlock pay period is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "unlock-pay-period",
+    "admin",
+    "unlock",
+    "pay",
+    "period",
+    "unlock pay period"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.283Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.283Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--unlock-pay-period"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

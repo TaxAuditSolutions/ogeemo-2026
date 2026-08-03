@@ -1,0 +1,65 @@
+{
+  "guideId": "marketing--create-beta-waitlist-campaign",
+  "title": "Create Beta Waitlist Campaign in Marketing",
+  "module": "marketing",
+  "intent": "create-beta-waitlist-campaign",
+  "targetAudience": "consultant",
+  "description": "Complete the create beta waitlist campaign workflow in the Marketing module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Marketing module in the current Ogeemo environment.",
+    "Required data inputs for create beta waitlist campaign are prepared before starting."
+  ],
+  "steps": [
+    "Open the Marketing module from the main navigation.",
+    "Locate the create beta waitlist campaign entry point in the module workflow.",
+    "Enter or select the required inputs for create beta waitlist campaign.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Beta Waitlist Campaign completes without warnings or blockers.",
+    "Resulting records are visible in the expected Marketing views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create beta waitlist campaign.",
+    "Permission constraints prevent completion of create beta waitlist campaign.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create beta waitlist campaign.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create beta waitlist campaign?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create beta waitlist campaign is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "marketing",
+    "create-beta-waitlist-campaign",
+    "consultant",
+    "create",
+    "beta",
+    "waitlist",
+    "campaign",
+    "create beta waitlist campaign"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:38:52.643Z",
+  "lastVerifiedAt": "2026-07-22T02:38:52.643Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for marketing--create-beta-waitlist-campaign"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

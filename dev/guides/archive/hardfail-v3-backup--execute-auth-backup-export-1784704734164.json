@@ -1,0 +1,71 @@
+{
+  "guideId": "backup--execute-auth-backup-export",
+  "title": "Execute Auth Backup Export in Backup",
+  "module": "backup",
+  "intent": "execute-auth-backup-export",
+  "targetAudience": "admin",
+  "description": "Answer: How do I execute auth backup export? This is the canonical Backup workflow for execute-auth-backup-export.",
+  "prerequisites": [
+    "You are signed in as admin and can access Backup.",
+    "Route /backup is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for execute-auth-backup-export are available before execution."
+  ],
+  "steps": [
+    "Navigate to /backup and open Backup.",
+    "Verify active workspace/company context before running execute auth backup export.",
+    "Open the exact workflow action labeled for execute auth backup export.",
+    "Enter required fields for execute auth backup export (entity selection, date range, and status where applicable).",
+    "Apply changes and execute execute auth backup export with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The execute-auth-backup-export action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Backup lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting execute-auth-backup-export.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /backup, reapply field values, and rerun execute-auth-backup-export with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I execute auth backup export?",
+      "answer": "Open Backup at /backup, run execute auth backup export with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot execute auth backup export if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "execute-auth-backup-export",
+    "execute auth backup export",
+    "/backup",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "execute",
+    "auth",
+    "export"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.164Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.164Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/backup",
+    "workflowInstruction": "Hard-fail remediation guide for backup--execute-auth-backup-export"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

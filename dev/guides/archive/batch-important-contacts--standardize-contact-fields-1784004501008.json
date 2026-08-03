@@ -1,0 +1,65 @@
+{
+  "guideId": "contacts--standardize-contact-fields",
+  "title": "Standardize Contact Fields in Contacts",
+  "module": "contacts",
+  "intent": "standardize-contact-fields",
+  "targetAudience": "admin",
+  "description": "Complete the standardize contact fields workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for standardize contact fields are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the standardize contact fields entry point in the module workflow.",
+    "Enter or select the required inputs for standardize contact fields.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Standardize Contact Fields completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during standardize contact fields.",
+    "Permission constraints prevent completion of standardize contact fields.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun standardize contact fields.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun standardize contact fields?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm standardize contact fields is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "standardize-contact-fields",
+    "admin",
+    "crm",
+    "standardize",
+    "contact",
+    "fields",
+    "standardize contact fields"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:21.008Z",
+  "lastVerifiedAt": "2026-07-14T04:48:21.008Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--standardize-contact-fields"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

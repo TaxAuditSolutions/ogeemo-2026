@@ -1,0 +1,68 @@
+{
+  "guideId": "knowledge--summarize-left-sidebar-quick-start-actions",
+  "title": "Summarize Left Sidebar Quick Start Actions in Knowledge",
+  "module": "knowledge",
+  "intent": "summarize-left-sidebar-quick-start-actions",
+  "targetAudience": "general",
+  "description": "Complete the summarize left sidebar quick start actions workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for summarize left sidebar quick start actions are prepared before starting."
+  ],
+  "steps": [
+    "Open Ogeemo Assistant and load the knowledge workflow context.",
+    "Identify the exact question scope, including module and user goal.",
+    "Use canonical Ogeemo terms for left-sidebar items and action chips.",
+    "Provide a direct numbered answer with module path and expected outcome.",
+    "Include troubleshooting for missing sidebar items or permission visibility.",
+    "Confirm final answer avoids missing-context language and remains actionable."
+  ],
+  "validations": [
+    "Summarize Left Sidebar Quick Start Actions completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during summarize left sidebar quick start actions.",
+    "Permission constraints prevent completion of summarize left sidebar quick start actions.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun summarize left sidebar quick start actions.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun summarize left sidebar quick start actions?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm summarize left sidebar quick start actions is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "summarize-left-sidebar-quick-start-actions",
+    "general",
+    "assistant",
+    "summarize",
+    "left",
+    "sidebar",
+    "quick",
+    "start",
+    "actions",
+    "summarize left sidebar quick start actions"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.932Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.932Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--summarize-left-sidebar-quick-start-actions"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

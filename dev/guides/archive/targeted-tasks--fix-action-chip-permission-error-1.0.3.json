@@ -1,0 +1,65 @@
+{
+    "guideId": "tasks--fix-action-chip-permission-error",
+    "title": "Fix Action Chip Permission Errors",
+    "module": "tasks",
+    "intent": "fix-action-chip-permission-error",
+    "targetAudience": "admin",
+    "description": "Resolve Action Chip permission failures by checking role permissions, record ownership, workspace access, and session state before retrying the action.",
+    "prerequisites": [
+        "You are signed in with admin or role-management access.",
+        "You can open the Tasks module and the record or board where the Action Chip is being used.",
+        "You know which user is seeing the permission error and what action they attempted, such as create, edit, assign, or complete."
+    ],
+    "steps": [
+        "Open the Tasks module and reproduce the Action Chip permission error on the same record, board, or workflow where the user reported it.",
+        "Confirm which Action Chip operation is blocked, such as creating the chip, editing its details, assigning it, or marking it complete.",
+        "Open Settings or role permissions and verify that the affected user's role has access to the Tasks module and the specific Action Chip action they are trying to perform.",
+        "Check whether the user also needs access to the underlying record, workspace, team, client, or board that owns the Action Chip, then grant that access if it is missing.",
+        "Save any permission changes, ask the user to refresh their session or sign out and sign back in, and then retry the same Action Chip action.",
+        "If the error still occurs, test the same Action Chip action with an admin account to determine whether the problem is role-based or caused by the record's local sharing rules.",
+        "When the action succeeds, document what permission was missing and update the role baseline so the same Action Chip error does not recur for similar users."
+    ],
+    "validations": [
+        "The affected user can complete the previously blocked Action Chip action without a permission error.",
+        "The Action Chip appears or updates correctly in the expected Tasks view after the retry.",
+        "The corrected permission or access rule is saved and can be explained in admin audit notes."
+    ],
+    "commonErrors": [
+        "The user has general Tasks access but does not have permission for the specific Action Chip action.",
+        "The user can open Tasks but lacks access to the board, client, project, or record that owns the Action Chip.",
+        "Permissions were updated, but the user session still reflects the old access state."
+    ],
+    "recovery": [
+        "Grant the missing Action Chip or task-workflow permission in the user's role and retry the blocked action.",
+        "Add the user to the correct workspace, team, board, or record context so the Action Chip is no longer blocked by ownership rules.",
+        "Refresh the user's session by reauthenticating after permission changes, then retest before escalating."
+    ],
+    "faq": [
+        {
+            "question": "How do I know whether the Action Chip error is caused by role permissions or record access?",
+            "answer": "Test the same Action Chip action with an admin account and compare it to the affected user's access to the board, record, or workspace. If admin succeeds and the user fails, the issue is usually role or access scope related."
+        },
+        {
+            "question": "What should I do if the Action Chip permission error continues after updating the role?",
+            "answer": "Have the user refresh their session or sign in again, then verify record-level sharing and workspace membership before escalating the issue as a product bug."
+        }
+    ],
+    "keywords": [
+        "tasks",
+        "action chip",
+        "action-chip",
+        "permission error",
+        "permission denied",
+        "access denied",
+        "task permissions",
+        "role permissions",
+        "board access",
+        "record access"
+    ],
+    "version": "1.0.3",
+    "lastVerifiedAt": "2026-07-09T00:00:00.000Z",
+    "source": {
+        "targetUrl": "manual-corpus-patch",
+        "finalUrl": "manual-corpus-patch"
+    }
+}

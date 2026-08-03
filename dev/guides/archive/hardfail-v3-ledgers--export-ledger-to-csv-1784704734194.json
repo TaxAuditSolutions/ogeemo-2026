@@ -1,0 +1,73 @@
+{
+  "guideId": "ledgers--export-ledger-to-csv",
+  "title": "Export Ledger To Csv in Ledgers",
+  "module": "ledgers",
+  "intent": "export-ledger-to-csv",
+  "targetAudience": "accountant",
+  "description": "Answer: How do I export ledger to csv? This is the canonical Ledgers workflow for export-ledger-to-csv.",
+  "prerequisites": [
+    "You are signed in as accountant and can access Ledgers.",
+    "Route /accounting/ledgers is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for export-ledger-to-csv are available before execution."
+  ],
+  "steps": [
+    "Navigate to /accounting/ledgers and open Ledgers.",
+    "Verify active workspace/company context before running export ledger to csv.",
+    "Open the exact workflow action labeled for export ledger to csv.",
+    "Enter required fields for export ledger to csv (entity selection, date range, and status where applicable).",
+    "Apply changes and execute export ledger to csv with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The export-ledger-to-csv action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Ledgers lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting export-ledger-to-csv.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /accounting/ledgers, reapply field values, and rerun export-ledger-to-csv with a narrowed scope.",
+    "Refresh session and confirm role permissions for accountant before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I export ledger to csv?",
+      "answer": "Open Ledgers at /accounting/ledgers, run export ledger to csv with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot export ledger to csv if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "export-ledger-to-csv",
+    "export ledger to csv",
+    "/accounting/ledgers",
+    "accountant",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "export",
+    "ledger",
+    "to",
+    "csv"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.194Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.194Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/accounting/ledgers",
+    "workflowInstruction": "Hard-fail remediation guide for ledgers--export-ledger-to-csv"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

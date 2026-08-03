@@ -1,0 +1,64 @@
+{
+  "guideId": "files--replace-document-version",
+  "title": "Replace Document Version in Files",
+  "module": "files",
+  "intent": "replace-document-version",
+  "targetAudience": "general",
+  "description": "Complete the replace document version workflow in the Files module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Files module in the current Ogeemo environment.",
+    "Required data inputs for replace document version are prepared before starting."
+  ],
+  "steps": [
+    "Open the Files module from the main navigation.",
+    "Locate the replace document version entry point in the module workflow.",
+    "Enter or select the required inputs for replace document version.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Replace Document Version completes without warnings or blockers.",
+    "Resulting records are visible in the expected Files views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during replace document version.",
+    "Permission constraints prevent completion of replace document version.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun replace document version.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun replace document version?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm replace document version is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "files",
+    "replace-document-version",
+    "general",
+    "replace",
+    "document",
+    "version",
+    "replace document version"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.304Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.304Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for files--replace-document-version"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

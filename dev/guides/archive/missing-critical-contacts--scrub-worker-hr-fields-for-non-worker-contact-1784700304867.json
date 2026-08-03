@@ -1,0 +1,69 @@
+{
+  "guideId": "contacts--scrub-worker-hr-fields-for-non-worker-contact",
+  "title": "Scrub Worker Hr Fields For Non Worker Contact in Contacts",
+  "module": "contacts",
+  "intent": "scrub-worker-hr-fields-for-non-worker-contact",
+  "targetAudience": "admin",
+  "description": "Complete the scrub worker hr fields for non worker contact workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for scrub worker hr fields for non worker contact are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the scrub worker hr fields for non worker contact entry point in the module workflow.",
+    "Enter or select the required inputs for scrub worker hr fields for non worker contact.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Scrub Worker Hr Fields For Non Worker Contact completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during scrub worker hr fields for non worker contact.",
+    "Permission constraints prevent completion of scrub worker hr fields for non worker contact.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun scrub worker hr fields for non worker contact.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun scrub worker hr fields for non worker contact?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm scrub worker hr fields for non worker contact is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "scrub-worker-hr-fields-for-non-worker-contact",
+    "admin",
+    "crm",
+    "scrub",
+    "worker",
+    "hr",
+    "fields",
+    "for",
+    "non",
+    "contact",
+    "scrub worker hr fields for non worker contact"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.867Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.867Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--scrub-worker-hr-fields-for-non-worker-contact"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

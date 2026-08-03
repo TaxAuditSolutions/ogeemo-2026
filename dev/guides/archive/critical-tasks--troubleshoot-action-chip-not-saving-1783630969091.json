@@ -1,0 +1,67 @@
+{
+  "guideId": "tasks--troubleshoot-action-chip-not-saving",
+  "title": "Troubleshoot Action Chip Not Saving in Tasks",
+  "module": "tasks",
+  "intent": "troubleshoot-action-chip-not-saving",
+  "targetAudience": "general",
+  "description": "Complete the troubleshoot action chip not saving workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for troubleshoot action chip not saving are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the troubleshoot action chip not saving entry point in the module workflow.",
+    "Enter or select the required inputs for troubleshoot action chip not saving.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Troubleshoot Action Chip Not Saving completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during troubleshoot action chip not saving.",
+    "Permission constraints prevent completion of troubleshoot action chip not saving.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun troubleshoot action chip not saving.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun troubleshoot action chip not saving?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm troubleshoot action chip not saving is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "troubleshoot-action-chip-not-saving",
+    "general",
+    "productivity",
+    "troubleshoot",
+    "action",
+    "chip",
+    "not",
+    "saving",
+    "troubleshoot action chip not saving"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-09T21:02:49.091Z",
+  "lastVerifiedAt": "2026-07-09T21:02:49.091Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--troubleshoot-action-chip-not-saving"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

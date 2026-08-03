@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--manage-employee-documents",
+  "title": "Manage Employee Documents in Payroll",
+  "module": "payroll",
+  "intent": "manage-employee-documents",
+  "targetAudience": "admin",
+  "description": "Complete the manage employee documents workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for manage employee documents are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the manage employee documents entry point in the module workflow.",
+    "Enter or select the required inputs for manage employee documents.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Manage Employee Documents completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during manage employee documents.",
+    "Permission constraints prevent completion of manage employee documents.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun manage employee documents.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun manage employee documents?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm manage employee documents is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "manage-employee-documents",
+    "admin",
+    "manage",
+    "employee",
+    "documents",
+    "manage employee documents"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:42.304Z",
+  "lastVerifiedAt": "2026-07-22T01:53:42.304Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--manage-employee-documents"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

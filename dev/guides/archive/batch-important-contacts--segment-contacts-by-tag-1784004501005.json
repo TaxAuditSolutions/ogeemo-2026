@@ -1,0 +1,65 @@
+{
+  "guideId": "contacts--segment-contacts-by-tag",
+  "title": "Segment Contacts By Tag in Contacts",
+  "module": "contacts",
+  "intent": "segment-contacts-by-tag",
+  "targetAudience": "consultant",
+  "description": "Complete the segment contacts by tag workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for segment contacts by tag are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the segment contacts by tag entry point in the module workflow.",
+    "Enter or select the required inputs for segment contacts by tag.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Segment Contacts By Tag completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during segment contacts by tag.",
+    "Permission constraints prevent completion of segment contacts by tag.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun segment contacts by tag.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun segment contacts by tag?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm segment contacts by tag is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "segment-contacts-by-tag",
+    "consultant",
+    "crm",
+    "segment",
+    "by",
+    "tag",
+    "segment contacts by tag"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:21.005Z",
+  "lastVerifiedAt": "2026-07-14T04:48:21.005Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--segment-contacts-by-tag"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

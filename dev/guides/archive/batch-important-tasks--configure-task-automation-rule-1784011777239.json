@@ -1,0 +1,66 @@
+{
+  "guideId": "tasks--configure-task-automation-rule",
+  "title": "Configure Task Automation Rule in Tasks",
+  "module": "tasks",
+  "intent": "configure-task-automation-rule",
+  "targetAudience": "admin",
+  "description": "Complete the configure task automation rule workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for configure task automation rule are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the configure task automation rule entry point in the module workflow.",
+    "Enter or select the required inputs for configure task automation rule.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Configure Task Automation Rule completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during configure task automation rule.",
+    "Permission constraints prevent completion of configure task automation rule.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun configure task automation rule.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun configure task automation rule?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm configure task automation rule is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "configure-task-automation-rule",
+    "admin",
+    "productivity",
+    "configure",
+    "task",
+    "automation",
+    "rule",
+    "configure task automation rule"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.239Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.239Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--configure-task-automation-rule"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

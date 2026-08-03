@@ -1,0 +1,70 @@
+{
+  "guideId": "reports--generate-work-activity-report-by-contact-and-date",
+  "title": "Generate Work Activity Report By Contact And Date in Reports",
+  "module": "reports",
+  "intent": "generate-work-activity-report-by-contact-and-date",
+  "targetAudience": "general",
+  "description": "Complete the generate work activity report by contact and date workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for generate work activity report by contact and date are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the generate work activity report by contact and date entry point in the module workflow.",
+    "Enter or select the required inputs for generate work activity report by contact and date.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Generate Work Activity Report By Contact And Date completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during generate work activity report by contact and date.",
+    "Permission constraints prevent completion of generate work activity report by contact and date.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun generate work activity report by contact and date.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun generate work activity report by contact and date?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm generate work activity report by contact and date is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "generate-work-activity-report-by-contact-and-date",
+    "general",
+    "reporting",
+    "generate",
+    "work",
+    "activity",
+    "report",
+    "by",
+    "contact",
+    "and",
+    "date",
+    "generate work activity report by contact and date"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.880Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.880Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--generate-work-activity-report-by-contact-and-date"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,66 @@
+{
+  "guideId": "ledgers--bulk-delete-ledger-transactions",
+  "title": "Bulk Delete Ledger Transactions in Ledgers",
+  "module": "ledgers",
+  "intent": "bulk-delete-ledger-transactions",
+  "targetAudience": "admin",
+  "description": "Complete the bulk delete ledger transactions workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for bulk delete ledger transactions are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Filter to the target account, period, and transaction set.",
+    "Select the transaction or transaction batch intended for deletion.",
+    "Run delete and confirm impact preview before finalizing.",
+    "Verify balances and dependent reports after deletion completes.",
+    "If rollback is required, restore from audit history or reversal workflow."
+  ],
+  "validations": [
+    "Bulk Delete Ledger Transactions completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during bulk delete ledger transactions.",
+    "Permission constraints prevent completion of bulk delete ledger transactions.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun bulk delete ledger transactions.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun bulk delete ledger transactions?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm bulk delete ledger transactions is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "bulk-delete-ledger-transactions",
+    "admin",
+    "accounting",
+    "bulk",
+    "delete",
+    "ledger",
+    "transactions",
+    "bulk delete ledger transactions"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:24:41.917Z",
+  "lastVerifiedAt": "2026-07-24T16:24:41.917Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--bulk-delete-ledger-transactions"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

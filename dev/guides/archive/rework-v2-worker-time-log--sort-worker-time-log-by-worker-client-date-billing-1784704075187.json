@@ -1,0 +1,73 @@
+{
+  "guideId": "worker-time-log--sort-worker-time-log-by-worker-client-date-billing",
+  "title": "Sort Worker Time Log By Worker Client Date Billing in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "sort-worker-time-log-by-worker-client-date-billing",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete sort worker time log by worker client date billing in Worker Time Log. Intent key: sort-worker-time-log-by-worker-client-date-billing. Module key: worker-time-log.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Worker Time Log.",
+    "Records needed for sort worker time log by worker client date billing are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Worker Time Log."
+  ],
+  "steps": [
+    "Open Worker Time Log from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Sort Worker Time Log By Worker Client Date Billing\" in Worker Time Log.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the sort worker time log by worker client date billing action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Sort Worker Time Log By Worker Client Date Billing finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Worker Time Log lists, totals, or linked records.",
+    "Output references can be traced back to worker-time-log--sort-worker-time-log-by-worker-client-date-billing with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing sort-worker-time-log-by-worker-client-date-billing.",
+    "Insufficient permissions for admin while attempting sort-worker-time-log-by-worker-client-date-billing.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Worker Time Log, reapply required filters, and repeat sort worker time log by worker client date billing.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm sort worker time log by worker client date billing completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Worker Time Log immediately after execution."
+    },
+    {
+      "question": "What should I do if sort worker time log by worker client date billing returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "worker-time-log",
+    "worker time log",
+    "sort-worker-time-log-by-worker-client-date-billing",
+    "sort worker time log by worker client date billing",
+    "admin",
+    "sort",
+    "worker",
+    "time",
+    "log",
+    "by",
+    "client",
+    "date",
+    "billing",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.187Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.187Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for worker-time-log--sort-worker-time-log-by-worker-client-date-billing from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

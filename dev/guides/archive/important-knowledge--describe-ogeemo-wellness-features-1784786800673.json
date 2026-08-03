@@ -1,0 +1,66 @@
+{
+  "guideId": "knowledge--describe-ogeemo-wellness-features",
+  "title": "Describe Ogeemo Wellness Features in Knowledge",
+  "module": "knowledge",
+  "intent": "describe-ogeemo-wellness-features",
+  "targetAudience": "general",
+  "description": "Complete the describe ogeemo wellness features workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for describe ogeemo wellness features are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the describe ogeemo wellness features entry point in the module workflow.",
+    "Enter or select the required inputs for describe ogeemo wellness features.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Describe Ogeemo Wellness Features completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during describe ogeemo wellness features.",
+    "Permission constraints prevent completion of describe ogeemo wellness features.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun describe ogeemo wellness features.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun describe ogeemo wellness features?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm describe ogeemo wellness features is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "describe-ogeemo-wellness-features",
+    "general",
+    "assistant",
+    "describe",
+    "ogeemo",
+    "wellness",
+    "features",
+    "describe ogeemo wellness features"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:40.673Z",
+  "lastVerifiedAt": "2026-07-23T06:06:40.673Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--describe-ogeemo-wellness-features"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

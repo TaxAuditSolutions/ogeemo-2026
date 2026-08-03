@@ -1,0 +1,60 @@
+{
+    "guideId": "accounting--prepare-for-cra-audit",
+    "title": "Prepare for CRA Audit Using No-Orphans Ledger Practices",
+    "module": "accounting",
+    "intent": "prepare-for-cra-audit",
+    "targetAudience": "accountant",
+    "description": "Maintain CRA audit readiness by ensuring every ledger transaction is linked to source evidence and operational actions.",
+    "prerequisites": [
+        "You can access accounting ledger views and linked source documents.",
+        "Operational modules (invoicing, payroll, time logs, files) are used in-platform.",
+        "You have permission to review and correct transaction linkage."
+    ],
+    "steps": [
+        "Open accounting ledger reports for the audit period and identify transactions requiring evidence linkage checks.",
+        "For each transaction, verify there is a tethered source document or operational origin event, following the No-Orphans policy.",
+        "Trace invoices, payroll remittances, and time logs back to their generating workflows to confirm linkage integrity.",
+        "Open sample expense lines and confirm the linked receipt, related project, and responsible team member are present.",
+        "Correct any orphaned or weakly linked transactions by attaching missing source evidence and reconciling references.",
+        "Export an audit package containing ledger extracts and linked supporting documentation for fast auditor review."
+    ],
+    "validations": [
+        "Transactions in scope have traceable source linkage with no unresolved orphans.",
+        "Expense drill-down reveals receipt, project context, and originator details.",
+        "Exported audit package matches the reviewed ledger period."
+    ],
+    "commonErrors": [
+        "Transactions exist without attached source documents.",
+        "Payroll or invoice entries are not linked to originating operational events.",
+        "Receipt linkage points to wrong project or missing employee context."
+    ],
+    "recovery": [
+        "Attach or relink missing documents for orphaned transactions before finalizing reports.",
+        "Regenerate operational records in-platform where linkage metadata is incomplete.",
+        "Run a final orphan scan and reconciliation check before sharing with auditors."
+    ],
+    "faq": [
+        {
+            "question": "What does No-Orphans mean in practice?",
+            "answer": "Every ledger line must be tethered to verifiable source evidence or a tracked operational action."
+        },
+        {
+            "question": "How quickly can I answer auditor questions about a specific expense?",
+            "answer": "You can open the transaction and drill down to receipt, project linkage, and responsible employee details."
+        }
+    ],
+    "keywords": [
+        "CRA audit",
+        "no orphans",
+        "ledger evidence",
+        "receipt linkage",
+        "audit readiness",
+        "financial compliance"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

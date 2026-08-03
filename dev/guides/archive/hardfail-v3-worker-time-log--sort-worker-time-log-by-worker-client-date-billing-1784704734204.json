@@ -1,0 +1,79 @@
+{
+  "guideId": "worker-time-log--sort-worker-time-log-by-worker-client-date-billing",
+  "title": "Sort Worker Time Log By Worker Client Date Billing in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "sort-worker-time-log-by-worker-client-date-billing",
+  "targetAudience": "admin",
+  "description": "Answer: How do I sort worker time log by worker client date billing? This is the canonical Worker Time Log workflow for sort-worker-time-log-by-worker-client-date-billing.",
+  "prerequisites": [
+    "You are signed in as admin and can access Worker Time Log.",
+    "Route /reports/time-log is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for sort-worker-time-log-by-worker-client-date-billing are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/time-log and open Worker Time Log.",
+    "Verify active workspace/company context before running sort worker time log by worker client date billing.",
+    "Open the exact workflow action labeled for sort worker time log by worker client date billing.",
+    "Enter required fields for sort worker time log by worker client date billing (entity selection, date range, and status where applicable).",
+    "Apply changes and execute sort worker time log by worker client date billing with explicit confirmation in the UI.",
+    "Use sort controls and verify row order changes by the selected sort key.",
+    "Use date picker controls and confirm date range chips update before running the action.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The sort-worker-time-log-by-worker-client-date-billing action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Worker Time Log lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting sort-worker-time-log-by-worker-client-date-billing.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/time-log, reapply field values, and rerun sort-worker-time-log-by-worker-client-date-billing with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I sort worker time log by worker client date billing?",
+      "answer": "Open Worker Time Log at /reports/time-log, run sort worker time log by worker client date billing with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot sort worker time log by worker client date billing if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "worker-time-log",
+    "worker time log",
+    "sort-worker-time-log-by-worker-client-date-billing",
+    "sort worker time log by worker client date billing",
+    "/reports/time-log",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "sort",
+    "worker",
+    "time",
+    "log",
+    "by",
+    "client",
+    "date",
+    "billing"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.204Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.204Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/time-log",
+    "workflowInstruction": "Hard-fail remediation guide for worker-time-log--sort-worker-time-log-by-worker-client-date-billing"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

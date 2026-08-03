@@ -1,0 +1,74 @@
+{
+  "guideId": "document-manager--open-linked-google-drive-file",
+  "title": "Open Linked Google Drive File in Document Manager",
+  "module": "document-manager",
+  "intent": "open-linked-google-drive-file",
+  "targetAudience": "general",
+  "description": "Answer: How do I open linked google drive file? This is the canonical Document Manager workflow for open-linked-google-drive-file.",
+  "prerequisites": [
+    "You are signed in as general and can access Document Manager.",
+    "Route /files is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for open-linked-google-drive-file are available before execution."
+  ],
+  "steps": [
+    "Navigate to /files and open Document Manager.",
+    "Verify active workspace/company context before running open linked google drive file.",
+    "Open the exact workflow action labeled for open linked google drive file.",
+    "Enter required fields for open linked google drive file (entity selection, date range, and status where applicable).",
+    "Apply changes and execute open linked google drive file with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The open-linked-google-drive-file action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Document Manager lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting open-linked-google-drive-file.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /files, reapply field values, and rerun open-linked-google-drive-file with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I open linked google drive file?",
+      "answer": "Open Document Manager at /files, run open linked google drive file with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot open linked google drive file if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "files",
+    "document-manager",
+    "document manager",
+    "open-linked-google-drive-file",
+    "open linked google drive file",
+    "/files",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "open",
+    "linked",
+    "google",
+    "drive",
+    "file"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.198Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.198Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/files",
+    "workflowInstruction": "Hard-fail remediation guide for document-manager--open-linked-google-drive-file"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

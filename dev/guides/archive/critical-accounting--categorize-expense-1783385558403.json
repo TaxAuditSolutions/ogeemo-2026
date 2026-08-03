@@ -1,0 +1,63 @@
+{
+  "guideId": "accounting--categorize-expense",
+  "title": "Categorize Expense in Accounting",
+  "module": "accounting",
+  "intent": "categorize-expense",
+  "targetAudience": "accountant",
+  "description": "Complete the categorize expense workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for categorize expense are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the categorize expense entry point in the module workflow.",
+    "Enter or select the required inputs for categorize expense.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Categorize Expense completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during categorize expense.",
+    "Permission constraints prevent completion of categorize expense.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun categorize expense.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun categorize expense?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm categorize expense is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "categorize-expense",
+    "accountant",
+    "categorize",
+    "expense",
+    "categorize expense"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T00:52:38.403Z",
+  "lastVerifiedAt": "2026-07-07T00:52:38.403Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--categorize-expense"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

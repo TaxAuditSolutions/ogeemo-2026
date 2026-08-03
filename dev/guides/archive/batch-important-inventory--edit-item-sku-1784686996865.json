@@ -1,0 +1,64 @@
+{
+  "guideId": "inventory--edit-item-sku",
+  "title": "Edit Item Sku in Inventory",
+  "module": "inventory",
+  "intent": "edit-item-sku",
+  "targetAudience": "admin",
+  "description": "Complete the edit item sku workflow in the Inventory module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Inventory module in the current Ogeemo environment.",
+    "Required data inputs for edit item sku are prepared before starting."
+  ],
+  "steps": [
+    "Open the Inventory module from the main navigation.",
+    "Locate the edit item sku entry point in the module workflow.",
+    "Enter or select the required inputs for edit item sku.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Edit Item Sku completes without warnings or blockers.",
+    "Resulting records are visible in the expected Inventory views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during edit item sku.",
+    "Permission constraints prevent completion of edit item sku.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun edit item sku.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun edit item sku?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm edit item sku is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "inventory",
+    "edit-item-sku",
+    "admin",
+    "edit",
+    "item",
+    "sku",
+    "edit item sku"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:23:16.865Z",
+  "lastVerifiedAt": "2026-07-22T02:23:16.865Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for inventory--edit-item-sku"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

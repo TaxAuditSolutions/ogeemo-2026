@@ -1,0 +1,64 @@
+{
+  "guideId": "settings--enable-maintenance-mode",
+  "title": "Enable Maintenance Mode in Settings",
+  "module": "settings",
+  "intent": "enable-maintenance-mode",
+  "targetAudience": "admin",
+  "description": "Complete the enable maintenance mode workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for enable maintenance mode are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the enable maintenance mode entry point in the module workflow.",
+    "Enter or select the required inputs for enable maintenance mode.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Enable Maintenance Mode completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during enable maintenance mode.",
+    "Permission constraints prevent completion of enable maintenance mode.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun enable maintenance mode.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun enable maintenance mode?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm enable maintenance mode is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "enable-maintenance-mode",
+    "admin",
+    "enable",
+    "maintenance",
+    "mode",
+    "enable maintenance mode"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.306Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.306Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--enable-maintenance-mode"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,72 @@
+{
+  "guideId": "worker-time-log--open-worker-document-folder-from-time-log",
+  "title": "Open Worker Document Folder From Time Log in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "open-worker-document-folder-from-time-log",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete open worker document folder from time log in Worker Time Log. Intent key: open-worker-document-folder-from-time-log. Module key: worker-time-log.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Worker Time Log.",
+    "Records needed for open worker document folder from time log are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Worker Time Log."
+  ],
+  "steps": [
+    "Open Worker Time Log from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Open Worker Document Folder From Time Log\" in Worker Time Log.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the open worker document folder from time log action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Open Worker Document Folder From Time Log finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Worker Time Log lists, totals, or linked records.",
+    "Output references can be traced back to worker-time-log--open-worker-document-folder-from-time-log with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing open-worker-document-folder-from-time-log.",
+    "Insufficient permissions for admin while attempting open-worker-document-folder-from-time-log.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Worker Time Log, reapply required filters, and repeat open worker document folder from time log.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm open worker document folder from time log completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Worker Time Log immediately after execution."
+    },
+    {
+      "question": "What should I do if open worker document folder from time log returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "worker-time-log",
+    "worker time log",
+    "open-worker-document-folder-from-time-log",
+    "open worker document folder from time log",
+    "admin",
+    "open",
+    "worker",
+    "document",
+    "folder",
+    "from",
+    "time",
+    "log",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.187Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.187Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for worker-time-log--open-worker-document-folder-from-time-log from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

@@ -1,0 +1,70 @@
+{
+  "guideId": "knowledge--troubleshoot-action-chip-not-saving-or-permission-errors",
+  "title": "Troubleshoot Action Chip Not Saving Or Permission Errors in Knowledge",
+  "module": "knowledge",
+  "intent": "troubleshoot-action-chip-not-saving-or-permission-errors",
+  "targetAudience": "general",
+  "description": "Complete the troubleshoot action chip not saving or permission errors workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for troubleshoot action chip not saving or permission errors are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the troubleshoot action chip not saving or permission errors entry point in the module workflow.",
+    "Enter or select the required inputs for troubleshoot action chip not saving or permission errors.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Troubleshoot Action Chip Not Saving Or Permission Errors completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during troubleshoot action chip not saving or permission errors.",
+    "Permission constraints prevent completion of troubleshoot action chip not saving or permission errors.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun troubleshoot action chip not saving or permission errors.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun troubleshoot action chip not saving or permission errors?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm troubleshoot action chip not saving or permission errors is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "troubleshoot-action-chip-not-saving-or-permission-errors",
+    "general",
+    "assistant",
+    "troubleshoot",
+    "action",
+    "chip",
+    "not",
+    "saving",
+    "or",
+    "permission",
+    "errors",
+    "troubleshoot action chip not saving or permission errors"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:39.247Z",
+  "lastVerifiedAt": "2026-07-23T06:06:39.247Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--troubleshoot-action-chip-not-saving-or-permission-errors"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

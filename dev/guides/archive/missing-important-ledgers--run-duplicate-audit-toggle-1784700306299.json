@@ -1,0 +1,66 @@
+{
+  "guideId": "ledgers--run-duplicate-audit-toggle",
+  "title": "Run Duplicate Audit Toggle in Ledgers",
+  "module": "ledgers",
+  "intent": "run-duplicate-audit-toggle",
+  "targetAudience": "accountant",
+  "description": "Complete the run duplicate audit toggle workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for run duplicate audit toggle are prepared before starting."
+  ],
+  "steps": [
+    "Open the Ledgers module from the main navigation.",
+    "Locate the run duplicate audit toggle entry point in the module workflow.",
+    "Enter or select the required inputs for run duplicate audit toggle.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Run Duplicate Audit Toggle completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during run duplicate audit toggle.",
+    "Permission constraints prevent completion of run duplicate audit toggle.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun run duplicate audit toggle.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun run duplicate audit toggle?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm run duplicate audit toggle is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "run-duplicate-audit-toggle",
+    "accountant",
+    "accounting",
+    "run",
+    "duplicate",
+    "audit",
+    "toggle",
+    "run duplicate audit toggle"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.299Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.299Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--run-duplicate-audit-toggle"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

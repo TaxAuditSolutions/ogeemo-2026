@@ -1,0 +1,65 @@
+{
+  "guideId": "tasks--remove-task-dependency",
+  "title": "Remove Task Dependency in Tasks",
+  "module": "tasks",
+  "intent": "remove-task-dependency",
+  "targetAudience": "general",
+  "description": "Complete the remove task dependency workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for remove task dependency are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the remove task dependency entry point in the module workflow.",
+    "Enter or select the required inputs for remove task dependency.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Remove Task Dependency completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during remove task dependency.",
+    "Permission constraints prevent completion of remove task dependency.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun remove task dependency.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun remove task dependency?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm remove task dependency is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "remove-task-dependency",
+    "general",
+    "productivity",
+    "remove",
+    "task",
+    "dependency",
+    "remove task dependency"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.231Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.231Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--remove-task-dependency"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

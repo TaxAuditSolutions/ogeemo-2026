@@ -1,0 +1,64 @@
+{
+  "guideId": "accounting--record-vendor-payment",
+  "title": "Record Vendor Payment in Accounting",
+  "module": "accounting",
+  "intent": "record-vendor-payment",
+  "targetAudience": "accountant",
+  "description": "Complete the record vendor payment workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for record vendor payment are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the record vendor payment entry point in the module workflow.",
+    "Enter or select the required inputs for record vendor payment.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Record Vendor Payment completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during record vendor payment.",
+    "Permission constraints prevent completion of record vendor payment.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun record vendor payment.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun record vendor payment?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm record vendor payment is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "record-vendor-payment",
+    "accountant",
+    "record",
+    "vendor",
+    "payment",
+    "record vendor payment"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:47.400Z",
+  "lastVerifiedAt": "2026-07-14T05:30:47.400Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--record-vendor-payment"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

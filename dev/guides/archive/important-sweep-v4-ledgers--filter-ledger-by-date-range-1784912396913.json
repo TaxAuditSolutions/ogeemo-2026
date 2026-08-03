@@ -1,0 +1,67 @@
+{
+  "guideId": "ledgers--filter-ledger-by-date-range",
+  "title": "Filter Ledger By Date Range in Ledgers",
+  "module": "ledgers",
+  "intent": "filter-ledger-by-date-range",
+  "targetAudience": "accountant",
+  "description": "Complete the filter ledger by date range workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for filter ledger by date range are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Use account and date filters to load the target ledger view.",
+    "Perform the requested ledger action for the selected records.",
+    "Validate resulting balances, transaction state, and posting status.",
+    "Capture change references and audit evidence.",
+    "Escalate any permission or lock errors through ledger recovery steps."
+  ],
+  "validations": [
+    "Filter Ledger By Date Range completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during filter ledger by date range.",
+    "Permission constraints prevent completion of filter ledger by date range.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun filter ledger by date range.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun filter ledger by date range?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm filter ledger by date range is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "filter-ledger-by-date-range",
+    "accountant",
+    "accounting",
+    "filter",
+    "ledger",
+    "by",
+    "date",
+    "range",
+    "filter ledger by date range"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.913Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.913Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--filter-ledger-by-date-range"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

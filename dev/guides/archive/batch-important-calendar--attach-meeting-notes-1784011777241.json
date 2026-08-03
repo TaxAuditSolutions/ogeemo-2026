@@ -1,0 +1,65 @@
+{
+  "guideId": "calendar--attach-meeting-notes",
+  "title": "Attach Meeting Notes in Calendar",
+  "module": "calendar",
+  "intent": "attach-meeting-notes",
+  "targetAudience": "general",
+  "description": "Complete the attach meeting notes workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for attach meeting notes are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the attach meeting notes entry point in the module workflow.",
+    "Enter or select the required inputs for attach meeting notes.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Attach Meeting Notes completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during attach meeting notes.",
+    "Permission constraints prevent completion of attach meeting notes.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun attach meeting notes.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun attach meeting notes?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm attach meeting notes is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "attach-meeting-notes",
+    "general",
+    "productivity",
+    "attach",
+    "meeting",
+    "notes",
+    "attach meeting notes"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.241Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.241Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--attach-meeting-notes"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

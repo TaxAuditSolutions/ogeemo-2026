@@ -1,0 +1,72 @@
+{
+  "guideId": "backup--select-backup-types-for-export",
+  "title": "Select Backup Types For Export in Backup",
+  "module": "backup",
+  "intent": "select-backup-types-for-export",
+  "targetAudience": "admin",
+  "description": "Answer: How do I select backup types for export? This is the canonical Backup workflow for select-backup-types-for-export.",
+  "prerequisites": [
+    "You are signed in as admin and can access Backup.",
+    "Route /backup is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for select-backup-types-for-export are available before execution."
+  ],
+  "steps": [
+    "Navigate to /backup and open Backup.",
+    "Verify active workspace/company context before running select backup types for export.",
+    "Open the exact workflow action labeled for select backup types for export.",
+    "Enter required fields for select backup types for export (entity selection, date range, and status where applicable).",
+    "Apply changes and execute select backup types for export with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The select-backup-types-for-export action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Backup lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting select-backup-types-for-export.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /backup, reapply field values, and rerun select-backup-types-for-export with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I select backup types for export?",
+      "answer": "Open Backup at /backup, run select backup types for export with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot select backup types for export if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "select-backup-types-for-export",
+    "select backup types for export",
+    "/backup",
+    "admin",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "select",
+    "types",
+    "for",
+    "export"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.163Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.163Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/backup",
+    "workflowInstruction": "Hard-fail remediation guide for backup--select-backup-types-for-export"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

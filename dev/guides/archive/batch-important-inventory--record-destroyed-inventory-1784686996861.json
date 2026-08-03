@@ -1,0 +1,63 @@
+{
+  "guideId": "inventory--record-destroyed-inventory",
+  "title": "Record Destroyed Inventory in Inventory",
+  "module": "inventory",
+  "intent": "record-destroyed-inventory",
+  "targetAudience": "admin",
+  "description": "Complete the record destroyed inventory workflow in the Inventory module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Inventory module in the current Ogeemo environment.",
+    "Required data inputs for record destroyed inventory are prepared before starting."
+  ],
+  "steps": [
+    "Open the Inventory module from the main navigation.",
+    "Locate the record destroyed inventory entry point in the module workflow.",
+    "Enter or select the required inputs for record destroyed inventory.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Record Destroyed Inventory completes without warnings or blockers.",
+    "Resulting records are visible in the expected Inventory views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during record destroyed inventory.",
+    "Permission constraints prevent completion of record destroyed inventory.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun record destroyed inventory.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun record destroyed inventory?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm record destroyed inventory is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "inventory",
+    "record-destroyed-inventory",
+    "admin",
+    "record",
+    "destroyed",
+    "record destroyed inventory"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:23:16.861Z",
+  "lastVerifiedAt": "2026-07-22T02:23:16.861Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for inventory--record-destroyed-inventory"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

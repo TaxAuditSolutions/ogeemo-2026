@@ -1,0 +1,75 @@
+{
+  "guideId": "client-statement--set-client-statement-start-date",
+  "title": "Set Client Statement Start Date in Client Statement",
+  "module": "client-statement",
+  "intent": "set-client-statement-start-date",
+  "targetAudience": "general",
+  "description": "Answer: How do I set client statement start date? This is the canonical Client Statement workflow for set-client-statement-start-date.",
+  "prerequisites": [
+    "You are signed in as general and can access Client Statement.",
+    "Route /reports/client-statement is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for set-client-statement-start-date are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/client-statement and open Client Statement.",
+    "Verify active workspace/company context before running set client statement start date.",
+    "Open the exact workflow action labeled for set client statement start date.",
+    "Enter required fields for set client statement start date (entity selection, date range, and status where applicable).",
+    "Apply changes and execute set client statement start date with explicit confirmation in the UI.",
+    "Use date picker controls and confirm date range chips update before running the action.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The set-client-statement-start-date action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Client Statement lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting set-client-statement-start-date.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/client-statement, reapply field values, and rerun set-client-statement-start-date with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I set client statement start date?",
+      "answer": "Open Client Statement at /reports/client-statement, run set client statement start date with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot set client statement start date if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-statement",
+    "client statement",
+    "set-client-statement-start-date",
+    "set client statement start date",
+    "/reports/client-statement",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "set",
+    "client",
+    "statement",
+    "start",
+    "date"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.202Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.202Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/client-statement",
+    "workflowInstruction": "Hard-fail remediation guide for client-statement--set-client-statement-start-date"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

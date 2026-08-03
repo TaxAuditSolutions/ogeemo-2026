@@ -1,0 +1,72 @@
+{
+  "guideId": "email-hub--resolve-missing-contact-or-subject-before-log",
+  "title": "Resolve Missing Contact Or Subject Before Log in Email Hub",
+  "module": "email-hub",
+  "intent": "resolve-missing-contact-or-subject-before-log",
+  "targetAudience": "general",
+  "description": "Use this guide to complete resolve missing contact or subject before log in Email Hub. Intent key: resolve-missing-contact-or-subject-before-log. Module key: email-hub.",
+  "prerequisites": [
+    "You are signed in with general access and can open Email Hub.",
+    "Records needed for resolve missing contact or subject before log are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Email Hub."
+  ],
+  "steps": [
+    "Open Email Hub from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Resolve Missing Contact Or Subject Before Log\" in Email Hub.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the resolve missing contact or subject before log action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Resolve Missing Contact Or Subject Before Log finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Email Hub lists, totals, or linked records.",
+    "Output references can be traced back to email-hub--resolve-missing-contact-or-subject-before-log with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing resolve-missing-contact-or-subject-before-log.",
+    "Insufficient permissions for general while attempting resolve-missing-contact-or-subject-before-log.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Email Hub, reapply required filters, and repeat resolve missing contact or subject before log.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm resolve missing contact or subject before log completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Email Hub immediately after execution."
+    },
+    {
+      "question": "What should I do if resolve missing contact or subject before log returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "email-hub",
+    "email hub",
+    "resolve-missing-contact-or-subject-before-log",
+    "resolve missing contact or subject before log",
+    "general",
+    "resolve",
+    "missing",
+    "contact",
+    "or",
+    "subject",
+    "before",
+    "log",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.170Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.170Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for email-hub--resolve-missing-contact-or-subject-before-log from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

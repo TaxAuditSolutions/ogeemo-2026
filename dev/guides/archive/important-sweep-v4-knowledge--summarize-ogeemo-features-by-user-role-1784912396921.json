@@ -1,0 +1,68 @@
+{
+  "guideId": "knowledge--summarize-ogeemo-features-by-user-role",
+  "title": "Summarize Ogeemo Features By User Role in Knowledge",
+  "module": "knowledge",
+  "intent": "summarize-ogeemo-features-by-user-role",
+  "targetAudience": "general",
+  "description": "Complete the summarize ogeemo features by user role workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for summarize ogeemo features by user role are prepared before starting."
+  ],
+  "steps": [
+    "Open Ogeemo Assistant and load the knowledge workflow context.",
+    "Identify the exact question scope, including module and user goal.",
+    "Use canonical Ogeemo terms for left-sidebar items and action chips.",
+    "Provide a direct numbered answer with module path and expected outcome.",
+    "Include troubleshooting for missing sidebar items or permission visibility.",
+    "Confirm final answer avoids missing-context language and remains actionable."
+  ],
+  "validations": [
+    "Summarize Ogeemo Features By User Role completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during summarize ogeemo features by user role.",
+    "Permission constraints prevent completion of summarize ogeemo features by user role.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun summarize ogeemo features by user role.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun summarize ogeemo features by user role?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm summarize ogeemo features by user role is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "summarize-ogeemo-features-by-user-role",
+    "general",
+    "assistant",
+    "summarize",
+    "ogeemo",
+    "features",
+    "by",
+    "user",
+    "role",
+    "summarize ogeemo features by user role"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.921Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.921Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--summarize-ogeemo-features-by-user-role"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

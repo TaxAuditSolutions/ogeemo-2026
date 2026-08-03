@@ -1,0 +1,68 @@
+{
+  "guideId": "worker-time-log--clear-worker-time-log-filters",
+  "title": "Clear Worker Time Log Filters in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "clear-worker-time-log-filters",
+  "targetAudience": "admin",
+  "description": "Complete the clear worker time log filters workflow in the Worker Time Log module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Worker Time Log module in the current Ogeemo environment.",
+    "Required data inputs for clear worker time log filters are prepared before starting."
+  ],
+  "steps": [
+    "Open the Worker Time Log module from the main navigation.",
+    "Locate the clear worker time log filters entry point in the module workflow.",
+    "Enter or select the required inputs for clear worker time log filters.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Clear Worker Time Log Filters completes without warnings or blockers.",
+    "Resulting records are visible in the expected Worker Time Log views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during clear worker time log filters.",
+    "Permission constraints prevent completion of clear worker time log filters.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun clear worker time log filters.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun clear worker time log filters?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm clear worker time log filters is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "worker-time-log",
+    "clear-worker-time-log-filters",
+    "admin",
+    "reporting",
+    "clear",
+    "worker",
+    "time",
+    "log",
+    "filters",
+    "worker time log",
+    "clear worker time log filters"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.318Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.318Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for worker-time-log--clear-worker-time-log-filters"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

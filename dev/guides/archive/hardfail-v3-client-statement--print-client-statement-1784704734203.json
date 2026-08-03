@@ -1,0 +1,73 @@
+{
+  "guideId": "client-statement--print-client-statement",
+  "title": "Print Client Statement in Client Statement",
+  "module": "client-statement",
+  "intent": "print-client-statement",
+  "targetAudience": "general",
+  "description": "Answer: How do I print client statement? This is the canonical Client Statement workflow for print-client-statement.",
+  "prerequisites": [
+    "You are signed in as general and can access Client Statement.",
+    "Route /reports/client-statement is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for print-client-statement are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/client-statement and open Client Statement.",
+    "Verify active workspace/company context before running print client statement.",
+    "Open the exact workflow action labeled for print client statement.",
+    "Enter required fields for print client statement (entity selection, date range, and status where applicable).",
+    "Apply changes and execute print client statement with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The print-client-statement action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Client Statement lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting print-client-statement.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/client-statement, reapply field values, and rerun print-client-statement with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I print client statement?",
+      "answer": "Open Client Statement at /reports/client-statement, run print client statement with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot print client statement if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-statement",
+    "client statement",
+    "print-client-statement",
+    "print client statement",
+    "/reports/client-statement",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "print",
+    "client",
+    "statement"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.203Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.203Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/client-statement",
+    "workflowInstruction": "Hard-fail remediation guide for client-statement--print-client-statement"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

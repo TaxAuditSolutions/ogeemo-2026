@@ -1,0 +1,76 @@
+{
+  "guideId": "document-manager--link-google-drive-url-to-file-record",
+  "title": "Link Google Drive Url To File Record in Document Manager",
+  "module": "document-manager",
+  "intent": "link-google-drive-url-to-file-record",
+  "targetAudience": "general",
+  "description": "Answer: How do I link google drive url to file record? This is the canonical Document Manager workflow for link-google-drive-url-to-file-record.",
+  "prerequisites": [
+    "You are signed in as general and can access Document Manager.",
+    "Route /files is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for link-google-drive-url-to-file-record are available before execution."
+  ],
+  "steps": [
+    "Navigate to /files and open Document Manager.",
+    "Verify active workspace/company context before running link google drive url to file record.",
+    "Open the exact workflow action labeled for link google drive url to file record.",
+    "Enter required fields for link google drive url to file record (entity selection, date range, and status where applicable).",
+    "Apply changes and execute link google drive url to file record with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The link-google-drive-url-to-file-record action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Document Manager lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting link-google-drive-url-to-file-record.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /files, reapply field values, and rerun link-google-drive-url-to-file-record with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I link google drive url to file record?",
+      "answer": "Open Document Manager at /files, run link google drive url to file record with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot link google drive url to file record if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "files",
+    "document-manager",
+    "document manager",
+    "link-google-drive-url-to-file-record",
+    "link google drive url to file record",
+    "/files",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "link",
+    "google",
+    "drive",
+    "url",
+    "to",
+    "file",
+    "record"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.199Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.199Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/files",
+    "workflowInstruction": "Hard-fail remediation guide for document-manager--link-google-drive-url-to-file-record"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

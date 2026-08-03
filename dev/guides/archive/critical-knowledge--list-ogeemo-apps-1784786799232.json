@@ -1,0 +1,65 @@
+{
+  "guideId": "knowledge--list-ogeemo-apps",
+  "title": "List Ogeemo Apps in Knowledge",
+  "module": "knowledge",
+  "intent": "list-ogeemo-apps",
+  "targetAudience": "general",
+  "description": "Complete the list ogeemo apps workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for list ogeemo apps are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the list ogeemo apps entry point in the module workflow.",
+    "Enter or select the required inputs for list ogeemo apps.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "List Ogeemo Apps completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during list ogeemo apps.",
+    "Permission constraints prevent completion of list ogeemo apps.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun list ogeemo apps.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun list ogeemo apps?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm list ogeemo apps is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "list-ogeemo-apps",
+    "general",
+    "assistant",
+    "list",
+    "ogeemo",
+    "apps",
+    "list ogeemo apps"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T06:06:39.232Z",
+  "lastVerifiedAt": "2026-07-23T06:06:39.232Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--list-ogeemo-apps"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

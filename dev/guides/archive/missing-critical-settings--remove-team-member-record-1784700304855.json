@@ -1,0 +1,65 @@
+{
+  "guideId": "settings--remove-team-member-record",
+  "title": "Remove Team Member Record in Settings",
+  "module": "settings",
+  "intent": "remove-team-member-record",
+  "targetAudience": "admin",
+  "description": "Complete the remove team member record workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for remove team member record are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the remove team member record entry point in the module workflow.",
+    "Enter or select the required inputs for remove team member record.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Remove Team Member Record completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during remove team member record.",
+    "Permission constraints prevent completion of remove team member record.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun remove team member record.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun remove team member record?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm remove team member record is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "remove-team-member-record",
+    "admin",
+    "remove",
+    "team",
+    "member",
+    "record",
+    "remove team member record"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.855Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.855Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--remove-team-member-record"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

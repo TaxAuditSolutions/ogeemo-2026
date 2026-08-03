@@ -9,3 +9,4 @@ firestore-debug.log
 # Next.js cache
 .next/
 node_modules
+keys/ogeemo-firebase-firebase-adminsdk-fbsvc-ef0acfe30c.json

@@ -1,0 +1,66 @@
+{
+  "guideId": "knowledge--split-guide-into-chunks",
+  "title": "Split Guide Into Chunks in Knowledge",
+  "module": "knowledge",
+  "intent": "split-guide-into-chunks",
+  "targetAudience": "admin",
+  "description": "Complete the split guide into chunks workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for split guide into chunks are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the split guide into chunks entry point in the module workflow.",
+    "Enter or select the required inputs for split guide into chunks.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Split Guide Into Chunks completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during split guide into chunks.",
+    "Permission constraints prevent completion of split guide into chunks.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun split guide into chunks.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun split guide into chunks?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm split guide into chunks is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "split-guide-into-chunks",
+    "admin",
+    "assistant",
+    "split",
+    "guide",
+    "into",
+    "chunks",
+    "split guide into chunks"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.306Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.306Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--split-guide-into-chunks"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

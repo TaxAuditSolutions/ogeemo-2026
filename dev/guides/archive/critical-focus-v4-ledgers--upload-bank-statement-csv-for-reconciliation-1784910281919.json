@@ -1,0 +1,68 @@
+{
+  "guideId": "ledgers--upload-bank-statement-csv-for-reconciliation",
+  "title": "Upload Bank Statement Csv For Reconciliation in Ledgers",
+  "module": "ledgers",
+  "intent": "upload-bank-statement-csv-for-reconciliation",
+  "targetAudience": "accountant",
+  "description": "Complete the upload bank statement csv for reconciliation workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for upload bank statement csv for reconciliation are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Go to Reconciliation and launch the reconciliation workspace.",
+    "Set account and statement period before importing or matching transactions.",
+    "Load bank statement data, then review unmatched and suggested matches.",
+    "Bulk verify valid matches and flag exceptions for manual review.",
+    "Complete reconciliation, then confirm status and saved audit trail."
+  ],
+  "validations": [
+    "Upload Bank Statement Csv For Reconciliation completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during upload bank statement csv for reconciliation.",
+    "Permission constraints prevent completion of upload bank statement csv for reconciliation.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun upload bank statement csv for reconciliation.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun upload bank statement csv for reconciliation?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm upload bank statement csv for reconciliation is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "upload-bank-statement-csv-for-reconciliation",
+    "accountant",
+    "accounting",
+    "upload",
+    "bank",
+    "statement",
+    "csv",
+    "for",
+    "reconciliation",
+    "upload bank statement csv for reconciliation"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:24:41.919Z",
+  "lastVerifiedAt": "2026-07-24T16:24:41.919Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--upload-bank-statement-csv-for-reconciliation"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,63 @@
+{
+  "guideId": "payroll--process-bonus-payroll",
+  "title": "Process Bonus Payroll in Payroll",
+  "module": "payroll",
+  "intent": "process-bonus-payroll",
+  "targetAudience": "accountant",
+  "description": "Complete the process bonus payroll workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for process bonus payroll are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the process bonus payroll entry point in the module workflow.",
+    "Enter or select the required inputs for process bonus payroll.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Process Bonus Payroll completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during process bonus payroll.",
+    "Permission constraints prevent completion of process bonus payroll.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun process bonus payroll.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun process bonus payroll?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm process bonus payroll is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "process-bonus-payroll",
+    "accountant",
+    "process",
+    "bonus",
+    "process bonus payroll"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:13.283Z",
+  "lastVerifiedAt": "2026-07-14T05:55:13.283Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--process-bonus-payroll"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

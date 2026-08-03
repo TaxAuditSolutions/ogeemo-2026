@@ -1,0 +1,65 @@
+{
+  "guideId": "ledgers--delete-ledger-transaction",
+  "title": "Delete Ledger Transaction in Ledgers",
+  "module": "ledgers",
+  "intent": "delete-ledger-transaction",
+  "targetAudience": "accountant",
+  "description": "Complete the delete ledger transaction workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for delete ledger transaction are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Filter to the target account, period, and transaction set.",
+    "Select the transaction or transaction batch intended for deletion.",
+    "Run delete and confirm impact preview before finalizing.",
+    "Verify balances and dependent reports after deletion completes.",
+    "If rollback is required, restore from audit history or reversal workflow."
+  ],
+  "validations": [
+    "Delete Ledger Transaction completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during delete ledger transaction.",
+    "Permission constraints prevent completion of delete ledger transaction.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun delete ledger transaction.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun delete ledger transaction?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm delete ledger transaction is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "delete-ledger-transaction",
+    "accountant",
+    "accounting",
+    "delete",
+    "ledger",
+    "transaction",
+    "delete ledger transaction"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:56:58.112Z",
+  "lastVerifiedAt": "2026-07-24T16:56:58.112Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--delete-ledger-transaction"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

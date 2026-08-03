@@ -1,0 +1,63 @@
+{
+  "guideId": "inventory--edit-inventory-item",
+  "title": "Edit Inventory Item in Inventory",
+  "module": "inventory",
+  "intent": "edit-inventory-item",
+  "targetAudience": "admin",
+  "description": "Complete the edit inventory item workflow in the Inventory module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Inventory module in the current Ogeemo environment.",
+    "Required data inputs for edit inventory item are prepared before starting."
+  ],
+  "steps": [
+    "Open the Inventory module from the main navigation.",
+    "Locate the edit inventory item entry point in the module workflow.",
+    "Enter or select the required inputs for edit inventory item.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Edit Inventory Item completes without warnings or blockers.",
+    "Resulting records are visible in the expected Inventory views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during edit inventory item.",
+    "Permission constraints prevent completion of edit inventory item.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun edit inventory item.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun edit inventory item?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm edit inventory item is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "inventory",
+    "edit-inventory-item",
+    "admin",
+    "edit",
+    "item",
+    "edit inventory item"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:23:16.856Z",
+  "lastVerifiedAt": "2026-07-22T02:23:16.856Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for inventory--edit-inventory-item"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

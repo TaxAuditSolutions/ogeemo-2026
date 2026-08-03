@@ -1,0 +1,70 @@
+{
+  "guideId": "reports--generate-client-statement-by-client-and-date",
+  "title": "Generate Client Statement By Client And Date in Reports",
+  "module": "reports",
+  "intent": "generate-client-statement-by-client-and-date",
+  "targetAudience": "general",
+  "description": "Use this guide to complete generate client statement by client and date in Reports. Intent key: generate-client-statement-by-client-and-date. Module key: reports.",
+  "prerequisites": [
+    "You are signed in with general access and can open Reports.",
+    "Records needed for generate client statement by client and date are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Reports."
+  ],
+  "steps": [
+    "Open Reports from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Generate Client Statement By Client And Date\" in Reports.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the generate client statement by client and date action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Generate Client Statement By Client And Date finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Reports lists, totals, or linked records.",
+    "Output references can be traced back to reports--generate-client-statement-by-client-and-date with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing generate-client-statement-by-client-and-date.",
+    "Insufficient permissions for general while attempting generate-client-statement-by-client-and-date.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Reports, reapply required filters, and repeat generate client statement by client and date.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm generate client statement by client and date completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Reports immediately after execution."
+    },
+    {
+      "question": "What should I do if generate client statement by client and date returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "reports",
+    "generate-client-statement-by-client-and-date",
+    "generate client statement by client and date",
+    "general",
+    "generate",
+    "client",
+    "statement",
+    "by",
+    "and",
+    "date",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.184Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.184Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for reports--generate-client-statement-by-client-and-date from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

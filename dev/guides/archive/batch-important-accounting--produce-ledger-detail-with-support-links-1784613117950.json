@@ -1,0 +1,67 @@
+{
+  "guideId": "accounting--produce-ledger-detail-with-support-links",
+  "title": "Produce Ledger Detail With Support Links in Accounting",
+  "module": "accounting",
+  "intent": "produce-ledger-detail-with-support-links",
+  "targetAudience": "accountant",
+  "description": "Complete the produce ledger detail with support links workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for produce ledger detail with support links are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the produce ledger detail with support links entry point in the module workflow.",
+    "Enter or select the required inputs for produce ledger detail with support links.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Produce Ledger Detail With Support Links completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during produce ledger detail with support links.",
+    "Permission constraints prevent completion of produce ledger detail with support links.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun produce ledger detail with support links.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun produce ledger detail with support links?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm produce ledger detail with support links is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "produce-ledger-detail-with-support-links",
+    "accountant",
+    "produce",
+    "ledger",
+    "detail",
+    "with",
+    "support",
+    "links",
+    "produce ledger detail with support links"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:51:57.950Z",
+  "lastVerifiedAt": "2026-07-21T05:51:57.950Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--produce-ledger-detail-with-support-links"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

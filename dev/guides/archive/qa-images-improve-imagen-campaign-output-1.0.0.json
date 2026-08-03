@@ -1,0 +1,60 @@
+{
+    "guideId": "images--improve-imagen-campaign-output",
+    "title": "Improve Imagen Campaign Output Quality",
+    "module": "images",
+    "intent": "improve-imagen-campaign-output",
+    "targetAudience": "general",
+    "description": "Improve AI-generated marketing visuals by simplifying prompts, focusing subject clarity, and iterating one descriptor at a time.",
+    "prerequisites": [
+        "You can access the AI Image Generator.",
+        "You know the campaign objective and target visual style.",
+        "You have a baseline prompt and at least one output to evaluate."
+    ],
+    "steps": [
+        "Start with a single clear subject and avoid crowded scene instructions.",
+        "Add style and rendering descriptors deliberately, such as minimalist, macro, or cinematic lighting.",
+        "Generate an initial image and assess composition, subject clarity, and brand fit.",
+        "Modify one prompt descriptor at a time instead of rewriting the entire prompt between attempts.",
+        "Repeat short iterations until output quality stabilizes around campaign requirements.",
+        "Save the winning prompt and image variant for reproducibility and team reuse."
+    ],
+    "validations": [
+        "Output has one clear focal subject aligned to campaign intent.",
+        "Image style, texture, and lighting reflect requested visual direction.",
+        "Prompt changes produce predictable incremental output differences."
+    ],
+    "commonErrors": [
+        "Prompt includes too many competing subjects and creates cluttered output.",
+        "Large prompt rewrites make iteration results unpredictable.",
+        "Style terms conflict and degrade image consistency."
+    ],
+    "recovery": [
+        "Reduce prompt to one subject and two or three style constraints.",
+        "Reintroduce descriptors one at a time and compare outputs.",
+        "Store successful prompt variants as reusable templates."
+    ],
+    "faq": [
+        {
+            "question": "How specific should my prompt be?",
+            "answer": "Be specific about subject and style, but avoid overloading the prompt with many unrelated scene elements."
+        },
+        {
+            "question": "Why change one word at a time?",
+            "answer": "Single-variable iteration helps isolate which descriptor improved or degraded output quality."
+        }
+    ],
+    "keywords": [
+        "imagen-3",
+        "prompt engineering",
+        "image quality",
+        "marketing campaign",
+        "style descriptors",
+        "rapid iteration"
+    ],
+    "version": "1.0.0",
+    "lastVerifiedAt": "2026-07-14T00:00:00.000Z",
+    "source": {
+        "targetUrl": "docs/guides/q-and-a.md",
+        "finalUrl": "docs/guides/q-and-a.md"
+    }
+}

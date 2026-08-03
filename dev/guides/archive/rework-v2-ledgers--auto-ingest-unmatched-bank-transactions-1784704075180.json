@@ -1,0 +1,70 @@
+{
+  "guideId": "ledgers--auto-ingest-unmatched-bank-transactions",
+  "title": "Auto Ingest Unmatched Bank Transactions in Ledgers",
+  "module": "ledgers",
+  "intent": "auto-ingest-unmatched-bank-transactions",
+  "targetAudience": "accountant",
+  "description": "Use this guide to complete auto ingest unmatched bank transactions in Ledgers. Intent key: auto-ingest-unmatched-bank-transactions. Module key: ledgers.",
+  "prerequisites": [
+    "You are signed in with accountant access and can open Ledgers.",
+    "Records needed for auto ingest unmatched bank transactions are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Ledgers."
+  ],
+  "steps": [
+    "Open Ledgers from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Auto Ingest Unmatched Bank Transactions\" in Ledgers.",
+    "Select the correct ledger tab (general, income, expense, or reconciliation) before running the action.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the auto ingest unmatched bank transactions action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Auto Ingest Unmatched Bank Transactions finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Ledgers lists, totals, or linked records.",
+    "Output references can be traced back to ledgers--auto-ingest-unmatched-bank-transactions with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing auto-ingest-unmatched-bank-transactions.",
+    "Insufficient permissions for accountant while attempting auto-ingest-unmatched-bank-transactions.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Ledgers, reapply required filters, and repeat auto ingest unmatched bank transactions.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm auto ingest unmatched bank transactions completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Ledgers immediately after execution."
+    },
+    {
+      "question": "What should I do if auto ingest unmatched bank transactions returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "auto-ingest-unmatched-bank-transactions",
+    "auto ingest unmatched bank transactions",
+    "accountant",
+    "auto",
+    "ingest",
+    "unmatched",
+    "bank",
+    "transactions",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.180Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.180Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for ledgers--auto-ingest-unmatched-bank-transactions from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

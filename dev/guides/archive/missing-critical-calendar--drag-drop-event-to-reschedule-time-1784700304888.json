@@ -1,0 +1,68 @@
+{
+  "guideId": "calendar--drag-drop-event-to-reschedule-time",
+  "title": "Drag Drop Event To Reschedule Time in Calendar",
+  "module": "calendar",
+  "intent": "drag-drop-event-to-reschedule-time",
+  "targetAudience": "general",
+  "description": "Complete the drag drop event to reschedule time workflow in the Calendar module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Calendar module in the current Ogeemo environment.",
+    "Required data inputs for drag drop event to reschedule time are prepared before starting."
+  ],
+  "steps": [
+    "Open the Calendar module from the main navigation.",
+    "Locate the drag drop event to reschedule time entry point in the module workflow.",
+    "Enter or select the required inputs for drag drop event to reschedule time.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Drag Drop Event To Reschedule Time completes without warnings or blockers.",
+    "Resulting records are visible in the expected Calendar views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during drag drop event to reschedule time.",
+    "Permission constraints prevent completion of drag drop event to reschedule time.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun drag drop event to reschedule time.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun drag drop event to reschedule time?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm drag drop event to reschedule time is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "calendar",
+    "drag-drop-event-to-reschedule-time",
+    "general",
+    "productivity",
+    "drag",
+    "drop",
+    "event",
+    "to",
+    "reschedule",
+    "time",
+    "drag drop event to reschedule time"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.888Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.888Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for calendar--drag-drop-event-to-reschedule-time"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

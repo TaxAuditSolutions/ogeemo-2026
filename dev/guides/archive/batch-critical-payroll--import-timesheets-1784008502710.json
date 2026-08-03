@@ -1,0 +1,63 @@
+{
+  "guideId": "payroll--import-timesheets",
+  "title": "Import Timesheets in Payroll",
+  "module": "payroll",
+  "intent": "import-timesheets",
+  "targetAudience": "accountant",
+  "description": "Complete the import timesheets workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for import timesheets are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the import timesheets entry point in the module workflow.",
+    "Enter or select the required inputs for import timesheets.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Import Timesheets completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during import timesheets.",
+    "Permission constraints prevent completion of import timesheets.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun import timesheets.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun import timesheets?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm import timesheets is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "import-timesheets",
+    "accountant",
+    "import",
+    "timesheets",
+    "import timesheets"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:02.710Z",
+  "lastVerifiedAt": "2026-07-14T05:55:02.710Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--import-timesheets"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

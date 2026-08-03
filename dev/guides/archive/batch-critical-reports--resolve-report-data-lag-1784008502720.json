@@ -1,0 +1,66 @@
+{
+  "guideId": "reports--resolve-report-data-lag",
+  "title": "Resolve Report Data Lag in Reports",
+  "module": "reports",
+  "intent": "resolve-report-data-lag",
+  "targetAudience": "admin",
+  "description": "Complete the resolve report data lag workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for resolve report data lag are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the resolve report data lag entry point in the module workflow.",
+    "Enter or select the required inputs for resolve report data lag.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Resolve Report Data Lag completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during resolve report data lag.",
+    "Permission constraints prevent completion of resolve report data lag.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun resolve report data lag.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun resolve report data lag?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm resolve report data lag is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "resolve-report-data-lag",
+    "admin",
+    "reporting",
+    "resolve",
+    "report",
+    "data",
+    "lag",
+    "resolve report data lag"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:02.720Z",
+  "lastVerifiedAt": "2026-07-14T05:55:02.720Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--resolve-report-data-lag"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

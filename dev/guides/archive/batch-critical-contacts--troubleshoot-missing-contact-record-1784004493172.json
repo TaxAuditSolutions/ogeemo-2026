@@ -1,0 +1,66 @@
+{
+  "guideId": "contacts--troubleshoot-missing-contact-record",
+  "title": "Troubleshoot Missing Contact Record in Contacts",
+  "module": "contacts",
+  "intent": "troubleshoot-missing-contact-record",
+  "targetAudience": "admin",
+  "description": "Complete the troubleshoot missing contact record workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for troubleshoot missing contact record are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the troubleshoot missing contact record entry point in the module workflow.",
+    "Enter or select the required inputs for troubleshoot missing contact record.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Troubleshoot Missing Contact Record completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during troubleshoot missing contact record.",
+    "Permission constraints prevent completion of troubleshoot missing contact record.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun troubleshoot missing contact record.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun troubleshoot missing contact record?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm troubleshoot missing contact record is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "troubleshoot-missing-contact-record",
+    "admin",
+    "crm",
+    "troubleshoot",
+    "missing",
+    "contact",
+    "record",
+    "troubleshoot missing contact record"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:13.172Z",
+  "lastVerifiedAt": "2026-07-14T04:48:13.172Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--troubleshoot-missing-contact-record"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

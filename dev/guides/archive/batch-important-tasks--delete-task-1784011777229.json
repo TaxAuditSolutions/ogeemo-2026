@@ -1,0 +1,64 @@
+{
+  "guideId": "tasks--delete-task",
+  "title": "Delete Task in Tasks",
+  "module": "tasks",
+  "intent": "delete-task",
+  "targetAudience": "general",
+  "description": "Complete the delete task workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for delete task are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the delete task entry point in the module workflow.",
+    "Enter or select the required inputs for delete task.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Delete Task completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during delete task.",
+    "Permission constraints prevent completion of delete task.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun delete task.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun delete task?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm delete task is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "delete-task",
+    "general",
+    "productivity",
+    "delete",
+    "task",
+    "delete task"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.229Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.229Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--delete-task"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

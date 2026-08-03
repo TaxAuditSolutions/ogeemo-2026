@@ -1,0 +1,72 @@
+{
+  "guideId": "project-status--archive-task-from-board-to-file-manager",
+  "title": "Archive Task From Board To File Manager in Project Status",
+  "module": "project-status",
+  "intent": "archive-task-from-board-to-file-manager",
+  "targetAudience": "general",
+  "description": "Use this guide to complete archive task from board to file manager in Project Status. Intent key: archive-task-from-board-to-file-manager. Module key: project-status.",
+  "prerequisites": [
+    "You are signed in with general access and can open Project Status.",
+    "Records needed for archive task from board to file manager are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Project Status."
+  ],
+  "steps": [
+    "Open Project Status from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Archive Task From Board To File Manager\" in Project Status.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the archive task from board to file manager action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Archive Task From Board To File Manager finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Project Status lists, totals, or linked records.",
+    "Output references can be traced back to project-status--archive-task-from-board-to-file-manager with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing archive-task-from-board-to-file-manager.",
+    "Insufficient permissions for general while attempting archive-task-from-board-to-file-manager.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Project Status, reapply required filters, and repeat archive task from board to file manager.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm archive task from board to file manager completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Project Status immediately after execution."
+    },
+    {
+      "question": "What should I do if archive task from board to file manager returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "archive-task-from-board-to-file-manager",
+    "archive task from board to file manager",
+    "general",
+    "archive",
+    "task",
+    "from",
+    "board",
+    "to",
+    "file",
+    "manager",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.175Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.175Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for project-status--archive-task-from-board-to-file-manager from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

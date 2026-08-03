@@ -1,0 +1,73 @@
+{
+  "guideId": "client-time-log--resolve-client-time-log-data-load-failure",
+  "title": "Resolve Client Time Log Data Load Failure in Client Time Log",
+  "module": "client-time-log",
+  "intent": "resolve-client-time-log-data-load-failure",
+  "targetAudience": "general",
+  "description": "Use this guide to complete resolve client time log data load failure in Client Time Log. Intent key: resolve-client-time-log-data-load-failure. Module key: client-time-log.",
+  "prerequisites": [
+    "You are signed in with general access and can open Client Time Log.",
+    "Records needed for resolve client time log data load failure are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Client Time Log."
+  ],
+  "steps": [
+    "Open Client Time Log from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Resolve Client Time Log Data Load Failure\" in Client Time Log.",
+    "Set client and date filters first, then review billable flags and amount calculations.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the resolve client time log data load failure action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Resolve Client Time Log Data Load Failure finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Client Time Log lists, totals, or linked records.",
+    "Output references can be traced back to client-time-log--resolve-client-time-log-data-load-failure with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing resolve-client-time-log-data-load-failure.",
+    "Insufficient permissions for general while attempting resolve-client-time-log-data-load-failure.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Client Time Log, reapply required filters, and repeat resolve client time log data load failure.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm resolve client time log data load failure completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Client Time Log immediately after execution."
+    },
+    {
+      "question": "What should I do if resolve client time log data load failure returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-time-log",
+    "client time log",
+    "resolve-client-time-log-data-load-failure",
+    "resolve client time log data load failure",
+    "general",
+    "resolve",
+    "client",
+    "time",
+    "log",
+    "data",
+    "load",
+    "failure",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.190Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.190Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for client-time-log--resolve-client-time-log-data-load-failure from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

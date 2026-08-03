@@ -1,0 +1,76 @@
+{
+  "guideId": "email-hub--open-document-manager-mirror-from-email-hub",
+  "title": "Open Document Manager Mirror From Email Hub in Email Hub",
+  "module": "email-hub",
+  "intent": "open-document-manager-mirror-from-email-hub",
+  "targetAudience": "general",
+  "description": "Answer: How do I open document manager mirror from email hub? This is the canonical Email Hub workflow for open-document-manager-mirror-from-email-hub.",
+  "prerequisites": [
+    "You are signed in as general and can access Email Hub.",
+    "Route /actions is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for open-document-manager-mirror-from-email-hub are available before execution."
+  ],
+  "steps": [
+    "Navigate to /actions and open Email Hub.",
+    "Verify active workspace/company context before running open document manager mirror from email hub.",
+    "Open the exact workflow action labeled for open document manager mirror from email hub.",
+    "Enter required fields for open document manager mirror from email hub (entity selection, date range, and status where applicable).",
+    "Apply changes and execute open document manager mirror from email hub with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The open-document-manager-mirror-from-email-hub action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Email Hub lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting open-document-manager-mirror-from-email-hub.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /actions, reapply field values, and rerun open-document-manager-mirror-from-email-hub with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I open document manager mirror from email hub?",
+      "answer": "Open Email Hub at /actions, run open document manager mirror from email hub with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot open document manager mirror from email hub if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "email-hub",
+    "email hub",
+    "open-document-manager-mirror-from-email-hub",
+    "open document manager mirror from email hub",
+    "/actions",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "open",
+    "document",
+    "manager",
+    "mirror",
+    "from",
+    "email",
+    "hub"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.182Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.182Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/actions",
+    "workflowInstruction": "Hard-fail remediation guide for email-hub--open-document-manager-mirror-from-email-hub"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

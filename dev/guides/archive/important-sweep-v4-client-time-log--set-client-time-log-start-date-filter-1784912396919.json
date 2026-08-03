@@ -1,0 +1,70 @@
+{
+  "guideId": "client-time-log--set-client-time-log-start-date-filter",
+  "title": "Set Client Time Log Start Date Filter in Client Time Log",
+  "module": "client-time-log",
+  "intent": "set-client-time-log-start-date-filter",
+  "targetAudience": "general",
+  "description": "Complete the set client time log start date filter workflow in the Client Time Log module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Client Time Log module in the current Ogeemo environment.",
+    "Required data inputs for set client time log start date filter are prepared before starting."
+  ],
+  "steps": [
+    "Open Reporting and navigate to Client Time Log.",
+    "Apply client and date filters for the target time entries.",
+    "Select the specific time entry or grouped total required by the workflow.",
+    "Run the requested action (delete, invoice creation, or filter confirmation).",
+    "Validate that billing totals and linked records update correctly.",
+    "Save the result and verify the updated log state in reporting views."
+  ],
+  "validations": [
+    "Set Client Time Log Start Date Filter completes without warnings or blockers.",
+    "Resulting records are visible in the expected Client Time Log views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during set client time log start date filter.",
+    "Permission constraints prevent completion of set client time log start date filter.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun set client time log start date filter.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun set client time log start date filter?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm set client time log start date filter is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "client-time-log",
+    "set-client-time-log-start-date-filter",
+    "general",
+    "reporting",
+    "set",
+    "client",
+    "time",
+    "log",
+    "start",
+    "date",
+    "filter",
+    "client time log",
+    "set client time log start date filter"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.919Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.919Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for client-time-log--set-client-time-log-start-date-filter"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

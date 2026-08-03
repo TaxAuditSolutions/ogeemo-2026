@@ -1,0 +1,67 @@
+{
+  "guideId": "knowledge--explain-bks-general-income-expense-tabs",
+  "title": "Explain Bks General Income Expense Tabs in Knowledge",
+  "module": "knowledge",
+  "intent": "explain-bks-general-income-expense-tabs",
+  "targetAudience": "general",
+  "description": "Complete the explain bks general income expense tabs workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for explain bks general income expense tabs are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the explain bks general income expense tabs entry point in the module workflow.",
+    "Enter or select the required inputs for explain bks general income expense tabs.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Explain Bks General Income Expense Tabs completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during explain bks general income expense tabs.",
+    "Permission constraints prevent completion of explain bks general income expense tabs.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun explain bks general income expense tabs.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun explain bks general income expense tabs?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm explain bks general income expense tabs is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "explain-bks-general-income-expense-tabs",
+    "general",
+    "assistant",
+    "explain",
+    "bks",
+    "income",
+    "expense",
+    "tabs",
+    "explain bks general income expense tabs"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:27:41.957Z",
+  "lastVerifiedAt": "2026-07-23T07:27:41.957Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--explain-bks-general-income-expense-tabs"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

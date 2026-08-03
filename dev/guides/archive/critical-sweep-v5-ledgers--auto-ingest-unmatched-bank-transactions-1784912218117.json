@@ -1,0 +1,67 @@
+{
+  "guideId": "ledgers--auto-ingest-unmatched-bank-transactions",
+  "title": "Auto Ingest Unmatched Bank Transactions in Ledgers",
+  "module": "ledgers",
+  "intent": "auto-ingest-unmatched-bank-transactions",
+  "targetAudience": "accountant",
+  "description": "Complete the auto ingest unmatched bank transactions workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for auto ingest unmatched bank transactions are prepared before starting."
+  ],
+  "steps": [
+    "Open Accounting and select BKS General Ledger.",
+    "Use account and date filters to load the target ledger view.",
+    "Perform the requested ledger action for the selected records.",
+    "Validate resulting balances, transaction state, and posting status.",
+    "Capture change references and audit evidence.",
+    "Escalate any permission or lock errors through ledger recovery steps."
+  ],
+  "validations": [
+    "Auto Ingest Unmatched Bank Transactions completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during auto ingest unmatched bank transactions.",
+    "Permission constraints prevent completion of auto ingest unmatched bank transactions.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun auto ingest unmatched bank transactions.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun auto ingest unmatched bank transactions?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm auto ingest unmatched bank transactions is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "auto-ingest-unmatched-bank-transactions",
+    "accountant",
+    "accounting",
+    "auto",
+    "ingest",
+    "unmatched",
+    "bank",
+    "transactions",
+    "auto ingest unmatched bank transactions"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:56:58.116Z",
+  "lastVerifiedAt": "2026-07-24T16:56:58.116Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--auto-ingest-unmatched-bank-transactions"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

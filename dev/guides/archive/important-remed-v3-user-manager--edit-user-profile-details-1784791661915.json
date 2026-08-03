@@ -1,0 +1,66 @@
+{
+  "guideId": "user-manager--edit-user-profile-details",
+  "title": "Edit User Profile Details in User Manager",
+  "module": "user-manager",
+  "intent": "edit-user-profile-details",
+  "targetAudience": "admin",
+  "description": "Complete the edit user profile details workflow in the User Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the User Manager module in the current Ogeemo environment.",
+    "Required data inputs for edit user profile details are prepared before starting."
+  ],
+  "steps": [
+    "Open the User Manager module from the main navigation.",
+    "Locate the edit user profile details entry point in the module workflow.",
+    "Enter or select the required inputs for edit user profile details.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Edit User Profile Details completes without warnings or blockers.",
+    "Resulting records are visible in the expected User Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during edit user profile details.",
+    "Permission constraints prevent completion of edit user profile details.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun edit user profile details.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun edit user profile details?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm edit user profile details is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "user-manager",
+    "edit-user-profile-details",
+    "admin",
+    "edit",
+    "user",
+    "profile",
+    "details",
+    "user manager",
+    "edit user profile details"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:27:41.915Z",
+  "lastVerifiedAt": "2026-07-23T07:27:41.915Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for user-manager--edit-user-profile-details"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

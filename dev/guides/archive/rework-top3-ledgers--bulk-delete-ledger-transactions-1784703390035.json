@@ -1,0 +1,69 @@
+{
+  "guideId": "ledgers--bulk-delete-ledger-transactions",
+  "title": "Bulk Delete Ledger Transactions in Ledgers",
+  "module": "ledgers",
+  "intent": "bulk-delete-ledger-transactions",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete bulk delete ledger transactions in Ledgers. Intent key: bulk-delete-ledger-transactions. Module key: ledgers.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Ledgers.",
+    "Records needed for bulk delete ledger transactions are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Ledgers."
+  ],
+  "steps": [
+    "Open Ledgers from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Bulk Delete Ledger Transactions\" in Ledgers.",
+    "Select the correct ledger tab (general, income, expense, or reconciliation) before running the action.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the bulk delete ledger transactions action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Bulk Delete Ledger Transactions finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Ledgers lists, totals, or linked records.",
+    "Output references can be traced back to ledgers--bulk-delete-ledger-transactions with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing bulk-delete-ledger-transactions.",
+    "Insufficient permissions for admin while attempting bulk-delete-ledger-transactions.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Ledgers, reapply required filters, and repeat bulk delete ledger transactions.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm bulk delete ledger transactions completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Ledgers immediately after execution."
+    },
+    {
+      "question": "What should I do if bulk delete ledger transactions returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "ledgers",
+    "bulk-delete-ledger-transactions",
+    "bulk delete ledger transactions",
+    "admin",
+    "bulk",
+    "delete",
+    "ledger",
+    "transactions",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.2",
+  "generatedAt": "2026-07-22T06:56:30.035Z",
+  "lastVerifiedAt": "2026-07-22T06:56:30.035Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for ledgers--bulk-delete-ledger-transactions from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

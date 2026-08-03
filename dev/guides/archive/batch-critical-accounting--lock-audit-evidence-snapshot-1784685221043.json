@@ -1,0 +1,65 @@
+{
+  "guideId": "accounting--lock-audit-evidence-snapshot",
+  "title": "Lock Audit Evidence Snapshot in Accounting",
+  "module": "accounting",
+  "intent": "lock-audit-evidence-snapshot",
+  "targetAudience": "admin",
+  "description": "Complete the lock audit evidence snapshot workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for lock audit evidence snapshot are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the lock audit evidence snapshot entry point in the module workflow.",
+    "Enter or select the required inputs for lock audit evidence snapshot.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Lock Audit Evidence Snapshot completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during lock audit evidence snapshot.",
+    "Permission constraints prevent completion of lock audit evidence snapshot.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun lock audit evidence snapshot.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun lock audit evidence snapshot?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm lock audit evidence snapshot is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "lock-audit-evidence-snapshot",
+    "admin",
+    "lock",
+    "audit",
+    "evidence",
+    "snapshot",
+    "lock audit evidence snapshot"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:41.043Z",
+  "lastVerifiedAt": "2026-07-22T01:53:41.043Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--lock-audit-evidence-snapshot"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

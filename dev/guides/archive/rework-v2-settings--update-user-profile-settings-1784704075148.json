@@ -1,0 +1,67 @@
+{
+  "guideId": "settings--update-user-profile-settings",
+  "title": "Update User Profile Settings in Settings",
+  "module": "settings",
+  "intent": "update-user-profile-settings",
+  "targetAudience": "general",
+  "description": "Use this guide to complete update user profile settings in Settings. Intent key: update-user-profile-settings. Module key: settings.",
+  "prerequisites": [
+    "You are signed in with general access and can open Settings.",
+    "Records needed for update user profile settings are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Settings."
+  ],
+  "steps": [
+    "Open Settings from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Update User Profile Settings\" in Settings.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the update user profile settings action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Update User Profile Settings finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Settings lists, totals, or linked records.",
+    "Output references can be traced back to settings--update-user-profile-settings with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing update-user-profile-settings.",
+    "Insufficient permissions for general while attempting update-user-profile-settings.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Settings, reapply required filters, and repeat update user profile settings.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm update user profile settings completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Settings immediately after execution."
+    },
+    {
+      "question": "What should I do if update user profile settings returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "admin",
+    "settings",
+    "update-user-profile-settings",
+    "update user profile settings",
+    "general",
+    "update",
+    "user",
+    "profile",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.148Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.148Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for settings--update-user-profile-settings from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

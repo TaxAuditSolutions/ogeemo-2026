@@ -1,0 +1,64 @@
+{
+  "guideId": "backup--handle-auth-backup-failure",
+  "title": "Handle Auth Backup Failure in Backup",
+  "module": "backup",
+  "intent": "handle-auth-backup-failure",
+  "targetAudience": "admin",
+  "description": "Complete the handle auth backup failure workflow in the Backup module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Backup module in the current Ogeemo environment.",
+    "Required data inputs for handle auth backup failure are prepared before starting."
+  ],
+  "steps": [
+    "Open the Backup module from the main navigation.",
+    "Locate the handle auth backup failure entry point in the module workflow.",
+    "Enter or select the required inputs for handle auth backup failure.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Handle Auth Backup Failure completes without warnings or blockers.",
+    "Resulting records are visible in the expected Backup views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during handle auth backup failure.",
+    "Permission constraints prevent completion of handle auth backup failure.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun handle auth backup failure.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun handle auth backup failure?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm handle auth backup failure is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "handle-auth-backup-failure",
+    "admin",
+    "handle",
+    "auth",
+    "failure",
+    "handle auth backup failure"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:04.861Z",
+  "lastVerifiedAt": "2026-07-22T06:05:04.861Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for backup--handle-auth-backup-failure"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

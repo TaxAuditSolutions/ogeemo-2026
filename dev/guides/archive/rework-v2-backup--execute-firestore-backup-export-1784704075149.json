@@ -1,0 +1,66 @@
+{
+  "guideId": "backup--execute-firestore-backup-export",
+  "title": "Execute Firestore Backup Export in Backup",
+  "module": "backup",
+  "intent": "execute-firestore-backup-export",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete execute firestore backup export in Backup. Intent key: execute-firestore-backup-export. Module key: backup.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Backup.",
+    "Records needed for execute firestore backup export are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Backup."
+  ],
+  "steps": [
+    "Open Backup from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Execute Firestore Backup Export\" in Backup.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the execute firestore backup export action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Execute Firestore Backup Export finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Backup lists, totals, or linked records.",
+    "Output references can be traced back to backup--execute-firestore-backup-export with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing execute-firestore-backup-export.",
+    "Insufficient permissions for admin while attempting execute-firestore-backup-export.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Backup, reapply required filters, and repeat execute firestore backup export.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm execute firestore backup export completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Backup immediately after execution."
+    },
+    {
+      "question": "What should I do if execute firestore backup export returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "execute-firestore-backup-export",
+    "execute firestore backup export",
+    "admin",
+    "execute",
+    "firestore",
+    "export",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.149Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.149Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for backup--execute-firestore-backup-export from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

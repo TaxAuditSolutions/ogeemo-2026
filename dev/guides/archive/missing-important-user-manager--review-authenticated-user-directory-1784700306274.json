@@ -1,0 +1,66 @@
+{
+  "guideId": "user-manager--review-authenticated-user-directory",
+  "title": "Review Authenticated User Directory in User Manager",
+  "module": "user-manager",
+  "intent": "review-authenticated-user-directory",
+  "targetAudience": "admin",
+  "description": "Complete the review authenticated user directory workflow in the User Manager module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the User Manager module in the current Ogeemo environment.",
+    "Required data inputs for review authenticated user directory are prepared before starting."
+  ],
+  "steps": [
+    "Open the User Manager module from the main navigation.",
+    "Locate the review authenticated user directory entry point in the module workflow.",
+    "Enter or select the required inputs for review authenticated user directory.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Review Authenticated User Directory completes without warnings or blockers.",
+    "Resulting records are visible in the expected User Manager views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during review authenticated user directory.",
+    "Permission constraints prevent completion of review authenticated user directory.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun review authenticated user directory.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun review authenticated user directory?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm review authenticated user directory is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "user-manager",
+    "review-authenticated-user-directory",
+    "admin",
+    "review",
+    "authenticated",
+    "user",
+    "directory",
+    "user manager",
+    "review authenticated user directory"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.274Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.274Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for user-manager--review-authenticated-user-directory"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

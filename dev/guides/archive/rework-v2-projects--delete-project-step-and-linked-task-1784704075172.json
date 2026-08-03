@@ -1,0 +1,70 @@
+{
+  "guideId": "projects--delete-project-step-and-linked-task",
+  "title": "Delete Project Step And Linked Task in Projects",
+  "module": "projects",
+  "intent": "delete-project-step-and-linked-task",
+  "targetAudience": "general",
+  "description": "Use this guide to complete delete project step and linked task in Projects. Intent key: delete-project-step-and-linked-task. Module key: projects.",
+  "prerequisites": [
+    "You are signed in with general access and can open Projects.",
+    "Records needed for delete project step and linked task are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Projects."
+  ],
+  "steps": [
+    "Open Projects from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Delete Project Step And Linked Task\" in Projects.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the delete project step and linked task action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Delete Project Step And Linked Task finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Projects lists, totals, or linked records.",
+    "Output references can be traced back to projects--delete-project-step-and-linked-task with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing delete-project-step-and-linked-task.",
+    "Insufficient permissions for general while attempting delete-project-step-and-linked-task.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Projects, reapply required filters, and repeat delete project step and linked task.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm delete project step and linked task completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Projects immediately after execution."
+    },
+    {
+      "question": "What should I do if delete project step and linked task returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "projects",
+    "delete-project-step-and-linked-task",
+    "delete project step and linked task",
+    "general",
+    "delete",
+    "project",
+    "step",
+    "and",
+    "linked",
+    "task",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.172Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.172Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for projects--delete-project-step-and-linked-task from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

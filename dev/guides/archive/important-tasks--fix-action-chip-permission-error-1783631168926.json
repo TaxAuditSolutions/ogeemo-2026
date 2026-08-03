@@ -1,0 +1,67 @@
+{
+  "guideId": "tasks--fix-action-chip-permission-error",
+  "title": "Fix Action Chip Permission Error in Tasks",
+  "module": "tasks",
+  "intent": "fix-action-chip-permission-error",
+  "targetAudience": "admin",
+  "description": "Complete the fix action chip permission error workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for fix action chip permission error are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the fix action chip permission error entry point in the module workflow.",
+    "Enter or select the required inputs for fix action chip permission error.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Fix Action Chip Permission Error completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during fix action chip permission error.",
+    "Permission constraints prevent completion of fix action chip permission error.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun fix action chip permission error.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun fix action chip permission error?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm fix action chip permission error is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "fix-action-chip-permission-error",
+    "admin",
+    "productivity",
+    "fix",
+    "action",
+    "chip",
+    "permission",
+    "error",
+    "fix action chip permission error"
+  ],
+  "version": "1.0.2",
+  "generatedAt": "2026-07-09T21:06:08.924Z",
+  "lastVerifiedAt": "2026-07-09T21:06:08.924Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--fix-action-chip-permission-error"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

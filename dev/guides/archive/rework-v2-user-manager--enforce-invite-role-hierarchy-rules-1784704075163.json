@@ -1,0 +1,69 @@
+{
+  "guideId": "user-manager--enforce-invite-role-hierarchy-rules",
+  "title": "Enforce Invite Role Hierarchy Rules in User Manager",
+  "module": "user-manager",
+  "intent": "enforce-invite-role-hierarchy-rules",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete enforce invite role hierarchy rules in User Manager. Intent key: enforce-invite-role-hierarchy-rules. Module key: user-manager.",
+  "prerequisites": [
+    "You are signed in with admin access and can open User Manager.",
+    "Records needed for enforce invite role hierarchy rules are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in User Manager."
+  ],
+  "steps": [
+    "Open User Manager from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Enforce Invite Role Hierarchy Rules\" in User Manager.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the enforce invite role hierarchy rules action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Enforce Invite Role Hierarchy Rules finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in User Manager lists, totals, or linked records.",
+    "Output references can be traced back to user-manager--enforce-invite-role-hierarchy-rules with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing enforce-invite-role-hierarchy-rules.",
+    "Insufficient permissions for admin while attempting enforce-invite-role-hierarchy-rules.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen User Manager, reapply required filters, and repeat enforce invite role hierarchy rules.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm enforce invite role hierarchy rules completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in User Manager immediately after execution."
+    },
+    {
+      "question": "What should I do if enforce invite role hierarchy rules returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "admin",
+    "user-manager",
+    "user manager",
+    "enforce-invite-role-hierarchy-rules",
+    "enforce invite role hierarchy rules",
+    "enforce",
+    "invite",
+    "role",
+    "hierarchy",
+    "rules",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.163Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.163Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for user-manager--enforce-invite-role-hierarchy-rules from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

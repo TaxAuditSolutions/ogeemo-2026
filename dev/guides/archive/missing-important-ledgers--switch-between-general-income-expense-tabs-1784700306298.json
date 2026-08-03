@@ -1,0 +1,68 @@
+{
+  "guideId": "ledgers--switch-between-general-income-expense-tabs",
+  "title": "Switch Between General Income Expense Tabs in Ledgers",
+  "module": "ledgers",
+  "intent": "switch-between-general-income-expense-tabs",
+  "targetAudience": "accountant",
+  "description": "Complete the switch between general income expense tabs workflow in the Ledgers module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Ledgers module in the current Ogeemo environment.",
+    "Required data inputs for switch between general income expense tabs are prepared before starting."
+  ],
+  "steps": [
+    "Open the Ledgers module from the main navigation.",
+    "Locate the switch between general income expense tabs entry point in the module workflow.",
+    "Enter or select the required inputs for switch between general income expense tabs.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Switch Between General Income Expense Tabs completes without warnings or blockers.",
+    "Resulting records are visible in the expected Ledgers views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during switch between general income expense tabs.",
+    "Permission constraints prevent completion of switch between general income expense tabs.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun switch between general income expense tabs.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun switch between general income expense tabs?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm switch between general income expense tabs is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "ledgers",
+    "switch-between-general-income-expense-tabs",
+    "accountant",
+    "accounting",
+    "switch",
+    "between",
+    "general",
+    "income",
+    "expense",
+    "tabs",
+    "switch between general income expense tabs"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.298Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.298Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for ledgers--switch-between-general-income-expense-tabs"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

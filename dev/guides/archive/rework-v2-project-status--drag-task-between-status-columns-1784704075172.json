@@ -1,0 +1,70 @@
+{
+  "guideId": "project-status--drag-task-between-status-columns",
+  "title": "Drag Task Between Status Columns in Project Status",
+  "module": "project-status",
+  "intent": "drag-task-between-status-columns",
+  "targetAudience": "general",
+  "description": "Use this guide to complete drag task between status columns in Project Status. Intent key: drag-task-between-status-columns. Module key: project-status.",
+  "prerequisites": [
+    "You are signed in with general access and can open Project Status.",
+    "Records needed for drag task between status columns are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Project Status."
+  ],
+  "steps": [
+    "Open Project Status from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Drag Task Between Status Columns\" in Project Status.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the drag task between status columns action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Drag Task Between Status Columns finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Project Status lists, totals, or linked records.",
+    "Output references can be traced back to project-status--drag-task-between-status-columns with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing drag-task-between-status-columns.",
+    "Insufficient permissions for general while attempting drag-task-between-status-columns.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Project Status, reapply required filters, and repeat drag task between status columns.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm drag task between status columns completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Project Status immediately after execution."
+    },
+    {
+      "question": "What should I do if drag task between status columns returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "drag-task-between-status-columns",
+    "drag task between status columns",
+    "general",
+    "drag",
+    "task",
+    "between",
+    "status",
+    "columns",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.172Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.172Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for project-status--drag-task-between-status-columns from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

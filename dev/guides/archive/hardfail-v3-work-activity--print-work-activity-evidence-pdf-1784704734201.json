@@ -1,0 +1,75 @@
+{
+  "guideId": "work-activity--print-work-activity-evidence-pdf",
+  "title": "Print Work Activity Evidence Pdf in Work Activity",
+  "module": "work-activity",
+  "intent": "print-work-activity-evidence-pdf",
+  "targetAudience": "general",
+  "description": "Answer: How do I print work activity evidence pdf? This is the canonical Work Activity workflow for print-work-activity-evidence-pdf.",
+  "prerequisites": [
+    "You are signed in as general and can access Work Activity.",
+    "Route /reports/work-activity is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for print-work-activity-evidence-pdf are available before execution."
+  ],
+  "steps": [
+    "Navigate to /reports/work-activity and open Work Activity.",
+    "Verify active workspace/company context before running print work activity evidence pdf.",
+    "Open the exact workflow action labeled for print work activity evidence pdf.",
+    "Enter required fields for print work activity evidence pdf (entity selection, date range, and status where applicable).",
+    "Apply changes and execute print work activity evidence pdf with explicit confirmation in the UI.",
+    "Use print/export controls and confirm file preview/download generation completes.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The print-work-activity-evidence-pdf action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Work Activity lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting print-work-activity-evidence-pdf.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /reports/work-activity, reapply field values, and rerun print-work-activity-evidence-pdf with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I print work activity evidence pdf?",
+      "answer": "Open Work Activity at /reports/work-activity, run print work activity evidence pdf with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot print work activity evidence pdf if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "work-activity",
+    "work activity",
+    "print-work-activity-evidence-pdf",
+    "print work activity evidence pdf",
+    "/reports/work-activity",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "print",
+    "work",
+    "activity",
+    "evidence",
+    "pdf"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.201Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.201Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/reports/work-activity",
+    "workflowInstruction": "Hard-fail remediation guide for work-activity--print-work-activity-evidence-pdf"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

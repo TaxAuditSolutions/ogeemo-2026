@@ -5,12 +5,19 @@ run:
     - npm run build
   start:
     - npm run start
-# This section tells App Hosting to securely fetch the secret from Secret Manager
-# and make it available as an environment variable to the running server.
-secretEnvironmentVariables:
-  - key: FIREBASE_SERVICE_ACCOUNT_KEY
-    secret: firebase-service-account-key
-  - key: GEMINI_API_KEY
-    secret: gemini-api-key
+# Runtime env vars sourced from Secret Manager.
+env:
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: SERVICE_ACCOUNT_KEY
+    availability:
+      - RUNTIME
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+    availability:
+      - RUNTIME
+  - variable: OGEEMO_ASSISTANT_URL
+    secret: OGEEMO_ASSISTANT_URL
+    availability:
+      - RUNTIME
 # Pin to a specific version of Node.js
 runtime: nodejs20

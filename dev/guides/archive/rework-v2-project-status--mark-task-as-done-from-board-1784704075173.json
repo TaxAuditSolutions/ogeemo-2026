@@ -1,0 +1,71 @@
+{
+  "guideId": "project-status--mark-task-as-done-from-board",
+  "title": "Mark Task As Done From Board in Project Status",
+  "module": "project-status",
+  "intent": "mark-task-as-done-from-board",
+  "targetAudience": "general",
+  "description": "Use this guide to complete mark task as done from board in Project Status. Intent key: mark-task-as-done-from-board. Module key: project-status.",
+  "prerequisites": [
+    "You are signed in with general access and can open Project Status.",
+    "Records needed for mark task as done from board are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Project Status."
+  ],
+  "steps": [
+    "Open Project Status from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Mark Task As Done From Board\" in Project Status.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the mark task as done from board action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Mark Task As Done From Board finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Project Status lists, totals, or linked records.",
+    "Output references can be traced back to project-status--mark-task-as-done-from-board with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing mark-task-as-done-from-board.",
+    "Insufficient permissions for general while attempting mark-task-as-done-from-board.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Project Status, reapply required filters, and repeat mark task as done from board.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm mark task as done from board completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Project Status immediately after execution."
+    },
+    {
+      "question": "What should I do if mark task as done from board returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "project-status",
+    "project status",
+    "mark-task-as-done-from-board",
+    "mark task as done from board",
+    "general",
+    "mark",
+    "task",
+    "as",
+    "done",
+    "from",
+    "board",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.173Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.173Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for project-status--mark-task-as-done-from-board from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

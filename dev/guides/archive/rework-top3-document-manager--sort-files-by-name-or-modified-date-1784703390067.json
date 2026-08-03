@@ -1,0 +1,72 @@
+{
+  "guideId": "document-manager--sort-files-by-name-or-modified-date",
+  "title": "Sort Files By Name Or Modified Date in Document Manager",
+  "module": "document-manager",
+  "intent": "sort-files-by-name-or-modified-date",
+  "targetAudience": "general",
+  "description": "Use this guide to complete sort files by name or modified date in Document Manager. Intent key: sort-files-by-name-or-modified-date. Module key: document-manager.",
+  "prerequisites": [
+    "You are signed in with general access and can open Document Manager.",
+    "Records needed for sort files by name or modified date are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Document Manager."
+  ],
+  "steps": [
+    "Open Document Manager from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Sort Files By Name Or Modified Date\" in Document Manager.",
+    "Confirm folder tree location and parent node before moving, renaming, or linking files.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the sort files by name or modified date action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Sort Files By Name Or Modified Date finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Document Manager lists, totals, or linked records.",
+    "Output references can be traced back to document-manager--sort-files-by-name-or-modified-date with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing sort-files-by-name-or-modified-date.",
+    "Insufficient permissions for general while attempting sort-files-by-name-or-modified-date.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Document Manager, reapply required filters, and repeat sort files by name or modified date.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm sort files by name or modified date completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Document Manager immediately after execution."
+    },
+    {
+      "question": "What should I do if sort files by name or modified date returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "files",
+    "document-manager",
+    "document manager",
+    "sort-files-by-name-or-modified-date",
+    "sort files by name or modified date",
+    "general",
+    "sort",
+    "by",
+    "name",
+    "or",
+    "modified",
+    "date",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.2",
+  "generatedAt": "2026-07-22T06:56:30.067Z",
+  "lastVerifiedAt": "2026-07-22T06:56:30.067Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for document-manager--sort-files-by-name-or-modified-date from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

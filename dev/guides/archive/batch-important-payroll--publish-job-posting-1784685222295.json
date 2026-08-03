@@ -1,0 +1,64 @@
+{
+  "guideId": "payroll--publish-job-posting",
+  "title": "Publish Job Posting in Payroll",
+  "module": "payroll",
+  "intent": "publish-job-posting",
+  "targetAudience": "admin",
+  "description": "Complete the publish job posting workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for publish job posting are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the publish job posting entry point in the module workflow.",
+    "Enter or select the required inputs for publish job posting.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Publish Job Posting completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during publish job posting.",
+    "Permission constraints prevent completion of publish job posting.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun publish job posting.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun publish job posting?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm publish job posting is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "publish-job-posting",
+    "admin",
+    "publish",
+    "job",
+    "posting",
+    "publish job posting"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:42.295Z",
+  "lastVerifiedAt": "2026-07-22T01:53:42.295Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--publish-job-posting"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

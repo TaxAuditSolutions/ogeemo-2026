@@ -1,0 +1,66 @@
+{
+  "guideId": "contacts--unlink-contact-from-deal",
+  "title": "Unlink Contact From Deal in Contacts",
+  "module": "contacts",
+  "intent": "unlink-contact-from-deal",
+  "targetAudience": "consultant",
+  "description": "Complete the unlink contact from deal workflow in the Contacts module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Contacts module in the current Ogeemo environment.",
+    "Required data inputs for unlink contact from deal are prepared before starting."
+  ],
+  "steps": [
+    "Open the Contacts module from the main navigation.",
+    "Locate the unlink contact from deal entry point in the module workflow.",
+    "Enter or select the required inputs for unlink contact from deal.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Unlink Contact From Deal completes without warnings or blockers.",
+    "Resulting records are visible in the expected Contacts views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during unlink contact from deal.",
+    "Permission constraints prevent completion of unlink contact from deal.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun unlink contact from deal.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun unlink contact from deal?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm unlink contact from deal is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "contacts",
+    "unlink-contact-from-deal",
+    "consultant",
+    "crm",
+    "unlink",
+    "contact",
+    "from",
+    "deal",
+    "unlink contact from deal"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:21.007Z",
+  "lastVerifiedAt": "2026-07-14T04:48:21.007Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for contacts--unlink-contact-from-deal"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

@@ -1,0 +1,70 @@
+{
+  "guideId": "client-statement--clear-client-statement-date-filters",
+  "title": "Clear Client Statement Date Filters in Client Statement",
+  "module": "client-statement",
+  "intent": "clear-client-statement-date-filters",
+  "targetAudience": "general",
+  "description": "Use this guide to complete clear client statement date filters in Client Statement. Intent key: clear-client-statement-date-filters. Module key: client-statement.",
+  "prerequisites": [
+    "You are signed in with general access and can open Client Statement.",
+    "Records needed for clear client statement date filters are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Client Statement."
+  ],
+  "steps": [
+    "Open Client Statement from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Clear Client Statement Date Filters\" in Client Statement.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the clear client statement date filters action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Clear Client Statement Date Filters finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Client Statement lists, totals, or linked records.",
+    "Output references can be traced back to client-statement--clear-client-statement-date-filters with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing clear-client-statement-date-filters.",
+    "Insufficient permissions for general while attempting clear-client-statement-date-filters.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Client Statement, reapply required filters, and repeat clear client statement date filters.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm clear client statement date filters completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Client Statement immediately after execution."
+    },
+    {
+      "question": "What should I do if clear client statement date filters returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "reporting",
+    "client-statement",
+    "client statement",
+    "clear-client-statement-date-filters",
+    "clear client statement date filters",
+    "general",
+    "clear",
+    "client",
+    "statement",
+    "date",
+    "filters",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.186Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.186Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for client-statement--clear-client-statement-date-filters from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

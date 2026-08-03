@@ -1,0 +1,65 @@
+{
+  "guideId": "settings--set-approval-workflow-rules",
+  "title": "Set Approval Workflow Rules in Settings",
+  "module": "settings",
+  "intent": "set-approval-workflow-rules",
+  "targetAudience": "admin",
+  "description": "Complete the set approval workflow rules workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for set approval workflow rules are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the set approval workflow rules entry point in the module workflow.",
+    "Enter or select the required inputs for set approval workflow rules.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Set Approval Workflow Rules completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during set approval workflow rules.",
+    "Permission constraints prevent completion of set approval workflow rules.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun set approval workflow rules.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun set approval workflow rules?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm set approval workflow rules is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "set-approval-workflow-rules",
+    "admin",
+    "set",
+    "approval",
+    "workflow",
+    "rules",
+    "set approval workflow rules"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:21:05.114Z",
+  "lastVerifiedAt": "2026-07-14T06:21:05.114Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--set-approval-workflow-rules"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

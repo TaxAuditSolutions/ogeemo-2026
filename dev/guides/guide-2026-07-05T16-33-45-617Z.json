@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-07-05T16:33:45.616Z",
+  "targetUrl": "http://localhost:9002/dashboard",
+  "finalUrl": "http://localhost:9002/reports",
+  "workflowInstruction": "You are already authenticated. Find the Analytics tab and navigate to the export reports section. If labels differ, identify the closest equivalent navigation path. Stop after you reach the export reports screen. Do not navigate away from these hosts: localhost, 127.0.0.1. Never open external domains, new tabs, or third-party sites.",
+  "allowedHosts": [
+    "localhost",
+    "127.0.0.1"
+  ],
+  "finalUiContext": "URL: http://localhost:9002/reports\nVisible headings: OGEEMO | Reports Hub | Operational Evidence | Work Activity Summary | Worker Time Logs | Client Time Log | Financial Intelligence | Client Statement | Income Statement (T2125) | Accrual Adjustments | Global Discovery | Advanced AI Search\nVisible actions: Action Manager | Action Chip Magic | Command Centre | AI Dispatch | Record Keeping Credo | Ogeemo Web | Audit Ready | Mentor Mediation | Action Manager Settings | Trash | A-Z Sort | HR Hub | CRM Hub | Inventory | Marketing | Google Apps | Hytexercise | Image Generator | Settings | Image Manager",
+  "actionTrace": "1. open_web_browser (url: http://localhost:9002/login)\n2. click (url: http://localhost:9002/welcome)\n3. scroll (url: http://localhost:9002/welcome)\n4. click (url: http://localhost:9002/welcome)\n5. click (url: http://localhost:9002/action-manager)\n6. click (url: http://localhost:9002/action-manager)\n7. scroll (url: http://localhost:9002/inventory-manager/track)\n8. click (url: http://localhost:9002/inventory-manager/track)\n9. click (url: http://localhost:9002/accounting/audit-readiness)\n10. keypress (url: http://localhost:9002/accounting/audit-readiness)\n11. keypress (url: http://localhost:9002/accounting/audit-readiness)\n12. click (url: http://localhost:9002/accounting/audit-readiness)\n13. keypress (url: http://localhost:9002/reports)\n14. keypress (url: http://localhost:9002/reports)\n15. click (url: http://localhost:9002/reports)\n16. wait (url: http://localhost:9002/reports/work-activity)\n17. click (url: http://localhost:9002/reports/work-activity)\n18. click (url: http://localhost:9002/reports)",
+  "guide": {
+    "title": "How to Export Your Data",
+    "description": "This guide outlines the steps to navigate to the Reports Hub and locate the data export feature. This allows you to download your full BKS ledger and vault for data portability.",
+    "steps": [
+      "From the main vertical navigation bar on the left, click on the \"Reports Hub\" icon.",
+      "On the \"Reports Hub\" page, scroll to the bottom to find the \"DATA PORTABILITY (ANTI-GREED)\" section.",
+      "Click the \"ACCESS DATA\" link under the \"Export My Data\" heading to begin the export process."
+    ]
+  }
+}

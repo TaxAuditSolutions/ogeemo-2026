@@ -1,0 +1,65 @@
+{
+  "guideId": "backup--prevent-backup-run-without-selection",
+  "title": "Prevent Backup Run Without Selection in Backup",
+  "module": "backup",
+  "intent": "prevent-backup-run-without-selection",
+  "targetAudience": "admin",
+  "description": "Complete the prevent backup run without selection workflow in the Backup module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Backup module in the current Ogeemo environment.",
+    "Required data inputs for prevent backup run without selection are prepared before starting."
+  ],
+  "steps": [
+    "Open the Backup module from the main navigation.",
+    "Locate the prevent backup run without selection entry point in the module workflow.",
+    "Enter or select the required inputs for prevent backup run without selection.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Prevent Backup Run Without Selection completes without warnings or blockers.",
+    "Resulting records are visible in the expected Backup views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during prevent backup run without selection.",
+    "Permission constraints prevent completion of prevent backup run without selection.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun prevent backup run without selection.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun prevent backup run without selection?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm prevent backup run without selection is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "prevent-backup-run-without-selection",
+    "admin",
+    "prevent",
+    "run",
+    "without",
+    "selection",
+    "prevent backup run without selection"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.273Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.273Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for backup--prevent-backup-run-without-selection"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

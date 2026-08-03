@@ -1,0 +1,70 @@
+{
+  "guideId": "backup--prepare-export-payload-for-third-party-ingestion",
+  "title": "Prepare Export Payload For Third Party Ingestion in Backup",
+  "module": "backup",
+  "intent": "prepare-export-payload-for-third-party-ingestion",
+  "targetAudience": "admin",
+  "description": "Use this guide to complete prepare export payload for third party ingestion in Backup. Intent key: prepare-export-payload-for-third-party-ingestion. Module key: backup.",
+  "prerequisites": [
+    "You are signed in with admin access and can open Backup.",
+    "Records needed for prepare export payload for third party ingestion are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Backup."
+  ],
+  "steps": [
+    "Open Backup from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Prepare Export Payload For Third Party Ingestion\" in Backup.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the prepare export payload for third party ingestion action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Prepare Export Payload For Third Party Ingestion finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Backup lists, totals, or linked records.",
+    "Output references can be traced back to backup--prepare-export-payload-for-third-party-ingestion with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing prepare-export-payload-for-third-party-ingestion.",
+    "Insufficient permissions for admin while attempting prepare-export-payload-for-third-party-ingestion.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Backup, reapply required filters, and repeat prepare export payload for third party ingestion.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm prepare export payload for third party ingestion completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Backup immediately after execution."
+    },
+    {
+      "question": "What should I do if prepare export payload for third party ingestion returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "backup",
+    "prepare-export-payload-for-third-party-ingestion",
+    "prepare export payload for third party ingestion",
+    "admin",
+    "prepare",
+    "export",
+    "payload",
+    "for",
+    "third",
+    "party",
+    "ingestion",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.155Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.155Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for backup--prepare-export-payload-for-third-party-ingestion from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

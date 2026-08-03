@@ -1,0 +1,65 @@
+{
+  "guideId": "accounting--monitor-open-audit-requests",
+  "title": "Monitor Open Audit Requests in Accounting",
+  "module": "accounting",
+  "intent": "monitor-open-audit-requests",
+  "targetAudience": "admin",
+  "description": "Complete the monitor open audit requests workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for monitor open audit requests are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the monitor open audit requests entry point in the module workflow.",
+    "Enter or select the required inputs for monitor open audit requests.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Monitor Open Audit Requests completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during monitor open audit requests.",
+    "Permission constraints prevent completion of monitor open audit requests.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun monitor open audit requests.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun monitor open audit requests?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm monitor open audit requests is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "monitor-open-audit-requests",
+    "admin",
+    "monitor",
+    "open",
+    "audit",
+    "requests",
+    "monitor open audit requests"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-21T05:51:57.952Z",
+  "lastVerifiedAt": "2026-07-21T05:51:57.952Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--monitor-open-audit-requests"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

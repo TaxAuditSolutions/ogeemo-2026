@@ -1,0 +1,64 @@
+{
+  "guideId": "accounting--handle-duplicate-transaction",
+  "title": "Handle Duplicate Transaction in Accounting",
+  "module": "accounting",
+  "intent": "handle-duplicate-transaction",
+  "targetAudience": "accountant",
+  "description": "Complete the handle duplicate transaction workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for handle duplicate transaction are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the handle duplicate transaction entry point in the module workflow.",
+    "Enter or select the required inputs for handle duplicate transaction.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Handle Duplicate Transaction completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during handle duplicate transaction.",
+    "Permission constraints prevent completion of handle duplicate transaction.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun handle duplicate transaction.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun handle duplicate transaction?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm handle duplicate transaction is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "handle-duplicate-transaction",
+    "accountant",
+    "handle",
+    "duplicate",
+    "transaction",
+    "handle duplicate transaction"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:54.313Z",
+  "lastVerifiedAt": "2026-07-14T05:30:54.313Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--handle-duplicate-transaction"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

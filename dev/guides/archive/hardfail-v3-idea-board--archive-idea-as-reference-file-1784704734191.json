@@ -1,0 +1,74 @@
+{
+  "guideId": "idea-board--archive-idea-as-reference-file",
+  "title": "Archive Idea As Reference File in Idea Board",
+  "module": "idea-board",
+  "intent": "archive-idea-as-reference-file",
+  "targetAudience": "general",
+  "description": "Answer: How do I archive idea as reference file? This is the canonical Idea Board workflow for archive-idea-as-reference-file.",
+  "prerequisites": [
+    "You are signed in as general and can access Idea Board.",
+    "Route /ideas is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for archive-idea-as-reference-file are available before execution."
+  ],
+  "steps": [
+    "Navigate to /ideas and open Idea Board.",
+    "Verify active workspace/company context before running archive idea as reference file.",
+    "Open the exact workflow action labeled for archive idea as reference file.",
+    "Enter required fields for archive idea as reference file (entity selection, date range, and status where applicable).",
+    "Apply changes and execute archive idea as reference file with explicit confirmation in the UI.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The archive-idea-as-reference-file action completes without permission or validation errors.",
+    "Resulting state is visible immediately in Idea Board lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting archive-idea-as-reference-file.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /ideas, reapply field values, and rerun archive-idea-as-reference-file with a narrowed scope.",
+    "Refresh session and confirm role permissions for general before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I archive idea as reference file?",
+      "answer": "Open Idea Board at /ideas, run archive idea as reference file with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot archive idea as reference file if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "idea-board",
+    "idea board",
+    "archive-idea-as-reference-file",
+    "archive idea as reference file",
+    "/ideas",
+    "general",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "archive",
+    "idea",
+    "as",
+    "reference",
+    "file"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.191Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.191Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/ideas",
+    "workflowInstruction": "Hard-fail remediation guide for idea-board--archive-idea-as-reference-file"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

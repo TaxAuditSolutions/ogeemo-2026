@@ -1,0 +1,72 @@
+{
+  "guideId": "email-hub--open-document-manager-mirror-from-email-hub",
+  "title": "Open Document Manager Mirror From Email Hub in Email Hub",
+  "module": "email-hub",
+  "intent": "open-document-manager-mirror-from-email-hub",
+  "targetAudience": "general",
+  "description": "Use this guide to complete open document manager mirror from email hub in Email Hub. Intent key: open-document-manager-mirror-from-email-hub. Module key: email-hub.",
+  "prerequisites": [
+    "You are signed in with general access and can open Email Hub.",
+    "Records needed for open document manager mirror from email hub are available in the active workspace.",
+    "You have permission to save changes, print, export, or post updates in Email Hub."
+  ],
+  "steps": [
+    "Open Email Hub from the main navigation and confirm the correct company/workspace context.",
+    "Locate the exact workflow for \"Open Document Manager Mirror From Email Hub\" in Email Hub.",
+    "Apply required filters and selections (date range, account/client/worker, and status fields).",
+    "Complete the open document manager mirror from email hub action and review on-screen confirmation feedback.",
+    "Validate the resulting ledger/report/document rows and totals before leaving the page.",
+    "Save or export output artifacts and capture references for audit follow-up."
+  ],
+  "validations": [
+    "Open Document Manager Mirror From Email Hub finishes without permission, validation, or runtime errors.",
+    "Expected changes are visible immediately in Email Hub lists, totals, or linked records.",
+    "Output references can be traced back to email-hub--open-document-manager-mirror-from-email-hub with date and user context."
+  ],
+  "commonErrors": [
+    "Missing or inconsistent filters while executing open-document-manager-mirror-from-email-hub.",
+    "Insufficient permissions for general while attempting open-document-manager-mirror-from-email-hub.",
+    "Result appears in UI but is not persisted or linked to expected records."
+  ],
+  "recovery": [
+    "Reopen Email Hub, reapply required filters, and repeat open document manager mirror from email hub.",
+    "Validate role permissions and refresh session before rerunning the workflow.",
+    "Cross-check saved records and relink missing outputs to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I confirm open document manager mirror from email hub completed successfully?",
+      "answer": "Verify list/table updates, totals, and output references in Email Hub immediately after execution."
+    },
+    {
+      "question": "What should I do if open document manager mirror from email hub returns no data?",
+      "answer": "Review filters, date range, selected entities, and permissions, then rerun and validate results."
+    }
+  ],
+  "keywords": [
+    "productivity",
+    "email-hub",
+    "email hub",
+    "open-document-manager-mirror-from-email-hub",
+    "open document manager mirror from email hub",
+    "general",
+    "open",
+    "document",
+    "manager",
+    "mirror",
+    "from",
+    "email",
+    "hub",
+    "draft-rework",
+    "verification-retry"
+  ],
+  "version": "1.0.3",
+  "generatedAt": "2026-07-22T07:07:55.166Z",
+  "lastVerifiedAt": "2026-07-22T07:07:55.166Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Rework guide for email-hub--open-document-manager-mirror-from-email-hub from draft verification failures"
+  },
+  "actionTrace": "coverage-matrix-rework"
+}

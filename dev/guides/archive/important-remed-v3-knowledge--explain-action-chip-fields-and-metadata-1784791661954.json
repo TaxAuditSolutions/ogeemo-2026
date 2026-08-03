@@ -1,0 +1,68 @@
+{
+  "guideId": "knowledge--explain-action-chip-fields-and-metadata",
+  "title": "Explain Action Chip Fields And Metadata in Knowledge",
+  "module": "knowledge",
+  "intent": "explain-action-chip-fields-and-metadata",
+  "targetAudience": "general",
+  "description": "Complete the explain action chip fields and metadata workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for explain action chip fields and metadata are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the explain action chip fields and metadata entry point in the module workflow.",
+    "Enter or select the required inputs for explain action chip fields and metadata.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Explain Action Chip Fields And Metadata completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during explain action chip fields and metadata.",
+    "Permission constraints prevent completion of explain action chip fields and metadata.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun explain action chip fields and metadata.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun explain action chip fields and metadata?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm explain action chip fields and metadata is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "explain-action-chip-fields-and-metadata",
+    "general",
+    "assistant",
+    "explain",
+    "action",
+    "chip",
+    "fields",
+    "and",
+    "metadata",
+    "explain action chip fields and metadata"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-23T07:27:41.954Z",
+  "lastVerifiedAt": "2026-07-23T07:27:41.954Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--explain-action-chip-fields-and-metadata"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

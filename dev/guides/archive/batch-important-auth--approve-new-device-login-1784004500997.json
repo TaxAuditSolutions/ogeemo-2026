@@ -1,0 +1,66 @@
+{
+  "guideId": "auth--approve-new-device-login",
+  "title": "Approve New Device Login in Auth",
+  "module": "auth",
+  "intent": "approve-new-device-login",
+  "targetAudience": "admin",
+  "description": "Complete the approve new device login workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for approve new device login are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the approve new device login entry point in the module workflow.",
+    "Enter or select the required inputs for approve new device login.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Approve New Device Login completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during approve new device login.",
+    "Permission constraints prevent completion of approve new device login.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun approve new device login.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun approve new device login?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm approve new device login is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "approve-new-device-login",
+    "admin",
+    "onboarding",
+    "approve",
+    "new",
+    "device",
+    "login",
+    "approve new device login"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:20.996Z",
+  "lastVerifiedAt": "2026-07-14T04:48:20.996Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--approve-new-device-login"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

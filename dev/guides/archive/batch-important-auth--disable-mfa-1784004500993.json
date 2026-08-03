@@ -1,0 +1,64 @@
+{
+  "guideId": "auth--disable-mfa",
+  "title": "Disable Mfa in Auth",
+  "module": "auth",
+  "intent": "disable-mfa",
+  "targetAudience": "admin",
+  "description": "Complete the disable mfa workflow in the Auth module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Auth module in the current Ogeemo environment.",
+    "Required data inputs for disable mfa are prepared before starting."
+  ],
+  "steps": [
+    "Open the Auth module from the main navigation.",
+    "Locate the disable mfa entry point in the module workflow.",
+    "Enter or select the required inputs for disable mfa.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Disable Mfa completes without warnings or blockers.",
+    "Resulting records are visible in the expected Auth views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during disable mfa.",
+    "Permission constraints prevent completion of disable mfa.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun disable mfa.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun disable mfa?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm disable mfa is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "auth",
+    "disable-mfa",
+    "admin",
+    "onboarding",
+    "disable",
+    "mfa",
+    "disable mfa"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T04:48:20.991Z",
+  "lastVerifiedAt": "2026-07-14T04:48:20.991Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for auth--disable-mfa"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

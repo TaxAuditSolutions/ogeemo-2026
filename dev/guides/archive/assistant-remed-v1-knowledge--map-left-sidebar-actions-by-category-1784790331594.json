@@ -1,0 +1,75 @@
+{
+  "guideId": "knowledge--map-left-sidebar-actions-by-category",
+  "title": "Map Left Sidebar Actions By Category (Assistant Knowledge)",
+  "module": "knowledge",
+  "intent": "map-left-sidebar-actions-by-category",
+  "targetAudience": "general",
+  "description": "Canonical assistant knowledge workflow for map-left-sidebar-actions-by-category. User question: How do I map left sidebar actions by category?",
+  "prerequisites": [
+    "User is authenticated in Ogeemo and can open the requested modules.",
+    "Assistant has current workspace context and role visibility rules.",
+    "Navigation labels and module actions are loaded without blocking errors."
+  ],
+  "steps": [
+    "Open Ogeemo and confirm you are in the correct workspace context.",
+    "Open the Ogeemo Assistant interface from the main navigation.",
+    "Use the knowledge intent workflow for map left sidebar actions by category and confirm the request scope (module, role, and goal).",
+    "Gather current UI evidence from the relevant pages (navigation labels, module names, and action names).",
+    "Normalize terminology to Ogeemo canonical wording and remove ambiguous synonyms.",
+    "Compose the answer in a structured sequence for map left sidebar actions by category with explicit step numbers.",
+    "Include route/module pointers, required permissions, and expected output so the user can execute immediately.",
+    "Add a troubleshooting branch for missing menus, permission mismatches, or stale UI state.",
+    "Validate that the answer avoids missing-context statements and references concrete Ogeemo actions.",
+    "Return the final response with concise headings and actionable steps only."
+  ],
+  "validations": [
+    "Response contains a complete numbered procedure with at least 6 actionable steps.",
+    "Response names concrete Ogeemo modules/actions rather than generic advice.",
+    "Response includes at least one troubleshooting path for likely failure points."
+  ],
+  "commonErrors": [
+    "Assistant reports missing context instead of using known Ogeemo workflows.",
+    "Response is too short or lacks ordered execution steps.",
+    "Terminology does not match current Ogeemo UI labels."
+  ],
+  "recovery": [
+    "Re-check route/module names and regenerate the answer with explicit workflow steps.",
+    "Reframe the question to include module and user goal when ambiguity is detected.",
+    "Re-run with refreshed workspace context and confirm role-based visibility details."
+  ],
+  "faq": [
+    {
+      "question": "How do I map left sidebar actions by category?",
+      "answer": "Open Ogeemo Assistant, apply the map left sidebar actions by category workflow, and follow the numbered module-specific steps with troubleshooting guidance."
+    },
+    {
+      "question": "Why might answers for map left sidebar actions by category be incomplete?",
+      "answer": "Incomplete answers usually happen when module scope, role visibility, or navigation context is not explicitly confirmed before response generation."
+    }
+  ],
+  "keywords": [
+    "assistant",
+    "knowledge",
+    "map-left-sidebar-actions-by-category",
+    "map left sidebar actions by category",
+    "ogeemo-assistant",
+    "knowledge-intent",
+    "workflow",
+    "sidebar",
+    "troubleshooting",
+    "map",
+    "left",
+    "actions",
+    "by",
+    "category"
+  ],
+  "version": "1.0.5",
+  "generatedAt": "2026-07-23T07:05:31.593Z",
+  "lastVerifiedAt": "2026-07-23T07:05:31.593Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/assistant",
+    "workflowInstruction": "Assistant-knowledge draft remediation for knowledge--map-left-sidebar-actions-by-category"
+  },
+  "actionTrace": "assistant-knowledge-draft-remediation"
+}

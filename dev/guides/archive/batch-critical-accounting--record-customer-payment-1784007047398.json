@@ -1,0 +1,64 @@
+{
+  "guideId": "accounting--record-customer-payment",
+  "title": "Record Customer Payment in Accounting",
+  "module": "accounting",
+  "intent": "record-customer-payment",
+  "targetAudience": "accountant",
+  "description": "Complete the record customer payment workflow in the Accounting module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Accounting module in the current Ogeemo environment.",
+    "Required data inputs for record customer payment are prepared before starting."
+  ],
+  "steps": [
+    "Open the Accounting module from the main navigation.",
+    "Locate the record customer payment entry point in the module workflow.",
+    "Enter or select the required inputs for record customer payment.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Record Customer Payment completes without warnings or blockers.",
+    "Resulting records are visible in the expected Accounting views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during record customer payment.",
+    "Permission constraints prevent completion of record customer payment.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun record customer payment.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun record customer payment?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm record customer payment is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "accounting",
+    "record-customer-payment",
+    "accountant",
+    "record",
+    "customer",
+    "payment",
+    "record customer payment"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:30:47.398Z",
+  "lastVerifiedAt": "2026-07-14T05:30:47.398Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for accounting--record-customer-payment"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

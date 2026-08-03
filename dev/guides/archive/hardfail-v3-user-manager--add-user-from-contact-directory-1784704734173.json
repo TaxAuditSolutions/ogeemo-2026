@@ -1,0 +1,74 @@
+{
+  "guideId": "user-manager--add-user-from-contact-directory",
+  "title": "Add User From Contact Directory in User Manager",
+  "module": "user-manager",
+  "intent": "add-user-from-contact-directory",
+  "targetAudience": "admin",
+  "description": "Answer: How do I add user from contact directory? This is the canonical User Manager workflow for add-user-from-contact-directory.",
+  "prerequisites": [
+    "You are signed in as admin and can access User Manager.",
+    "Route /settings is reachable and module data is loaded without blocking errors.",
+    "Required records and permissions for add-user-from-contact-directory are available before execution."
+  ],
+  "steps": [
+    "Navigate to /settings and open User Manager.",
+    "Verify active workspace/company context before running add user from contact directory.",
+    "Open the exact workflow action labeled for add user from contact directory.",
+    "Enter required fields for add user from contact directory (entity selection, date range, and status where applicable).",
+    "Apply changes and execute add user from contact directory with explicit confirmation in the UI.",
+    "Complete required fields and verify newly created record appears in the target list.",
+    "Validate result rows/totals/artifacts on the same page before navigating away.",
+    "If output is generated (report, export, invoice, or link), verify it is accessible and associated with the same context.",
+    "Record resulting reference IDs or filenames for traceability and follow-up."
+  ],
+  "validations": [
+    "The add-user-from-contact-directory action completes without permission or validation errors.",
+    "Resulting state is visible immediately in User Manager lists, metrics, or related output panels.",
+    "Output artifacts remain linked to the same entity/date context used during execution."
+  ],
+  "commonErrors": [
+    "No data returned because filter/date/entity scope is missing or inconsistent.",
+    "Permission denial while attempting add-user-from-contact-directory.",
+    "Action appears successful but output record is not persisted or linked."
+  ],
+  "recovery": [
+    "Reopen /settings, reapply field values, and rerun add-user-from-contact-directory with a narrowed scope.",
+    "Refresh session and confirm role permissions for admin before retry.",
+    "Cross-check logs/output panes and relink missing artifacts to the correct context."
+  ],
+  "faq": [
+    {
+      "question": "How do I add user from contact directory?",
+      "answer": "Open User Manager at /settings, run add user from contact directory with required selections, and validate table/list + output artifacts before closing."
+    },
+    {
+      "question": "How do I troubleshoot add user from contact directory if results are missing?",
+      "answer": "Recheck filters, dates, selected entities, and permissions; rerun and confirm row counts/totals update in place."
+    }
+  ],
+  "keywords": [
+    "admin",
+    "user-manager",
+    "user manager",
+    "add-user-from-contact-directory",
+    "add user from contact directory",
+    "/settings",
+    "canonical-workflow",
+    "draft-remediation",
+    "verification-retry",
+    "add",
+    "user",
+    "from",
+    "contact",
+    "directory"
+  ],
+  "version": "1.0.4",
+  "generatedAt": "2026-07-22T07:18:54.171Z",
+  "lastVerifiedAt": "2026-07-22T07:18:54.171Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "/settings",
+    "workflowInstruction": "Hard-fail remediation guide for user-manager--add-user-from-contact-directory"
+  },
+  "actionTrace": "coverage-matrix-hard-fail-remediation"
+}

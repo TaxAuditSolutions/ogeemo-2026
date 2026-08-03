@@ -1,0 +1,65 @@
+{
+  "guideId": "marketing--launch-founder-network-outreach",
+  "title": "Launch Founder Network Outreach in Marketing",
+  "module": "marketing",
+  "intent": "launch-founder-network-outreach",
+  "targetAudience": "consultant",
+  "description": "Complete the launch founder network outreach workflow in the Marketing module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Marketing module in the current Ogeemo environment.",
+    "Required data inputs for launch founder network outreach are prepared before starting."
+  ],
+  "steps": [
+    "Open the Marketing module from the main navigation.",
+    "Locate the launch founder network outreach entry point in the module workflow.",
+    "Enter or select the required inputs for launch founder network outreach.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Launch Founder Network Outreach completes without warnings or blockers.",
+    "Resulting records are visible in the expected Marketing views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during launch founder network outreach.",
+    "Permission constraints prevent completion of launch founder network outreach.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun launch founder network outreach.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun launch founder network outreach?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm launch founder network outreach is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "marketing",
+    "launch-founder-network-outreach",
+    "consultant",
+    "launch",
+    "founder",
+    "network",
+    "outreach",
+    "launch founder network outreach"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:38:53.902Z",
+  "lastVerifiedAt": "2026-07-22T02:38:53.902Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for marketing--launch-founder-network-outreach"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

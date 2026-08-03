@@ -1,0 +1,64 @@
+{
+  "guideId": "settings--audit-configuration-changes",
+  "title": "Audit Configuration Changes in Settings",
+  "module": "settings",
+  "intent": "audit-configuration-changes",
+  "targetAudience": "admin",
+  "description": "Complete the audit configuration changes workflow in the Settings module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Settings module in the current Ogeemo environment.",
+    "Required data inputs for audit configuration changes are prepared before starting."
+  ],
+  "steps": [
+    "Open the Settings module from the main navigation.",
+    "Locate the audit configuration changes entry point in the module workflow.",
+    "Enter or select the required inputs for audit configuration changes.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Audit Configuration Changes completes without warnings or blockers.",
+    "Resulting records are visible in the expected Settings views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during audit configuration changes.",
+    "Permission constraints prevent completion of audit configuration changes.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun audit configuration changes.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun audit configuration changes?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm audit configuration changes is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "settings",
+    "audit-configuration-changes",
+    "admin",
+    "audit",
+    "configuration",
+    "changes",
+    "audit configuration changes"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T01:19:32.830Z",
+  "lastVerifiedAt": "2026-07-07T01:19:32.830Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for settings--audit-configuration-changes"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

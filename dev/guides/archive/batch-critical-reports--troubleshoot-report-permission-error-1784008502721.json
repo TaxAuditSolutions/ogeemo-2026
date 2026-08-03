@@ -1,0 +1,66 @@
+{
+  "guideId": "reports--troubleshoot-report-permission-error",
+  "title": "Troubleshoot Report Permission Error in Reports",
+  "module": "reports",
+  "intent": "troubleshoot-report-permission-error",
+  "targetAudience": "admin",
+  "description": "Complete the troubleshoot report permission error workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for troubleshoot report permission error are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the troubleshoot report permission error entry point in the module workflow.",
+    "Enter or select the required inputs for troubleshoot report permission error.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Troubleshoot Report Permission Error completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during troubleshoot report permission error.",
+    "Permission constraints prevent completion of troubleshoot report permission error.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun troubleshoot report permission error.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun troubleshoot report permission error?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm troubleshoot report permission error is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "troubleshoot-report-permission-error",
+    "admin",
+    "reporting",
+    "troubleshoot",
+    "report",
+    "permission",
+    "error",
+    "troubleshoot report permission error"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T05:55:02.721Z",
+  "lastVerifiedAt": "2026-07-14T05:55:02.721Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--troubleshoot-report-permission-error"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

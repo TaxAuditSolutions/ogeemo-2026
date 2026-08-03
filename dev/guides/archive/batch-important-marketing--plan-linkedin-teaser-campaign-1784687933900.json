@@ -1,0 +1,65 @@
+{
+  "guideId": "marketing--plan-linkedin-teaser-campaign",
+  "title": "Plan Linkedin Teaser Campaign in Marketing",
+  "module": "marketing",
+  "intent": "plan-linkedin-teaser-campaign",
+  "targetAudience": "consultant",
+  "description": "Complete the plan linkedin teaser campaign workflow in the Marketing module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with consultant access or equivalent permissions.",
+    "You can open the Marketing module in the current Ogeemo environment.",
+    "Required data inputs for plan linkedin teaser campaign are prepared before starting."
+  ],
+  "steps": [
+    "Open the Marketing module from the main navigation.",
+    "Locate the plan linkedin teaser campaign entry point in the module workflow.",
+    "Enter or select the required inputs for plan linkedin teaser campaign.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Plan Linkedin Teaser Campaign completes without warnings or blockers.",
+    "Resulting records are visible in the expected Marketing views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during plan linkedin teaser campaign.",
+    "Permission constraints prevent completion of plan linkedin teaser campaign.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun plan linkedin teaser campaign.",
+    "Confirm role permissions for consultant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun plan linkedin teaser campaign?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm plan linkedin teaser campaign is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "marketing",
+    "plan-linkedin-teaser-campaign",
+    "consultant",
+    "plan",
+    "linkedin",
+    "teaser",
+    "campaign",
+    "plan linkedin teaser campaign"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:38:53.899Z",
+  "lastVerifiedAt": "2026-07-22T02:38:53.899Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for marketing--plan-linkedin-teaser-campaign"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

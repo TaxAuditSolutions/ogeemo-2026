@@ -1,0 +1,68 @@
+{
+  "guideId": "reports--navigate-to-client-time-log-report",
+  "title": "Navigate To Client Time Log Report in Reports",
+  "module": "reports",
+  "intent": "navigate-to-client-time-log-report",
+  "targetAudience": "general",
+  "description": "Complete the navigate to client time log report workflow in the Reports module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Reports module in the current Ogeemo environment.",
+    "Required data inputs for navigate to client time log report are prepared before starting."
+  ],
+  "steps": [
+    "Open the Reports module from the main navigation.",
+    "Locate the navigate to client time log report entry point in the module workflow.",
+    "Enter or select the required inputs for navigate to client time log report.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Navigate To Client Time Log Report completes without warnings or blockers.",
+    "Resulting records are visible in the expected Reports views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during navigate to client time log report.",
+    "Permission constraints prevent completion of navigate to client time log report.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun navigate to client time log report.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun navigate to client time log report?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm navigate to client time log report is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "reports",
+    "navigate-to-client-time-log-report",
+    "general",
+    "reporting",
+    "navigate",
+    "to",
+    "client",
+    "time",
+    "log",
+    "report",
+    "navigate to client time log report"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.306Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.306Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for reports--navigate-to-client-time-log-report"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

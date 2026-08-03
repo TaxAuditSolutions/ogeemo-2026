@@ -1,0 +1,65 @@
+{
+  "guideId": "knowledge--triage-failing-intents",
+  "title": "Triage Failing Intents in Knowledge",
+  "module": "knowledge",
+  "intent": "triage-failing-intents",
+  "targetAudience": "admin",
+  "description": "Complete the triage failing intents workflow in the Knowledge module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Knowledge module in the current Ogeemo environment.",
+    "Required data inputs for triage failing intents are prepared before starting."
+  ],
+  "steps": [
+    "Open the Knowledge module from the main navigation.",
+    "Locate the triage failing intents entry point in the module workflow.",
+    "Enter or select the required inputs for triage failing intents.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Triage Failing Intents completes without warnings or blockers.",
+    "Resulting records are visible in the expected Knowledge views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during triage failing intents.",
+    "Permission constraints prevent completion of triage failing intents.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun triage failing intents.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun triage failing intents?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm triage failing intents is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "knowledge",
+    "triage-failing-intents",
+    "admin",
+    "assistant",
+    "triage",
+    "failing",
+    "intents",
+    "triage failing intents"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:20:58.309Z",
+  "lastVerifiedAt": "2026-07-14T06:20:58.309Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for knowledge--triage-failing-intents"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

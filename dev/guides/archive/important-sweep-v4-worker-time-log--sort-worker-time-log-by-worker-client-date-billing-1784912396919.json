@@ -1,0 +1,71 @@
+{
+  "guideId": "worker-time-log--sort-worker-time-log-by-worker-client-date-billing",
+  "title": "Sort Worker Time Log By Worker Client Date Billing in Worker Time Log",
+  "module": "worker-time-log",
+  "intent": "sort-worker-time-log-by-worker-client-date-billing",
+  "targetAudience": "admin",
+  "description": "Complete the sort worker time log by worker client date billing workflow in the Worker Time Log module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Worker Time Log module in the current Ogeemo environment.",
+    "Required data inputs for sort worker time log by worker client date billing are prepared before starting."
+  ],
+  "steps": [
+    "Open the Worker Time Log module from the main navigation.",
+    "Locate the sort worker time log by worker client date billing entry point in the module workflow.",
+    "Enter or select the required inputs for sort worker time log by worker client date billing.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Sort Worker Time Log By Worker Client Date Billing completes without warnings or blockers.",
+    "Resulting records are visible in the expected Worker Time Log views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during sort worker time log by worker client date billing.",
+    "Permission constraints prevent completion of sort worker time log by worker client date billing.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun sort worker time log by worker client date billing.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun sort worker time log by worker client date billing?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm sort worker time log by worker client date billing is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "worker-time-log",
+    "sort-worker-time-log-by-worker-client-date-billing",
+    "admin",
+    "reporting",
+    "sort",
+    "worker",
+    "time",
+    "log",
+    "by",
+    "client",
+    "date",
+    "billing",
+    "worker time log",
+    "sort worker time log by worker client date billing"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-24T16:59:56.919Z",
+  "lastVerifiedAt": "2026-07-24T16:59:56.919Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for worker-time-log--sort-worker-time-log-by-worker-client-date-billing"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

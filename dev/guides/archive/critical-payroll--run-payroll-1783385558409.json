@@ -1,0 +1,62 @@
+{
+  "guideId": "payroll--run-payroll",
+  "title": "Run Payroll in Payroll",
+  "module": "payroll",
+  "intent": "run-payroll",
+  "targetAudience": "accountant",
+  "description": "Complete the run payroll workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with accountant access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for run payroll are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the run payroll entry point in the module workflow.",
+    "Enter or select the required inputs for run payroll.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Run Payroll completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during run payroll.",
+    "Permission constraints prevent completion of run payroll.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun run payroll.",
+    "Confirm role permissions for accountant and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun run payroll?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm run payroll is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "run-payroll",
+    "accountant",
+    "run",
+    "run payroll"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-07T00:52:38.409Z",
+  "lastVerifiedAt": "2026-07-07T00:52:38.409Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--run-payroll"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

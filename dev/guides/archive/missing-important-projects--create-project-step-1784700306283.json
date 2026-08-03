@@ -1,0 +1,65 @@
+{
+  "guideId": "projects--create-project-step",
+  "title": "Create Project Step in Projects",
+  "module": "projects",
+  "intent": "create-project-step",
+  "targetAudience": "general",
+  "description": "Complete the create project step workflow in the Projects module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Projects module in the current Ogeemo environment.",
+    "Required data inputs for create project step are prepared before starting."
+  ],
+  "steps": [
+    "Open the Projects module from the main navigation.",
+    "Locate the create project step entry point in the module workflow.",
+    "Enter or select the required inputs for create project step.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Create Project Step completes without warnings or blockers.",
+    "Resulting records are visible in the expected Projects views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during create project step.",
+    "Permission constraints prevent completion of create project step.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun create project step.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun create project step?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm create project step is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "projects",
+    "create-project-step",
+    "general",
+    "productivity",
+    "create",
+    "project",
+    "step",
+    "create project step"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T06:05:06.283Z",
+  "lastVerifiedAt": "2026-07-22T06:05:06.283Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for projects--create-project-step"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

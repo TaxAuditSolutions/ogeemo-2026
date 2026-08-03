@@ -1,0 +1,65 @@
+{
+  "guideId": "marketing--prepare-founder-discount-offer",
+  "title": "Prepare Founder Discount Offer in Marketing",
+  "module": "marketing",
+  "intent": "prepare-founder-discount-offer",
+  "targetAudience": "admin",
+  "description": "Complete the prepare founder discount offer workflow in the Marketing module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Marketing module in the current Ogeemo environment.",
+    "Required data inputs for prepare founder discount offer are prepared before starting."
+  ],
+  "steps": [
+    "Open the Marketing module from the main navigation.",
+    "Locate the prepare founder discount offer entry point in the module workflow.",
+    "Enter or select the required inputs for prepare founder discount offer.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Prepare Founder Discount Offer completes without warnings or blockers.",
+    "Resulting records are visible in the expected Marketing views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during prepare founder discount offer.",
+    "Permission constraints prevent completion of prepare founder discount offer.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun prepare founder discount offer.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun prepare founder discount offer?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm prepare founder discount offer is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "marketing",
+    "prepare-founder-discount-offer",
+    "admin",
+    "prepare",
+    "founder",
+    "discount",
+    "offer",
+    "prepare founder discount offer"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T02:38:53.904Z",
+  "lastVerifiedAt": "2026-07-22T02:38:53.904Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for marketing--prepare-founder-discount-offer"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

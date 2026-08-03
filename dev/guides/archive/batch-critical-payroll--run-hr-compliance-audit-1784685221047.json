@@ -1,0 +1,65 @@
+{
+  "guideId": "payroll--run-hr-compliance-audit",
+  "title": "Run Hr Compliance Audit in Payroll",
+  "module": "payroll",
+  "intent": "run-hr-compliance-audit",
+  "targetAudience": "admin",
+  "description": "Complete the run hr compliance audit workflow in the Payroll module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with admin access or equivalent permissions.",
+    "You can open the Payroll module in the current Ogeemo environment.",
+    "Required data inputs for run hr compliance audit are prepared before starting."
+  ],
+  "steps": [
+    "Open the Payroll module from the main navigation.",
+    "Locate the run hr compliance audit entry point in the module workflow.",
+    "Enter or select the required inputs for run hr compliance audit.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Run Hr Compliance Audit completes without warnings or blockers.",
+    "Resulting records are visible in the expected Payroll views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during run hr compliance audit.",
+    "Permission constraints prevent completion of run hr compliance audit.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun run hr compliance audit.",
+    "Confirm role permissions for admin and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun run hr compliance audit?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm run hr compliance audit is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "run-hr-compliance-audit",
+    "admin",
+    "run",
+    "hr",
+    "compliance",
+    "audit",
+    "run hr compliance audit"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-22T01:53:41.046Z",
+  "lastVerifiedAt": "2026-07-22T01:53:41.046Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for payroll--run-hr-compliance-audit"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

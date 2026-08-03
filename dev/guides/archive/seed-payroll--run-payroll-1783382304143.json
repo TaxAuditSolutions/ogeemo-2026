@@ -1,0 +1,62 @@
+{
+  "guideId": "payroll--run-payroll",
+  "title": "Run Payroll Safely",
+  "module": "payroll",
+  "intent": "run-payroll",
+  "targetAudience": "accountant",
+  "description": "Process payroll with verification checkpoints to reduce errors and ensure compliance.",
+  "prerequisites": [
+    "Worker profiles and pay rates are up to date.",
+    "Current period time and attendance data is finalized.",
+    "You have payroll approval rights."
+  ],
+  "steps": [
+    "Open payroll and select the current payroll period.",
+    "Verify included workers and employment types.",
+    "Import or confirm hours, salary, and adjustments.",
+    "Run payroll preview and inspect gross-to-net values.",
+    "Resolve anomalies, then finalize payroll run.",
+    "Export payroll summary and store evidence artifacts."
+  ],
+  "validations": [
+    "Payroll totals match approved time and compensation data.",
+    "No unresolved payroll warnings remain before finalization.",
+    "Final payroll summary is archived for compliance review."
+  ],
+  "commonErrors": [
+    "Worker missing from run.",
+    "Unexpected net pay due to incorrect pay type.",
+    "Finalization blocked by incomplete profile data."
+  ],
+  "recovery": [
+    "Update worker assignment and rerun preview.",
+    "Fix pay type/rate and recalculate payroll.",
+    "Complete required profile fields and finalize again."
+  ],
+  "faq": [
+    {
+      "question": "Should payroll be rerun after corrections?",
+      "answer": "Yes. Re-run preview and validation checks before final finalization."
+    },
+    {
+      "question": "What evidence should be retained?",
+      "answer": "Retain payroll summary, approval notes, and any correction records."
+    }
+  ],
+  "keywords": [
+    "payroll",
+    "run",
+    "preview",
+    "gross",
+    "net"
+  ],
+  "version": "1.0.0",
+  "generatedAt": "2026-07-06T23:58:24.130Z",
+  "lastVerifiedAt": "2026-07-06T23:58:24.130Z",
+  "source": {
+    "targetUrl": "manual-seed",
+    "finalUrl": "manual-seed",
+    "workflowInstruction": "Seeded from coverage matrix for corpus bootstrap"
+  },
+  "actionTrace": "seeded-guide"
+}

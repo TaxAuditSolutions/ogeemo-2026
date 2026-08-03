@@ -1,0 +1,66 @@
+{
+  "guideId": "tasks--link-task-to-document",
+  "title": "Link Task To Document in Tasks",
+  "module": "tasks",
+  "intent": "link-task-to-document",
+  "targetAudience": "general",
+  "description": "Complete the link task to document workflow in the Tasks module using a validated, repeatable process.",
+  "prerequisites": [
+    "You are signed in with general access or equivalent permissions.",
+    "You can open the Tasks module in the current Ogeemo environment.",
+    "Required data inputs for link task to document are prepared before starting."
+  ],
+  "steps": [
+    "Open the Tasks module from the main navigation.",
+    "Locate the link task to document entry point in the module workflow.",
+    "Enter or select the required inputs for link task to document.",
+    "Review the configuration and confirm all required fields are complete.",
+    "Run or save the workflow and wait for confirmation feedback.",
+    "Record output artifacts and references for audit and follow-up tasks."
+  ],
+  "validations": [
+    "Link Task To Document completes without warnings or blockers.",
+    "Resulting records are visible in the expected Tasks views.",
+    "Any generated output is stored in the expected location with traceable metadata."
+  ],
+  "commonErrors": [
+    "Required fields are missing during link task to document.",
+    "Permission constraints prevent completion of link task to document.",
+    "Output is created but not linked to the expected workflow context."
+  ],
+  "recovery": [
+    "Validate required field inputs and rerun link task to document.",
+    "Confirm role permissions for general and retry after access refresh.",
+    "Re-open the module, relink output artifacts, and verify final state."
+  ],
+  "faq": [
+    {
+      "question": "When should I rerun link task to document?",
+      "answer": "Rerun after correcting inputs or permissions, then validate output against expected records."
+    },
+    {
+      "question": "How do I confirm link task to document is complete?",
+      "answer": "Use module validation checks, confirm resulting records, and verify supporting artifacts were saved."
+    }
+  ],
+  "keywords": [
+    "tasks",
+    "link-task-to-document",
+    "general",
+    "productivity",
+    "link",
+    "task",
+    "to",
+    "document",
+    "link task to document"
+  ],
+  "version": "1.0.1",
+  "generatedAt": "2026-07-14T06:49:37.239Z",
+  "lastVerifiedAt": "2026-07-14T06:49:37.239Z",
+  "source": {
+    "targetUrl": "coverage-matrix",
+    "finalUrl": "coverage-matrix",
+    "workflowInstruction": "Seeded from coverage matrix row for tasks--link-task-to-document"
+  },
+  "actionTrace": "coverage-matrix-seed"
+}

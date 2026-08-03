@@ -78,10 +78,11 @@
   body * {
     visibility: hidden;
   }
-  #invoice-preview, #invoice-preview * {
+  #invoice-preview, #invoice-preview *,
+  #agenda-preview, #agenda-preview * {
     visibility: visible;
   }
-  #invoice-preview {
+  #invoice-preview, #agenda-preview {
     position: absolute;
     left: 0;
     top: 0;

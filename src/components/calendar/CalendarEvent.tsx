@@ -11,6 +11,7 @@ import {
   Briefcase,
   Clock,
   PlayCircle,
+  Users,
 } from 'lucide-react';
 import { type Event } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
@@ -69,7 +70,7 @@ export function CalendarEvent({
 
   return (
     <div
-      ref={drag}
+      ref={drag as unknown as React.Ref<HTMLDivElement>}
       className={cn(
         'relative rounded-md p-1 group flex items-center justify-between border w-full my-0.5',
         isCompleted && !isAllDay
@@ -102,6 +103,11 @@ export function CalendarEvent({
           >
             <DropdownMenuItem onSelect={() => onEdit(event)}>
               <Pencil className="mr-2 h-4 w-4" /> Open / Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/meetings?taskId=${event.id}`}>
+                <Users className="mr-2 h-4 w-4" /> View Agenda
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href={`/master-mind?eventId=${event.id}&startTimer=true`}>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown } from 'lucide-react';
+import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';

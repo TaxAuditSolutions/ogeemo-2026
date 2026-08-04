@@ -40,6 +40,8 @@ export interface Event {
   urgency?: ProjectUrgency;
   importance?: ProjectImportance;
   ritualType?: 'daily' | 'weekly';
+  workOrderId?: string | null;|ritualType?: 'daily' | 'weekly';
+  workOrderId?: string | null;
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';

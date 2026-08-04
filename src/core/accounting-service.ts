@@ -273,6 +273,57 @@ export interface ServiceItem {
   userId: string;
 }
 
+// --- Work Order Interfaces ---
+export type WorkOrderStatus = 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface WorkOrderLineItem {
+  id?: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  workOrderId: string;
+  description: string;
+  internalNotes?: string;
+  categoryNumber?: string;
+  quantity: number;
+  price: number;
+  totalAmount?: number;
+  preTaxAmount?: number;
+  taxAmount?: number;
+  taxType?: string;
+  taxRate?: number;
+  itemType?: 'service' | 'product';
+  serviceItemId?: string;
+  userId: string;
+}
+
+export interface WorkOrder {
+  id: string;
+  orgId?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  workOrderNumber: string;
+  quoteId?: string | null;
+  businessNumber?: string;
+  companyName: string;
+  contactId: string;
+  supplierId?: string | null;
+  totalAmount: number;
+  status: WorkOrderStatus;
+  scheduledDate?: Date | null;
+  completedDate?: Date | null;
+  assignedWorkerId?: string | null;
+  assignedWorkerName?: string;
+  notes: string;
+  lineItemDetails?: string;
+  taxType: string;
+  userId: string;
+}
+
 const INVOICES_COLLECTION = 'invoices';
 const LINE_ITEMS_COLLECTION = 'invoiceLineItems';
 const QUOTES_COLLECTION = 'quotes';
@@ -291,6 +342,8 @@ const TAX_TYPES_COLLECTION = 'taxTypes';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const INTERNAL_ACCOUNT_COLLECTION = 'internalAccounts';
 const PETTY_CASH_COLLECTION = 'pettyCashTransactions';
+const WORK_ORDERS_COLLECTION = 'workOrders';
+const WORK_ORDER_LINE_ITEMS_COLLECTION = 'workOrderLineItems';
 
 const docToInvoice = (doc: any): Invoice => {
   const data = doc.data();
@@ -2277,4 +2330,419 @@ export async function deleteInternalAccount(id: string): Promise<void> {
       errorEmitter.emit('permission-error', permissionError);
     }
   });
+}
+// --- Work Order Functions ---
+
+const docToWorkOrder = (doc: any): WorkOrder => {
+  const data = doc.data();
+  if (!data) throw new Error("Document data is missing.");
+  return {
+    id: doc.id,
+    orgId: data.orgId,
+    createdBy: data.createdBy,
+    updatedBy: data.updatedBy,
+    workOrderNumber: data.workOrderNumber,
+    quoteId: data.quoteId || null,
+    businessNumber: data.businessNumber,
+    companyName: data.companyName,
+    contactId: data.contactId,
+    supplierId: data.supplierId || null,
+    totalAmount: data.totalAmount,
+    status: data.status || 'pending',
+    scheduledDate: toClientDate(data.scheduledDate) || null,
+    completedDate: toClientDate(data.completedDate) || null,
+    assignedWorkerId: data.assignedWorkerId || null,
+    assignedWorkerName: data.assignedWorkerName || '',
+    notes: data.notes || '',
+    lineItemDetails: data.lineItemDetails,
+    taxType: data.taxType || 'gst_hst',
+    userId: data.userId,
+    createdAt: toClientDate(data.createdAt),
+    updatedAt: toClientDate(data.updatedAt),
+  } as WorkOrder;
+};
+
+const docToWorkOrderLineItem = (doc: any): WorkOrderLineItem => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    orgId: data.orgId,
+    createdBy: data.createdBy,
+    updatedBy: data.updatedBy,
+    createdAt: toClientDate(data.createdAt),
+    updatedAt: toClientDate(data.updatedAt),
+    workOrderId: data.workOrderId,
+    description: data.description,
+    internalNotes: data.internalNotes || '',
+    categoryNumber: data.categoryNumber || '',
+    quantity: data.quantity,
+    price: data.price,
+    totalAmount: data.totalAmount,
+    preTaxAmount: data.preTaxAmount,
+    taxAmount: data.taxAmount,
+    taxType: data.taxType || '',
+    taxRate: data.taxRate || 0,
+    itemType: data.itemType,
+    serviceItemId: data.serviceItemId,
+    userId: data.userId,
+  } as WorkOrderLineItem;
+};
+
+export async function getWorkOrders(_userId: string): Promise<WorkOrder[]> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const q = query(collection(db, WORK_ORDERS_COLLECTION), where('orgId', '==', orgId));
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToWorkOrder).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: WORK_ORDERS_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function getWorkOrderById(workOrderId: string): Promise<WorkOrder | null> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const docRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+  try {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const workOrder = docToWorkOrder(docSnap);
+      return workOrder.orgId === orgId ? workOrder : null;
+    }
+    return null;
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'get',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function getWorkOrderLineItems(_userId: string, workOrderId: string): Promise<WorkOrderLineItem[]> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const q = query(
+    collection(db, WORK_ORDER_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where("workOrderId", "==", workOrderId)
+  );
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docToWorkOrderLineItem);
+  } catch (error: any) {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: WORK_ORDER_LINE_ITEMS_COLLECTION,
+        operation: 'list',
+      }));
+    }
+    throw error;
+  }
+}
+
+export async function addWorkOrderWithLineItems(
+  workOrderData: Omit<WorkOrder, 'id' | 'createdAt'>,
+  lineItems: Omit<WorkOrderLineItem, 'workOrderId' | 'id' | 'userId'>[]
+): Promise<WorkOrder> {
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+  const batch = writeBatch(db);
+
+  const workOrderRef = doc(collection(db, WORK_ORDERS_COLLECTION));
+  const workOrderPayload = {
+    ...workOrderData,
+    orgId,
+    createdBy: currentUser.uid,
+    updatedBy: currentUser.uid,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    scheduledDate: toFirestoreDateValue(workOrderData.scheduledDate),
+    completedDate: toFirestoreDateValue(workOrderData.completedDate),
+  };
+  batch.set(workOrderRef, workOrderPayload);
+
+  lineItems.forEach(item => {
+    const itemRef = doc(collection(db, WORK_ORDER_LINE_ITEMS_COLLECTION));
+    batch.set(itemRef, {
+      ...item,
+      workOrderId: workOrderRef.id,
+      userId: workOrderData.userId,
+      orgId,
+      createdBy: currentUser.uid,
+      updatedBy: currentUser.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'write',
+        requestResourceData: { workOrderData, lineItems },
+      }));
+    }
+    throw error;
+  });
+
+  return docToWorkOrder({ id: workOrderRef.id, data: () => workOrderPayload });
+}
+
+export async function updateWorkOrderWithLineItems(
+  workOrderId: string,
+  workOrderData: Partial<Omit<WorkOrder, 'id' | 'userId'>>,
+  lineItems: Omit<WorkOrderLineItem, 'id' | 'workOrderId' | 'userId'>[],
+  userId: string
+): Promise<void> {
+  const db = getDb();
+  const currentUser = getCurrentAuthContext();
+  const orgId = await getCurrentOrgId();
+
+  const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+  const workOrderSnap = await getDoc(workOrderRef);
+  if (!workOrderSnap.exists() || workOrderSnap.data().orgId !== orgId) return;
+
+  const existingItemsQuery = query(
+    collection(db, WORK_ORDER_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where('workOrderId', '==', workOrderId)
+  );
+  const existingItemsSnapshot = await getDocs(existingItemsQuery);
+
+  const batch = writeBatch(db);
+
+  const updatePayload: any = {
+    ...workOrderData,
+    orgId,
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  };
+  if ('scheduledDate' in workOrderData) {
+    updatePayload.scheduledDate = toFirestoreDateValue((workOrderData as any).scheduledDate);
+  }
+  if ('completedDate' in workOrderData) {
+    updatePayload.completedDate = toFirestoreDateValue((workOrderData as any).completedDate);
+  }
+  batch.update(workOrderRef, updatePayload);
+
+  existingItemsSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+
+  lineItems.forEach(item => {
+    const itemRef = doc(collection(db, WORK_ORDER_LINE_ITEMS_COLLECTION));
+    batch.set(itemRef, {
+      ...item,
+      workOrderId,
+      userId,
+      orgId,
+      createdBy: currentUser.uid,
+      updatedBy: currentUser.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  });
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'write',
+        requestResourceData: { workOrderData, lineItems },
+      }));
+    }
+    throw error;
+  });
+}
+
+export async function updateWorkOrderStatus(workOrderId: string, status: WorkOrderStatus, userId: string): Promise<void> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+  const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+  const workOrderSnap = await getDoc(workOrderRef);
+  if (!workOrderSnap.exists() || workOrderSnap.data().orgId !== orgId) return;
+
+  const updateData: any = {
+    status,
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  };
+  if (status === 'completed') {
+    updateData.completedDate = new Date();
+  }
+
+  await updateDoc(workOrderRef, updateData);
+}
+
+export async function deleteWorkOrder(userId: string, workOrderId: string): Promise<void> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+
+  const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+  const workOrderSnap = await getDoc(workOrderRef);
+  if (!workOrderSnap.exists() || workOrderSnap.data().orgId !== orgId) return;
+
+  const lineItemsQuery = query(
+    collection(db, WORK_ORDER_LINE_ITEMS_COLLECTION),
+    where('orgId', '==', orgId),
+    where('workOrderId', '==', workOrderId)
+  );
+  const lineItemsSnapshot = await getDocs(lineItemsQuery);
+
+  const batch = writeBatch(db);
+  batch.delete(workOrderRef);
+  lineItemsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: 'batch',
+        operation: 'delete',
+      }));
+    }
+    throw error;
+  });
+}
+
+export async function convertQuoteToWorkOrder(quoteId: string, userId: string): Promise<WorkOrder> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+
+  const quote = await getQuoteById(quoteId);
+  if (!quote) throw new Error('Quote not found.');
+
+  const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
+  const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+
+  const workOrderNumber = `WO-${Date.now().toString().slice(-6)}`;
+  const now = new Date();
+
+  const workOrderData: Omit<WorkOrder, 'id' | 'createdAt'> = {
+    workOrderNumber,
+    quoteId: quoteId,
+    businessNumber: quote.businessNumber,
+    companyName: quote.companyName,
+    contactId: quote.contactId,
+    supplierId: quote.supplierId,
+    totalAmount: quote.totalAmount,
+    status: 'pending',
+    scheduledDate: null,
+    completedDate: null,
+    assignedWorkerId: null,
+    assignedWorkerName: '',
+    notes: quote.notes || `Converted from quote ${quote.quoteNumber}`,
+    lineItemDetails: quote.lineItemDetails,
+    taxType: quote.taxType,
+    userId,
+  };
+
+  const workOrderLineItems = lineItems.map(item => {
+    const payload: any = {
+      description: item.description,
+      internalNotes: item.internalNotes,
+      categoryNumber: item.categoryNumber,
+      quantity: item.quantity,
+      price: item.price,
+      totalAmount: item.totalAmount,
+      preTaxAmount: item.preTaxAmount,
+      taxAmount: item.taxAmount,
+      taxType: item.taxType,
+      taxRate: item.taxRate,
+      itemType: item.itemType,
+      serviceItemId: item.serviceItemId,
+    };
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    return payload;
+  });
+
+  const workOrder = await addWorkOrderWithLineItems(workOrderData, workOrderLineItems);
+
+  // Mark quote as invoiced (reusing existing status)
+  await updateDoc(quoteRef, {
+    status: 'invoiced',
+    updatedBy: currentUser.uid,
+    updatedAt: new Date(),
+  });
+
+  return workOrder;
+}
+
+export async function convertWorkOrderToInvoice(workOrderId: string, userId: string): Promise<Invoice> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+
+  const workOrder = await getWorkOrderById(workOrderId);
+  if (!workOrder) throw new Error('Work order not found.');
+
+  const lineItems = await getWorkOrderLineItems(userId, workOrderId);
+  const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+
+  const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+  const now = new Date();
+  const dueDate = new Date(now);
+  dueDate.setDate(dueDate.getDate() + 14);
+
+  const invoiceData: any = {
+    invoiceNumber,
+    businessNumber: workOrder.businessNumber,
+    companyName: workOrder.companyName,
+    contactId: workOrder.contactId,
+    supplierId: workOrder.supplierId,
+    originalAmount: workOrder.totalAmount,
+    amountPaid: 0,
+    dueDate,
+    invoiceDate: now,
+    status: 'outstanding' as const,
+    notes: workOrder.notes || `Converted from work order ${workOrder.workOrderNumber}`,
+    lineItemDetails: workOrder.lineItemDetails,
+    taxType: workOrder.taxType,
+    userId,
+  };
+  Object.keys(invoiceData).forEach(key => invoiceData[key] === undefined && delete invoiceData[key]);
+
+  const invoiceLineItems = lineItems.map(item => {
+    const payload: any = {
+      description: item.description,
+      internalNotes: item.internalNotes,
+      categoryNumber: item.categoryNumber,
+      quantity: item.quantity,
+      price: item.price,
+      totalAmount: item.totalAmount,
+      preTaxAmount: item.preTaxAmount,
+      taxAmount: item.taxAmount,
+      taxType: item.taxType,
+      taxRate: item.taxRate,
+      itemType: item.itemType,
+      serviceItemId: item.serviceItemId,
+    };
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    return payload;
+  });
+
+  const invoice = await addInvoiceWithLineItems(invoiceData, invoiceLineItems);
+
+  // Mark work order as completed
+  await updateDoc(workOrderRef, {
+    status: 'completed',
+    completedDate: now,
+    updatedBy: currentUser.uid,
+    updatedAt: now,
+  });
+
+  return invoice;
 }

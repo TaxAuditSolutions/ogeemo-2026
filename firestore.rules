@@ -96,6 +96,8 @@ service cloud.firestore {
     match /quoteLineItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /invoices/{invoiceId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /invoiceLineItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /workOrders/{workOrderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /workOrderLineItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /serviceItems/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /taxTypes/{typeId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /incomeTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }

@@ -11,7 +11,7 @@ import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, Arr
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getQuotes, type Quote, convertQuoteToInvoice, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
+import { getQuotes, type Quote, convertQuoteToInvoice, convertQuoteToWorkOrder, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 
 const formatCurrency = (amount: number) => {
@@ -100,6 +100,20 @@ export function QuotesPageView() {
       toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleConvertToWorkOrder = async (quoteId: string) => {
+    if (!user) return;
+    setIsConverting(quoteId);
+    try {
+      const wo = await convertQuoteToWorkOrder(quoteId, user.uid);
+      toast({ title: "Work Order Created", description: `Work order ${wo.workOrderNumber} has been created from this quote.` });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Conversion Failed", description: error.message });
+    } finally {
+      setIsConverting(null);
     }
   };
 
@@ -274,7 +288,9 @@ export function QuotesPageView() {
                               <CheckCircle className="mr-2 h-4 w-4" /> Mark Approved
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleConvertQuote(quote.id)}>
-                              <FileDigit className="mr-2 h-4 w-4" /> Convert to Invoice
+                              <FileDigit className="mr-2 h-4 w-4" /> Convert to Invoice</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleConvertToWorkOrder(quote.id)}>
+                              <ClipboardList className="mr-2 h-4 w-4" /> Convert to Work Order
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleAcceptAndConvertQuote(quote.id)}>
                               <CheckCircle className="mr-2 h-4 w-4" /> Approve and Create an Invoice

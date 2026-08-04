@@ -168,6 +168,7 @@ const docToTask = (doc: any): TaskEvent => {
         urgency: data.urgency,
         importance: data.importance,
         ritualType: data.ritualType,
+        workOrderId: data.workOrderId || null,
     };
 };
 

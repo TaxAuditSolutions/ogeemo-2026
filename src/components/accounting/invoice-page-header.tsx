@@ -54,7 +54,7 @@ export function InvoicePageHeader({ pageTitle, hubPath = "/accounting/accounts-r
         <Button asChild variant="outline">
             <Link href={hubPath} aria-label={`Return to ${hubLabel}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to A/R
+            Back to Accounting Hub
             </Link>
         </Button>
       </div>

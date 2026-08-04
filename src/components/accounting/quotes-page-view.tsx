@@ -22,6 +22,7 @@ export function QuotesPageView() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState<string | null>(null);
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<keyof Quote>('quoteDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -195,7 +196,7 @@ export function QuotesPageView() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting/quotes" hubLabel="Quotes" />
+      <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting" hubLabel="Quotes" />
       <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">Quote Manager</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">

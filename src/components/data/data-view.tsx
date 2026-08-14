@@ -43,11 +43,13 @@ import { ChangePasswordDialog } from "./change-password-dialog";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { getUsers, deleteUserProfile, type UserProfile } from '@/core/user-profile-service';
+import { getOrganizationsByIds } from '@/core/organization-service';
 import { format } from "date-fns";
 
 export function UserListView() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [orgNamesById, setOrgNamesById] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,6 +68,8 @@ export function UserListView() {
     try {
       const fetchedUsers = await getUsers();
       setUsers(fetchedUsers);
+      const orgIds = fetchedUsers.map((u) => u.orgId).filter((id): id is string => !!id);
+      setOrgNamesById(await getOrganizationsByIds(orgIds));
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Failed to load users', description: e.message });
     } finally {
@@ -136,6 +140,7 @@ export function UserListView() {
                     <TableHead>User ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Organization</TableHead>
                     <TableHead>Access Level</TableHead>
                     <TableHead className="hidden md:table-cell">Created at</TableHead>
                     <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
@@ -143,13 +148,14 @@ export function UserListView() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="h-24 text-center"><LoaderCircle className="mx-auto h-6 w-6 animate-spin text-primary" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="h-24 text-center"><LoaderCircle className="mx-auto h-6 w-6 animate-spin text-primary" /></TableCell></TableRow>
                   ) : users.length > 0 ? (
                     users.map((userProfile) => (
                       <TableRow key={userProfile.id}>
                         <TableCell className="font-mono text-[10px] uppercase tracking-tighter text-muted-foreground">{userProfile.employeeNumber || userProfile.id.slice(0, 8)}</TableCell>
                         <TableCell className="font-medium">{userProfile.displayName}</TableCell>
                         <TableCell>{userProfile.email}</TableCell>
+                        <TableCell className="text-muted-foreground">{userProfile.orgId ? (orgNamesById[userProfile.orgId] || userProfile.orgId) : 'Unassigned'}</TableCell>
                         <TableCell><Badge variant="outline" className="capitalize">{userProfile.accessLevel || 'none'}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{userProfile.createdAt ? format(new Date(userProfile.createdAt.toDate()), 'PP') : 'N/A'}</TableCell>
                         <TableCell>
@@ -167,7 +173,7 @@ export function UserListView() {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={6} className="h-24 text-center text-muted-foreground italic">No users found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="h-24 text-center text-muted-foreground italic">No users found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

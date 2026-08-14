@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
 import { getUserProfile } from '@/core/user-profile-service';
+import { canAccessUserManager } from '@/core/rbac';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
@@ -122,7 +123,7 @@ export function MainMenu() {
             if (user) {
                 try {
                     const profile = await getUserProfile(user.uid);
-                    setIsAdmin(profile?.accessLevel === 'org_admin');
+                    setIsAdmin(canAccessUserManager(profile?.accessLevel));
                 } catch (error) {
                     console.error("Failed to check admin status", error);
                 }

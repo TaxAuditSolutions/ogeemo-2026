@@ -37,17 +37,41 @@ service cloud.firestore {
       );
     }
 
-    // Role helpers
+    // Role helpers (super_admin only ever applies to master-tenant users)
+    function isSuperAdmin() {
+      return hasAccessLevel('super_admin');
+    }
+
+    function isMasterTenant() {
+      return isSignedIn() && request.auth.token.isMasterTenant == true;
+    }
+
     function isOrgAdmin() {
-      return hasAccessLevel('org_admin');
+      return hasAccessLevel('org_admin') || isSuperAdmin();
     }
 
     function isEditor() {
-      return hasAccessLevel('editor') || hasAccessLevel('org_admin');
+      return hasAccessLevel('editor') || isOrgAdmin();
     }
 
     function isViewer() {
-      return hasAccessLevel('viewer') || hasAccessLevel('editor') || hasAccessLevel('org_admin');
+      return hasAccessLevel('viewer') || isEditor();
+    }
+
+    // Strict target-role matrix helpers: an actor may only manage users with a strictly lower role.
+    function roleWeight(level) {
+      return level == 'super_admin' ? 4 :
+             level == 'org_admin' ? 3 :
+             level == 'editor' ? 2 :
+             level == 'viewer' ? 1 : 0;
+    }
+
+    function actingRoleWeight() {
+      return roleWeight(request.auth.token.accessLevel != null ? request.auth.token.accessLevel : profileAccessLevel());
+    }
+
+    function canManageTargetRole(targetLevel) {
+      return isSuperAdmin() || actingRoleWeight() > roleWeight(targetLevel);
     }
 
     // 2. Data Protection & Role Enforcement functions
@@ -72,16 +96,22 @@ service cloud.firestore {
     // ---------------------------------------------------------
     
     match /organizations/{orgId} {
-      allow read: if isRightTenant(orgId);
-      allow write: if isRightTenant(orgId) && isOrgAdmin();
+      // Master-tenant super admins manage tenant lifecycle (create/list companies) but this is the
+      // ONLY collection where they get a cross-tenant exception -- never for business data below.
+      allow read: if isRightTenant(orgId) || (isMasterTenant() && isSuperAdmin());
+      allow write: if (isRightTenant(orgId) && isOrgAdmin()) || (isMasterTenant() && isSuperAdmin());
     }
 
     match /users/{userId} {
       // Users can read their own profile, or any profile within their org
       allow read: if isSignedIn() && (request.auth.uid == userId || canReadOrgDoc());
-      allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId);
-      allow update: if isSignedIn() && (request.auth.uid == userId || (isOrgAdmin() && isRightTenant(resource.data.orgId)));
-      allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId);
+      allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId) && canManageTargetRole(request.resource.data.accessLevel);
+      // Self-updates may never change accessLevel (prevents client-side role self-escalation).
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && request.resource.data.accessLevel == resource.data.accessLevel) ||
+        (isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel) && canManageTargetRole(request.resource.data.accessLevel))
+      );
+      allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel);
     }
 
     // ---------------------------------------------------------

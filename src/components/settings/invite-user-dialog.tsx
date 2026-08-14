@@ -27,6 +27,7 @@ import { inviteUser } from '@/app/actions/org-actions';
 import { LoaderCircle, MailPlus, Send } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AccessLevel, UserProfile } from '@/core/user-profile-service';
+import { getAssignableRoles, ROLE_LABELS } from '@/core/rbac';
 
 const inviteSchema = z.object({
     email: z.string().email({ message: 'A valid email is required.' }),
@@ -89,7 +90,8 @@ export function InviteUserDialog({ isOpen, onOpenChange, onUserInvited, currentU
         }
     };
 
-    const isOrgAdmin = currentUserProfile?.accessLevel === 'org_admin';
+    // super_admin is never invitable here -- it's assigned exclusively via the Tenant Management dashboard.
+    const invitableRoles = getAssignableRoles(currentUserProfile?.accessLevel, false);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -123,9 +125,9 @@ export function InviteUserDialog({ isOpen, onOpenChange, onUserInvited, currentU
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {isOrgAdmin && <SelectItem value="org_admin">Admin (Full Access)</SelectItem>}
-                                        {isOrgAdmin && <SelectItem value="editor">Editor (Read/Edit)</SelectItem>}
-                                        <SelectItem value="viewer">Viewer (Read Only)</SelectItem>
+                                        {invitableRoles.map((role) => (
+                                            <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

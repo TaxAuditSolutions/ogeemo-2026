@@ -23,7 +23,7 @@ import { getUserProfile } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
 
 const groupedMenuItems = {
-    Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/email-hub'] },
+    Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },

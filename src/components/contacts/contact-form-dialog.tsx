@@ -197,11 +197,11 @@ export default function ContactFormDialog({
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Legal Name *</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity</FormLabel><FormControl><Input placeholder="john@example.com" autoComplete="off" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email Identity</FormLabel><FormControl><Input placeholder="john@example.com" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="folderId" render={({ field }) => ( 
                                             <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Assign role..." /></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4"/></Button></div><FormMessage /></FormItem>
                                         )} />
-                                        <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" autoComplete="off" data-lpignore="true" data-form-type="other" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                     </div>
                                 </section>
 

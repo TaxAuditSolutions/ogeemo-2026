@@ -7,11 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown } from 'lucide-react';
+import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getQuotes, type Quote, convertQuoteToInvoice, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
+import { getQuotes, type Quote, convertQuoteToInvoice, convertQuoteToWorkOrder, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 
 const formatCurrency = (amount: number) => {
@@ -22,6 +22,7 @@ export function QuotesPageView() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState<string | null>(null);
   const [activeQuoteId, setActiveQuoteId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<keyof Quote>('quoteDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -103,6 +104,20 @@ export function QuotesPageView() {
     }
   };
 
+  const handleConvertToWorkOrder = async (quoteId: string) => {
+    if (!user) return;
+    setIsConverting(quoteId);
+    try {
+      const wo = await convertQuoteToWorkOrder(quoteId, user.uid);
+      toast({ title: "Work Order Created", description: `Work order ${wo.workOrderNumber} has been created from this quote.` });
+      loadData();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Conversion Failed", description: error.message });
+    } finally {
+      setIsConverting(null);
+    }
+  };
+
   const handleConvertQuote = async (quoteId: string) => {
     if (!user) return;
     setIsSaving(true);
@@ -181,7 +196,7 @@ export function QuotesPageView() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting/quotes" hubLabel="Quotes" />
+      <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting" hubLabel="Quotes" />
       <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">Quote Manager</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -274,7 +289,9 @@ export function QuotesPageView() {
                               <CheckCircle className="mr-2 h-4 w-4" /> Mark Approved
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleConvertQuote(quote.id)}>
-                              <FileDigit className="mr-2 h-4 w-4" /> Convert to Invoice
+                              <FileDigit className="mr-2 h-4 w-4" /> Convert to Invoice</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleConvertToWorkOrder(quote.id)}>
+                              <ClipboardList className="mr-2 h-4 w-4" /> Convert to Work Order
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleAcceptAndConvertQuote(quote.id)}>
                               <CheckCircle className="mr-2 h-4 w-4" /> Approve and Create an Invoice

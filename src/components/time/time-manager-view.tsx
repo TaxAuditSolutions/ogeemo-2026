@@ -80,6 +80,8 @@ import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, 
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { AgendaForm } from '@/components/meetings/agenda-form';
+import { Users as UsersIcon } from 'lucide-react';
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
@@ -143,6 +145,8 @@ export function TimeManagerView() {
     const [editSessionNotes, setEditSessionNotes] = React.useState('');
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    
+    const [isAgendaFormOpen, setIsAgendaFormOpen] = useState(false);
 
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
@@ -257,8 +261,8 @@ export function TimeManagerView() {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a subject for the event.' });
             return;
         }
-        let start: Date | null = null;
-        let end: Date | null = null;
+        let start: Date | undefined = undefined;
+        let end: Date | undefined = undefined;
         let isScheduled = false;
         if (startDate) {
             if (isAllDay) {
@@ -478,6 +482,23 @@ export function TimeManagerView() {
 
     if (isLoadingData) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
 
+    if (isAgendaFormOpen) {
+        return (
+            <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-4xl text-black">
+                <div className="flex items-center justify-between mb-6 print:hidden">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Meeting Agenda</h1>
+                        <p className="text-muted-foreground mt-1">Plan and organize your meeting.</p>
+                    </div>
+                    <Button variant="outline" onClick={() => setIsAgendaFormOpen(false)}>
+                        Back to Command Centre
+                    </Button>
+                </div>
+                <AgendaForm onSuccess={() => setIsAgendaFormOpen(false)} />
+            </div>
+        );
+    }
+
     return (
         <>
             <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full text-black">
@@ -598,6 +619,11 @@ export function TimeManagerView() {
                                 </Card>
                             </div>
                             <div className="space-y-2"><Label htmlFor="notes">Details</Label><Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} /></div>
+                            <div className="pt-2">
+                                <Button variant="outline" onClick={() => setIsAgendaFormOpen(true)} className="w-full sm:w-auto">
+                                    <UsersIcon className="mr-2 h-4 w-4" /> Create Agenda
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
 

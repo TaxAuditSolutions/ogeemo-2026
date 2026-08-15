@@ -76,6 +76,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
 
     // Only offer roles the acting user is permitted to assign, per the hierarchy matrix.
     const assignableRoles = getAssignableRoles(actingAccessLevel, isMasterTenant);
+    const isEditingSuperAdmin = userToEdit?.accessLevel === 'super_admin';
     // Only master-tenant super admins may spin up a brand-new, fully isolated tenant here.
     const canCreateNewTenant = !userToEdit && isMasterTenant && actingAccessLevel === 'super_admin';
 
@@ -155,7 +156,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     employeeNumber: values.employeeNumber,
                     notes: values.notes,
                 });
-                if (values.accessLevel !== (userToEdit.accessLevel || 'none')) {
+                if (values.accessLevel !== (userToEdit.accessLevel || 'none') && !isEditingSuperAdmin) {
                     await updateUserAccess({ targetUid: userToEdit.id, newRole: values.accessLevel });
                 }
                 toast({ title: 'User Updated' });
@@ -169,6 +170,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     companyName: values.companyName.trim(),
                     email: values.email,
                     name: values.name,
+                    employeeNumber: values.employeeNumber,
+                    notes: values.notes,
                     password: values.password || undefined,
                 });
                 toast({ title: 'Tenant Created', description: `"${values.companyName}" has been provisioned with ${values.email} as its super admin.` });
@@ -319,7 +322,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">Authority & Configuration</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <FormField control={formMethods.control} name="accessLevel" render={({ field }) => (
-                                                <FormItem><FormLabel>Authority Level (Access)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Select an access level" /></SelectTrigger></FormControl><SelectContent>{assignableRoles.map((role) => (<SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>))}<SelectItem value="none">No Access (Revoked Node)</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                                                <FormItem><FormLabel>Authority Level (Access)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isEditingSuperAdmin}><FormControl><SelectTrigger className={cn("h-11", isEditingSuperAdmin && "bg-muted/50")}><SelectValue placeholder="Select an access level" /></SelectTrigger></FormControl><SelectContent>{isEditingSuperAdmin ? (<SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>) : (<>{assignableRoles.map((role) => (<SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>))}<SelectItem value="none">No Access (Revoked Node)</SelectItem></>)}</SelectContent></Select>{isEditingSuperAdmin && <FormDescription className="text-xs">Super Admin authority is locked. Every tenant must keep at least one Super Admin.</FormDescription>}<FormMessage /></FormItem>
                                             )} />
                                         </div>
                                         <FormField control={formMethods.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={5} className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>)} />

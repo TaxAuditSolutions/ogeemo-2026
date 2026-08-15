@@ -261,6 +261,10 @@ export async function updateUserAccess(data: { targetUid: string; newRole: Acces
     if (data.targetUid === decodedToken.uid) {
         throw new Error('Unauthorized: Use another admin account to change your own role.');
     }
+    // Every tenant must retain its super admin, so that role is immutable once granted.
+    if (currentTargetRole === 'super_admin') {
+        throw new Error('The Super Admin authority level cannot be changed. Every tenant must keep at least one Super Admin.');
+    }
     if (!canManageTargetRole(requestingAccessLevel, currentTargetRole || 'viewer')) {
         throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot manage a ${currentTargetRole} user.`);
     }
@@ -358,7 +362,7 @@ export async function removeUser(targetUid: string) {
  * along with its founding super_admin (that tenant's top authority). The master tenant
  * super admin never gains ongoing access to the new company's data or claims.
  */
-export async function createTenantWithSuperAdmin(data: { companyName: string; email: string; password?: string; name?: string }) {
+export async function createTenantWithSuperAdmin(data: { companyName: string; email: string; password?: string; name?: string; employeeNumber?: string; notes?: string }) {
     await requireMasterTenantSuperAdmin();
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
@@ -390,6 +394,8 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             id: createdUid,
             email: data.email,
             displayName: data.name || '',
+            employeeNumber: data.employeeNumber || '',
+            notes: data.notes || '',
             orgId: orgId,
             accessLevel: 'super_admin',
             mentorshipRole: 'Apprentice',

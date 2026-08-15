@@ -2,7 +2,7 @@
 // to avoid two divergent org-creation code paths (see org-actions.ts registerOrganization).
 export type { Organization } from '@/app/actions/org-actions';
 
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import type { Organization } from '@/app/actions/org-actions';
 
@@ -31,6 +31,15 @@ export async function getOrganizationsByIds(orgIds: string[]): Promise<Record<st
         })
     );
     return Object.fromEntries(entries);
+}
+
+/** Renames a tenant. Firestore rules restrict this to the org's own org_admin/super_admin. */
+export async function updateOrganizationName(orgId: string, name: string): Promise<void> {
+    const { db } = getFirebaseServices();
+    await updateDoc(doc(db, ORGANIZATIONS_COLLECTION, orgId), {
+        name,
+        updatedAt: serverTimestamp(),
+    });
 }
 
 /**

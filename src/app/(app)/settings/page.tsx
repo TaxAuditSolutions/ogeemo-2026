@@ -13,26 +13,28 @@ import { VisualIdentityCard } from "@/components/settings/visual-identity-card";
 import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/core/user-profile-service';
+import { getOrganization, updateOrganizationName } from '@/core/organization-service';
+import { canAccessUserManager } from '@/core/rbac';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 
 const profileSchema = z.object({
-    displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
-    email: z.string().email({ message: "Please enter a valid email address." }).optional(),
-    companyName: z.string().optional(),
-    website: z.string().optional(),
-    businessPhone: z.string().optional(),
-    cellPhone: z.string().optional(),
-    bestPhone: z.enum(['business', 'cell']).optional(),
-    employeeNumber: z.string().optional(),
+  displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
+  email: z.string().email({ message: "Please enter a valid email address." }).optional(),
+  companyName: z.string().optional(),
+  website: z.string().optional(),
+  businessPhone: z.string().optional(),
+  cellPhone: z.string().optional(),
+  bestPhone: z.enum(['business', 'cell']).optional(),
+  employeeNumber: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function SettingsPage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, accessLevel } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,14 +43,14 @@ export default function SettingsPage() {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-        displayName: '',
-        email: '',
-        companyName: '',
-        website: '',
-        businessPhone: '',
-        cellPhone: '',
-        bestPhone: 'cell',
-        employeeNumber: '',
+      displayName: '',
+      email: '',
+      companyName: '',
+      website: '',
+      businessPhone: '',
+      cellPhone: '',
+      bestPhone: 'cell',
+      employeeNumber: '',
     },
   });
 
@@ -59,10 +61,19 @@ export default function SettingsPage() {
         const userProfile = await getUserProfile(user.uid);
         setProfile(userProfile);
         if (userProfile) {
+          // Company name lives on the tenant, not the user profile.
+          let orgName = '';
+          if (userProfile.orgId) {
+            try {
+              orgName = (await getOrganization(userProfile.orgId))?.name || '';
+            } catch (orgError) {
+              console.error('Failed to load organization name:', orgError);
+            }
+          }
           form.reset({
             displayName: userProfile.displayName || user.displayName || '',
             email: userProfile.email || user.email || '',
-            companyName: userProfile.companyName || '',
+            companyName: orgName,
             website: userProfile.website || '',
             businessPhone: userProfile.businessPhone || '',
             cellPhone: userProfile.cellPhone || '',
@@ -96,24 +107,33 @@ export default function SettingsPage() {
     }
     setIsSubmitting(true);
     try {
-        await updateUserProfile(user.uid, values.email || user.email || '', values);
-        
-        // Refresh local state after save to update the badge/ui
-        const updated = await getUserProfile(user.uid);
-        if (updated) setProfile(updated);
+      const { companyName, ...profileValues } = values;
+      await updateUserProfile(user.uid, values.email || user.email || '', profileValues);
 
-        toast({
-            title: "Settings Saved",
-            description: "Your profile information has been updated successfully.",
-        });
+      // Only tenant admins may rename the organization (enforced by firestore.rules).
+      if (profile?.orgId && canAccessUserManager(accessLevel) && companyName !== undefined) {
+        const currentOrgName = (await getOrganization(profile.orgId))?.name || '';
+        if (companyName !== currentOrgName) {
+          await updateOrganizationName(profile.orgId, companyName);
+        }
+      }
+
+      // Refresh local state after save to update the badge/ui
+      const updated = await getUserProfile(user.uid);
+      if (updated) setProfile(updated);
+
+      toast({
+        title: "Settings Saved",
+        description: "Your profile information has been updated successfully.",
+      });
     } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: error.message || "An unknown error occurred while saving your profile.",
-        });
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error.message || "An unknown error occurred while saving your profile.",
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -130,42 +150,42 @@ export default function SettingsPage() {
               {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
-             <Button asChild variant="ghost" size="icon">
-                <Link href="/action-manager" aria-label="Close settings">
-                    <X className="h-5 w-5" />
-                </Link>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/action-manager" aria-label="Close settings">
+                <X className="h-5 w-5" />
+              </Link>
             </Button>
           </div>
         </header>
         <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-20">
           <div className="space-y-6">
-            <ProfileCard form={form} isLoading={isLoading} profile={profile} />
-            
+            <ProfileCard form={form} isLoading={isLoading} profile={profile} canEditCompanyName={canAccessUserManager(accessLevel)} />
+
             <Card className="border-primary/20 bg-primary/5 shadow-md">
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <Users2 className="h-6 w-6 text-primary" />
-                        <CardTitle>Team & Authority</CardTitle>
-                    </div>
-                    <CardDescription>
-                        Manage your team's digital identities and secure access levels within the specialized User Manager.
-                    </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                    <Button asChild className="w-full font-bold shadow-lg">
-                        <Link href="/user-manager">
-                            Open User Manager <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </CardFooter>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Users2 className="h-6 w-6 text-primary" />
+                  <CardTitle>Team & Authority</CardTitle>
+                </div>
+                <CardDescription>
+                  Manage your team's digital identities and secure access levels within the specialized User Manager.
+                </CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Button asChild className="w-full font-bold shadow-lg">
+                  <Link href="/user-manager">
+                    Open User Manager <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
             </Card>
 
             <PreferencesCard />
           </div>
           <div className="space-y-6">
-             <VisualIdentityCard />
-             <PlanningRitualsCard />
-             <SiteImagesSettingsCard />
+            <VisualIdentityCard />
+            <PlanningRitualsCard />
+            <SiteImagesSettingsCard />
           </div>
         </div>
       </form>

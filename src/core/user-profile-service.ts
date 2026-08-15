@@ -67,6 +67,10 @@ export interface UserProfile {
     displayName?: string;
     employeeNumber?: string;
     businessNumber?: string;
+    website?: string;
+    businessPhone?: string;
+    cellPhone?: string;
+    bestPhone?: 'business' | 'cell';
 
     // Organization & Access
     orgId?: string;

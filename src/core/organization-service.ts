@@ -1,19 +1,46 @@
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirebaseServices } from '@/firebase';
+// Canonical Organization (tenant) shape and creation logic now live in org-actions.ts
+// to avoid two divergent org-creation code paths (see org-actions.ts registerOrganization).
+export type { Organization } from '@/app/actions/org-actions';
 
-export interface Organization {
-    id: string;
-    name: string;
-    ownerId: string;
-    seatCount: number;
-    basePrice: number;
-    extraSeatPrice: number;
-    totalMonthlyPrice: number;
-    createdAt: any;
-    updatedAt: any;
-}
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirebaseServices } from '@/firebase';
+import type { Organization } from '@/app/actions/org-actions';
 
 const ORGANIZATIONS_COLLECTION = 'organizations';
+
+/** Fetches a single organization's public fields (name) for display purposes. */
+export async function getOrganization(orgId: string): Promise<Pick<Organization, 'id' | 'name'> | null> {
+    const { db } = getFirebaseServices();
+    const snap = await getDoc(doc(db, ORGANIZATIONS_COLLECTION, orgId));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    return { id: snap.id, name: data.name as string };
+}
+
+/** Batches lookups for multiple organizations, keyed by orgId, tolerating individual failures. */
+export async function getOrganizationsByIds(orgIds: string[]): Promise<Record<string, string>> {
+    const uniqueIds = Array.from(new Set(orgIds.filter(Boolean)));
+    const entries = await Promise.all(
+        uniqueIds.map(async (orgId) => {
+            try {
+                const org = await getOrganization(orgId);
+                return [orgId, org?.name ?? orgId] as const;
+            } catch {
+                return [orgId, orgId] as const;
+            }
+        })
+    );
+    return Object.fromEntries(entries);
+}
+
+/** Renames a tenant. Firestore rules restrict this to the org's own org_admin/super_admin. */
+export async function updateOrganizationName(orgId: string, name: string): Promise<void> {
+    const { db } = getFirebaseServices();
+    await updateDoc(doc(db, ORGANIZATIONS_COLLECTION, orgId), {
+        name,
+        updatedAt: serverTimestamp(),
+    });
+}
 
 /**
  * Calculates the monthly membership price based on seat count.
@@ -30,46 +57,4 @@ export function calculateMembershipPrice(seatCount: number): number {
 
     const extraSeats = seatCount - includedSeats;
     return basePrice + (extraSeats * extraSeatPrice);
-}
-
-/**
- * Provisions a new organization for a member.
- */
-export async function createOrganization(ownerId: string, name: string, seatCount: number): Promise<Organization> {
-    const { db } = getFirebaseServices();
-    const orgId = `org_${ownerId}`; // Simple 1:1 mapping for now
-    const orgRef = doc(db, ORGANIZATIONS_COLLECTION, orgId);
-
-    const totalMonthlyPrice = calculateMembershipPrice(seatCount);
-
-    const organization: Organization = {
-        id: orgId,
-        name: name || `${ownerId}'s Circle`,
-        ownerId,
-        seatCount,
-        basePrice: 25,
-        extraSeatPrice: 5,
-        totalMonthlyPrice,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    };
-
-    await setDoc(orgRef, organization);
-    return organization;
-}
-
-/**
- * Updates an organization's seat count and recalculates price.
- */
-export async function updateSeatCount(orgId: string, newSeatCount: number): Promise<void> {
-    const { db } = getFirebaseServices();
-    const orgRef = doc(db, ORGANIZATIONS_COLLECTION, orgId);
-    
-    const newPrice = calculateMembershipPrice(newSeatCount);
-
-    await updateDoc(orgRef, {
-        seatCount: newSeatCount,
-        totalMonthlyPrice: newPrice,
-        updatedAt: serverTimestamp()
-    });
 }

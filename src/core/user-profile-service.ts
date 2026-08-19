@@ -50,7 +50,8 @@ function getFunctionsService() {
     return functions;
 }
 
-export type AccessLevel = 'org_admin' | 'editor' | 'viewer';
+// super_admin only ever applies to users belonging to the master ("Ogeemo") tenant.
+export type AccessLevel = 'super_admin' | 'org_admin' | 'editor' | 'viewer';
 export type MentorshipRole = 'Apprentice' | 'Mentor_Apprentice' | 'Certified_Mentor';
 
 export interface Organization {
@@ -66,6 +67,10 @@ export interface UserProfile {
     displayName?: string;
     employeeNumber?: string;
     businessNumber?: string;
+    website?: string;
+    businessPhone?: string;
+    cellPhone?: string;
+    bestPhone?: 'business' | 'cell';
 
     // Organization & Access
     orgId?: string;

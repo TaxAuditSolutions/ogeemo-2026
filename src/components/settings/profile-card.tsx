@@ -30,9 +30,10 @@ interface ProfileCardProps {
   form: UseFormReturn<ProfileFormData>;
   isLoading: boolean;
   profile: any;
+  canEditCompanyName?: boolean;
 }
 
-export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profile }) => {
+export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profile, canEditCompanyName = false }) => {
   const { user } = useAuth();
 
   const getInitials = (name?: string | null) => {
@@ -49,16 +50,18 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
 
   const getRoleLabel = (r: string | undefined) => {
     switch (r) {
-      case 'org_admin': return 'Admin (Full Orchestration)';
-      case 'editor': return 'Read/Edit (Operational)';
-      case 'viewer': return 'Read Only (Intelligence)';
-      case 'none': return 'No Access (Revoked)';
-      default: return 'User';
+      case 'super_admin': return 'Super Admin';
+      case 'org_admin': return 'Admin';
+      case 'editor': return 'Editor';
+      case 'viewer': return 'Viewer';
+      case 'none': return 'Viewer';
+      default: return 'Viewer';
     }
   };
 
   const getRoleIcon = (r: string | undefined) => {
     switch (r) {
+      case 'super_admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'org_admin': return <ShieldAlert className="h-4 w-4 text-destructive" />;
       case 'editor': return <ShieldCheck className="h-4 w-4 text-primary" />;
       case 'viewer': return <Shield className="h-4 w-4 text-muted-foreground" />;
@@ -114,7 +117,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} readOnly={!canEditCompanyName} className={!canEditCompanyName ? "bg-muted/50" : undefined} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
 

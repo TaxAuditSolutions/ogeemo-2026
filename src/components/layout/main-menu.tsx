@@ -19,7 +19,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
-import { getUserProfile } from '@/core/user-profile-service';
+import { getUserProfile, type AccessLevel } from '@/core/user-profile-service';
+import { canAccessUserManager } from '@/core/rbac';
 
 const groupedMenuItems = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },
@@ -111,25 +112,32 @@ export function MainMenu() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>(allMenuItems);
     const [actionChips, setActionChips] = useState<ActionChipData[]>([]);
     const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
-    const { user } = useAuth();
+    const { user, accessLevel } = useAuth();
     const { toast } = useToast();
     const { view, setView } = useSidebarView();
     const [isLoadingChips, setIsLoadingChips] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
 
     useEffect(() => {
-        async function checkAdminStatus() {
-            if (user) {
-                try {
-                    const profile = await getUserProfile(user.uid);
-                    setIsAdmin(profile?.accessLevel === 'org_admin');
-                } catch (error) {
-                    console.error("Failed to check admin status", error);
-                }
-            }
+        if (!user) {
+            setProfileAccessLevel(null);
+            return;
         }
-        checkAdminStatus();
+        let cancelled = false;
+        (async () => {
+            try {
+                const profile = await getUserProfile(user.uid);
+                if (!cancelled) setProfileAccessLevel(profile?.accessLevel ?? null);
+            } catch (error) {
+                console.error("Failed to check admin status", error);
+                if (!cancelled) setProfileAccessLevel(null);
+            }
+        })();
+        return () => { cancelled = true; };
     }, [user]);
+
+    // Claims are the primary source; the Firestore profile covers users whose claims were never set.
+    const isAdmin = canAccessUserManager(accessLevel) || canAccessUserManager(profileAccessLevel);
 
     const sortMenuItems = useCallback((order: string[]) => {
         const orderedItems = order

@@ -13,10 +13,11 @@ interface AuthContextType {
   isLoading: boolean;
   accessToken: string | null;
   accessLevel: AccessLevel | null;
+  isMasterTenant: boolean;
   isOrgAdmin: boolean;
   isEditor: boolean;
   isViewer: boolean;
-  auth: Auth;
+  auth: Auth | null;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   getGoogleAccessToken: () => Promise<string | null>;
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
+  const [isMasterTenant, setIsMasterTenant] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [firebaseAuth, setFirebaseAuth] = useState<Auth | null>(null);
 
@@ -91,12 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const tokenAccessLevel = tokenResult.claims.accessLevel;
         const tokenOrgId = tokenResult.claims.orgId;
         const normalizedTokenAccessLevel =
-          tokenAccessLevel === 'org_admin' || tokenAccessLevel === 'editor' || tokenAccessLevel === 'viewer'
+          tokenAccessLevel === 'super_admin' || tokenAccessLevel === 'org_admin' || tokenAccessLevel === 'editor' || tokenAccessLevel === 'viewer'
             ? tokenAccessLevel
             : null;
         setAccessLevel(
           normalizedTokenAccessLevel
         );
+        setIsMasterTenant(tokenResult.claims.isMasterTenant === true);
 
         // This creates the server-side session cookie.
         // A 5s timeout ensures a hanging call never blocks the login redirect.
@@ -157,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clear everything on sign out
         setAccessToken(null);
         setAccessLevel(null);
+        setIsMasterTenant(false);
         sessionStorage.removeItem('google_access_token');
         fetch('/api/auth/session', { method: 'DELETE' }).catch(() => { });
       }
@@ -225,12 +229,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAccessToken(null);
     setAccessLevel(null);
+    setIsMasterTenant(false);
     sessionStorage.removeItem('google_access_token');
     router.push('/login');
   }, [router, firebaseAuth]);
 
-  const isOrgAdmin = accessLevel === 'org_admin';
-  const isEditor = accessLevel === 'editor' || accessLevel === 'org_admin';
+  const isOrgAdmin = accessLevel === 'org_admin' || accessLevel === 'super_admin';
+  const isEditor = accessLevel === 'editor' || isOrgAdmin;
   const isViewer = accessLevel === 'viewer' || isEditor;
 
   const value = {
@@ -238,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: isAuthLoading,
     accessToken,
     accessLevel,
+    isMasterTenant,
     isOrgAdmin,
     isEditor,
     isViewer,

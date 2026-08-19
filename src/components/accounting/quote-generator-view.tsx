@@ -774,10 +774,14 @@ export function QuoteGeneratorView() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="requested">Requested</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="sent">Sent</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>
                       <SelectItem value="invoiced">Invoiced</SelectItem>
+                      <SelectItem value="in_progress">Work in Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
                       <SelectItem value="declined">Declined</SelectItem>
                     </SelectContent>
                   </Select>

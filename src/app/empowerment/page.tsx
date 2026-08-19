@@ -84,6 +84,41 @@ const INSIGHT_POSTS = [
             <p>Ogeemo collapses these disparate actions into single, seamless workflows. Need to bill a client? The time log is already connected to their Contact Hub profile, which instantly populates the Invoice Generator.</p>
             <p>This streamlining doesn't just save minutes; it preserves momentum. Your team can operate in a state of flow, completely unburdened by administrative bottlenecks.</p>
         `
+    },
+    { 
+        id: "fragmentation",
+        title: "The Hidden Cost of Software Fragmentation", 
+        date: "August 13, 2026", 
+        cat: "Strategy",
+        content: `
+            <p>The average small business uses between 9 and 15 different software tools to manage daily operations. Each tool has its own login, its own data model, its own export format, and its own monthly subscription fee. Individually, each tool seems reasonable. Collectively, they create a fragmented digital ecosystem that quietly drains productivity.</p>
+            <p>The hidden costs are staggering. Context switching — the cognitive penalty of jumping between unrelated tools — can consume up to 40% of a knowledge worker's productive time. When your bookkeeping software doesn't talk to your CRM, and your CRM doesn't talk to your project manager, every data point must be manually re-entered, re-checked, and re-reconciled. Errors creep in. Invoices go missing. Billable hours slip through the cracks.</p>
+            <p>Ogeemo was built on a fundamentally different premise: one platform, one data model, one source of truth. When you log a time entry, it automatically flows to the invoice generator, the payroll system, and the project profitability report — because it's all the same database. No integrations to maintain, no API limits to hit, no sync failures to troubleshoot. Just one unified system that treats your business as the interconnected organism it is.</p>
+        `
+    },
+    { 
+        id: "cash-basis",
+        title: "Why Cash-Basis Accounting Works for Small Business", 
+        date: "August 13, 2026", 
+        cat: "Accounting",
+        content: `
+            <p>Walk into any accounting 101 course and you'll be taught accrual-basis accounting. It's the gold standard for large enterprises with complex revenue recognition requirements and inventory-heavy operations. But for the vast majority of small businesses — service providers, consultants, tradespeople — cash-basis accounting is not just simpler. It's more honest.</p>
+            <p>Cash-basis accounting recognizes revenue when the money hits your bank account and expenses when the money leaves it. No "unearned revenue" liabilities. No "prepaid expenses" amortization schedules. Just a clear, unambiguous picture of what came in and what went out. For a business owner trying to understand whether they're actually making money, this clarity is invaluable.</p>
+            <p>Ogeemo's BKS (Bookkeeping System) supports both cash and accrual methods, but defaults to cash-basis for new accounts. Why? Because when you're running a small business, you don't need to know what your revenue "looks like" on paper — you need to know whether you can make payroll next Friday. Cash-basis tells you that. Accrual tells your auditor a story. Both matter, but only one keeps you solvent.</p>
+            <p>As your business grows and your reporting needs become more sophisticated, Ogeemo's dual-ledger architecture lets you switch to accrual without losing historical data. The cash-basis ledger remains intact; an accrual overlay is applied on top. You get the best of both worlds: the simplicity of cash-basis for daily operations and the rigor of accrual for tax planning and investor reporting.</p>
+        `
+    },
+    { 
+        id: "audit-trail",
+        title: "Building a Defensible Audit Trail from Day One", 
+        date: "August 13, 2026", 
+        cat: "Compliance",
+        content: `
+            <p>Most businesses approach audit readiness reactively. When the letter arrives from the CRA or IRS, a frantic scramble begins: receipts are hunted down, invoices are matched to bank statements, and someone inevitably discovers that a critical document was never saved in the first place. The cost — in stress, in billable hours, and in potential penalties — is enormous.</p>
+            <p>The alternative is to build a defensible audit trail from day one. This means every transaction is linked to its source document at the point of entry, not retroactively. Every change to a financial record is logged with a timestamp, a user ID, and a reason. Every invoice, receipt, and contract is stored in a structured, searchable archive — not buried in someone's email inbox or scattered across a dozen Google Drive folders.</p>
+            <p>Ogeemo was designed by Tax Audit Solutions (TAS), a firm that has lived through hundreds of audits. Every architectural decision — from the immutable transaction log to the document management system to the role-based access controls — was made with audit defensibility in mind. When you log a time entry, the system automatically links it to the project, the client, and the invoice. When you upload a receipt, it's immediately attached to the corresponding expense transaction. When you modify a ledger entry, the original value is preserved in an audit log.</p>
+            <p>The result is a platform where "audit-ready" isn't a seasonal scramble — it's the default state. If the auditor comes knocking, you export your ledger, hand over the structured archive, and go back to running your business. That's not just compliance. That's peace of mind.</p>
+        `
     }
 ];
 
@@ -187,7 +222,7 @@ export default function EmpowermentPage() {
                                 Explore our collection of expert articles and practical tips designed to enhance your business management and boost your productivity.
                             </p>
                             <p>
-                                This paragraph serves as an introduction to your blog post. Begin by discussing the primary theme or topic that you plan to cover, ensuring it captures the reader’s interest from the very first sentence. Share a brief overview that highlights why this topic is important and how it can provide value.
+                                Running a business shouldn't mean drowning in software subscriptions and administrative busywork. Yet most small business owners spend upwards of 40% of their time managing tools instead of growing their company. The Ogeemo Insights hub is where we share what we've learned building a platform that fights that trend — from audit-readiness strategies to workflow optimization techniques that actually move the needle.
                             </p>
                             <div className="bg-card p-8 rounded-3xl border-l-8 border-primary shadow-xl relative overflow-hidden group">
                                 <Quote className="absolute top-4 right-4 h-12 w-12 text-primary/10 group-hover:text-primary/20 transition-colors" />

@@ -1,0 +1,149 @@
+# Ogeemo Website — Image Placeholder Catalog
+
+**Last updated:** August 13, 2026  
+**Purpose:** Complete inventory of all `ImagePlaceholder` IDs used across the Ogeemo website. Use this as a checklist when uploading images via the admin interface (footer → Admin Login → Manage Site Images).
+
+---
+
+## How It Works
+
+The Ogeemo website uses a CMS-like image system:
+1. Each `ImagePlaceholder` component has a unique `id` (e.g., `about-dan`)
+2. Images are uploaded to Firestore and linked by ID
+3. When a page loads, the component fetches the image from Firestore by ID
+4. If no image is set, a placeholder with "No image set for '[id]'" is displayed
+5. Authenticated admins can hover over any placeholder and click the edit button to upload or select an image
+
+**To upload images:** Log in via the footer "Admin Login" link, then visit `/image-manager` or hover over any placeholder on the site and click the edit (pencil) button.
+
+---
+
+## Priority 1: Public-Facing Website Pages
+
+These are the most visible placeholders that visitors to www.ogeemo.com will see.
+
+### Home / About Page
+*(Used on the landing page via `AboutContent` component)*
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `website-hero` | Home page (`/`) | Hero section, large feature image | Ogeemo platform screenshot or branded hero graphic | 16:9 |
+| `about-header-graphic` | About page (`/about`) | Header section, right side | Abstract branded graphic or team photo | 1:1 (square) |
+| `about-dan` | About page (`/about`) | Team member avatar — Dan White | Professional headshot, circular crop | 1:1 (square, small) |
+| `about-nick` | About page (`/about`) | Team member avatar — Nick Illiopoulos | Professional headshot, circular crop | 1:1 (square, small) |
+| `about-julie` | About page (`/about`) | Team member avatar — Julie White | Professional headshot, circular crop | 1:1 (square, small) |
+| `about-team` | About page (`/about`) | Team photo section | Group photo of the TAS/Ogeemo team | 16:9 |
+
+### Vertical / Solutions Pages
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `accountant-hero` | `/for-accountants` | Hero section, right side | Accountant using Ogeemo or branded illustration | 3:4 (portrait) |
+| `bookkeeper-hero` | `/for-bookkeepers` | Hero section, right side | Bookkeeper using Ogeemo or branded illustration | 3:4 (portrait) |
+| `consultant-hero` | `/for-consultants` | Hero section, right side | Consultant using Ogeemo or branded illustration | 3:4 (portrait) |
+| `lawyer-hero` | `/for-lawyers` | Hero section, right side | Lawyer using Ogeemo or branded illustration | 3:4 (portrait) |
+| `paralegal-hero` | `/for-paralegals` | Hero section, right side | Paralegal using Ogeemo or branded illustration | 3:4 (portrait) |
+| `va-hero` | `/for-virtual-assistants` | Hero section, right side | VA using Ogeemo or branded illustration | 3:4 (portrait) |
+| `pitch-architecture` | `/for-small-businesses` | Pain points section, left side | Architecture diagram or platform overview graphic | 1:1 (square) |
+| `features-dashboard` | `/for-small-businesses` | Inventory section, right side | Dashboard screenshot or inventory management graphic | 1:1 (square) |
+
+### Features Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `features-ecosystem` | `/features` | Ecosystem section | Platform ecosystem diagram showing all modules | 1:1 (square) |
+| `action-chips-spider-web` | `/features` and `/action-chips-info` | Spider web section | Spider web diagram showing action chips architecture | 1:1 (square) |
+
+### Pricing Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `pitch-strategy` | `/pricing` | Strategy banner section | Strategy/roadmap graphic or branded banner | 3:1 (wide banner) |
+
+### Empowerment / Blog Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `tas-team-story` | `/empowerment` | Success stories section, left side | Photo of TAS founders (Dan, Nick, Julie) | 4:3 |
+| `post-thumb-0` | `/empowerment` | Blog post 1 thumbnail ("How Ogeemo Helps You Achieve Your Growth Goals") | Growth-themed graphic or chart | 16:9 (thumbnail) |
+| `post-thumb-1` | `/empowerment` | Blog post 2 thumbnail ("Tax Audit Prep Made Easy") | Compliance/audit-themed graphic | 16:9 (thumbnail) |
+| `post-thumb-2` | `/empowerment` | Blog post 3 thumbnail ("Maximizing Efficiency Through Strategic Planning") | Strategy/planning-themed graphic | 16:9 (thumbnail) |
+| `post-thumb-3` | `/empowerment` | Blog post 4 thumbnail ("Streamlined Operations for the Modern Office") | Operations/workflow-themed graphic | 16:9 (thumbnail) |
+| `post-hero-growth` | `/empowerment` | Blog post 1 detail dialog hero | Growth-themed hero image | 16:9 |
+| `post-hero-compliance` | `/empowerment` | Blog post 2 detail dialog hero | Compliance/audit-themed hero image | 16:9 |
+| `post-hero-strategy` | `/empowerment` | Blog post 3 detail dialog hero | Strategy/planning-themed hero image | 16:9 |
+| `post-hero-operations` | `/empowerment` | Blog post 4 detail dialog hero | Operations/workflow-themed hero image | 16:9 |
+
+### Sarah Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `story-sarah` | `/sarah` | Hero section | Sarah portrait or branded story image | 4:3 |
+
+---
+
+## Priority 2: Internal App Pages
+
+These placeholders are visible to logged-in Ogeemo Suite users but not to public website visitors.
+
+### Welcome Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `welcome-graphic` | `/welcome` | Welcome section | Onboarding graphic or branded welcome image | 4:5 (portrait) |
+
+### Audit Readiness Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `audit-shield-banner` | `/accounting/audit-readiness` | Banner section | Audit shield/compliance banner graphic | 21:9 (ultra-wide) |
+
+### Action Chips Info Page
+
+| ID | Page | Location | Recommended Image | Aspect Ratio |
+|----|------|----------|-------------------|--------------|
+| `action-chips-spider-web` | `/action-chips-info` | Spider web section | *(Shared with features page — same image)* | 21:9 (ultra-wide) |
+
+---
+
+## Priority 3: Dynamic IDs (Hytexercise)
+
+The Hytexercise module uses dynamic IDs based on exercise IDs from the database. These are managed through the exercise configuration and will display whatever image is linked to each exercise ID in Firestore.
+
+| Pattern | Component | Location | Notes |
+|---------|-----------|----------|-------|
+| `{exercise.id}` | `hytexercise-view.tsx` | Exercise card thumbnails | Dynamic — one per exercise |
+| `{exercise.id}` | `exercise-player.tsx` | Exercise player hero | Dynamic — one per exercise |
+
+---
+
+## Summary
+
+| Category | Count | Priority |
+|----------|-------|----------|
+| Public-facing static IDs | 22 | 🔴 High — Visible to all website visitors |
+| Internal app static IDs | 3 | 🟡 Medium — Visible to logged-in users only |
+| Dynamic IDs (blog) | 8 | 🔴 High — Generated from blog post data |
+| Dynamic IDs (hytexercise) | Variable | 🟢 Low — Managed via exercise config |
+| **Total unique static IDs** | **25** | |
+
+---
+
+## Upload Instructions
+
+1. **Log in** as admin via the footer "Admin Login" link
+2. **Navigate** to `/image-manager` or any page with placeholders
+3. **Hover** over a placeholder and click the **pencil/edit** button (top-right corner)
+4. **Choose** to either:
+   - **Paste from Clipboard** — Copy an image, then paste
+   - **Upload** — Select a file from your computer
+   - **Select from Library** — Choose an existing image from the Firestore image library
+5. **Confirm** the upload — the image will be linked to that placeholder ID
+
+### Image Recommendations
+- **Format:** JPG or PNG (WebP for best performance)
+- **Hero images:** 1200×800px minimum
+- **Avatars:** 400×400px (square)
+- **Thumbnails:** 800×450px (16:9)
+- **Banners:** 2400×800px (3:1 ultra-wide)
+- **File size:** Under 500KB per image for fast loading

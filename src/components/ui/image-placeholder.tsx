@@ -28,11 +28,42 @@ import { useSiteImages } from '@/hooks/use-site-images';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { uploadSiteImageClient, updateSiteImageLink } from '@/core/file-service';
-import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit, Check } from 'lucide-react';
+import { LoaderCircle, Image as ImageIcon, ClipboardPaste, Upload, Edit, Check, User, Calculator, Scale, BookOpen, Briefcase, Store, BarChart3, ShieldCheck, Zap, Users, TrendingUp, FileText, Rocket, Layers, Network, PackageSearch, Clock, FileDigit, type LucideIcon } from 'lucide-react';
 
 interface ImagePlaceholderProps {
   id: string;
   className?: string;
+}
+
+// Maps placeholder IDs to relevant icons and labels for branded fallbacks
+function getPlaceholderConfig(id: string): { icon: LucideIcon; label: string } {
+  const configs: Record<string, { icon: LucideIcon; label: string }> = {
+    'about-dan': { icon: User, label: 'Dan White' },
+    'about-nick': { icon: User, label: 'Nick Illiopoulos' },
+    'about-julie': { icon: User, label: 'Julie White' },
+    'about-team': { icon: Users, label: 'The Ogeemo Team' },
+    'about-header-graphic': { icon: Layers, label: 'About Ogeemo' },
+    'website-hero': { icon: Rocket, label: 'Ogeemo Suite' },
+    'accountant-hero': { icon: Calculator, label: 'For Accountants' },
+    'bookkeeper-hero': { icon: BookOpen, label: 'For Bookkeepers' },
+    'consultant-hero': { icon: Briefcase, label: 'For Consultants' },
+    'lawyer-hero': { icon: Scale, label: 'For Lawyers' },
+    'paralegal-hero': { icon: FileText, label: 'For Paralegals' },
+    'va-hero': { icon: Network, label: 'For Virtual Assistants' },
+    'pitch-architecture': { icon: Layers, label: 'Platform Architecture' },
+    'features-dashboard': { icon: BarChart3, label: 'Dashboard' },
+    'features-ecosystem': { icon: Network, label: 'Ogeemo Ecosystem' },
+    'action-chips-spider-web': { icon: Zap, label: 'Action Chips' },
+    'pitch-strategy': { icon: TrendingUp, label: 'Strategy' },
+    'tas-team-story': { icon: Users, label: 'TAS Founders' },
+    'story-sarah': { icon: User, label: 'Sarah' },
+    'welcome-graphic': { icon: Rocket, label: 'Welcome' },
+    'audit-shield-banner': { icon: ShieldCheck, label: 'Audit Ready' },
+  };
+  if (id.startsWith('post-thumb-') || id.startsWith('post-hero-')) {
+    return { icon: FileText, label: 'Insight Article' };
+  }
+  return configs[id] || { icon: ImageIcon, label: id.replace(/-/g, ' ') };
 }
 
 export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
@@ -176,10 +207,18 @@ export function ImagePlaceholder({ id, className }: ImagePlaceholderProps) {
             />
         );
     }
+    const config = getPlaceholderConfig(id);
+    const Icon = config.icon;
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full bg-muted/50 text-muted-foreground">
-            <ImageIcon className="h-8 w-8" />
-            <p className="text-xs mt-2 text-center">No image set for '{id}'</p>
+        <div className="flex flex-col items-center justify-center h-full w-full bg-gradient-to-br from-primary/10 via-primary/5 to-background text-primary relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[length:20px_20px] opacity-50" />
+            <div className="relative z-10 flex flex-col items-center gap-3 p-4">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-8 w-8 text-primary/70" />
+                </div>
+                <p className="text-sm font-bold text-primary/80 tracking-tight text-center">{config.label}</p>
+                <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">Ogeemo</p>
+            </div>
         </div>
     );
   };

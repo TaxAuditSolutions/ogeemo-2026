@@ -188,7 +188,7 @@ export interface InvoiceLineItem {
   userId: string;
 }
 
-export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'invoiced';
+export type QuoteStatus = 'requested' | 'draft' | 'sent' | 'approved' | 'declined' | 'invoiced' | 'in_progress' | 'completed' | 'paid';
 
 export interface QuoteLineItem {
   id?: string;
@@ -231,6 +231,7 @@ export interface Quote {
   status: QuoteStatus;
   notes: string;
   lineItemDetails?: string;
+  workOrderNumber?: string;
   taxType: string;
   userId: string;
 }
@@ -442,6 +443,7 @@ const docToQuote = (doc: any): Quote => {
     status: data.status,
     notes: data.notes,
     taxType: data.taxType,
+    workOrderNumber: data.workOrderNumber,
     userId: data.userId,
     createdAt: toClientDate(data.createdAt),
     updatedAt: toClientDate(data.updatedAt),
@@ -2671,9 +2673,10 @@ export async function convertQuoteToWorkOrder(quoteId: string, userId: string): 
 
   const workOrder = await addWorkOrderWithLineItems(workOrderData, workOrderLineItems);
 
-  // Mark quote as invoiced (reusing existing status)
+  // Mark quote as work in progress and link the work order number
   await updateDoc(quoteRef, {
-    status: 'invoiced',
+    status: 'in_progress',
+    workOrderNumber: workOrder.workOrderNumber,
     updatedBy: currentUser.uid,
     updatedAt: new Date(),
   });

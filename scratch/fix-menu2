@@ -1,0 +1,21 @@
+const fs = require('fs');
+
+// Fix 1: Remove masterTenantOnly from tenant-manager in menu-items.ts
+const menuFile = 'src/lib/menu-items.ts';
+let menuContent = fs.readFileSync(menuFile, 'utf8');
+menuContent = menuContent.replace(
+    "{ href: '/tenant-manager', label: 'Tenant Manager', icon: Building2, masterTenantOnly: true },",
+    "{ href: '/tenant-manager', label: 'Tenant Manager', icon: Building2 },"
+);
+fs.writeFileSync(menuFile, menuContent);
+console.log('Updated menu-items.ts - removed masterTenantOnly from tenant-manager');
+
+// Fix 2: Add tenant-manager to Administration group in main-menu.tsx
+const mainMenuFile = 'src/components/layout/main-menu.tsx';
+let mainMenuContent = fs.readFileSync(mainMenuFile, 'utf8');
+mainMenuContent = mainMenuContent.replace(
+    "Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },",
+    "Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager', '/tenant-manager'] },"
+);
+fs.writeFileSync(mainMenuFile, mainMenuContent);
+console.log('Updated main-menu.tsx - added tenant-manager to Administration group');

@@ -1,0 +1,25 @@
+const fs = require('fs');
+
+const file = 'src/components/layout/main-menu.tsx';
+let c = fs.readFileSync(file, 'utf8');
+
+// 1. Move 'Ogeemo Owner' to the top of groupedMenuItems
+c = c.replace(
+    "    Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },",
+    "    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },\n    Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },"
+);
+
+// Remove the old 'Ogeemo Owner' line at the bottom
+c = c.replace(
+    "    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },\n};",
+    "};"
+);
+
+// 2. Add defaultValue to expand 'Ogeemo Owner' by default
+c = c.replace(
+    '<Accordion type="multiple" className="w-full space-y-1">',
+    "<Accordion type=\"multiple\" defaultValue={['Ogeemo Owner']} className=\"w-full space-y-1\">"
+);
+
+fs.writeFileSync(file, c);
+console.log('Done - main-menu updated');

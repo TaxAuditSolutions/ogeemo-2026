@@ -7,6 +7,7 @@ import {
     listCompanies,
     updateTenantName,
     updateTenantStatus,
+    updateTenantDetails,
     deleteTenant,
     getTenantDetails,
 } from '@/app/actions/org-actions';
@@ -80,9 +81,6 @@ export default function TenantManagerPage() {
     const [actioningId, setActioningId] = useState<string | null>(null);
     const [editCompany, setEditCompany] = useState<Company | null>(null);
     const [editName, setEditName] = useState('');
-    const [editAdminEmail, setEditAdminEmail] = useState('');
-    const [editAdminName, setEditAdminName] = useState('');
-    const [isLoadingEditDetails, setIsLoadingEditDetails] = useState(false);
     const [editAdminEmail, setEditAdminEmail] = useState('');
     const [editAdminName, setEditAdminName] = useState('');
     const [isLoadingEditDetails, setIsLoadingEditDetails] = useState(false);

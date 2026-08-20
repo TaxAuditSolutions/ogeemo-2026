@@ -1,0 +1,10 @@
+const fs = require('fs');
+const f = 'src/components/layout/main-menu.tsx';
+let c = fs.readFileSync(f, 'utf8');
+// Remove the duplicate 'Ogeemo Owner' line that appears after Administration
+c = c.replace(
+    "    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },\n    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },\n};",
+    "    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },\n};"
+);
+fs.writeFileSync(f, c);
+console.log('Removed duplicate Ogeemo Owner entry');

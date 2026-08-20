@@ -29,8 +29,7 @@ const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenan
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
     Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
-    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager', '/tenant-manager'] },
-    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
+    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
 };
 
 const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean }) => (

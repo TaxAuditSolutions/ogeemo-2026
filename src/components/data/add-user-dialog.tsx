@@ -29,9 +29,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app';
-import firebaseConfig from '@/lib/config';
+import { createUserInTenant } from '@/app/actions/user-actions';
+
+
 import { updateUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { updateUserAccess, createTenantWithSuperAdmin } from '@/app/actions/org-actions';
 import { getAssignableRoles, ROLE_LABELS } from '@/core/rbac';
@@ -148,7 +148,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     const onSubmit = async (values: UserFormData) => {
         if (!currentUser) return;
         setIsSaving(true);
-        let secondaryApp;
+        
         try {
             if (userToEdit) {
                 await updateUserProfile(userToEdit.id, values.email, {
@@ -182,25 +182,15 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     return;
                 }
 
-                const secondaryAppName = `Secondary-${Date.now()}`;
-                secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
-                const secondaryAuth = getAuth(secondaryApp);
-
-                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password);
-                const newUser = userCredential.user;
-                await updateProfile(newUser, { displayName: values.name });
-
-                await updateUserProfile(newUser.uid, newUser.email!, {
-                    displayName: values.name,
-                    email: newUser.email!,
+                await createUserInTenant({
+                    email: values.email,
+                    password: values.password,
+                    name: values.name,
                     employeeNumber: values.employeeNumber,
                     notes: values.notes,
-                    accessLevel: values.accessLevel === 'none' ? undefined : values.accessLevel,
+                    accessLevel: values.accessLevel as any,
                 });
 
-                await signOut(secondaryAuth);
-                await deleteApp(secondaryApp);
-                secondaryApp = null;
                 toast({ title: 'User Created' });
             }
             onUserAdded();
@@ -208,7 +198,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
         } finally {
-            if (secondaryApp) try { await deleteApp(secondaryApp); } catch (e) { }
+            
             setIsSaving(false);
         }
     };

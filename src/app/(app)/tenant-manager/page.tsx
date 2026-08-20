@@ -329,13 +329,13 @@ export default function TenantManagerPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
-                                                        onClick={() => handleViewDetails(company)}
+                                                        onSelect={() => handleViewDetails(company)}
                                                     >
                                                         <Users className="mr-2 h-4 w-4" />
                                                         View Details
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        onClick={() => {
+                                                        onSelect={() => {
                                                             setEditCompany(company);
                                                             setEditName(company.name);
                                                             setIsEditOpen(true);
@@ -345,7 +345,7 @@ export default function TenantManagerPage() {
                                                         Edit Name
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
-                                                        onClick={() => handleToggleStatus(company)}
+                                                        onSelect={() => handleToggleStatus(company)}
                                                     >
                                                         {company.status === 'active' ? (
                                                             <>
@@ -362,7 +362,7 @@ export default function TenantManagerPage() {
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         className="text-destructive focus:text-destructive"
-                                                        onClick={() => {
+                                                        onSelect={() => {
                                                             setDeleteCompany(company);
                                                             setIsDeleteOpen(true);
                                                         }}

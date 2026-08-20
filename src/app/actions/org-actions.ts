@@ -432,21 +432,38 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
 /**
  * Master Tenant (Ogeemo) only: lists all non-master companies for the Tenant Management dashboard.
  */
-export async function listCompanies(): Promise<Array<{ id: string; name: string; ownerUid: string | null; status: 'active' | 'suspended' }>> {
+export async function listCompanies(): Promise<Array<{ id: string; name: string; ownerUid: string | null; status: 'active' | 'suspended'; adminEmail: string; adminName: string }>> {
     await requireMasterTenantSuperAdmin();
     const adminDb = getAdminDb();
     if (!adminDb) throw new Error('Firebase Admin SDK is not initialized.');
 
     const snapshot = await adminDb.collection('organizations').where('isMasterTenant', '==', false).get();
-    return snapshot.docs.map((docSnap) => {
+
+    const companies = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const data = docSnap.data();
+        const ownerUid = (data.ownerUid as string | null) ?? null;
+
+        let adminEmail = '';
+        let adminName = '';
+        if (ownerUid) {
+            const userSnap = await adminDb.collection('users').doc(ownerUid).get();
+            if (userSnap.exists) {
+                adminEmail = (userSnap.data()?.email as string) || '';
+                adminName = (userSnap.data()?.displayName as string) || '';
+            }
+        }
+
         return {
             id: docSnap.id,
             name: data.name as string,
-            ownerUid: (data.ownerUid as string | null) ?? null,
+            ownerUid,
             status: (data.status as 'active' | 'suspended') ?? 'active',
+            adminEmail,
+            adminName,
         };
-    });
+    }));
+
+    return companies;
 }
 
 /**

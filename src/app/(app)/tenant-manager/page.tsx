@@ -5,11 +5,9 @@ import { useAuth } from '@/context/auth-context';
 import {
     createTenantWithSuperAdmin,
     listCompanies,
-    updateTenantName,
     updateTenantStatus,
     updateTenantDetails,
     deleteTenant,
-    getTenantDetails,
 } from '@/app/actions/org-actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -44,8 +42,6 @@ import {
     Trash2,
     Power,
     PowerOff,
-    Users,
-    Mail,
 } from 'lucide-react';
 
 interface Company {
@@ -53,15 +49,8 @@ interface Company {
     name: string;
     ownerUid: string | null;
     status: 'active' | 'suspended';
-}
-
-interface TenantDetails {
-    id: string;
-    name: string;
-    status: 'active' | 'suspended';
-    createdAt: any;
-    ownerUid: string | null;
-    users: Array<{ uid: string; email: string; displayName: string; accessLevel: string }>;
+    adminEmail: string;
+    adminName: string;
 }
 
 export default function TenantManagerPage() {
@@ -77,19 +66,18 @@ export default function TenantManagerPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    // Action state
+    // Edit state
     const [actioningId, setActioningId] = useState<string | null>(null);
     const [editCompany, setEditCompany] = useState<Company | null>(null);
     const [editName, setEditName] = useState('');
     const [editAdminEmail, setEditAdminEmail] = useState('');
     const [editAdminName, setEditAdminName] = useState('');
-    const [isLoadingEditDetails, setIsLoadingEditDetails] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Delete state
     const [deleteCompany, setDeleteCompany] = useState<Company | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [viewDetails, setViewDetails] = useState<TenantDetails | null>(null);
-    const [isViewOpen, setIsViewOpen] = useState(false);
-    const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
     const canAccess = accessLevel === 'super_admin' && isMasterTenant;
 
@@ -132,21 +120,29 @@ export default function TenantManagerPage() {
         }
     };
 
-    const handleEditTenant = async () => {
+    const handleOpenEdit = (company: Company) => {
+        setEditCompany(company);
+        setEditName(company.name);
+        setEditAdminEmail(company.adminEmail);
+        setEditAdminName(company.adminName);
+        setIsEditOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
         if (!editCompany || !editName.trim() || !editAdminEmail.trim()) return;
-        setActioningId(editCompany.id);
+        setIsSaving(true);
         try {
             await updateTenantDetails(editCompany.id, editName.trim(), editAdminEmail.trim(), editAdminName.trim());
             toast({ title: 'Tenant Updated', description: `Details updated for "${editName.trim()}".` });
             setCompanies((prev) =>
-                prev.map((c) => (c.id === editCompany.id ? { ...c, name: editName.trim() } : c))
+                prev.map((c) => c.id === editCompany.id ? { ...c, name: editName.trim(), adminEmail: editAdminEmail.trim(), adminName: editAdminName.trim() } : c)
             );
             setIsEditOpen(false);
             setEditCompany(null);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
         } finally {
-            setActioningId(null);
+            setIsSaving(false);
         }
     };
 
@@ -180,20 +176,6 @@ export default function TenantManagerPage() {
             toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
         } finally {
             setActioningId(null);
-        }
-    };
-
-    const handleViewDetails = async (company: Company) => {
-        setIsViewOpen(true);
-        setIsLoadingDetails(true);
-        setViewDetails(null);
-        try {
-            const details = await getTenantDetails(company.id);
-            setViewDetails(details);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Load Failed', description: error.message });
-        } finally {
-            setIsLoadingDetails(false);
         }
     };
 
@@ -296,7 +278,7 @@ export default function TenantManagerPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Owner</TableHead>
+                                    <TableHead>Admin Email</TableHead>
                                     <TableHead className="text-center">Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -305,7 +287,7 @@ export default function TenantManagerPage() {
                                 {companies.map((company) => (
                                     <TableRow key={company.id}>
                                         <TableCell className="font-medium">{company.name}</TableCell>
-                                        <TableCell className="text-muted-foreground">{company.ownerUid || 'Unassigned'}</TableCell>
+                                        <TableCell className="text-muted-foreground">{company.adminEmail || '—'}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge variant={company.status === 'active' ? 'default' : 'destructive'}>
                                                 {company.status}
@@ -329,20 +311,10 @@ export default function TenantManagerPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
-                                                        onSelect={() => handleViewDetails(company)}
-                                                    >
-                                                        <Users className="mr-2 h-4 w-4" />
-                                                        View Details
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onSelect={() => {
-                                                            setEditCompany(company);
-                                                            setEditName(company.name);
-                                                            setIsEditOpen(true);
-                                                        }}
+                                                        onSelect={() => handleOpenEdit(company)}
                                                     >
                                                         <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit Name
+                                                        Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onSelect={() => handleToggleStatus(company)}
@@ -381,12 +353,14 @@ export default function TenantManagerPage() {
                 </CardContent>
             </Card>
 
-            {/* Edit Name Dialog */}
+            {/* Edit Tenant Dialog - same form as Create Tenant, pre-populated */}
             <Dialog open={isEditOpen} onOpenChange={(open) => {
                 setIsEditOpen(open);
                 if (!open) {
                     setEditCompany(null);
                     setEditName('');
+                    setEditAdminEmail('');
+                    setEditAdminName('');
                 }
             }}>
                 <DialogContent>
@@ -396,20 +370,39 @@ export default function TenantManagerPage() {
                             Update the company name and admin details for this tenant.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-1.5 py-2">
-                        <Label>Company Name</Label>
-                        <Input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            placeholder="Company name"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label>Company Name</Label>
+                            <Input
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder="Company name"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>Admin Email</Label>
+                            <Input
+                                type="email"
+                                value={editAdminEmail}
+                                onChange={(e) => setEditAdminEmail(e.target.value)}
+                                placeholder="admin@acme.com"
+                            />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <Label>Admin Name</Label>
+                            <Input
+                                value={editAdminName}
+                                onChange={(e) => setEditAdminName(e.target.value)}
+                                placeholder="Jane Doe"
+                            />
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleEditTenant} disabled={!editName.trim() || !editAdminEmail.trim() || actioningId === editCompany?.id}>
-                            {actioningId === editCompany?.id ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        <Button onClick={handleSaveEdit} disabled={!editName.trim() || !editAdminEmail.trim() || isSaving}>
+                            {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Save Changes
                         </Button>
                     </DialogFooter>
@@ -440,122 +433,6 @@ export default function TenantManagerPage() {
                         >
                             {actioningId === deleteCompany?.id ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Delete Tenant
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Details Dialog */}
-            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Building2 className="h-5 w-5 text-primary" />
-                            Tenant Details
-                        </DialogTitle>
-                        <DialogDescription>
-                            Detailed information about this tenant organization.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {isLoadingDetails ? (
-                        <div className="flex justify-center py-8">
-                            <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : viewDetails ? (
-                        <div className="space-y-4">
-                            {/* Form-like layout matching the creation form */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label>Company Name</Label>
-                                    <div className="rounded-md border px-3 py-2 text-sm font-medium bg-muted/50">
-                                        {viewDetails.name}
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label>Status</Label>
-                                    <div className="rounded-md border px-3 py-2 text-sm bg-muted/50">
-                                        <Badge variant={viewDetails.status === 'active' ? 'default' : 'destructive'}>
-                                            {viewDetails.status}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                {viewDetails.users[0] && (
-                                    <>
-                                        <div className="space-y-1.5">
-                                            <Label>Admin Email</Label>
-                                            <div className="rounded-md border px-3 py-2 text-sm bg-muted/50">
-                                                {viewDetails.users[0].email}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label>Admin Name</Label>
-                                            <div className="rounded-md border px-3 py-2 text-sm bg-muted/50">
-                                                {viewDetails.users[0].displayName || '—'}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label>Admin Role</Label>
-                                            <div className="rounded-md border px-3 py-2 text-sm bg-muted/50">
-                                                <Badge variant="secondary">{viewDetails.users[0].accessLevel}</Badge>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <Label>Owner UID</Label>
-                                            <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground bg-muted/50 break-all">
-                                                {viewDetails.ownerUid || 'Unassigned'}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Users table */}
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                    <Users className="h-4 w-4" />
-                                    All Users ({viewDetails.users.length})
-                                </h3>
-                                {viewDetails.users.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No users found.</p>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Name</TableHead>
-                                                <TableHead>Email</TableHead>
-                                                <TableHead>Role</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {viewDetails.users.map((user) => (
-                                                <TableRow key={user.uid}>
-                                                    <TableCell className="font-medium">
-                                                        {user.displayName || '—'}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="flex items-center gap-1 text-muted-foreground">
-                                                            <Mail className="h-3 w-3" />
-                                                            {user.email}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="secondary">{user.accessLevel}</Badge>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="py-8 text-center">
-                            <p className="text-muted-foreground">Failed to load details. Please try again.</p>
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewOpen(false)}>
-                            Close
                         </Button>
                     </DialogFooter>
                 </DialogContent>

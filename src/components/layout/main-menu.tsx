@@ -22,6 +22,7 @@ import { getUserProfile, type AccessLevel } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
 
 const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
+    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
@@ -33,7 +34,7 @@ const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenan
 };
 
 const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean }) => (
-    <Accordion type="multiple" className="w-full space-y-1">
+    <Accordion type="multiple" defaultValue={['Ogeemo Owner']} className="w-full space-y-1">
         {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
             if (groupData.masterTenantOnly && !isMasterTenant) return null;
 

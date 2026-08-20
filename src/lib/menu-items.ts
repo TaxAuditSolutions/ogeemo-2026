@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   Users,
@@ -38,7 +37,9 @@ import {
   UserCog,
   DollarSign,
   ClipboardList,
-  Award
+  Award,
+  Crown,
+  Building2
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -49,6 +50,7 @@ export interface MenuItem {
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  masterTenantOnly?: boolean;
 }
 
 export const allMenuItems: MenuItem[] = [
@@ -74,6 +76,8 @@ export const allMenuItems: MenuItem[] = [
   { href: "/image-manager", label: "Image Manager", icon: Image },
   { href: "/backup", label: "Backups", icon: Database },
   { href: "/user-manager", label: "User Manager", icon: UserCog, adminOnly: true },
+  { href: "/owner", label: "Ogeemo Owner", icon: Crown, masterTenantOnly: true },
+  { href: "/tenant-manager", label: "Tenant Manager", icon: Building2, masterTenantOnly: true },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
   { href: "/contacts", label: "Contacts Hub", icon: Contact },

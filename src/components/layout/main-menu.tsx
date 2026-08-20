@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
@@ -9,7 +8,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList, Landmark } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList, Landmark, Crown } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -22,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { getUserProfile, type AccessLevel } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
 
-const groupedMenuItems = {
+const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
@@ -30,11 +29,14 @@ const groupedMenuItems = {
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
     Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
+    'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
 };
 
-const GroupedMenuView = memo(({ pathname, isAdmin }: { pathname: string, isAdmin: boolean }) => (
+const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean }) => (
     <Accordion type="multiple" className="w-full space-y-1">
         {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
+            if (groupData.masterTenantOnly && !isMasterTenant) return null;
+
             const CategoryIcon = groupData.icon;
             const groupItems = groupData.items
                 .map(href => allMenuItems.find(item => item.href === href))
@@ -42,6 +44,7 @@ const GroupedMenuView = memo(({ pathname, isAdmin }: { pathname: string, isAdmin
 
             const filteredItems = groupItems.filter(item => {
                 if (item.adminOnly && !isAdmin) return false;
+                if (item.masterTenantOnly && !isMasterTenant) return false;
                 return true;
             });
 
@@ -112,7 +115,7 @@ export function MainMenu() {
     const [menuItems, setMenuItems] = useState<MenuItem[]>(allMenuItems);
     const [actionChips, setActionChips] = useState<ActionChipData[]>([]);
     const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
-    const { user, accessLevel } = useAuth();
+    const { user, accessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
     const { view, setView } = useSidebarView();
     const [isLoadingChips, setIsLoadingChips] = useState(true);
@@ -221,6 +224,7 @@ export function MainMenu() {
 
     const displayedMenuItems = menuItems.filter(item => {
         if (item.adminOnly && !isAdmin) return false;
+        if (item.masterTenantOnly && !isMasterTenant) return false;
         return true;
     });
 
@@ -299,7 +303,7 @@ export function MainMenu() {
                 ) : view === 'dashboard' ? (
                     <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
                 ) : (
-                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} />
+                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} />
                 )}
             </div>
 

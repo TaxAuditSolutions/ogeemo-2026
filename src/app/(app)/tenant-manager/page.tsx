@@ -277,7 +277,8 @@ export default function TenantManagerPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Name</TableHead>
+                                    <TableHead>Company Name</TableHead>
+                                    <TableHead>Super Admin Name</TableHead>
                                     <TableHead>Admin Email</TableHead>
                                     <TableHead className="text-center">Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -287,6 +288,7 @@ export default function TenantManagerPage() {
                                 {companies.map((company) => (
                                     <TableRow key={company.id}>
                                         <TableCell className="font-medium">{company.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">{company.adminName || '—'}</TableCell>
                                         <TableCell className="text-muted-foreground">{company.adminEmail || '—'}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge variant={company.status === 'active' ? 'default' : 'destructive'}>

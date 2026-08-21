@@ -1,0 +1,31 @@
+const fs = require('fs');
+const f = 'src/components/data/add-user-dialog.tsx';
+let c = fs.readFileSync(f, 'utf8');
+
+// 1. Replace imports - use regex to handle \r\n
+const importPattern = /import \{ getAuth, createUserWithEmailAndPassword, updateProfile, signOut \} from 'firebase\/auth';[\r\n]+import \{ initializeApp, deleteApp \} from 'firebase\/app';[\r\n]+import firebaseConfig from '@\/lib\/config';[\r\n]+import \{ updateUserProfile, type UserProfile \} from '@\/core\/user-profile-service';[\r\n]+import \{ updateUserAccess, createTenantWithSuperAdmin \} from '@\/app\/actions\/org-actions';/;
+const importReplacement = "import { updateUserProfile, type UserProfile } from '@/core/user-profile-service';\nimport { updateUserAccess, createTenantWithSuperAdmin } from '@/app/actions/org-actions';\nimport { createUserInTenant } from '@/app/actions/user-actions';";
+c = c.replace(importPattern, importReplacement);
+
+// 2. Replace user creation logic - use regex
+const oldLogicPattern = /const secondaryAppName = `Secondary-\$\{Date\.now\(\)\}`;[\s\S]*?toast\(\{ title: 'User Created' \}\);/;
+const newLogic = `await createUserInTenant({
+                    email: values.email,
+                    password: values.password,
+                    name: values.name,
+                    employeeNumber: values.employeeNumber,
+                    notes: values.notes,
+                    accessLevel: values.accessLevel as any,
+                });
+
+                toast({ title: 'User Created' });`;
+c = c.replace(oldLogicPattern, newLogic);
+
+// 3. Remove secondaryApp variable declaration
+c = c.replace(/setIsSaving\(true\);[\r\n\s]+let secondaryApp;[\r\n\s]+try \{/, 'setIsSaving(true);\n        try {');
+
+// 4. Remove secondaryApp cleanup in finally block
+c = c.replace(/if \(secondaryApp\) try \{ await deleteApp\(secondaryApp\); \} catch \(e\) \{ \}[\r\n\s]+setIsSaving\(false\);/, 'setIsSaving(false);');
+
+fs.writeFileSync(f, c, 'utf8');
+console.log('File updated. Checking for createUserInTenant:', c.includes('createUserInTenant'));

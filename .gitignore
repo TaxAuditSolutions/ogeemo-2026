@@ -9,4 +9,15 @@ firestore-debug.log
 # Next.js cache
 .next/
 node_modules
+
+# TypeScript build info (auto-generated, changes every build)
+*.tsbuildinfo
+
+# Temp/debug files
+temp-ai-debug.log
+test.js
+.modified
+
+# Firebase service account key
 keys/ogeemo-firebase-firebase-adminsdk-fbsvc-ef0acfe30c.json
+GOOGLE_APPLICATION_CREDjson

@@ -29,11 +29,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { createUserInTenant } from '@/app/actions/user-actions';
+import { createUserInTenant, updateUserInTenant } from '@/app/actions/user-actions';
 
-
-import { updateUserProfile, type UserProfile } from '@/core/user-profile-service';
-import { updateUserAccess, createTenantWithSuperAdmin } from '@/app/actions/org-actions';
+import type { UserProfile } from '@/core/user-profile-service';
+import { createTenantWithSuperAdmin } from '@/app/actions/org-actions';
 import { getAssignableRoles, ROLE_LABELS } from '@/core/rbac';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info, Building2 } from 'lucide-react';
@@ -151,14 +150,13 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         
         try {
             if (userToEdit) {
-                await updateUserProfile(userToEdit.id, values.email, {
+                await updateUserInTenant({
+                    targetUid: userToEdit.id,
                     displayName: values.name,
                     employeeNumber: values.employeeNumber,
                     notes: values.notes,
+                    newRole: isEditingSuperAdmin ? undefined : (values.accessLevel as any),
                 });
-                if (values.accessLevel !== (userToEdit.accessLevel || 'none') && !isEditingSuperAdmin) {
-                    await updateUserAccess({ targetUid: userToEdit.id, newRole: values.accessLevel });
-                }
                 toast({ title: 'User Updated' });
             } else if (canCreateNewTenant && isCreatingNewTenant) {
                 if (!values.companyName?.trim()) {

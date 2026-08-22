@@ -42,12 +42,50 @@ async function requireMasterTenantSuperAdmin() {
     return decodedToken;
 }
 
+/**
+ * Formats a user-friendly error message when an email is already registered in Firebase Auth.
+ * Firebase Auth enforces unique email addresses across the entire project, so each tenant
+ * admin / invited user must have a distinct email. Email aliases (plus addressing) are
+ * suggested as a workaround since most providers deliver them to the same inbox.
+ */
+function formatEmailExistsError(email: string): string {
+    const aliasEmail = email.replace('@', '+admin@');
+    return (
+        `The email "${email}" is already registered to a Firebase Auth account. ` +
+        `Each user must have a unique email address. ` +
+        `Use a different email, or try an alias like "${aliasEmail}" ` +
+        `which most email providers deliver to the same inbox.`
+    );
+}
+
+/**
+ * Pre-checks whether an email is already registered in Firebase Auth.
+ * Returns true if the email is taken, false if available.
+ */
+async function isEmailAlreadyInUse(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string): Promise<boolean> {
+    try {
+        await adminAuth.getUserByEmail(email);
+        return true;
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/email-not-found') {
+            return false;
+        }
+        console.error('Unexpected error during email pre-check:', error);
+        return false; // Don't block — let createUser handle it
+    }
+}
+
 export async function registerOrganization(data: { orgName: string; email: string; password?: string; name?: string }) {
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
 
     if (!adminAuth || !adminDb) {
         throw new Error('Firebase Admin SDK is not initialized.');
+    }
+
+    // Pre-check: Firebase Auth requires unique email addresses across the entire project.
+    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
+        throw new Error(formatEmailExistsError(data.email));
     }
 
     let createdUid: string | null = null;
@@ -115,6 +153,9 @@ export async function registerOrganization(data: { orgName: string; email: strin
             }
         }
 
+        if (error.code === 'auth/email-already-exists') {
+            throw new Error(formatEmailExistsError(data.email));
+        }
         throw new Error(error.message || 'Failed to register organization');
     }
 }
@@ -157,6 +198,11 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
     // (a super_admin may invite another super_admin within their own tenant).
     if (!canManageTargetRole(requestingAccessLevel, data.targetRole)) {
         throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot invite a ${data.targetRole} role.`);
+    }
+
+    // Pre-check: Firebase Auth requires unique email addresses across the entire project.
+    if (await isEmailAlreadyInUse(adminAuth, data.invitedEmail)) {
+        throw new Error(formatEmailExistsError(data.invitedEmail));
     }
 
     let createdUid: string | null = null;
@@ -211,6 +257,9 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
             } catch (rollbackError) {
                 console.error("CRITICAL: Failed to rollback user creation", rollbackError);
             }
+        }
+        if (error.code === 'auth/email-already-exists') {
+            throw new Error(formatEmailExistsError(data.invitedEmail));
         }
         throw new Error(error.message || 'Failed to invite user');
     }
@@ -368,6 +417,13 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
     const adminDb = getAdminDb();
     if (!adminAuth || !adminDb) throw new Error('Firebase Admin SDK is not initialized.');
 
+    // Pre-check: Firebase Auth requires unique email addresses across the entire project.
+    // Catch this early with a clear, actionable message rather than letting createUser fail
+    // with a raw Firebase error.
+    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
+        throw new Error(formatEmailExistsError(data.email));
+    }
+
     let createdUid: string | null = null;
     try {
         const userRecord = await adminAuth.createUser({
@@ -424,6 +480,9 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             } catch (rollbackError) {
                 console.error('CRITICAL: Failed to rollback user creation', rollbackError);
             }
+        }
+        if (error.code === 'auth/email-already-exists') {
+            throw new Error(formatEmailExistsError(data.email));
         }
         throw new Error(error.message || 'Failed to create tenant');
     }

@@ -7,6 +7,39 @@ import type { AccessLevel } from '@/core/user-profile-service';
 import { canManageTargetRole } from '@/core/rbac';
 
 /**
+ * Formats a user-friendly error message when an email is already registered in Firebase Auth.
+ * Firebase Auth enforces unique email addresses across the entire project, so each user must
+ * have a distinct email. Email aliases (plus addressing) are suggested as a workaround since
+ * most providers deliver them to the same inbox.
+ */
+function formatEmailExistsError(email: string): string {
+    const aliasEmail = email.replace('@', '+admin@');
+    return (
+        `The email "${email}" is already registered to a Firebase Auth account. ` +
+        `Each user must have a unique email address. ` +
+        `Use a different email, or try an alias like "${aliasEmail}" ` +
+        `which most email providers deliver to the same inbox.`
+    );
+}
+
+/**
+ * Pre-checks whether an email is already registered in Firebase Auth.
+ * Returns true if the email is taken, false if available.
+ */
+async function isEmailAlreadyInUse(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string): Promise<boolean> {
+    try {
+        await adminAuth.getUserByEmail(email);
+        return true;
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/email-not-found') {
+            return false;
+        }
+        console.error('Unexpected error during email pre-check:', error);
+        return false; // Don't block — let createUser handle it
+    }
+}
+
+/**
  * Updates an existing user's profile within the requester's own tenant using the Firebase Admin SDK.
  * This bypasses client-side Firestore security rules that block direct writes on hosted environments.
  */
@@ -167,6 +200,11 @@ export async function createUserInTenant(data: {
         throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot assign the ${data.accessLevel} role.`);
     }
 
+    // Pre-check: Firebase Auth requires unique email addresses across the entire project.
+    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
+        throw new Error(formatEmailExistsError(data.email));
+    }
+
     let createdUid: string | null = null;
     try {
         const userRecord = await adminAuth.createUser({
@@ -204,6 +242,9 @@ export async function createUserInTenant(data: {
             } catch (rollbackError) {
                 console.error('CRITICAL: Failed to rollback user creation', rollbackError);
             }
+        }
+        if (error.code === 'auth/email-already-exists') {
+            throw new Error(formatEmailExistsError(data.email));
         }
         throw new Error(error.message || 'Failed to create user');
     }

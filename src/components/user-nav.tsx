@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { LogOut, User as UserIcon, Lock, ShieldAlert, ShieldCheck, Shield, Award } from "lucide-react";
+import { LogOut, User as UserIcon, Lock, ShieldAlert, ShieldCheck, Shield, Award, Building2, Check } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,14 +17,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getUserProfile, type MentorshipRole } from '@/core/user-profile-service';
+import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 
+interface OrgMembership {
+  orgId: string;
+  companyName: string;
+  isActive: boolean;
+}
+
 export function UserNav() {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [role, setRole] = useState<MentorshipRole | null>(null);
   const [isCertified, setIsCertified] = useState(false);
+  const [memberships, setMemberships] = useState<OrgMembership[]>([]);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -36,8 +47,29 @@ export function UserNav() {
           setIsCertified(!!profile.is_mentor_certified);
         }
       });
+      listMyOrgMemberships().then(setMemberships).catch(() => setMemberships([]));
     }
   }, [user]);
+
+  const handleSwitchOrg = async (orgId: string) => {
+    if (!user) return;
+    setIsSwitching(true);
+    try {
+      await switchActiveOrg(orgId);
+      await user.getIdToken(true);
+      const idToken = await user.getIdToken();
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      window.location.href = '/welcome';
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Switch Failed', description: error.message });
+      setIsSwitching(false);
+    }
+  };
+
 
   if (!user) {
     return null;
@@ -118,6 +150,27 @@ export function UserNav() {
                 </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {memberships.length > 1 && (
+                <>
+                    <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                            Switch Organization
+                        </DropdownMenuLabel>
+                        {memberships.map((m) => (
+                            <DropdownMenuItem
+                                key={m.orgId}
+                                disabled={m.isActive || isSwitching}
+                                onSelect={() => handleSwitchOrg(m.orgId)}
+                            >
+                                <Building2 className="mr-2 h-4 w-4" />
+                                <span className="flex-1 truncate">{m.companyName}</span>
+                                {m.isActive && <Check className="ml-2 h-4 w-4 text-primary" />}
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                </>
+            )}
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
                     <Link href="/settings">

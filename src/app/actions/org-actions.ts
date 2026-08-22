@@ -59,19 +59,18 @@ function formatEmailExistsError(email: string): string {
 }
 
 /**
- * Pre-checks whether an email is already registered in Firebase Auth.
- * Returns true if the email is taken, false if available.
+ * Looks up an existing Firebase Auth account by email.
+ * Returns the UserRecord if the email is taken, or null if it's available.
  */
-async function isEmailAlreadyInUse(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string): Promise<boolean> {
+async function findExistingUserByEmail(adminAuth: NonNullable<ReturnType<typeof getAdminAuth>>, email: string) {
     try {
-        await adminAuth.getUserByEmail(email);
-        return true;
+        return await adminAuth.getUserByEmail(email);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/email-not-found') {
-            return false;
+            return null;
         }
         console.error('Unexpected error during email pre-check:', error);
-        return false; // Don't block — let createUser handle it
+        return null; // Don't block — let createUser handle it
     }
 }
 
@@ -84,7 +83,7 @@ export async function registerOrganization(data: { orgName: string; email: strin
     }
 
     // Pre-check: Firebase Auth requires unique email addresses across the entire project.
-    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
+    if (await findExistingUserByEmail(adminAuth, data.email)) {
         throw new Error(formatEmailExistsError(data.email));
     }
 
@@ -201,7 +200,7 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
     }
 
     // Pre-check: Firebase Auth requires unique email addresses across the entire project.
-    if (await isEmailAlreadyInUse(adminAuth, data.invitedEmail)) {
+    if (await findExistingUserByEmail(adminAuth, data.invitedEmail)) {
         throw new Error(formatEmailExistsError(data.invitedEmail));
     }
 
@@ -410,6 +409,12 @@ export async function removeUser(targetUid: string) {
  * Master Tenant (Ogeemo) only: atomically provisions a brand-new tenant Organization
  * along with its founding super_admin (that tenant's top authority). The master tenant
  * super admin never gains ongoing access to the new company's data or claims.
+ *
+ * If the admin email already belongs to an existing Firebase Auth account (e.g. someone
+ * who already admins another tenant), that account is reused as this tenant's super admin
+ * via an org-membership record, rather than requiring a brand-new, unique email. Their
+ * currently-active org/claims are left untouched — they can switch into the new tenant
+ * with switchActiveOrg().
  */
 export async function createTenantWithSuperAdmin(data: { companyName: string; email: string; password?: string; name?: string; employeeNumber?: string; notes?: string }) {
     await requireMasterTenantSuperAdmin();
@@ -417,11 +422,31 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
     const adminDb = getAdminDb();
     if (!adminAuth || !adminDb) throw new Error('Firebase Admin SDK is not initialized.');
 
-    // Pre-check: Firebase Auth requires unique email addresses across the entire project.
-    // Catch this early with a clear, actionable message rather than letting createUser fail
-    // with a raw Firebase error.
-    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
-        throw new Error(formatEmailExistsError(data.email));
+    const existingUser = await findExistingUserByEmail(adminAuth, data.email);
+    if (existingUser) {
+        try {
+            const orgRef = adminDb.collection('organizations').doc();
+            const orgId = orgRef.id;
+            const batch = adminDb.batch();
+            batch.set(orgRef, {
+                id: orgId,
+                name: data.companyName,
+                createdAt: FieldValue.serverTimestamp(),
+                ownerUid: existingUser.uid,
+                isMasterTenant: false,
+            });
+            batch.set(adminDb.collection('users').doc(existingUser.uid).collection('orgMemberships').doc(orgId), {
+                orgId,
+                companyName: data.companyName,
+                accessLevel: 'super_admin',
+                isMasterTenant: false,
+                createdAt: FieldValue.serverTimestamp(),
+            });
+            await batch.commit();
+            return { success: true, orgId, uid: existingUser.uid, reusedExistingAccount: true };
+        } catch (error: any) {
+            throw new Error(error.message || 'Failed to create tenant');
+        }
     }
 
     let createdUid: string | null = null;
@@ -458,6 +483,13 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         });
+        batch.set(userRef.collection('orgMemberships').doc(orgId), {
+            orgId,
+            companyName: data.companyName,
+            accessLevel: 'super_admin',
+            isMasterTenant: false,
+            createdAt: FieldValue.serverTimestamp(),
+        });
 
         await batch.commit();
 
@@ -486,6 +518,94 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
         }
         throw new Error(error.message || 'Failed to create tenant');
     }
+}
+
+/**
+ * Returns every organization the current user belongs to (their currently-active org
+ * plus any additional orgs granted via orgMemberships), for rendering an org switcher.
+ */
+export async function listMyOrgMemberships(): Promise<Array<{ orgId: string; companyName: string; accessLevel: AccessLevel; isMasterTenant: boolean; isActive: boolean }>> {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    if (!adminAuth || !adminDb) throw new Error('Firebase Admin SDK is not initialized.');
+
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
+
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    } catch {
+        throw new Error('Unauthorized: Invalid session cookie.');
+    }
+
+    const activeOrgId = decodedToken.orgId as string | undefined;
+    const membershipsSnap = await adminDb.collection('users').doc(decodedToken.uid).collection('orgMemberships').get();
+
+    const memberships = new Map<string, { orgId: string; companyName: string; accessLevel: AccessLevel; isMasterTenant: boolean }>();
+    for (const doc of membershipsSnap.docs) {
+        const d = doc.data();
+        memberships.set(doc.id, {
+            orgId: doc.id,
+            companyName: (d.companyName as string) || 'Unknown',
+            accessLevel: d.accessLevel as AccessLevel,
+            isMasterTenant: d.isMasterTenant === true,
+        });
+    }
+
+    // Always represent the currently-active org, even if it predates membership tracking.
+    if (activeOrgId && !memberships.has(activeOrgId)) {
+        const orgSnap = await adminDb.collection('organizations').doc(activeOrgId).get();
+        memberships.set(activeOrgId, {
+            orgId: activeOrgId,
+            companyName: (orgSnap.data()?.name as string) || 'Unknown',
+            accessLevel: decodedToken.accessLevel as AccessLevel,
+            isMasterTenant: decodedToken.isMasterTenant === true,
+        });
+    }
+
+    return Array.from(memberships.values()).map((m) => ({ ...m, isActive: m.orgId === activeOrgId }));
+}
+
+/**
+ * Switches the current user's active org context by updating their custom claims to
+ * match a granted orgMembership. The client must force-refresh its ID token and
+ * re-mint the session cookie afterward for the change to take effect.
+ */
+export async function switchActiveOrg(orgId: string): Promise<{ success: true }> {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    if (!adminAuth || !adminDb) throw new Error('Firebase Admin SDK is not initialized.');
+
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
+
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    } catch {
+        throw new Error('Unauthorized: Invalid session cookie.');
+    }
+
+    if (orgId === decodedToken.orgId) {
+        return { success: true }; // Already active.
+    }
+
+    const membershipSnap = await adminDb.collection('users').doc(decodedToken.uid).collection('orgMemberships').doc(orgId).get();
+    if (!membershipSnap.exists) {
+        throw new Error('Unauthorized: You are not a member of that organization.');
+    }
+    const membership = membershipSnap.data()!;
+
+    await adminAuth.setCustomUserClaims(decodedToken.uid, {
+        orgId,
+        accessLevel: membership.accessLevel,
+        isMasterTenant: membership.isMasterTenant === true,
+    });
+
+    return { success: true };
 }
 
 /**

@@ -101,13 +101,18 @@ export default function TenantManagerPage() {
         if (!companyName.trim() || !adminEmail.trim()) return;
         setIsCreating(true);
         try {
-            await createTenantWithSuperAdmin({
+            const result = await createTenantWithSuperAdmin({
                 companyName: companyName.trim(),
                 email: adminEmail.trim(),
                 name: adminName.trim() || undefined,
                 password: adminPassword.trim() || undefined,
             });
-            toast({ title: 'Tenant Created', description: `"${companyName}" has been provisioned with ${adminEmail} as its super admin.` });
+            toast({
+                title: 'Tenant Created',
+                description: result.reusedExistingAccount
+                    ? `"${companyName}" has been provisioned. ${adminEmail} already had an account, so it was granted super admin access to this new tenant (use the org switcher to manage it).`
+                    : `"${companyName}" has been provisioned with ${adminEmail} as its super admin.`,
+            });
             setCompanyName('');
             setAdminEmail('');
             setAdminName('');
@@ -119,6 +124,7 @@ export default function TenantManagerPage() {
             setIsCreating(false);
         }
     };
+
 
     const handleOpenEdit = (company: Company) => {
         setEditCompany(company);

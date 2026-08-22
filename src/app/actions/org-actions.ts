@@ -406,6 +406,19 @@ export async function removeUser(targetUid: string) {
 }
 
 /**
+ * Master Tenant (Ogeemo) only: checks whether an email already belongs to an existing
+ * Firebase Auth account, so the Create Tenant form can hide the password field and
+ * explain that the existing account's password won't change.
+ */
+export async function checkTenantAdminEmailExists(email: string): Promise<boolean> {
+    await requireMasterTenantSuperAdmin();
+    const adminAuth = getAdminAuth();
+    if (!adminAuth) throw new Error('Firebase Admin SDK is not initialized.');
+
+    return (await findExistingUserByEmail(adminAuth, email)) !== null;
+}
+
+/**
  * Master Tenant (Ogeemo) only: atomically provisions a brand-new tenant Organization
  * along with its founding super_admin (that tenant's top authority). The master tenant
  * super admin never gains ongoing access to the new company's data or claims.

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import {
     createTenantWithSuperAdmin,
+    checkTenantAdminEmailExists,
     listCompanies,
     updateTenantStatus,
     updateTenantDetails,
@@ -65,6 +66,7 @@ export default function TenantManagerPage() {
     const [adminPassword, setAdminPassword] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isExistingAccount, setIsExistingAccount] = useState(false);
 
     // Edit state
     const [actioningId, setActioningId] = useState<string | null>(null);
@@ -97,6 +99,21 @@ export default function TenantManagerPage() {
         if (canAccess) loadCompanies();
     }, [canAccess, loadCompanies]);
 
+    useEffect(() => {
+        const email = adminEmail.trim();
+        if (!canAccess || !email || !email.includes('@')) {
+            setIsExistingAccount(false);
+            return;
+        }
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            checkTenantAdminEmailExists(email)
+                .then((exists) => { if (!cancelled) setIsExistingAccount(exists); })
+                .catch(() => { if (!cancelled) setIsExistingAccount(false); });
+        }, 400);
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [adminEmail, canAccess]);
+
     const handleCreateTenant = async () => {
         if (!companyName.trim() || !adminEmail.trim()) return;
         setIsCreating(true);
@@ -117,6 +134,7 @@ export default function TenantManagerPage() {
             setAdminEmail('');
             setAdminName('');
             setAdminPassword('');
+            setIsExistingAccount(false);
             loadCompanies();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Creation Failed', description: error.message });
@@ -229,6 +247,11 @@ export default function TenantManagerPage() {
                     <div className="space-y-1.5">
                         <Label>Admin Email</Label>
                         <Input type="email" placeholder="admin@acme.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} disabled={isCreating} />
+                        {isExistingAccount && (
+                            <p className="text-xs text-muted-foreground">
+                                This email already has an account. It will be granted super admin access to the new tenant — its existing password stays unchanged.
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-1.5">
                         <Label>Admin Name (optional)</Label>
@@ -239,10 +262,10 @@ export default function TenantManagerPage() {
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
-                                placeholder="Leave blank to send a reset link"
+                                placeholder={isExistingAccount ? 'Not used — existing password stays the same' : 'Leave blank to send a reset link'}
                                 value={adminPassword}
                                 onChange={(e) => setAdminPassword(e.target.value)}
-                                disabled={isCreating}
+                                disabled={isCreating || isExistingAccount}
                                 className="pr-10"
                             />
                             <Button
@@ -252,6 +275,7 @@ export default function TenantManagerPage() {
                                 className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-transparent"
                                 onClick={() => setShowPassword(!showPassword)}
                                 tabIndex={-1}
+                                disabled={isExistingAccount}
                             >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>

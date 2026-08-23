@@ -124,7 +124,7 @@ export default function ActionManagerDashboardPage() {
                           <Button asChild className="h-9 bg-slate-900 text-white hover:bg-slate-800">
                               <Link href="/master-mind">
                                   <PlayCircle className="mr-2 h-4 w-4 text-primary" />
-                                  Command Centre
+                                  Event Manager
                               </Link>
                           </Button>
                         </TooltipTrigger>

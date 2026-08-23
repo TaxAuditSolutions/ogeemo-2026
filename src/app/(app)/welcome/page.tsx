@@ -81,7 +81,7 @@ export default function WelcomePage() {
                     <div className="bg-white/20 p-4 rounded-full">
                         <HeartHandshake className="h-12 w-12" />
                     </div>
-                    <DialogTitle className="text-3xl font-headline uppercase tracking-tighter">Welcome Home.</DialogTitle>
+                    <DialogTitle className="text-3xl font-headline uppercase tracking-tighter">Welcome to Ogeemo</DialogTitle>
                     <DialogDescription className="text-lg opacity-90 leading-relaxed text-primary-foreground">
                         You are no longer app-juggling in isolation. You are a member of the Ogeemo Circle.
                     </DialogDescription>

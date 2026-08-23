@@ -411,7 +411,7 @@ export function CalendarView() {
       <div className="p-4 sm:p-6 flex flex-col h-full bg-background">
         <header className="relative text-center mb-6 print:hidden">
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Calendar
+            Activity Manager
           </h1>
           <p className="text-muted-foreground">
             Your Command Centre for your actions and connection to the nodes of the Spider Web

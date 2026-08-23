@@ -491,7 +491,7 @@ export function TimeManagerView() {
                         <p className="text-muted-foreground mt-1">Plan and organize your meeting.</p>
                     </div>
                     <Button variant="outline" onClick={() => setIsAgendaFormOpen(false)}>
-                        Back to Command Centre
+                        Back to Event Manager
                     </Button>
                 </div>
                 <AgendaForm onSuccess={() => setIsAgendaFormOpen(false)} />
@@ -534,8 +534,8 @@ export function TimeManagerView() {
                             </TooltipProvider>
                         </div>
                         <div className="text-center px-4">
-                            <h1 className="text-3xl font-bold font-headline text-primary">Command Centre</h1>
-                            <p className="text-sm text-muted-foreground mt-1">Flagship engine for orchestration.</p>
+                            <h1 className="text-3xl font-bold font-headline text-primary">Event Manager</h1>
+                            <p className="text-sm text-muted-foreground mt-1">Actions and events are recorded here.</p>
                         </div>
                         <div className="flex justify-center md:justify-end items-center gap-2">
                             {eventToEdit && <Button variant="outline" size="icon" onClick={() => setIsDeleteDialogOpen(true)}><Trash2 className="h-4 w-4" /></Button>}

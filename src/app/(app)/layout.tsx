@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
 import { ActiveTimerIndicator } from '@/components/layout/active-timer-indicator';
@@ -14,12 +15,46 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Bot, Search, Settings, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, Bot, Search, Settings, BrainCircuit, Building2 } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
+import { useAuth } from '@/context/auth-context';
+import { listMyOrgMemberships } from '@/app/actions/org-actions';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [activeTenantName, setActiveTenantName] = useState<string>('');
+
+  useEffect(() => {
+    if (!user) {
+      setActiveTenantName('');
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadActiveTenant() {
+      try {
+        const memberships = await listMyOrgMemberships();
+        const activeMembership = memberships.find((membership) => membership.isActive);
+        if (isMounted) {
+          setActiveTenantName(activeMembership?.companyName || '');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setActiveTenantName('');
+        }
+      }
+    }
+
+    loadActiveTenant();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
   return (
     <SidebarProvider>
       <DndProviderWrapper>
@@ -46,10 +81,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex flex-1 flex-col overflow-hidden">
               <header className="flex h-16 items-center bg-[var(--header-bg)] px-4 md:px-6 print:hidden" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
                  {/* Left Column: Branding */}
-                 <div className="flex-1 flex items-center gap-4">
+                 <div className="flex-1 flex items-center gap-4 min-w-0">
                    <SidebarTrigger className="md:hidden" />
                    
-                   <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80">
+                   <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80 shrink-0">
                       <Logo className="text-black" />
                    </Link>
                  </div>
@@ -88,7 +123,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Right Column: Orchestration & Identity */}
-                <div className="flex-1 flex items-center justify-end gap-4">
+                <div className="flex-1 flex items-center justify-end gap-4 min-w-0">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -104,6 +139,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+
+                  {activeTenantName && (
+                    <div className="hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px]">
+                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{activeTenantName}</span>
+                    </div>
+                  )}
+
                   <UserNav />
                 </div>
               </header>

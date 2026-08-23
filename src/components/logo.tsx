@@ -27,7 +27,7 @@ export function Logo({ className, ...props }: LogoProps) {
       />
       <h1 className={cn(
           fontOrbitron.variable,
-          "font-headline font-bold text-2xl tracking-wider uppercase"
+          "font-orbitron font-bold text-2xl tracking-wider uppercase"
       )}>
           OGEEMO
       </h1>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { UserListView } from '@/components/data/data-view';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
-import { LoaderCircle, ShieldAlert, ChevronLeft } from 'lucide-react';
+import { LoaderCircle, ShieldAlert, ChevronLeft, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -60,5 +60,16 @@ export default function UserManagerPage() {
         );
     }
 
-    return <UserListView />;
+    return (
+        <div className="relative">
+            <div className="absolute right-6 top-6 z-10">
+                <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open user manager instructions">
+                    <Link href="/user-manager/instructions">
+                        <Info className="h-4 w-4" />
+                    </Link>
+                </Button>
+            </div>
+            <UserListView />
+        </div>
+    );
 }

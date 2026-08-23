@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -38,6 +39,7 @@ import {
     Building2,
     Eye,
     EyeOff,
+    Info,
     MoreVertical,
     Pencil,
     Trash2,
@@ -229,9 +231,16 @@ export default function TenantManagerPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-primary" /> Tenant Management</h1>
-                <p className="text-muted-foreground">Provision new companies with their founding super admin. Master-tenant access never extends to a company's own data.</p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="h-6 w-6 text-primary" /> Tenant Management</h1>
+                    <p className="text-muted-foreground">Provision new companies with their founding super admin. Master-tenant access never extends to a company's own data.</p>
+                </div>
+                <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open tenant manager instructions">
+                    <Link href="/tenant-manager/instructions">
+                        <Info className="h-4 w-4" />
+                    </Link>
+                </Button>
             </div>
 
             <Card>
@@ -242,11 +251,27 @@ export default function TenantManagerPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                         <Label>Company Name</Label>
-                        <Input placeholder="Acme Inc." value={companyName} onChange={(e) => setCompanyName(e.target.value)} disabled={isCreating} />
+                        <Input
+                            name="tenant-company-name"
+                            placeholder="Acme Inc."
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            disabled={isCreating}
+                            autoComplete="organization"
+                        />
                     </div>
                     <div className="space-y-1.5">
                         <Label>Admin Email</Label>
-                        <Input type="email" placeholder="admin@acme.com" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} disabled={isCreating} />
+                        <Input
+                            type="email"
+                            name="tenant-admin-email"
+                            placeholder="admin@acme.com"
+                            value={adminEmail}
+                            onChange={(e) => setAdminEmail(e.target.value)}
+                            disabled={isCreating}
+                            autoComplete="off"
+                            spellCheck={false}
+                        />
                         {isExistingAccount && (
                             <p className="text-xs text-muted-foreground">
                                 This email already has an account. It will be granted super admin access to the new tenant — its existing password stays unchanged.
@@ -262,6 +287,8 @@ export default function TenantManagerPage() {
                         <div className="relative">
                             <Input
                                 type={showPassword ? 'text' : 'password'}
+                                name="tenant-admin-password"
+                                autoComplete="new-password"
                                 placeholder={isExistingAccount ? 'Not used — existing password stays the same' : 'Leave blank to send a reset link'}
                                 value={adminPassword}
                                 onChange={(e) => setAdminPassword(e.target.value)}

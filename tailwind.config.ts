@@ -19,6 +19,7 @@ const config: Config = {
       fontFamily: {
         body: ['var(--font-body)', 'sans-serif'],
         headline: ['var(--font-headline)', 'sans-serif'],
+        orbitron: ['var(--font-orbitron)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

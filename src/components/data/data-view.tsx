@@ -111,9 +111,16 @@ export function UserListView() {
   return (
     <>
       <div className="space-y-6 p-4 sm:p-6">
-        <header className="text-center">
-          <h1 className="text-3xl font-bold font-headline text-primary">User Manager</h1>
-          <p className="text-muted-foreground">Manage the accounts and permissions for your team.</p>
+        <header className="flex items-start justify-between gap-4 text-left">
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">User Manager</h1>
+            <p className="text-muted-foreground">Manage the accounts and permissions for your team.</p>
+          </div>
+          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open user manager instructions">
+            <Link href="/user-manager/instructions">
+              <Info className="h-4 w-4" />
+            </Link>
+          </Button>
         </header>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">

@@ -41,7 +41,7 @@ export default function WelcomePage() {
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">
-            Welcome to the Circle.
+            Welcome to Ogeemo
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Your high-fidelity operational engine is ready. <br className="hidden md:block" /> Let's begin the orchestration.
@@ -60,7 +60,7 @@ export default function WelcomePage() {
             className="h-16 px-12 text-xl font-bold rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 active:translate-y-0"
           >
             <Link href="/action-manager">
-              Enter Command Centre <ArrowRight className="ml-2 h-6 w-6" />
+              Get Started! <ArrowRight className="ml-2 h-6 w-6" />
             </Link>
           </Button>
         </div>

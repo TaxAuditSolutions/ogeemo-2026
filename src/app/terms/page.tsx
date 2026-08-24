@@ -72,7 +72,7 @@ export default function TermsOfServicePage() {
                                 <div className="bg-muted/30 p-6 rounded-2xl border border-primary/10">
                                     <h3 className="font-bold text-lg mb-3 text-primary">Circle Membership</h3>
                                     <ul className="space-y-2 text-muted-foreground">
-                                        <li><strong>Price:</strong> $25.00 CAD per month (total)</li>
+                                        <li><strong>Price:</strong> $30.00 CAD per month (total)</li>
                                         <li><strong>Includes:</strong> 5 user seats</li>
                                         <li><strong>Additional users:</strong> $5.00 CAD per user per month</li>
                                         <li><strong>Free trial:</strong> 30 days, no credit card required</li>
@@ -83,7 +83,7 @@ export default function TermsOfServicePage() {
                                 <strong>Price Lock Guarantee.</strong> Your membership fee is locked for the life of your subscription. We will not increase your base rate as long as your account remains in good standing and your subscription is active. This is our commitment to you — no bait-and-switch pricing, no surprise increases.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
-                                <strong>Founding Member Rate.</strong> The first 100 paying members receive the founding rate of $25.00/month, locked for life. After this milestone, pricing may be updated for new members. Existing members' rates are never affected by pricing changes for new signups.
+                                <strong>Legacy Founding Rate.</strong> The first 100 paying members were granted the founding rate of $25.00/month, locked for life. New members join at $30.00/month total, and existing members' rates are never affected by pricing changes for new signups.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
                                 <strong>Billing.</strong> Subscription fees are billed monthly in advance. Payment is processed through our third-party payment provider. If a payment fails, we will notify you and provide a grace period. If payment is not resolved within 15 days, access to the Ogeemo Suite may be suspended (read-only access to your data will remain available for 30 days).

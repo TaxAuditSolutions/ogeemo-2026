@@ -6,7 +6,7 @@ import { Users, Briefcase, Newspaper, MessageSquare, Info, FileText, ShieldCheck
  * Hard-coded to prevent feature creep and maintain the KISS philosophy.
  */
 
-export const MEMBERSHIP_FEE = 25.00;
+export const MEMBERSHIP_FEE = 30.00;
 
 export const navLinks = [
     { href: "/for-small-businesses", label: "For Small Businesses", icon: Users },

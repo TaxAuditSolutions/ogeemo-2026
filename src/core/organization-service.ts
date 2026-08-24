@@ -44,10 +44,10 @@ export async function updateOrganizationName(orgId: string, name: string): Promi
 
 /**
  * Calculates the monthly membership price based on seat count.
- * Logic: $25 for the first 5 seats, $5 for each additional seat.
+ * Logic: $30 for the first 5 seats, $5 for each additional seat.
  */
 export function calculateMembershipPrice(seatCount: number): number {
-    const basePrice = 25;
+    const basePrice = 30;
     const includedSeats = 5;
     const extraSeatPrice = 5;
 

@@ -48,7 +48,7 @@ export default function PricingPage() {
                     <Link href="/register">Join the Movement</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl font-bold bg-transparent border-white text-white hover:bg-white/10">
-                    <Link href="/about">Compare Our Ethics</Link>
+                    <Link href="/about#ethics">Compare Our Ethics</Link>
                 </Button>
             </div>
           </div>

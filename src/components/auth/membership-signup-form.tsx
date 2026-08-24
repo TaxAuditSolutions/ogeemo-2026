@@ -42,7 +42,7 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
 
   const [showPassword, setShowPassword] = useState(false);
   const seatCount = form.watch("seatCount");
-  const [totalPrice, setTotalPrice] = useState(25);
+  const [totalPrice, setTotalPrice] = useState(30);
 
   useEffect(() => {
     setTotalPrice(calculateMembershipPrice(seatCount));
@@ -163,7 +163,7 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                     </div>
                   </FormControl>
                   <FormDescription className="text-xs mt-2 italic">
-                    $25 includes your first 5 seats. Each additional seat is just $5/mo.
+                    $30 includes your first 5 seats. Each additional seat is just $5/mo.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

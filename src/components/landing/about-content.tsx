@@ -136,7 +136,7 @@ export function AboutContent() {
                                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto italic">"We prioritize community over quarterly earnings."</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div id="ethics" className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                         <Card className="text-center p-8 border-primary/10 bg-card shadow-xl hover:shadow-2xl transition-all">
                                             <CardContent className="pt-6 space-y-4">
                                                 <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">

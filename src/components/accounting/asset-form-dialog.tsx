@@ -92,8 +92,8 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
 
       if (typeof purchaseDateSource === 'string') {
         dateToFormat = parseISO(purchaseDateSource);
-      } else if (purchaseDateSource instanceof Date) {
-        dateToFormat = purchaseDateSource;
+      } else if (purchaseDateSource && Object.prototype.toString.call(purchaseDateSource) === '[object Date]') {
+        dateToFormat = purchaseDateSource as Date;
       } else {
         dateToFormat = new Date();
       }

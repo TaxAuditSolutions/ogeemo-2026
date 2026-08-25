@@ -144,7 +144,8 @@ export default function AdvancedSearchPage() {
   const handleResultClick = (item: SearchResult) => {
     let path = '';
     if (item.resultType === 'Menu Item') {
-        path = typeof item.href === 'string' ? item.href : item.href.pathname;
+        const href = (item as any).href;
+        path = typeof href === 'string' ? href : href?.pathname || '';
     } else if (item.resultType === 'Contact') {
         path = '/contacts';
     } else if (item.resultType === 'Project') {

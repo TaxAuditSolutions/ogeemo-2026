@@ -48,7 +48,7 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
     };
 
     return (
-        <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
+        <Card ref={(node) => { drop(node); }} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
             <CardHeader className="text-center">
                 <CardTitle>{title} ({projects.length})</CardTitle>
             </CardHeader>
@@ -130,7 +130,7 @@ export function ProjectStatusView() {
     const handleDropProject = useCallback(async (project: Project, newStatus: ProjectStatus) => {
         if (project.status === newStatus) return;
 
-        const originalProjects = projects;
+        const originalProjects = [...projects];
         const updatedProjects = projects.map(p => 
             p.id === project.id ? { ...p, status: newStatus } : p
         );
@@ -156,7 +156,7 @@ export function ProjectStatusView() {
     const handleConfirmDelete = async () => {
         if (!projectToDelete) return;
         try {
-            const tasksToDelete = await getTasksForProject(projectToDelete.id);
+            const tasksToDelete = await getTasksForProject(user?.uid, projectToDelete.id);
             await deleteProject(projectToDelete.id, tasksToDelete.map(t => t.id));
             setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
             toast({ title: 'Project Deleted' });

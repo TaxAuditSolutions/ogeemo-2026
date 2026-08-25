@@ -30,7 +30,7 @@ export function DraggableEvent({ event, style, onClick }: DraggableEventProps) {
 
   return (
     <div
-      ref={drag}
+      ref={(node) => { drag(node); }}
       style={style}
       onClick={onClick}
       className={cn(

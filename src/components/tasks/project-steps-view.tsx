@@ -46,7 +46,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, updateProject, addTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask, addProjectTemplate } from '@/services/project-service';
+import { getProjectById, updateProject, addTask, updateTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask, addProjectTemplate } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -226,10 +226,26 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleSaveToTemplates = async () => {
         if (!user || !project) return;
         try {
-            const templateData = {
+            const templateData: Omit<ProjectTemplate, 'id'> = {
                 name: `${project.name} Template`,
                 description: project.description || `Template based on project: ${project.name}`,
-                steps: steps,
+                tasks: tasks.map(task => ({
+                    ...task,
+                    id: task.id,
+                    title: task.title,
+                    status: task.status,
+                    position: task.position,
+                    userId: task.userId || user.uid,
+                    projectId: task.projectId ?? null,
+                    stepId: task.stepId ?? null,
+                    contactId: task.contactId ?? null,
+                    workerId: task.workerId ?? null,
+                    isScheduled: task.isScheduled ?? false,
+                    isTodoItem: task.isTodoItem ?? false,
+                    duration: task.duration,
+                    isBillable: task.isBillable ?? false,
+                    billableRate: task.billableRate ?? 0,
+                } as any)),
                 userId: user.uid,
             };
             await addProjectTemplate(templateData);

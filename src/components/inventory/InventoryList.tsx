@@ -81,8 +81,8 @@ export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: In
                                   <EditableSkuCell item={item} onEdit={() => onEditItem(item)} />
                               </TableCell>
                               <TableCell className="text-right font-mono py-2">{item.stockQuantity}</TableCell>
-                              <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost)}</TableCell>
-                              <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost || 0))}</TableCell>
+                              <TableCell className="text-right font-mono py-2">{formatCurrency(item.cost ?? 0)}</TableCell>
+                              <TableCell className="text-right font-mono font-semibold py-2">{formatCurrency(item.stockQuantity * (item.cost ?? 0))}</TableCell>
                               <TableCell className="text-right py-2">
                                   <DropdownMenu>
                                       <DropdownMenuTrigger asChild>

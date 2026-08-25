@@ -8,11 +8,11 @@ import { type ActionChipData } from '@/types/calendar';
 import { DraggableItemTypes, ActionChip } from './ActionChip';
 import { cn } from '@/lib/utils';
 
-interface ChipDropZoneProps extends React.ComponentProps<typeof CardContent> {
+type ChipDropZoneProps = Omit<React.ComponentProps<typeof CardContent>, 'onDrop'> & {
   children: React.ReactNode;
   onDrop: (item: ActionChipData & { index: number }) => void;
   onMove?: (dragIndex: number, hoverIndex: number) => void;
-}
+};
 
 export function ChipDropZone({ children, onDrop, onMove, className, ...props }: ChipDropZoneProps) {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -28,7 +28,7 @@ export function ChipDropZone({ children, onDrop, onMove, className, ...props }: 
 
   return (
     <CardContent
-      ref={drop}
+      ref={(node) => { drop(node); }}
       className={cn(
         "flex flex-wrap gap-2 transition-colors p-4",
         isOver && canDrop && "bg-primary/10 ring-2 ring-primary",

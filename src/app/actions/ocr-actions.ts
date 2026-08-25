@@ -37,6 +37,10 @@ export async function extractInvoiceData(fileId: string, isExternal: boolean = f
     const db = getAdminDb();
     const storage = getAdminStorage();
 
+    if (!db || !storage) {
+      return { error: 'Firebase Admin services are not initialized in this environment.' };
+    }
+
     let base64Pdf: string;
 
     if (isExternal) {

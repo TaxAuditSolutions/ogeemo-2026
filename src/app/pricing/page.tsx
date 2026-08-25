@@ -5,13 +5,17 @@ import { SiteFooter } from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { 
     Check,
     Zap,
     Scale,
     ShieldCheck,
-    ArrowRight
+    ArrowRight,
+    Users,
+    Handshake,
+    GraduationCap
 } from 'lucide-react';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { MEMBERSHIP_FEE } from '@/lib/constants';
@@ -27,25 +31,25 @@ export default function PricingPage() {
         <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden">
           <div className="container px-4 mx-auto text-center max-w-4xl space-y-8 relative z-10">
             <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
-              The Ogeemo Member's Manifesto
+              The Ogeemo Circle
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tighter leading-tight text-white">
-              One Price. <br />
-              <span className="text-primary">One Community.</span>
+              One price. <br />
+              <span className="text-primary">One platform. Total clarity.</span>
             </h1>
             
             <div className="prose prose-invert max-w-2xl mx-auto text-slate-300 text-lg leading-relaxed text-center space-y-6">
                 <p>
-                    Software shouldn't be a hostage situation. We are moving to a single-tier subscription model that reflects our commitment to the collective success of our members.
+                    Ogeemo is built for members, partners, and mentors who want one operating system without hidden fees, feature traps, or artificial tier walls.
                 </p>
                 <p className="text-white font-bold text-2xl italic font-headline">
-                    "Locked for life. No tiers. No traps."
+                    "Clear pricing. Full access. No nonsense."
                 </p>
             </div>
 
             <div className="pt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
-                    <Link href="/register">Join the Movement</Link>
+                    <Link href="/register">Join the Circle</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl font-bold bg-transparent border-white text-white hover:bg-white/10">
                     <Link href="/about#ethics">Compare Our Ethics</Link>
@@ -57,7 +61,7 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* Single Tier Bold Card */}
+        {/* Membership Pricing Card */}
         <section className="py-24 bg-muted/30 border-y">
           <div className="container px-4 mx-auto">
             <Card className="max-w-2xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform bg-card text-card-foreground">
@@ -66,11 +70,11 @@ export default function PricingPage() {
                     <div className="mt-4 flex flex-col items-center">
                         <div className="flex items-baseline gap-1">
                             <span className="text-6xl font-bold font-mono">${MEMBERSHIP_FEE}.00</span>
-                            <span className="text-primary-foreground/80">/month (Total)</span>
+                            <span className="text-primary-foreground/80">/month total</span>
                         </div>
                         <div className="mt-4 space-y-1">
-                            <p className="font-bold uppercase tracking-[0.2em] text-sm opacity-90">Locked for life • No Traps</p>
-                            <p className="text-xs font-medium opacity-80 italic">Includes 5 users. Additional users are $5.00 each.</p>
+                            <p className="font-bold uppercase tracking-[0.2em] text-sm opacity-90">Locked for life • Full access</p>
+                            <p className="text-xs font-medium opacity-80 italic">Includes 5 seats. Additional seats are $5.00 each per month.</p>
                         </div>
                     </div>
                 </CardHeader>
@@ -105,13 +109,6 @@ export default function PricingPage() {
                         </ul>
                     </div>
                     <Separator />
-                    <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 text-sm font-medium text-amber-600 dark:text-amber-400 flex items-start gap-3 text-left">
-                        <Zap className="h-5 w-5 shrink-0 mt-0.5" />
-                        <p>
-                            <strong>Founding Member Notice:</strong> This ${MEMBERSHIP_FEE}.00 deal is exclusively available for the first 100 clients! After this milestone is reached, we will review and update the pricing plan for all new members joining the network.
-                        </p>
-                    </div>
-                    <Separator />
                     <div className="bg-muted/50 p-4 rounded-xl border border-dashed text-xs text-muted-foreground italic">
                         "Every member gets the full engine. We scale with your impact, not by nickel-and-diming your features."
                     </div>
@@ -123,6 +120,92 @@ export default function PricingPage() {
                 </CardFooter>
             </Card>
           </div>
+        </section>
+
+        {/* Members / Partners / Mentors */}
+        <section className="py-24">
+            <div className="container px-4 mx-auto max-w-6xl space-y-12">
+                <div className="text-center max-w-3xl mx-auto space-y-4">
+                    <Badge className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
+                        Members & Partners
+                    </Badge>
+                    <h3 className="text-3xl md:text-5xl font-bold font-headline uppercase tracking-tight">One community. Three distinct roles.</h3>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                        Ogeemo is not a traditional software product with locked tiers. It is a working ecosystem where members, partners, and mentors create mutual value and share in the result.
+                    </p>
+                </div>
+
+                <Tabs defaultValue="members" className="w-full">
+                    <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-3 h-14 bg-card shadow-xl border border-primary/10 rounded-full p-1">
+                        <TabsTrigger value="members" className="text-base font-bold rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Members</TabsTrigger>
+                        <TabsTrigger value="partners" className="text-base font-bold rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Partners</TabsTrigger>
+                        <TabsTrigger value="mentors" className="text-base font-bold rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">Mentors</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="members" className="mt-8">
+                        <Card className="border-2 border-primary/10 shadow-xl bg-card">
+                            <CardContent className="p-8 md:p-10 grid md:grid-cols-[auto_1fr] gap-6 items-start">
+                                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <Users className="h-7 w-7" />
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-2xl font-bold font-headline text-primary">Members get the full platform.</h4>
+                                    <p className="text-muted-foreground leading-relaxed text-lg">
+                                        Your membership gives you access to the complete Ogeemo stack without hidden feature gates, upsells, or artificial limits. You are part of the operating system, not just another customer in a sales funnel.
+                                    </p>
+                                    <ul className="space-y-3 text-sm text-muted-foreground">
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Full-suite access for your business or organization</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Shared roadmap voting and direct community influence</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Transparent pricing and portable data if you ever leave</span></li>
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="partners" className="mt-8">
+                        <Card className="border-2 border-primary/10 shadow-xl bg-card">
+                            <CardContent className="p-8 md:p-10 grid md:grid-cols-[auto_1fr] gap-6 items-start">
+                                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <Handshake className="h-7 w-7" />
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-2xl font-bold font-headline text-primary">Partners expand the ecosystem.</h4>
+                                    <p className="text-muted-foreground leading-relaxed text-lg">
+                                        We build with partners, not at their expense. Strategic alliances, service collaborations, and shared growth opportunities are part of the Ogeemo model, not a separate premium layer hidden behind a sales pitch.
+                                    </p>
+                                    <ul className="space-y-3 text-sm text-muted-foreground">
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Referral, collaboration, and co-selling opportunities</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Shared operational leverage through the common platform</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Longer-term alignment instead of transactional upsells</span></li>
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="mentors" className="mt-8">
+                        <Card className="border-2 border-primary/10 shadow-xl bg-card">
+                            <CardContent className="p-8 md:p-10 grid md:grid-cols-[auto_1fr] gap-6 items-start">
+                                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                    <GraduationCap className="h-7 w-7" />
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-2xl font-bold font-headline text-primary">Mentors help members succeed.</h4>
+                                    <p className="text-muted-foreground leading-relaxed text-lg">
+                                        Our mentors are real professionals committed to your growth. They are here to advise, challenge, and accelerate your plans without the fluff, the nonsense, or the sales pressure.
+                                    </p>
+                                    <ul className="space-y-3 text-sm text-muted-foreground">
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Direct access to experienced operators and advisers</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Real accountability and professional standards</span></li>
+                                        <li className="flex gap-3"><Check className="h-4 w-4 text-primary shrink-0 mt-1" /><span>Support that reinforces the collective, not a paid gate</span></li>
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </div>
         </section>
 
         {/* Anti-Greed Promises */}
@@ -144,7 +227,7 @@ export default function PricingPage() {
                         </div>
                         <h3 className="text-2xl font-bold font-headline uppercase tracking-tight">Mentor Accountability</h3>
                         <p className="text-muted-foreground leading-relaxed text-lg">
-                            We don't hide behind bots. Our Mentors are real professionals committed to your growth. If you ever feel misled, our mediation protocol ensures the lead team resolves it personally.
+                            We don't hide behind bots. Our mentors are real professionals committed to your growth. If you ever feel misled, our mediation protocol ensures the lead team resolves it personally.
                         </p>
                     </div>
                 </div>

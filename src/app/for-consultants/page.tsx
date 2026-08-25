@@ -33,8 +33,8 @@ export default function ForConsultantsPage() {
                                 <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-1.5 rounded-full uppercase tracking-widest text-[10px] font-bold">
                                     INDUSTRY FOCUS: CONSULTANTS
                                 </Badge>
-                                <h1 className="text-6xl md:text-8xl font-bold font-headline text-primary tracking-tighter leading-none mb-4">
-                                    Ogeemo.
+                                <h1 className="text-6xl md:text-8xl font-bold font-orbitron text-primary tracking-tighter leading-none mb-4 uppercase">
+                                    OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
                                     Consulting Operations, Orchestrated.

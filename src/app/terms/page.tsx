@@ -83,7 +83,7 @@ export default function TermsOfServicePage() {
                                 <strong>Price Lock Guarantee.</strong> Your membership fee is locked for the life of your subscription. We will not increase your base rate as long as your account remains in good standing and your subscription is active. This is our commitment to you — no bait-and-switch pricing, no surprise increases.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
-                                <strong>Legacy Founding Rate.</strong> The first 100 paying members were granted the founding rate of $25.00/month, locked for life. New members join at $30.00/month total, and existing members' rates are never affected by pricing changes for new signups.
+                                <strong>Founding Member Rate.</strong> A limited group of founding members was granted a protected rate of $25.00/month, locked for life. New members join at $30.00/month total. This historical founder rate remains specific to those original members; it is not a general public pricing tier.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
                                 <strong>Billing.</strong> Subscription fees are billed monthly in advance. Payment is processed through our third-party payment provider. If a payment fails, we will notify you and provide a grace period. If payment is not resolved within 15 days, access to the Ogeemo Suite may be suspended (read-only access to your data will remain available for 30 days).

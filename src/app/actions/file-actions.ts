@@ -18,6 +18,10 @@ export async function fetchFileContent(fileId: string): Promise<{ content?: stri
     try {
         const adminAuth = getAdminAuth();
         const adminDb = getAdminDb();
+
+        if (!adminAuth || !adminDb) {
+            return { error: 'Firebase Admin services are not initialized in this environment.' };
+        }
         
         const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
         const userId = decodedToken.uid;

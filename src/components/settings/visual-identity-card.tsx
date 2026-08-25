@@ -63,7 +63,7 @@ export function VisualIdentityCard() {
             colors: { ...colors }
         };
 
-        const updatedPresets = [...customPresets, newPreset];
+        const updatedPresets = [...(customPresets || []), newPreset];
         
         try {
             await updatePreferences({ customPresets: updatedPresets });
@@ -76,7 +76,7 @@ export function VisualIdentityCard() {
     };
 
     const handleDeleteCustomPreset = async (name: string) => {
-        const updatedPresets = customPresets.filter(p => p.name !== name);
+        const updatedPresets = (customPresets || []).filter((preset: { name: string; colors: Record<string, string> }) => preset.name !== name);
         try {
             await updatePreferences({ customPresets: updatedPresets });
             toast({ title: 'Preset Removed' });
@@ -167,7 +167,7 @@ export function VisualIdentityCard() {
                                 <Heart className="h-3 w-3 text-red-500" /> My Presets
                             </h4>
                             <div className="grid grid-cols-2 gap-2">
-                                {customPresets.map((preset) => (
+                                {customPresets.map((preset: { name: string; colors: Record<string, string> }) => (
                                     <div key={preset.name} className="flex gap-1 group">
                                         <Button 
                                             variant="outline" 

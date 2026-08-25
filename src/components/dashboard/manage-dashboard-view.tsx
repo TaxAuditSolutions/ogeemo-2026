@@ -53,7 +53,7 @@ const TrashDropZone = () => {
     <div className="w-full flex justify-start">
         <Link href="/action-manager/trash" className="w-full md:w-1/4">
         <div
-            ref={drop}
+            ref={(node) => { drop(node); }}
             className={cn(
             'mt-6 flex items-center justify-start gap-4 rounded-lg border-2 border-dashed p-4 text-muted-foreground transition-colors',
             isOver && canDrop ? 'border-destructive bg-destructive/10 text-destructive' : 'hover:border-muted-foreground/50'

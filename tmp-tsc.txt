@@ -1,0 +1,8 @@
+src/components/accounting/asset-form-dialog.tsx(95,18): error TS2358: The left-hand side of an 'instanceof' expression must be of type 'any', an object type or a type parameter.
+src/components/crm/action-plan-content.tsx(131,15): error TS2322: Type 'ConnectDropTarget' is not assignable to type 'Ref<HTMLDivElement> | undefined'.
+  Type 'ConnectDropTarget' is not assignable to type '(instance: HTMLDivElement | null) => void | (() => VoidOrUndefinedOnly)'.
+    Type 'ReactElement<unknown, string | JSXElementConstructor<any>> | null' is not assignable to type 'void | (() => VoidOrUndefinedOnly)'.
+      Type 'null' is not assignable to type 'void | (() => VoidOrUndefinedOnly)'.
+src/components/dashboard/a-z-sort-view.tsx(81,26): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/dashboard/project-status-view.tsx(159,41): error TS2554: Expected 2 arguments, but got 1.
+src/components/google/google-integration-view.tsx(35,34): error TS7006: Parameter 'app' implicitly has an 'any' type.

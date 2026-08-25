@@ -68,8 +68,8 @@ export default function ContactPage() {
                                 <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-1.5 rounded-full uppercase tracking-widest text-[10px] font-bold">
                                     GET IN TOUCH
                                 </Badge>
-                                <h1 className="text-6xl md:text-8xl font-bold font-headline text-primary tracking-tighter leading-none">
-                                    Ogeemo.
+                                <h1 className="text-6xl md:text-8xl font-bold font-orbitron text-primary tracking-tighter leading-none uppercase">
+                                    OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
                                     Let's Orchestrate Your Future.

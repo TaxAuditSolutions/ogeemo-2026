@@ -114,7 +114,7 @@ const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDro
 
     return (
         <div 
-            ref={drop} 
+            ref={(node) => { drop(node); }} 
             onClick={onClick}
             className={cn("relative h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors group", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
         >
@@ -168,7 +168,7 @@ const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, o
 
   return (
     <div
-      ref={drop}
+      ref={(node) => { drop(node); }}
       className={cn(
           "relative h-full flex items-start p-1 gap-1 group", 
           isOver && canDrop && "bg-primary/20",
@@ -374,7 +374,6 @@ export function CalendarView() {
             start: newStart, 
             end: newEnd, 
             isScheduled: true,
-            type: (item as any).type,
             ritualType: (item as any).ritualType,
         };
         await updateTask(item.id, updatePayload);
@@ -741,7 +740,7 @@ export function CalendarView() {
         </div>
       </div>
 
-      <AlertDialog open={!!eventToDelete} onOpenChange={setEventToDelete} >
+      <AlertDialog open={!!eventToDelete} onOpenChange={(open) => { if (!open) setEventToDelete(null); }} >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

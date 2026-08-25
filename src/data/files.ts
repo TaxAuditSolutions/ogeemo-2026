@@ -10,6 +10,8 @@ export interface FolderItem {
   createdAt: Date;
   updatedAt?: Date;
   userId?: string;
+  isSystem?: boolean;
+  driveLink?: string;
 }
 
 export interface FileItem {
@@ -27,6 +29,7 @@ export interface FileItem {
   userId?: string;
   storagePath?: string;
   url?: string;
+  driveLink?: string;
   content?: string;
   keywords?: string[];
 }

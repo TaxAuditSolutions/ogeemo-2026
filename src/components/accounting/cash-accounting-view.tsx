@@ -104,12 +104,20 @@ const formatNumberWithCommas = (value: string | number) => {
   return parts.join(".");
 };
 
-const emptyTxForm = {
+const emptyTxForm: {
+    date: string;
+    description: string;
+    amount: string;
+    contact: string;
+    category: string;
+    type?: 'in' | 'out';
+} = {
     date: '',
     description: '',
     amount: '',
     contact: '',
     category: '',
+    type: 'out',
 };
 
 export function CashAccountingView() {
@@ -242,7 +250,7 @@ export function CashAccountingView() {
     const handleCreateCategory = async (name: string) => {
         if (!user || !name.trim()) return;
         try {
-            let newCat;
+            let newCat: IncomeCategory | ExpenseCategory;
             if (dialogType === 'in') {
                 newCat = await addIncomeCategory({ name: name.trim(), userId: user.uid });
                 setIncomeCategories(prev => [...prev, newCat]);
@@ -266,7 +274,7 @@ export function CashAccountingView() {
         }
         setIsSubmitting(true);
         try {
-            let newCat;
+            let newCat: IncomeCategory | ExpenseCategory;
             if (categoryManageType === 'in') {
                 newCat = await addIncomeCategory({ 
                     name: newCategoryName.trim(), 
@@ -799,7 +807,7 @@ export function CashAccountingView() {
                 onCustomIndustriesChange={setCustomIndustries}
             />
 
-            <AlertDialog open={!!txToDelete} onOpenChange={setTxToDelete}>
+            <AlertDialog open={!!txToDelete} onOpenChange={(open) => { if (!open) setTxToDelete(null); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>

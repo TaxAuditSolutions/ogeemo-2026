@@ -103,6 +103,16 @@ export interface ActionChipData {
   userId: string;
 }
 
+export interface StoredTimerState {
+  eventId: string;
+  notes: string;
+  isActive: boolean;
+  isPaused: boolean;
+  startTime: number;
+  pauseTime: number | null;
+  totalPausedDuration: number;
+}
+
 export interface Idea {
   id: string;
   orgId?: string;

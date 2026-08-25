@@ -449,13 +449,11 @@ export function TransactionDialog({
                         userId: user.uid,
                     }, [
                         {
-                            invoiceId: '',
                             description: values.description || 'Service Rendered',
                             quantity: values.quantity,
                             price: Number(values.unitPrice.replace(/,/g, '')),
                             taxRate: values.taxRate,
                             taxType: values.taxType,
-                            userId: user.uid
                         }
                     ]);
                     toast({ title: 'Receivable Logged' });
@@ -905,7 +903,7 @@ export function TransactionDialog({
                 onTaxTypesChange={() => onSuccess()}
             />
 
-            <AlertDialog open={!!accountToDelete} onOpenChange={setAccountToDelete}>
+            <AlertDialog open={!!accountToDelete} onOpenChange={(open) => { if (!open) setAccountToDelete(null); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

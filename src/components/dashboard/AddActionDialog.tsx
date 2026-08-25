@@ -36,14 +36,14 @@ import { useAuth } from '@/context/auth-context';
 import { addActionChip, updateActionChip } from '@/services/project-service';
 import { allMenuItems } from '@/lib/menu-items';
 import accountingMenuItems from '@/data/accounting-menu-items';
-import type { ActionChipData } from '@/types/calendar';
+import type { ActionChipData } from '@/types/calendar-types';
 import { Wand2 } from 'lucide-react';
 
 const addActionSchema = z.discriminatedUnion("linkType", [
   z.object({
     linkType: z.literal("internal"),
     label: z.string().min(1, { message: "Label is required." }),
-    targetPage: z.string({ required_error: "Please select a page." }).min(1, "Please select a page."),
+    targetPage: z.string().min(1, "Please select a page."),
     customUrl: z.string().optional(),
   }),
   z.object({
@@ -66,7 +66,7 @@ interface AddActionDialogProps {
   onActionEdited: (action: ActionChipData) => void;
   chipToEdit: ActionChipData | null;
   existingChips: ActionChipData[];
-  menuType?: 'dashboard' | 'accounting';
+  menuType?: 'dashboard' | 'accounting' | 'hr';
 }
 
 export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, onActionEdited, chipToEdit, existingChips, menuType = 'dashboard' }: AddActionDialogProps) {
@@ -78,9 +78,9 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
     defaultValues: {
       linkType: 'internal',
       label: "",
-      targetPage: undefined,
+      targetPage: "",
       customUrl: "",
-    },
+    } as AddActionFormData,
   });
 
   const linkType = form.watch("linkType");
@@ -99,16 +99,16 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
         form.reset({
           linkType: linkType,
           label: chipToEdit.label,
-          targetPage: isInternal ? chipToEdit.href as string : undefined,
+          targetPage: isInternal ? chipToEdit.href as string : "",
           customUrl: !isInternal ? chipToEdit.href as string : "",
-        });
+        } as AddActionFormData);
       } else {
         form.reset({
           linkType: 'internal',
           label: "",
-          targetPage: undefined,
+          targetPage: "",
           customUrl: "",
-        });
+        } as AddActionFormData);
       }
     }
   }, [chipToEdit, isOpen, form, availableMenuItems]);

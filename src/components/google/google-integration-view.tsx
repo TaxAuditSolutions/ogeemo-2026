@@ -31,9 +31,9 @@ export function GoogleIntegrationView() {
                 const savedOrder = profile?.preferences?.googleAppsOrder;
                 if (savedOrder && savedOrder.length > 0) {
                     const orderedApps = savedOrder
-                        .map(name => allApps.find(app => app.name === name))
-                        .filter(Boolean) as GoogleApp[];
-                    const remainingApps = allApps.filter(app => !savedOrder.includes(app.name));
+                        .map((name: string) => (allApps as GoogleApp[]).find((app: GoogleApp) => app.name === name))
+                        .filter((app: GoogleApp | undefined): app is GoogleApp => Boolean(app));
+                    const remainingApps = (allApps as GoogleApp[]).filter((app: GoogleApp) => !savedOrder.includes(app.name));
                     setApps([...orderedApps, ...remainingApps]);
                 } else {
                     setApps(allApps);

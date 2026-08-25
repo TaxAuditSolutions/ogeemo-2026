@@ -133,7 +133,7 @@ export function WorkActivityView() {
                 durationSeconds: l.durationSeconds,
                 isBillable: l.isBillable || false,
                 billableRate: l.billableRate || 0,
-                source: l.location ? 'Field App' : 'Manual Log' as any,
+                source: (l.location ? 'Field App' : 'Manual Log') as 'Field App' | 'Manual Log',
                 type: 'Staff / Worker' as const
             })),
             ...filteredTasks.map(t => ({
@@ -145,8 +145,8 @@ export function WorkActivityView() {
                 durationSeconds: t.duration || 0,
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
-                source: t.ritualType ? 'Ritual' : 'Command Centre' as any,
-                type: t.ritualType ? 'Ritual' : 'Staff / Worker' as const
+                source: (t.ritualType ? 'Ritual' : 'Command Centre') as 'Ritual' | 'Command Centre',
+                type: (t.ritualType ? 'Ritual' : 'Staff / Worker') as 'Ritual' | 'Staff / Worker'
             }))
         ];
 

@@ -45,7 +45,7 @@ const ProjectColumn = ({ title, status, projects, clientMap, onDrop, onEdit, onD
     };
 
     return (
-        <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
+        <Card ref={(node) => { drop(node); }} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
             <CardHeader className="text-center">
                 <CardTitle>{title} ({projects.length})</CardTitle>
             </CardHeader>

@@ -51,7 +51,9 @@ import {
     ArrowUpZA,
     ArrowDownAZ,
     ArrowUpDown,
-    ScanSearch
+    ScanSearch,
+    Calendar as CalendarIcon,
+    FilterX,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -346,6 +348,7 @@ export function ReconciliationWizard({
 
             for (const node of nodesToVerify) {
                 const match = node.matchedLedgerNode;
+                if (!match) continue;
                 if (match.matchType === 'ledger') {
                     await reconcileLedgerEntry(match.id, match.type, node.bank.id);
                 } else if (match.matchType === 'invoice') {

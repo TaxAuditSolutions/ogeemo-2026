@@ -136,9 +136,12 @@ export default function EmpowermentPage() {
             <Badge className="mb-6 bg-primary/15 text-primary hover:bg-primary/20 border-primary/20 px-6 py-2 rounded-full uppercase tracking-widest text-[11px] font-bold shadow-sm">
               Empower Your Business
             </Badge>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-headline text-primary tracking-tighter mb-8 leading-tight">
-              Keep Your Business Organized <br className="hidden md:block" /> and Ready for Tax Audits
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-orbitron text-primary tracking-tighter mb-8 leading-tight uppercase">
+              OGEEMO
             </h1>
+            <p className="text-xl md:text-2xl font-bold text-foreground max-w-3xl mx-auto mb-12 leading-relaxed">
+              Keep your business organized and ready for tax audits.
+            </p>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed">
               Ogeemo streamlines your operations with powerful tools designed to boost productivity and maintain flawless records, ensuring your business is always audit-ready.
             </p>
@@ -156,7 +159,7 @@ export default function EmpowermentPage() {
         {/* Core Value Proposition */}
         <section className="py-24 container px-4 max-w-5xl mx-auto text-center" id="solutions">
             <div className="space-y-6">
-                <h2 className="text-3xl md:text-5xl font-bold font-headline text-foreground tracking-tight">Streamline Your Business with Ogeemo</h2>
+                <h2 className="text-3xl md:text-5xl font-bold font-orbitron text-foreground tracking-tight uppercase">Streamline Your Business with OGEEMO</h2>
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
                     Ogeemo empowers businesses to stay organized, prepared for tax audits, and optimized for productivity with innovative management tools designed to boost efficiency and growth.
                 </p>

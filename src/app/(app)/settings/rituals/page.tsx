@@ -115,7 +115,7 @@ export default function PlanningRitualsPage() {
 
             if (isNaN(hours) || isNaN(minutes)) throw new Error("Invalid time format.");
             
-            if (dailyRitual.repeatEnabled && dailyRitual.repeatCount > 0) {
+            if (dailyRitual.repeatEnabled && typeof dailyRitual.repeatCount === 'number' && dailyRitual.repeatCount > 0) {
                 let currentDate = new Date(date);
                 let scheduled = 0;
                 while (scheduled < dailyRitual.repeatCount) {

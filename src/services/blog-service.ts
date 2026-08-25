@@ -56,15 +56,21 @@ function getDb() {
   return db;
 }
 
-const docToPost = (doc: any): BlogPost => ({
-  id: doc.id,
-  ...doc.data(),
-} as BlogPost);
+const docToPost = (doc: any): BlogPost => {
+  const data = (doc.data ? doc.data() : doc) as Record<string, any>;
+  return {
+    id: doc.id ?? data.id,
+    ...(data ?? {}),
+  } as BlogPost;
+};
 
-const docToComment = (doc: any): BlogComment => ({
-  id: doc.id,
-  ...doc.data(),
-} as BlogComment);
+const docToComment = (doc: any): BlogComment => {
+  const data = (doc.data ? doc.data() : doc) as Record<string, any>;
+  return {
+    id: doc.id ?? data.id,
+    ...(data ?? {}),
+  } as BlogComment;
+};
 
 export async function getPosts(authorId?: string): Promise<BlogPost[]> {
   const db = getDb();
@@ -77,7 +83,8 @@ export async function getPosts(authorId?: string): Promise<BlogPost[]> {
       const batch = writeBatch(db);
       mockBlogPosts.forEach(post => {
           const docRef = doc(collection(db, POSTS_COLLECTION));
-          batch.set(docRef, { ...post, authorId });
+          const postData = post as Record<string, unknown>;
+          batch.set(docRef, { ...(postData as object), authorId });
       });
       await batch.commit();
       // Re-fetch after seeding
@@ -151,10 +158,11 @@ export async function getPendingComments(authorId: string): Promise<BlogCommentW
     
     commentsSnapshot.forEach(commentDoc => {
       const comment = docToComment(commentDoc);
-      allPendingComments.push({
+      const pendingComment: BlogCommentWithPost = {
         ...comment,
         postTitle: postData.title,
-      });
+      };
+      allPendingComments.push(pendingComment);
     });
   }
 

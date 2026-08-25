@@ -340,7 +340,7 @@ export function OrganizeIdeasView() {
                         {status}
                     </Button>
                 </CardHeader>
-                <CardContent ref={drop} className={cn("flex-1", isOver && canDrop && 'bg-primary/10')}>
+                <CardContent ref={(node) => { drop(node); }} className={cn("flex-1", isOver && canDrop && 'bg-primary/10')}>
                     {status === 'Maybe' && showNewIdeaCard && (
                         <Card className="mb-4">
                             <CardContent className="p-3 space-y-2">

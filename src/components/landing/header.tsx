@@ -36,27 +36,11 @@ export function SiteHeader() {
         <nav className="flex flex-1 items-center space-x-1 overflow-x-auto no-scrollbar">
             <Button variant="link" asChild className="shrink-0"><Link href="/features">Features</Link></Button>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="link" className="shrink-0">
-                  Solutions <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem asChild><Link href="/for-small-businesses">For Small Businesses</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-consultants">For Consultants</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-accountants">For Accountants</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-bookkeepers">For Bookkeepers</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-virtual-assistants">For Virtual Assistants</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-lawyers">For Lawyers</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/for-paralegals">For Paralegals</Link></DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="link" asChild className="shrink-0"><Link href="/solutions">Solutions</Link></Button>
 
-            <Button variant="link" asChild className="shrink-0"><Link href="/lead-to-ledger">Lead to Ledger</Link></Button>
-            <Button variant="link" asChild className="shrink-0"><Link href="/empowerment">Empowerment</Link></Button>
-            <Button variant="link" asChild className="shrink-0"><Link href="/">Members/Mentors</Link></Button>
-            <Button variant="link" asChild className="shrink-0"><Link href="/sarah">Sarah</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/about">About</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Members</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/partners">Partners</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Pricing</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/contact">Contact</Link></Button>
         </nav>

@@ -18,6 +18,7 @@ interface AuthContextType {
   isEditor: boolean;
   isViewer: boolean;
   auth: Auth | null;
+  firebaseServices: ReturnType<typeof getFirebaseServices> | null;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   getGoogleAccessToken: () => Promise<string | null>;
@@ -50,14 +51,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isMasterTenant, setIsMasterTenant] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [firebaseAuth, setFirebaseAuth] = useState<Auth | null>(null);
+  const [firebaseServices, setFirebaseServices] = useState<ReturnType<typeof getFirebaseServices> | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     try {
-      const { auth } = getFirebaseServices();
-      setFirebaseAuth(auth);
+      const services = getFirebaseServices();
+      setFirebaseAuth(services.auth);
+      setFirebaseServices(services);
     } catch (error) {
       console.warn('Auth Context: Firebase services unavailable during prerender or build.', error);
       setIsAuthLoading(false);
@@ -248,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isEditor,
     isViewer,
     auth: firebaseAuth,
+    firebaseServices,
     logout,
     signInWithGoogle,
     getGoogleAccessToken,

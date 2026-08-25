@@ -108,7 +108,7 @@ const DraggableFileRow = ({ file, isHighlighted, children }: { file: FileItem, i
     }), [file]);
 
     return (
-        <div ref={drag} className={cn(isDragging && 'opacity-50', isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
+        <div ref={(node) => { drag(node); }} className={cn(isDragging && 'opacity-50', isHighlighted && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset")}>
             {children}
         </div>
     );
@@ -182,7 +182,7 @@ const FolderTreeItem = ({
     return (
       <div style={{ marginLeft: level > 0 ? '1rem' : '0' }} className="my-0.5">
         <div
-          ref={node => drag(drop(node))}
+          ref={(node) => { drag(drop(node)); }}
           className={cn(
             "flex items-center justify-between border border-black rounded-md h-8 group",
             isRenaming ? 'bg-background' : 'hover:bg-accent',
@@ -248,9 +248,9 @@ const FolderTreeItem = ({
                 onDelete={onDelete}
                 renamingFolderId={renamingFolderId}
                 renameInputValue={renameInputValue}
-                onRenameChange={setRenameInputValue}
-                onRenameConfirm={handleRenameConfirm}
-                onRenameCancel={() => setRenamingFolder(null)}
+                onRenameChange={onRenameChange}
+                onRenameConfirm={onRenameConfirm}
+                onRenameCancel={onRenameCancel}
                 sortDirection={sortDirection}
             />
         ))}
@@ -382,7 +382,7 @@ export function FilesView() {
     }
   }, [user, toast, folders]);
 
-  const [{ isOverRoot, canDropRoot }, dropRoot] = useDrop(() => ({
+  const [{ isOver: isOverRoot, canDrop: canDropRoot }, dropRoot] = useDrop(() => ({
     accept: [ItemTypes.FILE, ItemTypes.FOLDER],
     drop: (item: DroppableItem) => handleDrop(item, null),
     collect: (monitor) => ({ 
@@ -499,7 +499,7 @@ export function FilesView() {
           setFolders(prev => prev.map(f => f.id === folderToLink.id ? { ...f, driveLink: driveFolderLink.trim() || undefined } : f));
           toast({ title: "Drive Link Updated" });
       } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: e.message });
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
       } finally {
           setIsDriveLinkDialogOpen(false);
           setFolderToLink(null);
@@ -514,7 +514,7 @@ export function FilesView() {
           setFiles(prev => prev.map(f => f.id === fileToLink.id ? { ...f, driveLink: driveFileLink.trim() || undefined, type } : f));
           toast({ title: "Drive Link Updated" });
       } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: e.message });
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
       } finally {
           setIsDriveFileLinkDialogOpen(false);
           setFileToLink(null);
@@ -593,7 +593,7 @@ export function FilesView() {
             </div>
             <div className="flex flex-col border border-black rounded-lg h-[calc(100vh-350px)]">
               <div
-                ref={dropRoot}
+                ref={dropRoot as React.RefObject<HTMLDivElement> | ((instance: HTMLDivElement | null) => void) | null}
                 className={cn("p-2 border-b cursor-pointer transition-colors", selectedFolderId === 'all' && 'bg-primary/20', (isOverRoot && canDropRoot) && 'bg-primary/30 ring-1 ring-primary')}
                 onClick={() => handleSelectFolder('all')}
               >
@@ -650,7 +650,13 @@ export function FilesView() {
                     {filesInSelectedFolder.length > 0 ? (
                         filesInSelectedFolder.map((file) => (
                            <DraggableFileRow key={file.id} file={file} isHighlighted={highlightedId === file.id}>
-                            <div className="flex items-center border-b h-8 group p-2" ref={(el) => fileRefs.current.set(file.id, el)}>
+                            <div className="flex items-center border-b h-8 group p-2" ref={(el) => {
+                                if (el) {
+                                    fileRefs.current.set(file.id, el);
+                                } else {
+                                    fileRefs.current.delete(file.id);
+                                }
+                            }}>
                                 <Checkbox
                                     checked={selectedFileIds.includes(file.id)}
                                     onCheckedChange={(checked) => {
@@ -771,7 +777,7 @@ export function FilesView() {
         </DialogContent>
     </Dialog>
 
-    <AlertDialog open={!!folderToDelete} onOpenChange={setFolderToDelete}>
+    <AlertDialog open={!!folderToDelete} onOpenChange={(open) => setFolderToDelete(open ? folderToDelete : null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
@@ -781,7 +787,7 @@ export function FilesView() {
         </AlertDialogContent>
     </AlertDialog>
 
-    <AlertDialog open={!!fileToDelete} onOpenChange={setFileToDelete}>
+    <AlertDialog open={!!fileToDelete} onOpenChange={(open) => setFileToDelete(open ? fileToDelete : null)}>
         <AlertDialogContent>
             <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>

@@ -204,25 +204,25 @@ export function FinancialDiscoveryDialog({ isOpen, onOpenChange }: FinancialDisc
                                 let amount = 0;
 
                                 if (item.resultType === 'Invoice') {
-                                    title = `Invoice #${item.invoiceNumber}`;
-                                    subtitle = item.companyName;
-                                    amount = item.originalAmount;
+                                    title = `Invoice #${item.invoiceNumber ?? 'Unknown'}`;
+                                    subtitle = item.companyName ?? 'Unknown company';
+                                    amount = Number(item.originalAmount ?? 0);
                                 } else if (item.resultType === 'Income' || item.resultType === 'Expense') {
-                                    title = item.company;
-                                    subtitle = item.description;
-                                    amount = item.totalAmount;
+                                    title = item.company ?? 'Unknown';
+                                    subtitle = item.description ?? 'No description';
+                                    amount = Number(item.totalAmount ?? 0);
                                 } else if (item.resultType === 'Payable') {
-                                    title = item.vendor;
-                                    subtitle = item.description;
-                                    amount = item.totalAmount;
+                                    title = item.vendor ?? 'Unknown vendor';
+                                    subtitle = item.description ?? 'No description';
+                                    amount = Number(item.totalAmount ?? 0);
                                 } else if (item.resultType === 'Asset') {
-                                    title = item.name;
+                                    title = item.name ?? 'Unnamed asset';
                                     subtitle = item.assetClass ? `Class ${item.assetClass}` : 'Capital Asset';
-                                    amount = item.undepreciatedCapitalCost;
+                                    amount = Number(item.undepreciatedCapitalCost ?? 0);
                                 } else if (item.resultType === 'Loan') {
-                                    title = item.counterparty;
+                                    title = item.counterparty ?? 'Unknown counterparty';
                                     subtitle = item.loanType === 'payable' ? 'Loan Payable' : 'Loan Receivable';
-                                    amount = item.outstandingBalance;
+                                    amount = Number(item.outstandingBalance ?? 0);
                                 }
 
                                 return (

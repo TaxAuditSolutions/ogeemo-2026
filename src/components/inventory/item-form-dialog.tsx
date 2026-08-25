@@ -137,7 +137,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
 
       const dataToSave = {
         name: values.name || 'Untitled Item',
-        sku: values.sku || null,
+        sku: values.sku?.trim() || undefined,
         type: values.type,
         supplierId: finalSupplierId || null,
         acquisitionDate: values.acquisitionDate || null,

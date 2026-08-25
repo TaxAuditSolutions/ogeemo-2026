@@ -75,7 +75,7 @@ export function TaskColumn({
   const someInColumnSelected = selectedInColumn.length > 0 && !allInColumnSelected;
 
   return (
-    <Card ref={drop} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
+    <Card ref={(node) => { drop(node); }} className={cn("flex flex-col", isOver && canDrop && "bg-primary/10")}>
       <CardHeader className="flex flex-row items-center justify-between p-4">
         <div className="flex items-center gap-2">
             <CardTitle className="text-lg">{columnTitles[status]} <span className="text-sm font-normal text-muted-foreground">({tasks.length})</span></CardTitle>

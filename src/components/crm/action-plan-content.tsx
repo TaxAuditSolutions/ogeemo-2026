@@ -76,10 +76,14 @@ const ActionCard = ({ action, index, moveCard, onEdit, onDelete, onSchedule }: A
     },
   });
 
-  drag(drop(ref));
+  const setRefs = (node: HTMLDivElement | null) => {
+    ref.current = node;
+    drag(node);
+    drop(node);
+  };
 
   return (
-    <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <div ref={setRefs} style={{ opacity: isDragging ? 0.5 : 1 }}>
         <Card className="mb-2 cursor-grab active:cursor-grabbing group">
             <CardContent className="p-3 flex justify-between items-start">
                 <div className="flex-1" onClick={onEdit}>
@@ -124,7 +128,9 @@ const ActionColumn = ({ title, actions, moveCard, onDropCard, onEditAction, onDe
     });
 
     return (
-        <Card ref={drop} className={cn("flex flex-col h-full min-h-[400px]", isOver ? 'bg-primary/10' : '')}>
+        <Card ref={(node) => {
+            drop(node as HTMLDivElement | null);
+        }} className={cn("flex flex-col h-full min-h-[400px]", isOver ? 'bg-primary/10' : '')}>
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
             </CardHeader>

@@ -377,7 +377,7 @@ export default function TimeOffPage() {
                     </div>
                      <div className="space-y-2">
                         <Label>Leave Type</Label>
-                        <Select value={formData.leaveType} onValueChange={(value) => setFormData(p => ({...p, leaveType: value}))}>
+                        <Select value={formData.leaveType} onValueChange={(value) => setFormData(p => ({...p, leaveType: value as LeaveRequest['leaveType']}))}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Vacation">Vacation</SelectItem>

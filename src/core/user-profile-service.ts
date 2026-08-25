@@ -61,12 +61,30 @@ export interface Organization {
     ownerUid: string;
 }
 
+export interface PlanningRitual {
+    time: string;
+    day?: 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+    duration: number;
+    repeatEnabled?: boolean;
+    repeatCount?: number;
+}
+
 export interface UserProfile {
     id: string;
     email: string;
     displayName?: string;
     employeeNumber?: string;
     businessNumber?: string;
+    companyName?: string;
+    businessAddress?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+        [key: string]: any;
+    };
+    netEquity?: number;
     website?: string;
     businessPhone?: string;
     cellPhone?: string;

@@ -32,10 +32,10 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
     isCompact = false 
 }, forwardedRef) => {
   const localRef = useRef<HTMLDivElement>(null);
-  const ref = (forwardedRef as React.RefObject<HTMLDivElement>) || localRef;
+  const ref = (forwardedRef as React.RefObject<HTMLDivElement> | undefined) ?? localRef;
   const Icon = item.icon;
 
-  const [{ isDragging }, drag, preview] = useDrag({
+  const [{ isDragging }, drag] = useDrag({
     type: 'MENU_ITEM',
     item: () => ({ id: item.href, index }),
     canDrag: isDraggable,
@@ -46,9 +46,9 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
 
   const [, drop] = useDrop({
     accept: 'MENU_ITEM',
-    hover(draggedItem: DragItem, monitor) {
+    hover(draggedItem: DragItem) {
       if (!ref.current || !isDraggable) return;
-      
+
       const dragIndex = draggedItem.index;
       const hoverIndex = index;
       if (dragIndex === hoverIndex) return;
@@ -58,7 +58,14 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
     },
   });
 
-  drag(drop(ref));
+  const setRefs = React.useCallback((node: HTMLDivElement | null) => {
+    if (typeof ref === 'object' && ref !== null) {
+      (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    }
+    if (isDraggable && node) {
+      drag(drop(node));
+    }
+  }, [drag, drop, isDraggable, ref]);
 
   const isExternal = item.href.startsWith('http') || item.href === '/home';
 
@@ -71,11 +78,10 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
 
   return (
     <div
-      ref={isDraggable ? preview : null}
       style={{ opacity: isDragging ? 0.5 : 1 }}
       className="relative"
     >
-      <div ref={ref} className="flex items-center">
+      <div ref={setRefs as React.Ref<HTMLDivElement>} className="flex items-center">
         {isExternal ? (
            <Button
             asChild

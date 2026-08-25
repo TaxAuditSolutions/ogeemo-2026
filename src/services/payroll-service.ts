@@ -24,6 +24,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
  */
 
 export type Worker = Contact;
+export type Employee = Worker;
 
 const CONTACTS_COLLECTION = 'contacts';
 const FOLDERS_COLLECTION = 'contactFolders';
@@ -84,6 +85,10 @@ const docToWorker = (doc: any): Worker => {
  * This adheres to the protocol: If they are in the Workers/Employees/Contractors folders, they are workers.
  * Scoped strictly to the current user to prevent 'IN' comparison limit errors.
  */
+export async function getEmployees(userId: string): Promise<Employee[]> {
+    return getWorkers(userId);
+}
+
 export async function getWorkers(userId: string): Promise<Worker[]> {
     const db = getDb();
     const orgId = await getCurrentOrgId();

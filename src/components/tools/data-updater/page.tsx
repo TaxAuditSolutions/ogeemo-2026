@@ -66,8 +66,9 @@ export default function DataUpdaterPage() {
 
             for (const contact of contacts) {
                 // Check if keywords already exist and are up-to-date to avoid unnecessary writes
-                const newKeywords = generateContactKeywords(contact.name, contact.email, contact.businessName);
-                if (Array.isArray(contact.keywords) && newKeywords.every(k => contact.keywords.includes(k)) && contact.keywords.length === newKeywords.length) {
+                const newKeywords = generateContactKeywords(contact.name, contact.email ?? '', contact.businessName ?? '');
+                const existingKeywords = contact.keywords ?? [];
+                if (Array.isArray(existingKeywords) && newKeywords.every(k => existingKeywords.includes(k)) && existingKeywords.length === newKeywords.length) {
                     continue;
                 }
                 setStatus(`Updating contact: ${contact.name}...`);

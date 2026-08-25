@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
-import { fontOrbitron } from '@/app/layout';
+import { fontOrbitron } from '@/lib/fonts';
 
 interface LogoProps extends React.HTMLAttributes<HTMLDivElement> {}
 

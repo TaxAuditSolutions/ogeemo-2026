@@ -77,9 +77,9 @@ export function AZSortView() {
         
         if (savedOrder && savedOrder.length > 0) {
             const orderedItems = savedOrder
-                .map(href => allMenuItems.find(item => item.href === href))
-                .filter(Boolean) as MenuItem[];
-            const remainingItems = allMenuItems.filter(item => !savedOrder.includes(item.href));
+                .map((href: string) => (allMenuItems as MenuItem[]).find((item: MenuItem) => item.href === href))
+                .filter((item: MenuItem | undefined): item is MenuItem => Boolean(item));
+            const remainingItems = (allMenuItems as MenuItem[]).filter((item: MenuItem) => !savedOrder.includes(item.href));
             setMenuItems([...orderedItems, ...remainingItems]);
         } else {
             setMenuItems([...allMenuItems].sort((a, b) => a.label.localeCompare(b.label)));

@@ -19,7 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
-import { getUserProfile, type AccessLevel } from '@/core/user-profile-service';
+import { getUserProfile, type AccessLevel, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
 
 const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
@@ -121,20 +121,28 @@ export function MainMenu() {
     const { view, setView } = useSidebarView();
     const [isLoadingChips, setIsLoadingChips] = useState(true);
     const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
+    const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
 
     useEffect(() => {
         if (!user) {
             setProfileAccessLevel(null);
+            setSidebarAccess(undefined);
             return;
         }
         let cancelled = false;
         (async () => {
             try {
                 const profile = await getUserProfile(user.uid);
-                if (!cancelled) setProfileAccessLevel(profile?.accessLevel ?? null);
+                if (!cancelled) {
+                    setProfileAccessLevel(profile?.accessLevel ?? null);
+                    setSidebarAccess(profile?.sidebarAccess ?? undefined);
+                }
             } catch (error) {
                 console.error("Failed to check admin status", error);
-                if (!cancelled) setProfileAccessLevel(null);
+                if (!cancelled) {
+                    setProfileAccessLevel(null);
+                    setSidebarAccess(undefined);
+                }
             }
         })();
         return () => { cancelled = true; };
@@ -226,6 +234,22 @@ export function MainMenu() {
     const displayedMenuItems = menuItems.filter(item => {
         if (item.adminOnly && !isAdmin) return false;
         if (item.masterTenantOnly && !isMasterTenant) return false;
+
+        if (!sidebarAccess || sidebarAccess.mode === 'inherit') {
+            return true;
+        }
+
+        const href = item.href;
+        if (sidebarAccess.mode === 'allowlist') {
+            const allowList = sidebarAccess.allowedMenuItems ?? [];
+            return allowList.includes(href);
+        }
+
+        if (sidebarAccess.mode === 'blocklist') {
+            const hiddenSet = new Set(sidebarAccess.hiddenMenuItems ?? []);
+            return !hiddenSet.has(href);
+        }
+
         return true;
     });
 

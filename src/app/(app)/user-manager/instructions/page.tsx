@@ -57,10 +57,10 @@ export default function UserManagerInstructionsPage() {
                     <CardContent className="p-6 space-y-6">
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                             <p className="text-lg leading-relaxed">
-                                Ogeemo operates on a <strong>Multi-Tenant Silo Structure</strong>. When a company or individual originally signs up for Ogeemo, a completely isolated database instance is created for them. Workspaces are strictly separated.
+                                Ogeemo operates on a <strong>Multi-Tenant Silo Structure</strong>. Each tenant represents one company or organization, and every user invited into that tenant belongs to the same company workspace. This is a shared team environment: teammates in the same tenant are meant to collaborate and see each other's work within that company instance.
                             </p>
                             <p className="text-lg leading-relaxed text-muted-foreground">
-                                This strict partitioning means that a user in your company cannot see, query, or interact with data from any other company. To expand your team, new users <strong>must be invited by an Administrator</strong> directly from the inside of your existing workspace.
+                                The silo remains between companies, not within a company. A user in your company cannot see, query, or interact with data from any other company, but users inside the same tenant can work together in the same shared workspace. To expand your team, new users <strong>must be invited by an Administrator</strong> directly from inside the existing company tenant.
                             </p>
                         </div>
                     </CardContent>
@@ -90,7 +90,7 @@ export default function UserManagerInstructionsPage() {
                                             <li>Click the <strong>"+ Add User"</strong> button.</li>
                                             <li>Fill out the user's name, email, and assign them a role.</li>
                                         </ol>
-                                        <p>Our system automatically dual-provisions their secure login credentials and provisions their node in the Contact Hub. They will receive an email with instructions to securely log in.</p>
+                                        <p>Once they are invited into the same company tenant, they join the same shared company workspace and are expected to see and collaborate on the team’s work. Our system automatically provisions their secure login credentials and their place in the company workspace. They will receive an email with instructions to securely log in.</p>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -104,11 +104,11 @@ export default function UserManagerInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                        <p>Every member of a Company instance shares access to the Company's tools and data features, governed strictly by their assigned role:</p>
+                                        <p>Every member of a company tenant shares access to that company’s workspace, governed strictly by their assigned role. The tenant is the company boundary; the role is the permission boundary. In other words, users in the same tenant are meant to work within one shared team environment, while users in different tenants remain isolated.</p>
                                         <ul>
                                             <li><strong>Admin:</strong> Has full, unrestricted system access. Admins are the only users who can access the User Manager, view company-wide billing, and invite/delete team members.</li>
                                             <li><strong>Editor:</strong> Has comprehensive operational access. Editors can view and modify Project boards, the Command Centre calendar, Ledger finances, and the Document hub.</li>
-                                            <li><strong>Viewer:</strong> Has read-only access to operational features. They can see data but cannot make changes, which is beneficial for temporary contactors or auditing purposes.</li>
+                                            <li><strong>Viewer:</strong> Has read-only access to operational features. They can see data but cannot make changes, which is beneficial for temporary contractors or auditing purposes.</li>
                                         </ul>
                                     </div>
                                 </AccordionContent>

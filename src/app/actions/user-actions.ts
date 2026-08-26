@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import type { AccessLevel } from '@/core/user-profile-service';
+import type { AccessLevel, SidebarAccessConfig } from '@/core/user-profile-service';
 import { canManageTargetRole } from '@/core/rbac';
 
 /**
@@ -49,6 +49,7 @@ export async function updateUserInTenant(data: {
     employeeNumber?: string;
     notes?: string;
     newRole?: AccessLevel | 'none';
+    sidebarAccess?: SidebarAccessConfig;
 }) {
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
@@ -102,6 +103,9 @@ export async function updateUserInTenant(data: {
     if (data.displayName !== undefined) updateData.displayName = data.displayName;
     if (data.employeeNumber !== undefined) updateData.employeeNumber = data.employeeNumber;
     if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.sidebarAccess !== undefined) {
+        updateData.sidebarAccess = data.sidebarAccess.mode === 'inherit' ? { mode: 'inherit' } : data.sidebarAccess;
+    }
 
     // Update the profile
     await userRef.update(updateData);
@@ -169,6 +173,7 @@ export async function createUserInTenant(data: {
     employeeNumber?: string;
     notes?: string;
     accessLevel: AccessLevel;
+    sidebarAccess?: SidebarAccessConfig;
 }) {
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
@@ -223,6 +228,7 @@ export async function createUserInTenant(data: {
             notes: data.notes || '',
             orgId: requestingOrgId,
             accessLevel: data.accessLevel,
+            sidebarAccess: data.sidebarAccess && data.sidebarAccess.mode !== 'inherit' ? data.sidebarAccess : { mode: 'inherit' },
             mentorshipRole: 'Apprentice',
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),

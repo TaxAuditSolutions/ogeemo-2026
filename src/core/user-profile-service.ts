@@ -53,6 +53,13 @@ function getFunctionsService() {
 // super_admin only ever applies to users belonging to the master ("Ogeemo") tenant.
 export type AccessLevel = 'super_admin' | 'org_admin' | 'editor' | 'viewer';
 export type MentorshipRole = 'Apprentice' | 'Mentor_Apprentice' | 'Certified_Mentor';
+export type SidebarAccessMode = 'inherit' | 'allowlist' | 'blocklist';
+
+export interface SidebarAccessConfig {
+    mode?: SidebarAccessMode;
+    allowedMenuItems?: string[];
+    hiddenMenuItems?: string[];
+}
 
 export interface Organization {
     id: string;
@@ -93,6 +100,7 @@ export interface UserProfile {
     // Organization & Access
     orgId?: string;
     accessLevel?: AccessLevel;
+    sidebarAccess?: SidebarAccessConfig;
 
     // Legacy / Business Logic Roles
     role?: MentorshipRole;
@@ -145,26 +153,43 @@ export async function updateUserProfile(
 
     const dataWithTimestamp: { [key: string]: any } = { ...data, updatedAt: serverTimestamp() };
 
-    // 1. Ensure the user exists in the Contact Hub (SSoT)
-    const allFolders = await ensureSystemFolders(userId);
-    const adminFolder = allFolders.find(f => f.name === 'Admin' && f.isSystem);
-    const contactId = docSnap.exists() ? docSnap.data().contactId : null;
+    const profileIdentityFields = [
+        'displayName',
+        'employeeNumber',
+        'businessNumber',
+        'companyName',
+        'businessAddress',
+        'website',
+        'businessPhone',
+        'cellPhone',
+        'bestPhone',
+        'notes',
+    ] as const;
+    const shouldSyncContactProfile = profileIdentityFields.some((field) => data[field] !== undefined);
 
-    if (contactId) {
-        await updateContact(contactId, {
-            name: data.displayName,
-            email: email,
-            employeeNumber: data.employeeNumber,
-        });
-    } else {
-        const newContact = await addContact({
-            name: data.displayName || email,
-            email: email,
-            employeeNumber: data.employeeNumber,
-            folderId: adminFolder?.id || 'all',
-            userId: userId,
-        } as any);
-        dataWithTimestamp.contactId = newContact.id;
+    // Only sync Contact Hub identity data when the update is actually changing a user identity field.
+    // Preference-only updates (like sidebar ordering) should not require editor permissions on contacts.
+    if (shouldSyncContactProfile) {
+        const allFolders = await ensureSystemFolders(userId);
+        const adminFolder = allFolders.find(f => f.name === 'Admin' && f.isSystem);
+        const contactId = docSnap.exists() ? docSnap.data().contactId : null;
+
+        if (contactId) {
+            await updateContact(contactId, {
+                name: data.displayName,
+                email: email,
+                employeeNumber: data.employeeNumber,
+            });
+        } else {
+            const newContact = await addContact({
+                name: data.displayName || email,
+                email: email,
+                employeeNumber: data.employeeNumber,
+                folderId: adminFolder?.id || 'all',
+                userId: userId,
+            } as any);
+            dataWithTimestamp.contactId = newContact.id;
+        }
     }
 
     // 2. Update the Profile registry

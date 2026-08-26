@@ -31,16 +31,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserInTenant, updateUserInTenant } from '@/app/actions/user-actions';
 
-import type { UserProfile } from '@/core/user-profile-service';
+import type { SidebarAccessConfig, UserProfile } from '@/core/user-profile-service';
 import { createTenantWithSuperAdmin } from '@/app/actions/org-actions';
 import { getAssignableRoles, ROLE_LABELS } from '@/core/rbac';
 import { getContacts, type Contact } from '@/services/contact-service';
+import { allMenuItems } from '@/lib/menu-items';
 import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info, Building2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+
+const menuAccessOptions = [
+    { value: 'inherit', label: 'Inherit default role visibility' },
+    { value: 'allowlist', label: 'Custom app access (checkbox list)' },
+] as const;
 
 const userSchema = z.object({
     name: z.string().min(2, { message: 'Name is required.' }),
@@ -50,6 +56,7 @@ const userSchema = z.object({
     notes: z.string().optional(),
     accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer', 'none']).default('viewer'),
     companyName: z.string().optional(),
+    menuAccessMode: z.enum(['inherit', 'allowlist']).default('inherit'),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -69,6 +76,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [isCreatingNewTenant, setIsCreatingNewTenant] = useState(false);
+    const [sidebarAccessMode, setSidebarAccessMode] = useState<'inherit' | 'allowlist'>('inherit');
+    const [selectedSidebarTargets, setSelectedSidebarTargets] = useState<Set<string>>(() => new Set(allMenuItems.map((item) => item.href)));
 
     const { user: currentUser, accessLevel: actingAccessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
@@ -88,6 +97,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
             password: '',
             notes: '',
             accessLevel: 'viewer',
+            menuAccessMode: 'inherit',
         },
     });
 
@@ -118,10 +128,16 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     password: '',
                     accessLevel: userToEdit.accessLevel || 'viewer',
                     companyName: '',
+                    menuAccessMode: userToEdit.sidebarAccess?.mode === 'allowlist' ? 'allowlist' : 'inherit',
                 });
+                const configuredMenuAccess = userToEdit.sidebarAccess?.mode === 'allowlist' ? userToEdit.sidebarAccess.allowedMenuItems ?? [] : allMenuItems.map((item) => item.href);
+                setSidebarAccessMode(userToEdit.sidebarAccess?.mode === 'allowlist' ? 'allowlist' : 'inherit');
+                setSelectedSidebarTargets(new Set(configuredMenuAccess));
                 setSelectedContactId(null);
             } else {
-                reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', accessLevel: 'viewer', companyName: '' });
+                reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', accessLevel: 'viewer', companyName: '', menuAccessMode: 'inherit' });
+                setSidebarAccessMode('inherit');
+                setSelectedSidebarTargets(new Set(allMenuItems.map((item) => item.href)));
                 setSelectedContactId(null);
                 setIsCreatingNewTenant(false);
             }
@@ -144,9 +160,30 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         setValue('employeeNumber', '');
     };
 
+    const toggleSidebarTarget = (href: string) => {
+        setSelectedSidebarTargets((previous) => {
+            const next = new Set(previous);
+            if (next.has(href)) {
+                next.delete(href);
+            } else {
+                next.add(href);
+            }
+            return next;
+        });
+    };
+
+    const selectAllSidebarTargets = () => setSelectedSidebarTargets(new Set(allMenuItems.map((item) => item.href)));
+
     const onSubmit = async (values: UserFormData) => {
         if (!currentUser) return;
         setIsSaving(true);
+
+        const sidebarAccess: SidebarAccessConfig | undefined = sidebarAccessMode === 'inherit'
+            ? { mode: 'inherit' }
+            : {
+                mode: 'allowlist',
+                allowedMenuItems: Array.from(selectedSidebarTargets).sort(),
+            };
         
         try {
             if (userToEdit) {
@@ -156,6 +193,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     employeeNumber: values.employeeNumber,
                     notes: values.notes,
                     newRole: isEditingSuperAdmin ? undefined : (values.accessLevel as any),
+                    sidebarAccess,
                 });
                 toast({ title: 'User Updated' });
             } else if (canCreateNewTenant && isCreatingNewTenant) {
@@ -187,6 +225,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     employeeNumber: values.employeeNumber,
                     notes: values.notes,
                     accessLevel: values.accessLevel as any,
+                    sidebarAccess,
                 });
 
                 toast({ title: 'User Created' });
@@ -312,7 +351,45 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                             <FormField control={formMethods.control} name="accessLevel" render={({ field }) => (
                                                 <FormItem><FormLabel>Authority Level (Access)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value} disabled={isEditingSuperAdmin}><FormControl><SelectTrigger className={cn("h-11", isEditingSuperAdmin && "bg-muted/50")}><SelectValue placeholder="Select an access level" /></SelectTrigger></FormControl><SelectContent>{isEditingSuperAdmin ? (<SelectItem value="super_admin">{ROLE_LABELS.super_admin}</SelectItem>) : (<>{assignableRoles.map((role) => (<SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>))}<SelectItem value="none">No Access (Revoked Node)</SelectItem></>)}</SelectContent></Select>{isEditingSuperAdmin && <FormDescription className="text-xs">Super Admin authority is locked. Every tenant must keep at least one Super Admin.</FormDescription>}<FormMessage /></FormItem>
                                             )} />
+                                            <FormItem>
+                                                <FormLabel>Sidebar Access Mode</FormLabel>
+                                                <Select value={sidebarAccessMode} onValueChange={(value) => setSidebarAccessMode(value as 'inherit' | 'allowlist')}>
+                                                    <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Select visibility mode" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        {menuAccessOptions.map((option) => (
+                                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormDescription className="text-xs">Inherit keeps the normal role-based menu. Custom app access lets you choose exactly which apps this user can see.</FormDescription>
+                                            </FormItem>
                                         </div>
+
+                                        {sidebarAccessMode !== 'inherit' && (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
+                                                    <div className="text-sm font-medium">Visible Apps</div>
+                                                    <div className="flex gap-2">
+                                                        <Button type="button" variant="outline" size="sm" onClick={selectAllSidebarTargets}>Select All</Button>
+                                                        <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedSidebarTargets(new Set())}>Clear All</Button>
+                                                    </div>
+                                                </div>
+                                                <div className="grid max-h-96 grid-cols-1 gap-2 overflow-auto rounded-md border bg-background p-3 md:grid-cols-2">
+                                                    {allMenuItems.map((item) => (
+                                                        <label key={item.href} className="flex cursor-pointer items-center gap-2 rounded-md border p-2 hover:bg-muted/50">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSidebarTargets.has(item.href)}
+                                                                onChange={() => toggleSidebarTarget(item.href)}
+                                                                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                                                            />
+                                                            <span className="text-sm">{item.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <FormField control={formMethods.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={5} className="resize-none" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                     </div>
                                 )}

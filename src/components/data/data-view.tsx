@@ -149,6 +149,7 @@ export function UserListView() {
                     <TableHead>Email</TableHead>
                     <TableHead>Organization</TableHead>
                     <TableHead>Access Level</TableHead>
+                    <TableHead>Sidebar Access</TableHead>
                     <TableHead className="hidden md:table-cell">Created at</TableHead>
                     <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
@@ -164,6 +165,9 @@ export function UserListView() {
                         <TableCell>{userProfile.email}</TableCell>
                         <TableCell className="text-muted-foreground">{userProfile.orgId ? (orgNamesById[userProfile.orgId] || userProfile.orgId) : 'Unassigned'}</TableCell>
                         <TableCell><Badge variant="outline" className="capitalize">{userProfile.accessLevel || 'none'}</Badge></TableCell>
+                        <TableCell className="text-muted-foreground text-xs uppercase tracking-wide">
+                          {userProfile.sidebarAccess?.mode === 'allowlist' ? 'Allowlist' : userProfile.sidebarAccess?.mode === 'blocklist' ? 'Blocklist' : 'Inherit'}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">{userProfile.createdAt ? format(new Date(userProfile.createdAt.toDate()), 'PP') : 'N/A'}</TableCell>
                         <TableCell>
                           <DropdownMenu>

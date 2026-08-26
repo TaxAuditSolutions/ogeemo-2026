@@ -129,6 +129,115 @@ export function AboutContent() {
                             </section>
 
                             <section className="py-24 text-foreground">
+                                <div className="container px-4 max-w-6xl mx-auto space-y-16">
+                                    <div className="text-center space-y-4">
+                                        <Badge variant="outline" className="text-primary border-primary">HOW IT WAS BUILT</Badge>
+                                        <h2 className="text-3xl md:text-5xl font-bold font-headline text-foreground uppercase">Built from real operational pain.</h2>
+                                        <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+                                            Ogeemo was not designed as a software demo. It was built by people who had lived inside the chaos of small business operations: scattered spreadsheets, disconnected apps, missed deadlines, lost documents, unclear accountability, and pressure from clients, tax obligations, and payroll deadlines all hitting at once.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        <Card className="border-primary/10 bg-card shadow-xl hover:shadow-2xl transition-all">
+                                            <CardContent className="pt-6 space-y-4">
+                                                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
+                                                    <Target className="h-6 w-6" />
+                                                </div>
+                                                <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Built by operators</h3>
+                                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                                    The system was designed around the actual work being done by founders, accountants, consultants, and growing teams — not around a generic SaaS template that looks attractive in a pitch deck.
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="border-primary/10 bg-card shadow-xl hover:shadow-2xl transition-all">
+                                            <CardContent className="pt-6 space-y-4">
+                                                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
+                                                    <BrainCircuit className="h-6 w-6" />
+                                                </div>
+                                                <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Engineered to hold complexity</h3>
+                                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                                    Ogeemo was built to handle documents, projects, checks, receipts, financial activity, communication, and operational reporting in a single connected model — a level of integration that is difficult to achieve without strong domain knowledge.
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="border-primary/10 bg-card shadow-xl hover:shadow-2xl transition-all">
+                                            <CardContent className="pt-6 space-y-4">
+                                                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-2">
+                                                    <Crown className="h-6 w-6" />
+                                                </div>
+                                                <h3 className="font-bold text-xl uppercase tracking-tighter font-headline">Hard to replicate</h3>
+                                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                                    Most businesses do not have the time, domain depth, or operational discipline to build this kind of system from scratch. Ogeemo exists because the founders had to solve their own problems first, then bundle those lessons into a platform others could use.
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+
+                                    <div className="rounded-3xl border border-primary/10 bg-primary/5 p-8 md:p-10">
+                                        <p className="text-lg leading-relaxed text-foreground">
+                                            <span className="font-bold text-primary">What makes Ogeemo unique:</span> it is not a collection of plug-in tools. It is a connected operating system built around the reality that businesses are living, evolving organizations. That means the platform has to juggle auditability, client operations, task accountability, document flow, time, revenue, and decision-making in one coherent system. Building that under normal startup conditions is difficult because most teams optimize for speed, not durability. We optimized for both.
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-3xl border border-primary/10 bg-background p-8 md:p-10 shadow-xl">
+                                        <div className="flex items-center justify-center mb-6">
+                                            <Badge className="bg-primary/10 text-primary hover:bg-primary/15 border-transparent uppercase tracking-[0.2em] text-[10px] font-bold">
+                                                Technical view
+                                            </Badge>
+                                        </div>
+                                        <h3 className="text-3xl md:text-4xl font-bold font-headline text-primary text-center mb-6">How it was engineered.</h3>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                                            <div className="space-y-4">
+                                                <p className="text-lg leading-relaxed text-muted-foreground">
+                                                    From a technical perspective, Ogeemo was built as a unified platform architecture rather than a set of isolated SaaS features. The system combines operational data, workflow logic, document handling, task orchestration, and reporting into a common model so the same business context can flow across multiple experiences without duplication or reconciliation drift.
+                                                </p>
+                                                <p className="text-lg leading-relaxed text-muted-foreground">
+                                                    That means the product had to be designed around shared entities: clients, projects, documents, time, financial activity, compliance events, and project accountability. When those systems are fragmented, businesses lose trust in the information. When they are connected, the system starts behaving like a true operating layer instead of a collection of software widgets.
+                                                </p>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <p className="text-lg leading-relaxed text-muted-foreground">
+                                                    The real challenge was not feature count. It was system coherence. A normal product team can build one workflow well. They can also ship a CRM, an invoicing product, and a project tracker separately. What is difficult is building them so they share the same business reality in real time, with consistent permissions, audit trails, and operational logic.
+                                                </p>
+                                                <p className="text-lg leading-relaxed text-muted-foreground">
+                                                    Ogeemo was built to make that hard problem feel simple for the user. The engineering intent is to reduce operational entropy: less data silos, less manual re-entry, less ambiguity, and more accountability from one source of truth.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-10 border-t border-primary/10 pt-8">
+                                            <h4 className="text-xl font-bold font-headline text-foreground mb-4 uppercase tracking-tight">Technology stack</h4>
+                                            <p className="text-base leading-relaxed text-muted-foreground mb-6">
+                                                Ogeemo was implemented using a modern full-stack architecture designed for speed, clarity, and long-term maintainability. The system is primarily built with TypeScript, React, and Next.js on the front end, with Node.js and Firebase services powering the operational backend and deployment layer.
+                                            </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                                                <div className="rounded-2xl border border-primary/10 bg-card p-4">
+                                                    <p className="font-bold text-foreground mb-2">Frontend</p>
+                                                    <p>Next.js, React, TypeScript, Tailwind CSS</p>
+                                                </div>
+                                                <div className="rounded-2xl border border-primary/10 bg-card p-4">
+                                                    <p className="font-bold text-foreground mb-2">Backend / services</p>
+                                                    <p>Node.js, Firebase, Cloud Functions, server-side APIs</p>
+                                                </div>
+                                                <div className="rounded-2xl border border-primary/10 bg-card p-4">
+                                                    <p className="font-bold text-foreground mb-2">Data & storage</p>
+                                                    <p>Firestore, Firebase Storage, structured business data models</p>
+                                                </div>
+                                                <div className="rounded-2xl border border-primary/10 bg-card p-4">
+                                                    <p className="font-bold text-foreground mb-2">AI & integrations</p>
+                                                    <p>Google AI / Genkit workflows, API-driven integration patterns</p>
+                                                </div>
+                                            </div>
+                                            <p className="mt-8 text-lg leading-relaxed text-foreground">
+                                                <span className="font-bold text-primary">The reason this matters:</span> we did not build Ogeemo to be another collection of software features. We built it because the real work of business demands a system that understands context, accountability, and trust. The architecture exists to reduce operational chaos, not add another layer of complexity.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="py-24 text-foreground">
                                 <div className="container px-4 max-w-5xl mx-auto space-y-16">
                                     <div className="text-center space-y-4">
                                         <h2 className="text-3xl md:text-5xl font-bold font-headline text-foreground uppercase">The Ogeemo Difference</h2>

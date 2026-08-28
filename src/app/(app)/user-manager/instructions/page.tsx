@@ -99,6 +99,30 @@ export default function UserManagerInstructionsPage() {
                                 <AccordionTrigger>
                                     <div className="flex items-center gap-3">
                                         <Users className="h-5 w-5 text-primary"/>
+                                        <span className="font-semibold">Custom App Selection for Team Members</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
+                                        <p>Administrators can customize which sidebar apps are visible to each user, even when they are in the same company tenant. This is useful when a teammate should only see certain work areas, such as accounting, reports, or team administration.</p>
+                                        <ol>
+                                            <li>Open the <strong>User Manager</strong> page.</li>
+                                            <li>Select the user you want to manage.</li>
+                                            <li>Choose <strong>Edit User</strong> or <strong>Add User</strong> to open the user form.</li>
+                                            <li>In the form, locate the <strong>Sidebar Access</strong> section.</li>
+                                            <li>Select <strong>Custom app access (checkbox list)</strong>.</li>
+                                            <li>Use the checkbox list to turn apps on or off for that user.</li>
+                                            <li>Save the change.</li>
+                                        </ol>
+                                        <p>By default, the full list of available app sections is selected. If you uncheck an app, that app disappears from that user’s left sidebar and they no longer see it in their workspace. This feature should be used to tailor each user’s experience without changing their company membership or role assignment.</p>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-3">
+                                <AccordionTrigger>
+                                    <div className="flex items-center gap-3">
+                                        <Users className="h-5 w-5 text-primary"/>
                                         <span className="font-semibold">Levels of Authority (Roles)</span>
                                     </div>
                                 </AccordionTrigger>
@@ -114,7 +138,7 @@ export default function UserManagerInstructionsPage() {
                                 </AccordionContent>
                             </AccordionItem>
 
-                            <AccordionItem value="item-3" className="border-b-0">
+                            <AccordionItem value="item-4" className="border-b-0">
                                 <AccordionTrigger>
                                     <div className="flex items-center gap-3">
                                         <Database className="h-5 w-5 text-primary"/>

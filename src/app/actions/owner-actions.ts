@@ -13,10 +13,28 @@ export interface TenantSummary {
     ownerUid: string | null;
     ownerEmail: string | null;
     ownerName: string | null;
-    createdAt: any;
+    createdAt: string | null;
     status: 'active' | 'suspended';
     userCount: number;
     isMasterTenant: boolean;
+}
+
+function serializeFirestoreDate(value: any): string | null {
+    if (!value) return null;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return new Date(value).toISOString();
+    if (typeof value.toDate === 'function') return value.toDate().toISOString();
+    if (typeof value.seconds === 'number') {
+        const ms = (value.seconds * 1000) + Math.floor((value.nanoseconds ?? 0) / 1_000_000);
+        return new Date(ms).toISOString();
+    }
+    return null;
+}
+
+function getDateMs(value: string | null): number {
+    if (!value) return 0;
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export interface OwnerDashboardStats {
@@ -74,7 +92,7 @@ export async function getOwnerDashboardStats(): Promise<OwnerDashboardStats> {
             id: docSnap.id,
             name: data.name as string,
             ownerUid: (data.ownerUid as string | null) ?? null,
-            createdAt: data.createdAt ?? null,
+            createdAt: serializeFirestoreDate(data.createdAt),
             status: (data.status as 'active' | 'suspended') ?? 'active',
             isMasterTenant: data.isMasterTenant === true,
         };
@@ -165,19 +183,22 @@ export async function listTenantsDetailed(): Promise<TenantSummary[]> {
     const adminAuth = getAdminAuth();
     if (!adminDb || !adminAuth) throw new Error('Firebase Admin SDK is not initialized.');
 
-    // 1. Fetch all non-master organizations
-    const orgSnapshot = await adminDb.collection('organizations').where('isMasterTenant', '==', false).get();
-    const orgs = orgSnapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-            id: docSnap.id,
-            name: data.name as string,
-            ownerUid: (data.ownerUid as string | null) ?? null,
-            createdAt: data.createdAt ?? null,
-            status: (data.status as 'active' | 'suspended') ?? 'active',
-            isMasterTenant: false,
-        };
-    });
+    // 1. Fetch all organizations and filter client-side so older docs without
+    //    an explicit isMasterTenant value are still included as subscriber tenants.
+    const orgSnapshot = await adminDb.collection('organizations').get();
+    const orgs = orgSnapshot.docs
+        .filter((docSnap) => docSnap.data()?.isMasterTenant !== true)
+        .map((docSnap) => {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                name: data.name as string,
+                ownerUid: (data.ownerUid as string | null) ?? null,
+                createdAt: serializeFirestoreDate(data.createdAt),
+                status: (data.status as 'active' | 'suspended') ?? 'active',
+                isMasterTenant: false,
+            };
+        });
 
     // 2. Fetch all users to compute counts per org
     const userSnapshot = await adminDb.collection('users').get();
@@ -223,11 +244,7 @@ export async function listTenantsDetailed(): Promise<TenantSummary[]> {
             userCount: usersByOrg[org.id] || 0,
             isMasterTenant: false,
         }))
-        .sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() ?? 0;
-            const bTime = b.createdAt?.toMillis?.() ?? 0;
-            return bTime - aTime;
-        });
+        .sort((a, b) => getDateMs(b.createdAt) - getDateMs(a.createdAt));
 }
 
 /**

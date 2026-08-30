@@ -5,8 +5,8 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 dotenv.config({ path: ".env.local" });
 
-const MASTER_TENANT_NAME = "Ogeemo";
-const MASTER_TENANT_ORG_ID = "ogeemo-master";
+const MASTER_TENANT_NAME = process.env.MASTER_TENANT_NAME ?? "Ogeemo";
+const MASTER_TENANT_ORG_ID = process.env.MASTER_TENANT_ORG_ID ?? "ogeemo-master";
 
 async function main() {
     const email = process.env.SEED_SUPER_ADMIN_EMAIL;

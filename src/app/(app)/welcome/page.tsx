@@ -90,7 +90,7 @@ export default function WelcomePage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Workspace Selection</p>
-              <h2 className="mt-2 text-2xl font-bold font-headline text-primary">Choose which tenant to open</h2>
+              <h2 className="mt-2 text-2xl font-bold font-headline text-primary">Choose which workspace to open</h2>
             </div>
             <Building2 className="h-8 w-8 text-primary" />
           </div>

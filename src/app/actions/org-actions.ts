@@ -184,12 +184,13 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
 
     const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
     const requestingOrgId = decodedToken.orgId as string;
+    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
 
-    if (!requestingAccessLevel || !requestingOrgId) {
+    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
         throw new Error("Unauthorized: Missing custom claims.");
     }
 
-    if (requestingOrgId !== data.orgId) {
+    if (!isMasterTenantAdmin && requestingOrgId !== data.orgId) {
         throw new Error("Unauthorized: Cross-tenant invitation attempted.");
     }
 
@@ -290,8 +291,9 @@ export async function updateUserAccess(data: { targetUid: string; newRole: Acces
 
     const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
     const requestingOrgId = decodedToken.orgId as string;
+    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
 
-    if (!requestingAccessLevel || !requestingOrgId) {
+    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
         throw new Error('Unauthorized: Missing custom claims.');
     }
 
@@ -303,7 +305,7 @@ export async function updateUserAccess(data: { targetUid: string; newRole: Acces
     const targetOrgId = userSnap.data()?.orgId as string | undefined;
     const currentTargetRole = userSnap.data()?.accessLevel as AccessLevel | undefined;
 
-    if (!targetOrgId || targetOrgId !== requestingOrgId) {
+    if (!targetOrgId || (!isMasterTenantAdmin && targetOrgId !== requestingOrgId)) {
         throw new Error('Unauthorized: Cross-tenant access change attempted.');
     }
     if (data.targetUid === decodedToken.uid) {
@@ -373,8 +375,9 @@ export async function removeUser(targetUid: string) {
 
     const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
     const requestingOrgId = decodedToken.orgId as string;
+    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
 
-    if (!requestingAccessLevel || !requestingOrgId) {
+    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
         throw new Error('Unauthorized: Missing custom claims.');
     }
     if (targetUid === decodedToken.uid) {
@@ -388,7 +391,7 @@ export async function removeUser(targetUid: string) {
     }
     const targetData = userSnap.data() || {};
 
-    if (targetData.orgId !== requestingOrgId) {
+    if (!isMasterTenantAdmin && targetData.orgId !== requestingOrgId) {
         throw new Error('Unauthorized: Cross-tenant removal attempted.');
     }
     if (!canManageTargetRole(requestingAccessLevel, targetData.accessLevel as AccessLevel)) {
@@ -441,6 +444,9 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             const orgRef = adminDb.collection('organizations').doc();
             const orgId = orgRef.id;
             const batch = adminDb.batch();
+            const userRef = adminDb.collection('users').doc(existingUser.uid);
+            const userSnap = await userRef.get();
+
             batch.set(orgRef, {
                 id: orgId,
                 name: data.companyName,
@@ -448,14 +454,32 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
                 ownerUid: existingUser.uid,
                 isMasterTenant: false,
             });
-            batch.set(adminDb.collection('users').doc(existingUser.uid).collection('orgMemberships').doc(orgId), {
+
+            batch.set(userRef, {
+                id: existingUser.uid,
+                email: existingUser.email || data.email,
+                displayName: existingUser.displayName || data.name || '',
+                orgId,
+                accessLevel: 'super_admin',
+                mentorshipRole: 'Apprentice',
+                updatedAt: FieldValue.serverTimestamp(),
+                ...(userSnap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+            }, { merge: true });
+
+            batch.set(userRef.collection('orgMemberships').doc(orgId), {
                 orgId,
                 companyName: data.companyName,
                 accessLevel: 'super_admin',
                 isMasterTenant: false,
                 createdAt: FieldValue.serverTimestamp(),
             });
+
             await batch.commit();
+            await adminAuth.setCustomUserClaims(existingUser.uid, {
+                orgId,
+                accessLevel: 'super_admin',
+                isMasterTenant: false,
+            });
             return { success: true, orgId, uid: existingUser.uid, reusedExistingAccount: true };
         } catch (error: any) {
             throw new Error(error.message || 'Failed to create tenant');
@@ -559,11 +583,18 @@ export async function listMyOrgMemberships(): Promise<Array<{ orgId: string; com
     const memberships = new Map<string, { orgId: string; companyName: string; accessLevel: AccessLevel; isMasterTenant: boolean }>();
     for (const doc of membershipsSnap.docs) {
         const d = doc.data();
-        memberships.set(doc.id, {
-            orgId: doc.id,
-            companyName: (d.companyName as string) || 'Unknown',
+        const orgId = doc.id;
+
+        const orgSnap = await adminDb.collection('organizations').doc(orgId).get();
+        if (!orgSnap.exists) {
+            continue;
+        }
+
+        memberships.set(orgId, {
+            orgId,
+            companyName: (d.companyName as string) || (orgSnap.data()?.name as string) || 'Unknown',
             accessLevel: d.accessLevel as AccessLevel,
-            isMasterTenant: d.isMasterTenant === true,
+            isMasterTenant: d.isMasterTenant === true || orgSnap.data()?.isMasterTenant === true,
         });
     }
 
@@ -629,9 +660,11 @@ export async function listCompanies(): Promise<Array<{ id: string; name: string;
     const adminDb = getAdminDb();
     if (!adminDb) throw new Error('Firebase Admin SDK is not initialized.');
 
-    const snapshot = await adminDb.collection('organizations').where('isMasterTenant', '==', false).get();
+    const snapshot = await adminDb.collection('organizations').get();
 
-    const companies = await Promise.all(snapshot.docs.map(async (docSnap) => {
+    const companies = await Promise.all(snapshot.docs
+        .filter((docSnap) => docSnap.data()?.isMasterTenant !== true)
+        .map(async (docSnap) => {
         const data = docSnap.data();
         const ownerUid = (data.ownerUid as string | null) ?? null;
 
@@ -758,8 +791,31 @@ export async function deleteTenant(orgId: string): Promise<void> {
     if (!orgSnap.exists) throw new Error('Organization not found.');
     if (orgSnap.data()?.isMasterTenant === true) throw new Error('Cannot delete the master tenant.');
 
-    // Disable all users belonging to this org
+    const batch = adminDb.batch();
+
+    // Remove any stale orgMembership links that still point to this company.
+    // Use per-user membership lookups instead of a collectionGroup query because the latter
+    // requires a Firestore composite index and can fail with failed_precondition.
     const userSnapshot = await adminDb.collection('users').where('orgId', '==', orgId).get();
+    const affectedUserIds = new Set<string>();
+
+    for (const docSnap of userSnapshot.docs) {
+        const userId = docSnap.id;
+        affectedUserIds.add(userId);
+
+        const membershipSnapshot = await adminDb
+            .collection('users')
+            .doc(userId)
+            .collection('orgMemberships')
+            .where('orgId', '==', orgId)
+            .get();
+
+        membershipSnapshot.docs.forEach((membershipDoc) => {
+            batch.delete(membershipDoc.ref);
+        });
+    }
+
+    // Disable all users belonging to this org
     const disablePromises = userSnapshot.docs.map(async (docSnap) => {
         const uid = docSnap.id;
         try {
@@ -770,11 +826,34 @@ export async function deleteTenant(orgId: string): Promise<void> {
     });
     await Promise.all(disablePromises);
 
-    // Delete user profile documents and the org
-    const batch = adminDb.batch();
+    // Clear stale active-org claims tied to this tenant, then delete profile docs and the org.
+    for (const uid of affectedUserIds) {
+        try {
+            const userRecord = await adminAuth.getUser(uid);
+            const claims = userRecord.customClaims ?? {};
+            if (claims.orgId === orgId) {
+                const nextClaims = { ...claims };
+                delete nextClaims.orgId;
+                delete nextClaims.accessLevel;
+                delete nextClaims.isMasterTenant;
+                await adminAuth.setCustomUserClaims(uid, nextClaims);
+            }
+        } catch (error: any) {
+            console.error(`Failed to clear stale claims for ${uid}:`, error);
+        }
+    }
+
     userSnapshot.docs.forEach((docSnap) => {
+        const profile = docSnap.data();
+        if (profile?.orgId === orgId) {
+            batch.update(docSnap.ref, {
+                orgId: null,
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+        }
         batch.delete(docSnap.ref);
     });
+
     batch.delete(orgRef);
     await batch.commit();
 }

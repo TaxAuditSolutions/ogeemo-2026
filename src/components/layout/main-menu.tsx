@@ -33,10 +33,11 @@ const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenan
     Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
 };
 
-const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean }) => (
+const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean, accessLevel: string | null }) => (
     <Accordion type="multiple" defaultValue={['Ogeemo Owner']} className="w-full space-y-1">
         {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
-            if (groupData.masterTenantOnly && !isMasterTenant) return null;
+            const ownerConsoleVisible = groupData.masterTenantOnly && (isMasterTenant || accessLevel === 'super_admin');
+            if (groupData.masterTenantOnly && !ownerConsoleVisible) return null;
 
             const CategoryIcon = groupData.icon;
             const groupItems = groupData.items
@@ -45,7 +46,7 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant }: { pathname:
 
             const filteredItems = groupItems.filter(item => {
                 if (item.adminOnly && !isAdmin) return false;
-                if (item.masterTenantOnly && !isMasterTenant) return false;
+                if (item.masterTenantOnly && !(isMasterTenant || accessLevel === 'super_admin')) return false;
                 return true;
             });
 
@@ -328,7 +329,7 @@ export function MainMenu() {
                 ) : view === 'dashboard' ? (
                     <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
                 ) : (
-                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} />
+                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} accessLevel={accessLevel} />
                 )}
             </div>
 

@@ -34,7 +34,7 @@ export default function TenantManagerInstructionsPage() {
                             This page is restricted to the Ogeemo master tenant. Only a user with
                             <span className="font-semibold text-foreground"> super_admin access </span>
                             and <span className="font-semibold text-foreground"> isMasterTenant = true </span>
-                            can create, view, edit, suspend, or delete tenant organizations.
+                            can create, view, edit, pause, or delete tenant organizations.
                         </p>
                     </div>
                 </CardContent>
@@ -106,7 +106,7 @@ export default function TenantManagerInstructionsPage() {
                     <div className="flex gap-3">
                         <UserPlus className="mt-0.5 h-4 w-4 text-primary shrink-0" />
                         <p>
-                            You can review the tenant list, open a tenant for editing, suspend or reactivate it, and delete it when appropriate.
+                            You can review the tenant list, open a tenant for editing, pause or reactivate it, and delete it when appropriate.
                         </p>
                     </div>
                     <div className="flex gap-3">

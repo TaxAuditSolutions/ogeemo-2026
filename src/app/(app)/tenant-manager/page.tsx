@@ -174,11 +174,11 @@ export default function TenantManagerPage() {
 
     const handleToggleStatus = async (company: Company) => {
         const newStatus = company.status === 'active' ? 'suspended' : 'active';
-        const action = newStatus === 'suspended' ? 'suspend' : 'activate';
+        const action = newStatus === 'suspended' ? 'pause' : 'activate';
         setActioningId(company.id);
         try {
             await updateTenantStatus(company.id, newStatus);
-            toast({ title: `Tenant ${action}d`, description: `"${company.name}" has been ${action}ed.` });
+            toast({ title: `Tenant ${action}d`, description: `"${company.name}" has been ${action}d.` });
             setCompanies((prev) =>
                 prev.map((c) => (c.id === company.id ? { ...c, status: newStatus } : c))
             );
@@ -319,8 +319,10 @@ export default function TenantManagerPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Companies</CardTitle>
-                    <CardDescription>All tenants provisioned outside the master tenant.</CardDescription>
+                    <CardTitle>All Subscriber Tenants</CardTitle>
+                    <CardDescription>
+                        Full subscriber roster controlled by the master tenant. This list is separate from your personal workspace switcher.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {isLoadingCompanies ? (
@@ -349,7 +351,7 @@ export default function TenantManagerPage() {
                                         <TableCell className="text-muted-foreground">{company.adminEmail || '—'}</TableCell>
                                         <TableCell className="text-center">
                                             <Badge variant={company.status === 'active' ? 'default' : 'destructive'}>
-                                                {company.status}
+                                                {company.status === 'active' ? 'Active' : 'Paused'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -381,7 +383,7 @@ export default function TenantManagerPage() {
                                                         {company.status === 'active' ? (
                                                             <>
                                                                 <PowerOff className="mr-2 h-4 w-4" />
-                                                                Suspend
+                                                                Pause
                                                             </>
                                                         ) : (
                                                             <>

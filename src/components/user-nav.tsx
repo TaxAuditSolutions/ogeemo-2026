@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
-import { LogOut, User as UserIcon, Lock, ShieldAlert, ShieldCheck, Shield, Award, Building2, Check } from "lucide-react";
+import { LogOut, User as UserIcon, Lock, ShieldAlert, ShieldCheck, Shield, Award, Building2, Check, Crown } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface OrgMembership {
 }
 
 export function UserNav() {
-  const { user, logout } = useAuth();
+  const { user, logout, isMasterTenant, accessLevel } = useAuth();
   const { toast } = useToast();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [role, setRole] = useState<MentorshipRole | null>(null);
@@ -150,11 +150,11 @@ export function UserNav() {
                 </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {memberships.length > 1 && (
+            {memberships.length > 0 && (
                 <>
                     <DropdownMenuGroup>
                         <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                            Switch Organization
+                            {isMasterTenant ? 'My Workspaces' : 'Switch Organization'}
                         </DropdownMenuLabel>
                         {memberships.map((m) => (
                             <DropdownMenuItem
@@ -167,6 +167,28 @@ export function UserNav() {
                                 {m.isActive && <Check className="ml-2 h-4 w-4 text-primary" />}
                             </DropdownMenuItem>
                         ))}
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                </>
+            )}
+            {(isMasterTenant || accessLevel === 'super_admin') && (
+                <>
+                    <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                            Platform Control
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                            <Link href="/owner">
+                                <Crown className="mr-2 h-4 w-4" />
+                                <span>Ogeemo Owner Console</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/tenant-manager">
+                                <Building2 className="mr-2 h-4 w-4" />
+                                <span>Tenant Manager</span>
+                            </Link>
+                        </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                 </>

@@ -126,9 +126,39 @@ const docToUserProfile = (doc: any): UserProfile => ({ id: doc.id, ...doc.data()
 export async function getUsers(orgId?: string): Promise<UserProfile[]> {
     const db = getDb();
     const resolvedOrgId = orgId || await getCurrentOrgId();
+
     const q = query(collection(db, PROFILES_COLLECTION), where('orgId', '==', resolvedOrgId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToUserProfile);
+    const directMatches = snapshot.docs.map(docToUserProfile);
+
+    if (directMatches.length > 0) {
+        return directMatches;
+    }
+
+    const allUsersSnapshot = await getDocs(collection(db, PROFILES_COLLECTION));
+    const matches = new Map<string, UserProfile>();
+
+    for (const userDoc of allUsersSnapshot.docs) {
+        const data = userDoc.data();
+        const userProfile = docToUserProfile(userDoc);
+
+        if (data?.orgId === resolvedOrgId) {
+            matches.set(userProfile.id, userProfile);
+            continue;
+        }
+
+        const membershipRef = doc(db, PROFILES_COLLECTION, userDoc.id, 'orgMemberships', resolvedOrgId);
+        const membershipSnap = await getDoc(membershipRef);
+        if (membershipSnap.exists()) {
+            matches.set(userProfile.id, {
+                ...userProfile,
+                orgId: resolvedOrgId,
+                accessLevel: membershipSnap.data()?.accessLevel || userProfile.accessLevel || 'viewer',
+            });
+        }
+    }
+
+    return Array.from(matches.values());
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {

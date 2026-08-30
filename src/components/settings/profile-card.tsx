@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/context/auth-context";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChangePasswordDialog } from "@/components/data/change-password-dialog";
 import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
 const profileSchema = z.object({
@@ -35,6 +37,7 @@ interface ProfileCardProps {
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profile, canEditCompanyName = false }) => {
   const { user } = useAuth();
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
@@ -71,6 +74,18 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
   };
 
   const accessLevel = profile?.accessLevel;
+  const profileUser = profile ?? (user ? {
+    id: user.uid,
+    displayName: user.displayName || 'User',
+    email: user.email || '',
+    orgId: '',
+    accessLevel: accessLevel || 'viewer',
+    website: '',
+    businessPhone: '',
+    cellPhone: '',
+    bestPhone: 'cell',
+    employeeNumber: '',
+  } : null);
 
   if (isLoading || !user) {
     return (
@@ -116,6 +131,18 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
           </div>
         </div>
 
+        <div className="rounded-md border bg-muted/30 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Password</p>
+              <p className="text-sm font-medium">••••••••</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsPasswordDialogOpen(true)}>
+              Change Password
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input placeholder="Your Company LLC" {...field} readOnly={!canEditCompanyName} className={!canEditCompanyName ? "bg-muted/50" : undefined} /></FormControl><FormMessage /></FormItem>)} />
           <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Original ID / Employee #</FormLabel><FormControl><Input placeholder="e.g., U-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -152,6 +179,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
           </FormItem>
         )} />
       </CardContent>
+
+      <ChangePasswordDialog
+        isOpen={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+        user={profileUser}
+        onPasswordChanged={() => {}}
+      />
     </Card>
   );
 };

@@ -103,8 +103,14 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Users can read their own profile, or any profile within their org
-      allow read: if isSignedIn() && (request.auth.uid == userId || canReadOrgDoc());
+      // Users can read their own profile, or any profile within their org.
+      // Master-tenant super admins must also be able to read subscriber tenant profiles
+      // to manage memberships from the Owner Console.
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        canReadOrgDoc() ||
+        (isMasterTenant() && isSuperAdmin())
+      );
       allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId) && canManageTargetRole(request.resource.data.accessLevel);
       // Self-updates may never change accessLevel (prevents client-side role self-escalation).
       allow update: if isSignedIn() && (
@@ -112,6 +118,21 @@ service cloud.firestore {
         (isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel) && canManageTargetRole(request.resource.data.accessLevel))
       );
       allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel);
+    }
+
+    match /users/{userId}/orgMemberships/{membershipId} {
+      // Master-tenant admins need cross-tenant visibility to render the subscriber directory
+      // and tenant membership management views.
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        isRightTenant(resource.data.orgId) ||
+        (isMasterTenant() && isSuperAdmin())
+      );
+      allow write: if isSignedIn() && (
+        request.auth.uid == userId ||
+        isRightTenant(resource.data.orgId) && isOrgAdmin() ||
+        (isMasterTenant() && isSuperAdmin())
+      );
     }
 
     // ---------------------------------------------------------

@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         const question = (body?.question ?? body?.message ?? "").toString().trim();
         const history = Array.isArray(body?.history) ? body.history : [];
         const sessionId = typeof body?.sessionId === 'string' ? body.sessionId : undefined;
+        const runtimeContext = body?.runtimeContext && typeof body.runtimeContext === 'object' ? body.runtimeContext : undefined;
 
         if (!question) {
             return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
@@ -203,6 +204,14 @@ export async function POST(request: NextRequest) {
                 message: question,
                 history,
                 clientUserId: sessionId || 'ogeemo-guest',
+                runtimeContext: {
+                    userId: runtimeContext?.userId || sessionId,
+                    orgId: runtimeContext?.orgId,
+                    accessLevel: runtimeContext?.accessLevel,
+                    isMasterTenant: runtimeContext?.isMasterTenant,
+                    currentPath: runtimeContext?.currentPath || new URL(request.url).pathname,
+                    activeOrgName: runtimeContext?.activeOrgName,
+                },
             });
 
             const genkitAnswer = normalizeAnswerText(genkitResult?.reply);
@@ -242,6 +251,14 @@ export async function POST(request: NextRequest) {
                 message: question,
                 history,
                 clientUserId: sessionId || 'ogeemo-guest',
+                runtimeContext: {
+                    userId: runtimeContext?.userId || sessionId,
+                    orgId: runtimeContext?.orgId,
+                    accessLevel: runtimeContext?.accessLevel,
+                    isMasterTenant: runtimeContext?.isMasterTenant,
+                    currentPath: runtimeContext?.currentPath || new URL(request.url).pathname,
+                    activeOrgName: runtimeContext?.activeOrgName,
+                },
             });
 
             const generalAnswer = normalizeAnswerText(generalResult?.reply);

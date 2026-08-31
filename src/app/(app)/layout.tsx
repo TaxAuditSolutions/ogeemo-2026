@@ -10,25 +10,47 @@ import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
 import { Button } from '@/components/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Bot, Search, Settings, BrainCircuit, Building2 } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, BrainCircuit, Building2, Sparkles } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
 import { useAuth } from '@/context/auth-context';
-import { listMyOrgMemberships } from '@/app/actions/org-actions';
+import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
+
+const CoPilotMark = ({ className = 'h-6 w-6' }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" fill="currentColor" opacity="0.12" />
+    <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+    <path d="M22 20H35V25H22V20Z" fill="currentColor" />
+    <path d="M22 29H35V34H22V29Z" fill="currentColor" />
+    <path d="M22 38H35V43H22V38Z" fill="currentColor" />
+    <path d="M38 20H46V43H38V20Z" fill="currentColor" opacity="0.92" />
+    <path d="M38 18L49 18L49 20L38 20V18Z" fill="currentColor" opacity="0.92" />
+  </svg>
+);
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, accessLevel, isMasterTenant } = useAuth();
   const [activeTenantName, setActiveTenantName] = useState<string>('');
+  const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
+
+  const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
 
   useEffect(() => {
     if (!user) {
       setActiveTenantName('');
+      setTenantOptions([]);
       return;
     }
 
@@ -40,10 +62,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const activeMembership = memberships.find((membership) => membership.isActive);
         if (isMounted) {
           setActiveTenantName(activeMembership?.companyName || '');
+          setTenantOptions(memberships);
         }
       } catch (error) {
         if (isMounted) {
           setActiveTenantName('');
+          setTenantOptions([]);
         }
       }
     }
@@ -54,6 +78,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       isMounted = false;
     };
   }, [user]);
+
+  const handleSwitchTenant = async (orgId: string) => {
+    if (!user || !orgId || tenantOptions.find((tenant) => tenant.orgId === orgId)?.isActive) return;
+
+    try {
+      await switchActiveOrg(orgId);
+      const idToken = await user.getIdToken(true);
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      window.location.href = '/welcome';
+    } catch (error) {
+      console.error('Header tenant switch failed:', error);
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -94,23 +135,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-primary shadow-sm hover:shadow-primary/20 hover:scale-105 transition-all border border-primary/20">
-                            <Link href="/ai-dispatch">
-                                <BrainCircuit className="h-5 w-5" />
+                          <Button asChild size="icon" className="h-11 w-11 rounded-full bg-card text-primary shadow-sm hover:shadow-primary/20 hover:scale-105 transition-all border border-primary/20 p-0">
+                            <Link href="/ai-dispatch" className="flex h-full w-full items-center justify-center">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
+                                  <CoPilotMark className="h-6 w-6" />
+                                </div>
                                 <span className="sr-only">Ogeemo AI</span>
                             </Link>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="font-headline font-bold uppercase text-[10px] tracking-widest">
-                          Ogeemo Dispatch
+                          Ogeemo Co-Pilot
                         </TooltipContent>
                       </Tooltip>
                       
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-muted-foreground shadow-sm hover:text-primary hover:shadow-primary/10 hover:scale-105 transition-all border border-muted/20">
-                            <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer">
-                                <Bot className="h-5 w-5" />
+                          <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-muted-foreground shadow-sm hover:text-primary hover:shadow-primary/10 hover:scale-105 transition-all border border-muted/20 p-0">
+                            <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="flex h-full w-full items-center justify-center">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md border border-muted/20 bg-muted/10">
+                                  <Sparkles className="h-4 w-4" />
+                                </div>
                                 <span className="sr-only">Google Gemini</span>
                             </a>
                           </Button>
@@ -140,12 +185,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Tooltip>
                   </TooltipProvider>
 
-                  {activeTenantName && (
+                  {tenantOptions.length > 1 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px] hover:bg-white/50">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{activeTenantName || 'Workspace'}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64">
+                        {tenantOptions.map((tenant) => (
+                          <DropdownMenuItem
+                            key={tenant.orgId}
+                            onSelect={() => handleSwitchTenant(tenant.orgId)}
+                            disabled={tenant.isActive}
+                            className={tenant.isActive ? 'font-semibold text-primary' : ''}
+                          >
+                            <span className="flex-1 truncate">{tenant.companyName}</span>
+                            {tenant.isActive && <span className="ml-2 text-[10px] uppercase tracking-[0.2em]">Active</span>}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : activeTenantName ? (
                     <div className="hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px]">
                       <Building2 className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{activeTenantName}</span>
                     </div>
-                  )}
+                  ) : null}
+
+                  <div className="hidden sm:flex items-center rounded-full border border-black/10 bg-white/35 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm">
+                    {roleLabel}
+                  </div>
 
                   <UserNav />
                 </div>

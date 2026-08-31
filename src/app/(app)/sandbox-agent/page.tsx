@@ -51,7 +51,7 @@ export default function SandboxAgentPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold">Ogeemo Sandbox Agent</h1>
-          <p className="text-sm text-muted-foreground">Test the AI Dispatch feature knowledge base</p>
+          <p className="text-sm text-muted-foreground">Test the Ogeemo Co-Pilot feature knowledge base</p>
         </div>
       </div>
 

@@ -85,6 +85,24 @@ import { Users as UsersIcon } from 'lucide-react';
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
+type TimerWindow = Window & {
+    __ogeemoTimerState?: StoredTimerState | null;
+};
+
+const broadcastTimerState = (nextState: StoredTimerState | null) => {
+    const timerWindow = window as TimerWindow;
+
+    if (nextState) {
+        localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(nextState));
+        timerWindow.__ogeemoTimerState = nextState;
+    } else {
+        localStorage.removeItem(TIMER_STORAGE_KEY);
+        timerWindow.__ogeemoTimerState = null;
+    }
+
+    window.dispatchEvent(new CustomEvent('timer-state-changed', { detail: nextState }));
+};
+
 export function TimeManagerView() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -221,8 +239,7 @@ export function TimeManagerView() {
                 pauseTime: null,
                 totalPausedDuration: 0,
             };
-            localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(storedState));
-            window.dispatchEvent(new Event('storage'));
+            broadcastTimerState(storedState);
         }
     }, [eventToEdit, createAndSaveNewEvent]);
     
@@ -232,8 +249,7 @@ export function TimeManagerView() {
             const savedState: StoredTimerState = JSON.parse(savedStateRaw);
             if (savedState.isActive && !savedState.isPaused) {
                 const newState = { ...savedState, isPaused: true, pauseTime: Date.now() };
-                localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(newState));
-                window.dispatchEvent(new Event('storage'));
+                broadcastTimerState(newState);
             }
         }
     }, []);
@@ -250,8 +266,7 @@ export function TimeManagerView() {
                     pauseTime: null,
                     totalPausedDuration: savedState.totalPausedDuration + pausedDuration,
                 };
-                localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(newState));
-                window.dispatchEvent(new Event('storage'));
+                broadcastTimerState(newState);
             }
         }
     }, []);
@@ -320,8 +335,7 @@ export function TimeManagerView() {
         setEndDate(undefined); setEndHour(undefined); setEndMinute(undefined);
         setIsAllDay(false);
         setSessions([]); setEventToEdit(null);
-        localStorage.removeItem(TIMER_STORAGE_KEY);
-        window.dispatchEvent(new Event('storage'));
+        broadcastTimerState(null);
         router.replace('/master-mind');
         setTimeout(() => subjectInputRef.current?.focus(), 100);
     };
@@ -340,8 +354,7 @@ export function TimeManagerView() {
         };
         setSessions(prev => [...prev, newSession]);
         setCurrentSessionNotes('');
-        localStorage.removeItem(TIMER_STORAGE_KEY);
-        window.dispatchEvent(new Event('storage'));
+        broadcastTimerState(null);
         await handleSaveEvent(false);
         toast({ title: 'Session Logged' });
     };

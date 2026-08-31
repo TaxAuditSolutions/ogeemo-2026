@@ -21,6 +21,14 @@ const OgeemoAgentInputSchema = z.object({
   history: z.array(z.any()).optional(),
   clientUserId: z.string().optional(),
   localContext: z.any().optional(),
+  runtimeContext: z.object({
+    userId: z.string().optional(),
+    orgId: z.string().optional(),
+    accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer']).optional(),
+    isMasterTenant: z.boolean().optional(),
+    currentPath: z.string().optional(),
+    activeOrgName: z.string().optional(),
+  }).optional(),
 });
 export type OgeemoAgentInput = z.infer<typeof OgeemoAgentInputSchema>;
 
@@ -302,6 +310,12 @@ function getKnowledgeBase(): string {
 const systemPromptTemplate = `
 You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is to act as a proactive "Master Mind" for the user's business operations.
 
+**Runtime Operating Context:**
+{{{runtimeContext}}}
+
+**Page Guidance:**
+{{{pageGuidance}}}
+
 **Capabilities:**
 1. **Answer Questions**: Explain BKS, the Command Centre, or Action Chips using the knowledge base.
 2. **Execute Commands**: Use tools to manage contacts, tasks, or sync receipts.
@@ -315,6 +329,8 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 5. **No Hallucinations**: If no tool exists for the requested action, state clearly that you cannot directly execute it yet. If the action is available in the UI, point the user to the relevant screen or menu; otherwise explain the nearest supported path and ask for the target app or screen if needed.
 6. **Interaction Style**: Always respond in clear Markdown.
 7. **Intelligence Launcher**: If the user searches for a name (e.g., via searchGlobal or localContext), you MUST append the following tag to the very end of your response for each match: [[LAUNCH_REGISTRY:contact-id]]. Keep your text response very brief (e.g., "I found 2 matches for Dan:"). Let the Launcher Chips handle all the details. For "Dan" use [[LAUNCH_REGISTRY:dan-admin-id]], for "Julie" use [[LAUNCH_REGISTRY:julie-support-id]], and for others use their real ID.
+8. **Operating Awareness**: Stay within the user's active tenant and role. Do not claim access you do not have. If the user asks for a cross-tenant or restricted action, explain the limitation and suggest the correct tenant or route.
+9. **Screen-Scoped Advice**: Use the Page Guidance above to tailor your answer to the current screen. Do not suggest a tenant-management or super-admin action from a regular user page unless the user explicitly has the proper access and asks for it.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -349,6 +365,20 @@ function buildScrubbedMessages(history: any[] | undefined, message: string): any
   return scrubbedMessages;
 }
 
+function getPageContextGuidance(currentPath?: string): string {
+  const path = (currentPath || '/ai-dispatch').toLowerCase();
+  const map: Record<string, string> = {
+    '/ai-dispatch': 'This page is Ogeemo Co-Pilot. Prioritize concise operational help, command routing, search, and immediate follow-up actions.',
+    '/owner': 'This page is the Owner Console. Only the master tenant or super admin should discuss subscriber management, tenant creation, tenant pause, or tenant deletion.',
+    '/tenant-manager': 'This page is Tenant Management. Keep answers focused on active-tenant administration, membership, and tenant lifecycle actions within the current tenant.',
+    '/settings': 'This page is Settings. Keep advice focused on profile, organization, and personal account settings. Do not claim access to system-wide admin controls unless the user is clearly a super admin.',
+    '/welcome': 'This page is the tenant welcome screen. Use it for onboarding help, tenant switching, and basic account orientation.',
+    '/login': 'This page is the authentication screen. Answer login, account access, and credential issues only in the context of sign-in and access problems.',
+  };
+
+  return map[path] || 'This page is a general Ogeemo workspace page. Keep answers scoped to the user\'s current tenant and their role-based permissions.';
+}
+
 const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
@@ -356,11 +386,24 @@ const ogeemoAgentFlow = ai.defineFlow(
     outputSchema: z.object({ reply: z.string() }),
   },
   async (input) => {
-    const { userId, message, history, localContext } = input;
+    const { userId, message, history, localContext, runtimeContext } = input;
     const scrubbedMessages = buildScrubbedMessages(history, message);
 
+    const runtimeSummary = runtimeContext ? [
+      `userId: ${runtimeContext.userId || userId || 'unknown'}`,
+      `orgId: ${runtimeContext.orgId || 'unknown'}`,
+      `accessLevel: ${runtimeContext.accessLevel || 'unknown'}`,
+      `isMasterTenant: ${runtimeContext.isMasterTenant ? 'true' : 'false'}`,
+      `currentPath: ${runtimeContext.currentPath || '/ai-dispatch'}`,
+      `activeOrgName: ${runtimeContext.activeOrgName || 'unknown'}`,
+    ].join('\n') : `userId: ${userId || 'unknown'}\norgId: unknown\naccessLevel: unknown\nisMasterTenant: false\ncurrentPath: /ai-dispatch\nactiveOrgName: unknown`;
+
+    const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/ai-dispatch');
     const knowledgeBase = getKnowledgeBase();
-    const finalSystemPrompt = systemPromptTemplate.replace('{{{knowledgeBase}}}', knowledgeBase);
+    const finalSystemPrompt = systemPromptTemplate
+      .replace('{{{runtimeContext}}}', runtimeSummary)
+      .replace('{{{pageGuidance}}}', pageGuidance)
+      .replace('{{{knowledgeBase}}}', knowledgeBase);
 
     try {
       const result = await ai.generate({
@@ -422,14 +465,24 @@ const ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow(
   }
 );
 
-export async function ogeemoAgent(input: { message: string, history: any[], clientUserId: string, localContext?: any }): Promise<{ reply: string }> {
+export async function ogeemoAgent(input: { message: string, history: any[], clientUserId: string, localContext?: any, runtimeContext?: { userId?: string; orgId?: string; accessLevel?: 'super_admin' | 'org_admin' | 'editor' | 'viewer'; isMasterTenant?: boolean; currentPath?: string; activeOrgName?: string } }): Promise<{ reply: string }> {
   // The user identity is now passed directly from the API endpoint to ensure stability.
   const userId = input.clientUserId || 'ogeemo-guest';
   const localContext = input.localContext || null;
-  return ogeemoAgentFlow({ ...input, userId, localContext });
+  const runtimeContext = input.runtimeContext || {
+    userId,
+    currentPath: '/ai-dispatch',
+    isMasterTenant: false,
+  };
+  return ogeemoAgentFlow({ ...input, userId, localContext, runtimeContext });
 }
 
-export async function ogeemoGeneralKnowledgeFallbackAgent(input: { message: string, history: any[], clientUserId: string }): Promise<{ reply: string }> {
+export async function ogeemoGeneralKnowledgeFallbackAgent(input: { message: string, history: any[], clientUserId: string, runtimeContext?: { userId?: string; orgId?: string; accessLevel?: 'super_admin' | 'org_admin' | 'editor' | 'viewer'; isMasterTenant?: boolean; currentPath?: string; activeOrgName?: string } }): Promise<{ reply: string }> {
   const userId = input.clientUserId || 'ogeemo-guest';
-  return ogeemoGeneralKnowledgeFallbackFlow({ ...input, userId });
+  const runtimeContext = input.runtimeContext || {
+    userId,
+    currentPath: '/ai-dispatch',
+    isMasterTenant: false,
+  };
+  return ogeemoGeneralKnowledgeFallbackFlow({ ...input, userId, runtimeContext });
 }

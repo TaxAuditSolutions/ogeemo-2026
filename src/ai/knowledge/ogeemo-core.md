@@ -1,4 +1,4 @@
-3. **AI Dispatch**: The primary natural language interface for executing platform commands and querying the knowledge base.
+3. **AI Co-Pilot**: The primary natural language interface for executing platform commands and querying the knowledge base.
 # Ogeemo Intelligence Core: Canonical Identity
 
 ## What Ogeemo Is
@@ -23,15 +23,15 @@ The Ogeemo Assistant is the conversational entry point into the platform. It ans
 Action Chips are atomic operational units used across the platform to trigger specific workflows.
 - **Ledger Chips**: Open income and expense ledger workflows.
 - **Task Chips**: Launch the Command Centre or task-related actions.
-- **AI Chips**: Trigger AI Dispatch and deeper assistant-driven analysis.
+- **AI Chips**: Trigger Ogeemo Co-Pilot and deeper assistant-driven analysis.
 
 ## Main Navigation Model
-Users generally move through Ogeemo from the left sidebar into major hubs such as the Financial Hub, Command Centre, AI Dispatch, Contacts, Documents, Reports, and other operational areas. The assistant should describe these as the canonical top-level areas rather than inventing new product labels.
+Users generally move through Ogeemo from the left sidebar into major hubs such as the Financial Hub, Command Centre, Ogeemo Co-Pilot, Contacts, Documents, Reports, and other operational areas. The assistant should describe these as the canonical top-level areas rather than inventing new product labels.
 
 ## Operational Modules
 1. **Financial Hub**: Manages ledgers, invoicing, bills, and payroll orchestration.
 2. **Command Centre**: A visual orchestration board for tasks, events, and reminders.
-3. **AI Dispatch**: The primary natural language interface for executing platform commands and querying the knowledge base.
+3. **Ogeemo Co-Pilot**: The primary natural language interface for executing platform commands and querying the knowledge base.
 
 ## Status Levels
 - **Apprentice**: A new member learning the platform's core protocols.

@@ -33,4 +33,29 @@ The platform provider has issued a sunset notice for **March 22, 2027**. Given t
 - **Fidelity**: Use this time to build the "Black Box of Evidence" to its highest standard.
 
 ---
+
+## 🔐 Firebase Custom Domain / Auth Setup for app.ogeemo.com
+
+The application will work locally with the default Firebase Auth domain, but the public custom URL requires Firebase Authentication to authorize the domain as well.
+
+### Required Firebase Console setup
+1. Open the Firebase project for Ogeemo.
+2. Go to Authentication > Settings > Authorized domains.
+3. Add the custom domains used by the app, including:
+   - `app.ogeemo.com`
+   - `ogeemo.com` if used for sign-in flows
+   - `localhost` for local development
+4. If the app uses a custom domain on App Hosting or another provider, confirm the DNS records are active and the domain is verified.
+5. In the app environment, set:
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=app.ogeemo.com`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID=ogeemo-2026`
+6. Redeploy the app after changing the environment variables or adding the new auth domain.
+
+### Why the custom URL failed before
+The app code itself was not the main blocker. Firebase Auth rejected sign-ins on the custom domain because the domain was not explicitly authorized in Firebase Authentication, so the app could load but credentials would not be accepted.
+
+### Safe runtime fallback
+The app now includes a default fallback auth domain so local and dev environments continue working even before the custom domain is fully configured.
+
+---
 *Page last updated Mar 25, 2026 1:04 AM EST*

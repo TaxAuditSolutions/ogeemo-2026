@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -30,6 +30,18 @@ import {
     FolderOpen,
     UserCircle
 } from 'lucide-react';
+
+const CoPilotMark = ({ className = 'h-6 w-6' }: { className?: string }) => (
+    <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" fill="currentColor" opacity="0.12" />
+        <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+        <path d="M22 20H35V25H22V20Z" fill="currentColor" />
+        <path d="M22 29H35V34H22V29Z" fill="currentColor" />
+        <path d="M22 38H35V43H22V38Z" fill="currentColor" />
+        <path d="M38 20H46V43H38V20Z" fill="currentColor" opacity="0.92" />
+        <path d="M38 18L49 18L49 20L38 20V18Z" fill="currentColor" opacity="0.92" />
+    </svg>
+);
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
@@ -44,6 +56,10 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { getUserProfile } from '@/core/user-profile-service';
+import { getOrganization } from '@/core/organization-service';
+import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import {
     PenLine,
@@ -102,9 +118,23 @@ export default function AiDispatchPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, accessLevel, isMasterTenant } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const [contacts, setContacts] = useState<Contact[]>([]);
+    const [activeOrgName, setActiveOrgName] = useState('Current Tenant');
+    const [activeOrgId, setActiveOrgId] = useState<string | undefined>(undefined);
+    const [orgMemberships, setOrgMemberships] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
+    const [isSwitchingOrg, setIsSwitchingOrg] = useState(false);
+
+    const roleLabel = useMemo(() => {
+        if (isMasterTenant) return 'Master Tenant';
+        if (accessLevel === 'super_admin') return 'Super Admin';
+        if (accessLevel === 'org_admin') return 'Org Admin';
+        if (accessLevel === 'editor') return 'Editor';
+        if (accessLevel === 'viewer') return 'Viewer';
+        return 'User';
+    }, [accessLevel, isMasterTenant]);
 
     // Data Bridge Support for Registry Launcher
     const [folders, setFolders] = useState<FolderData[]>([]);
@@ -158,6 +188,49 @@ export default function AiDispatchPage() {
         return () => {
             isMounted = false;
         };
+    }, [user?.uid]);
+
+    useEffect(() => {
+        const loadRuntimeOrgContext = async () => {
+            if (!user?.uid) {
+                setActiveOrgName('Current Tenant');
+                setActiveOrgId(undefined);
+                setOrgMemberships([]);
+                return;
+            }
+
+            try {
+                const [profile, memberships] = await Promise.all([
+                    getUserProfile(user.uid),
+                    listMyOrgMemberships().catch(() => [])
+                ]);
+
+                const orgId = profile?.orgId || memberships.find((m) => m.isActive)?.orgId || undefined;
+                setActiveOrgId(orgId);
+                setOrgMemberships(
+                    memberships.map((m) => ({
+                        orgId: m.orgId,
+                        companyName: m.companyName,
+                        isActive: m.isActive,
+                    }))
+                );
+
+                if (!orgId) {
+                    setActiveOrgName('Current Tenant');
+                    return;
+                }
+
+                const org = await getOrganization(orgId);
+                setActiveOrgName(org?.name || profile?.companyName || 'Current Tenant');
+            } catch (err) {
+                console.warn('[AI Dispatch] Failed to load active org context:', err);
+                setActiveOrgName('Current Tenant');
+                setActiveOrgId(undefined);
+                setOrgMemberships([]);
+            }
+        };
+
+        void loadRuntimeOrgContext();
     }, [user?.uid]);
 
     useEffect(() => {
@@ -221,15 +294,64 @@ export default function AiDispatchPage() {
         }
     };
 
+    const handleOrgSwitch = async (nextOrgId: string) => {
+        if (!user || !nextOrgId || nextOrgId === activeOrgId) return;
+
+        setIsSwitchingOrg(true);
+        try {
+            await switchActiveOrg(nextOrgId);
+            await user.getIdToken(true);
+            const idToken = await user.getIdToken();
+            await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+            });
+            window.location.href = '/welcome';
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Tenant switch failed',
+                description: error.message || 'Unable to switch the active tenant.',
+            });
+        } finally {
+            setIsSwitchingOrg(false);
+        }
+    };
+
     const handleSend = async () => {
         const messageText = commandInput.trim();
         if (!messageText || isThinking) return;
+
+        const detectedCommand = processCommand(messageText);
+        const isActionCommand = detectedCommand.type !== 'unknown' && Boolean(detectedCommand.target);
 
         // 1. Add user message locally
         const newUserMessage: Message = { role: 'user', content: messageText };
         const messagesWithUserTurn = [...messages, newUserMessage];
         setMessages(messagesWithUserTurn);
         setCommandInput('');
+
+        if (isActionCommand) {
+            const actionReply: Message = {
+                role: 'model',
+                content: `${detectedCommand.message}\n\n${detectedCommand.description ?? ''}`,
+            };
+            const nextMessages = [...messagesWithUserTurn, actionReply];
+            setMessages(nextMessages);
+            if (user?.uid) {
+                void saveAssistantChatSession(user.uid, nextMessages).catch((error) => {
+                    console.warn('[AI Dispatch] Failed to persist direct command turn:', error);
+                });
+            }
+            if (detectedCommand.isExternal) {
+                window.open(detectedCommand.target, '_blank', 'noopener,noreferrer');
+            } else if (detectedCommand.target) {
+                router.push(detectedCommand.target);
+            }
+            return;
+        }
+
         setIsThinking(true);
 
         if (user?.uid) {
@@ -246,6 +368,14 @@ export default function AiDispatchPage() {
                     question: messageText,
                     sessionId: user?.uid || 'ogeemo-guest',
                     history: messagesWithUserTurn,
+                    runtimeContext: {
+                        userId: user?.uid,
+                        orgId: activeOrgId,
+                        accessLevel: accessLevel || undefined,
+                        isMasterTenant,
+                        currentPath: pathname,
+                        activeOrgName,
+                    },
                 }),
             });
 
@@ -297,14 +427,40 @@ export default function AiDispatchPage() {
                         <Link href="/action-manager"><ArrowLeft className="h-4 w-4" /></Link>
                     </Button>
                     <div className="flex items-center gap-2">
-                        <BrainCircuit className="h-6 w-6 text-primary animate-pulse" />
-                        <h1 className="text-xl font-bold font-headline text-primary tracking-tight">Ogeemo Dispatch</h1>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 shadow-sm">
+                            <CoPilotMark className="h-4 w-4 text-primary" />
+                        </div>
+                        <h1 className="text-xl font-bold font-headline text-primary tracking-tight">Ogeemo Co-Pilot</h1>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                        Unified Search Active
+                <div className="flex items-center gap-3 flex-wrap justify-end">
+                    {orgMemberships.length > 1 ? (
+                        <div className="min-w-[180px] max-w-[220px]">
+                            <Select
+                                value={activeOrgId || ''}
+                                onValueChange={handleOrgSwitch}
+                                disabled={isSwitchingOrg}
+                            >
+                                <SelectTrigger className="h-8 border-primary/20 bg-primary/5 text-primary text-[11px]">
+                                    <SelectValue placeholder="Select tenant" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {orgMemberships.map((membership) => (
+                                        <SelectItem key={membership.orgId} value={membership.orgId}>
+                                            {membership.companyName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : (
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex gap-2 items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                            {activeOrgName}
+                        </Badge>
+                    )}
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">
+                        {roleLabel}
                     </Badge>
                     <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">v2.1</Badge>
                 </div>
@@ -324,8 +480,8 @@ export default function AiDispatchPage() {
                                 <BrainCircuit className="h-12 w-12 text-primary" />
                             </div>
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Command Centre</h2>
-                                <p className="text-sm max-w-sm text-muted-foreground">Unified Intelligence: Dispatch commands or search across all records.</p>
+                                <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>
+                                <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
                             </div>
                         </div>
                     ) : (

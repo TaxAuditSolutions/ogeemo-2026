@@ -287,6 +287,18 @@ export function InvoiceGeneratorView() {
                     setSelectedContactId(contactIdParam);
                 }
 
+                const contactNameParam = searchParams.get('contactName');
+                if (contactNameParam) {
+                    const targetName = decodeURIComponent(contactNameParam).trim().toLowerCase();
+                    const matchedContact = fetchedContacts.find((contact) => {
+                        const fullName = `${contact.name || ''} ${contact.businessName || ''}`.toLowerCase();
+                        return fullName.includes(targetName) || (contact.name || '').toLowerCase() === targetName || (contact.businessName || '').toLowerCase() === targetName;
+                    });
+                    if (matchedContact) {
+                        setSelectedContactId(matchedContact.id);
+                    }
+                }
+
                 const rawTemplates = localStorage.getItem('invoiceTemplates');
                 if (rawTemplates) {
                     setInvoiceTemplates(JSON.parse(rawTemplates));

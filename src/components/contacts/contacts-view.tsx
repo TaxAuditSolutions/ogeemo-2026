@@ -280,6 +280,17 @@ export function ContactsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
+  const actionIntent = searchParams ? searchParams.get('action') : null;
+  const prefillName = searchParams ? searchParams.get('name') : null;
+  const [prefillContactData, setPrefillContactData] = useState<Partial<Contact> | undefined>(undefined);
+
+  useEffect(() => {
+    if (actionIntent === 'new') {
+      setContactToEdit(null);
+      setPrefillContactData(prefillName ? { name: decodeURIComponent(prefillName) } : {});
+      setIsContactFormOpen(true);
+    }
+  }, [actionIntent, prefillName]);
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }
@@ -319,7 +330,11 @@ export function ContactsView() {
     } else {
       setContacts(prev => [savedContact, ...prev]);
     }
+    setPrefillContactData(undefined);
     setIsContactFormOpen(false);
+    if (searchParams?.get('action') === 'new') {
+      router.replace('/contacts');
+    }
   };
 
   const displayedContacts = useMemo(() => {
@@ -535,7 +550,31 @@ export function ContactsView() {
         </div>
       </div>
 
-      {isContactFormOpen && <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={contactToEdit} selectedFolderId={selectedFolderId} folders={folders} onFoldersChange={setFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />}
+      {isContactFormOpen && (
+        <ContactFormDialog
+          isOpen={isContactFormOpen}
+          onOpenChange={(open) => {
+            setIsContactFormOpen(open);
+            if (!open) {
+              setPrefillContactData(undefined);
+              if (searchParams?.get('action') === 'new') {
+                router.replace('/contacts');
+              }
+            }
+          }}
+          contactToEdit={contactToEdit}
+          selectedFolderId={selectedFolderId}
+          folders={folders}
+          onFoldersChange={setFolders}
+          onSave={handleContactSave}
+          companies={companies}
+          onCompaniesChange={setCompanies}
+          customIndustries={customIndustries}
+          onCustomIndustriesChange={setCustomIndustries}
+          initialData={prefillContactData}
+          initialEmail={prefillContactData?.email ?? ''}
+        />
+      )}
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
       <AlertDialog open={!!folderToDelete} onOpenChange={(open) => !open && setFolderToDelete(null)}>
         <AlertDialogContent>

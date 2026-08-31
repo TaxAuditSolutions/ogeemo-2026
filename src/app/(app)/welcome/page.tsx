@@ -21,11 +21,14 @@ import { useToast } from '@/hooks/use-toast';
  * Features the "Welcome Home" modal node for new Ogeemo Circle members.
  */
 export default function WelcomePage() {
-  const { user } = useAuth();
+  const { user, accessLevel, isMasterTenant } = useAuth();
   const { toast } = useToast();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
   const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
+
+  const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
+  const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
 
   useEffect(() => {
     // Show modal only if it hasn't been dismissed in this session
@@ -85,6 +88,17 @@ export default function WelcomePage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4 bg-muted/10">
+      <div className="w-full max-w-3xl mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-white p-4 shadow-lg">
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <Building2 className="h-4 w-4 text-primary" />
+          <span>Current workspace:</span>
+          <span className="font-bold text-primary">{currentWorkspaceName}</span>
+        </div>
+        <div className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+          {roleLabel}
+        </div>
+      </div>
+
       {tenantOptions.length > 1 && (
         <div className="w-full max-w-3xl mb-8 rounded-2xl border border-primary/20 bg-white p-6 shadow-lg">
           <div className="flex items-start justify-between gap-4">

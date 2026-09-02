@@ -50,8 +50,13 @@ function getCurrentAuthContext() {
 
 async function getCurrentOrgId(): Promise<string> {
   const currentUser = getCurrentAuthContext();
-  const tokenResult = await currentUser.getIdTokenResult(true);
-  const claimedOrgId = tokenResult.claims.orgId;
+  let tokenResult;
+  try {
+    tokenResult = await currentUser.getIdTokenResult();
+  } catch (error) {
+    console.warn('CRM action service: unable to read auth claims; falling back to user profile org lookup.', error);
+  }
+  const claimedOrgId = tokenResult?.claims?.orgId;
 
   if (typeof claimedOrgId === 'string' && claimedOrgId.trim()) {
     return claimedOrgId;

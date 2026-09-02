@@ -154,6 +154,7 @@ service cloud.firestore {
     match /incomeTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /expenseTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /payableBills/{billId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /receiptStagingQueue/{itemId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /pettyCashTransactions/{transactionId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     
     match /payrollRuns/{runId} { 

@@ -92,7 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token);
         // Force refresh to reduce stale custom-claims reads during auth migration.
         const idToken = await currentUser.getIdToken(true);
-        const tokenResult = await currentUser.getIdTokenResult(true);
+        let tokenResult;
+        try {
+          tokenResult = await currentUser.getIdTokenResult();
+        } catch (tokenError) {
+          console.warn('Auth Context: Unable to refresh token claims; falling back to cached claims/profile data.', tokenError);
+          tokenResult = { claims: {} } as Awaited<ReturnType<typeof currentUser.getIdTokenResult>>;
+        }
         const tokenAccessLevel = tokenResult.claims.accessLevel;
         const tokenOrgId = tokenResult.claims.orgId;
         const normalizedTokenAccessLevel =

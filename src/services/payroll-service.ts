@@ -51,8 +51,13 @@ function getCurrentAuthContext() {
 
 async function getCurrentOrgId(): Promise<string> {
     const currentUser = getCurrentAuthContext();
-    const tokenResult = await currentUser.getIdTokenResult(true);
-    const orgId = tokenResult.claims.orgId;
+    let tokenResult;
+    try {
+        tokenResult = await currentUser.getIdTokenResult();
+    } catch (error) {
+        console.warn('Payroll service: unable to read auth claims; falling back to user profile org lookup.', error);
+    }
+    const orgId = tokenResult?.claims?.orgId;
 
     if (typeof orgId !== 'string' || !orgId.trim()) {
         throw new Error('Authenticated user is missing an orgId claim.');

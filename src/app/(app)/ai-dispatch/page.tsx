@@ -596,10 +596,17 @@ export default function AiDispatchPage() {
                                         }}
                                         aria-label={`Select ${thread.title}`}
                                     />
-                                    <button
-                                        type="button"
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
                                         onClick={() => handleOpenThread(thread.id)}
-                                        className="flex-1 min-w-0 text-left"
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter' || event.key === ' ') {
+                                                event.preventDefault();
+                                                handleOpenThread(thread.id);
+                                            }
+                                        }}
+                                        className="flex-1 min-w-0 cursor-pointer text-left outline-none"
                                     >
                                         {isEditingThreadTitle === thread.id ? (
                                             <div className="flex items-center gap-2">
@@ -631,7 +638,7 @@ export default function AiDispatchPage() {
                                         ) : (
                                             <div className="truncate text-sm font-medium">{thread.title}</div>
                                         )}
-                                    </button>
+                                    </div>
                                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                         <Button
                                             type="button"

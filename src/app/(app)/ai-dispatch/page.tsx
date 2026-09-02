@@ -48,9 +48,14 @@ import { processCommand } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useAuth } from '@/context/auth-context';
 import {
-    loadAssistantChatSession,
-    saveAssistantChatSession,
+    loadAssistantChatThreads,
+    saveAssistantChatThread,
+    updateAssistantChatThreadTitle,
+    deleteAssistantChatThreads,
+    createAssistantChatThread,
+    normalizeMessages,
     type AssistantChatMessage,
+    type AssistantChatThread,
 } from '@/services/chat-history-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
@@ -65,8 +70,16 @@ import {
     PenLine,
     Link as LinkIcon,
     LayoutDashboard,
-    ArrowUpRight
+    ArrowUpRight,
+    Check,
+    X,
+    Trash2,
+    Plus,
+    SquarePen,
+    ListChecks,
+    ListX
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Message extends AssistantChatMessage { }
 
@@ -115,7 +128,11 @@ const MaterializedContactCard = ({ contact, onLaunch }: { contact: Contact, onLa
 
 export default function AiDispatchPage() {
     const [commandInput, setCommandInput] = useState('');
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [threads, setThreads] = useState<AssistantChatThread[]>([]);
+    const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+    const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
+    const [isEditingThreadTitle, setIsEditingThreadTitle] = useState<string | null>(null);
+    const [draftThreadTitle, setDraftThreadTitle] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
     const { user, accessLevel, isMasterTenant } = useAuth();
@@ -155,6 +172,11 @@ export default function AiDispatchPage() {
     });
 
     const commandResult = useMemo(() => processCommand(commandInput), [commandInput]);
+    const activeThread = useMemo(
+        () => threads.find((thread) => thread.id === activeThreadId) ?? threads[0] ?? null,
+        [threads, activeThreadId]
+    );
+    const messages: Message[] = activeThread?.messages ?? [];
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -167,19 +189,25 @@ export default function AiDispatchPage() {
 
         const loadSession = async () => {
             if (!user?.uid) {
-                setMessages([]);
+                setThreads([]);
+                setActiveThreadId(null);
                 return;
             }
 
             try {
-                const session = await loadAssistantChatSession(user.uid);
+                const savedThreads = await loadAssistantChatThreads(user.uid);
                 if (!isMounted) {
                     return;
                 }
 
-                setMessages(session?.messages ?? []);
+                setThreads(savedThreads);
+                setActiveThreadId((current) => current && savedThreads.some((thread) => thread.id === current)
+                    ? current
+                    : savedThreads[0]?.id ?? null);
             } catch (error) {
                 console.warn('[AI Dispatch] Failed to load assistant chat history:', error);
+                setThreads([]);
+                setActiveThreadId(null);
             }
         };
 
@@ -253,6 +281,90 @@ export default function AiDispatchPage() {
         loadSupportData();
     }, [user]);
 
+    const persistThreadMessages = (nextThreadId: string, nextMessages: Message[]) => {
+        if (!user?.uid) {
+            return;
+        }
+
+        setThreads((previousThreads) => {
+            const nextThread = previousThreads.find((thread) => thread.id === nextThreadId) ?? createAssistantChatThread('Untitled Chat', nextMessages);
+            const sanitized = normalizeMessages(nextMessages);
+            const updatedThread: AssistantChatThread = {
+                ...nextThread,
+                id: nextThreadId,
+                title: nextThread.title || 'Untitled Chat',
+                userId: user.uid,
+                messages: sanitized,
+                updatedAt: new Date(),
+            };
+
+            const existing = previousThreads.some((thread) => thread.id === nextThreadId)
+                ? previousThreads.map((thread) => (thread.id === nextThreadId ? updatedThread : thread))
+                : [updatedThread, ...previousThreads];
+
+            void saveAssistantChatThread(user.uid, updatedThread).catch((error) => {
+                console.warn('[AI Dispatch] Failed to persist thread state:', error);
+            });
+
+            return existing;
+        });
+    };
+
+    const handleCreateNewThread = () => {
+        const newThread = createAssistantChatThread(`Chat ${threads.length + 1}`);
+        const nextThreadId = newThread.id;
+        setThreads((previous) => [newThread, ...previous]);
+        setActiveThreadId(nextThreadId);
+        setSelectedThreadIds([]);
+
+        if (user?.uid) {
+            void saveAssistantChatThread(user.uid, { ...newThread, userId: user.uid }).catch((error) => {
+                console.warn('[AI Dispatch] Failed to create new thread:', error);
+            });
+        }
+    };
+
+    const handleOpenThread = (threadId: string) => {
+        setActiveThreadId(threadId);
+    };
+
+    const handleRenameThread = async (threadId: string, title: string) => {
+        const trimmedTitle = title.trim();
+        if (!trimmedTitle) {
+            return;
+        }
+
+        setThreads((previous) =>
+            previous.map((thread) =>
+                thread.id === threadId ? { ...thread, title: trimmedTitle, updatedAt: new Date() } : thread
+            )
+        );
+
+        if (user?.uid) {
+            await updateAssistantChatThreadTitle(user.uid, threadId, trimmedTitle);
+        }
+
+        setIsEditingThreadTitle(null);
+        setDraftThreadTitle('');
+    };
+
+    const handleDeleteSelectedThreads = async () => {
+        if (!selectedThreadIds.length || !user?.uid) {
+            return;
+        }
+
+        const nextSelected = new Set(selectedThreadIds);
+        setThreads((previous) => previous.filter((thread) => !nextSelected.has(thread.id)));
+        setSelectedThreadIds([]);
+
+        if (activeThreadId && nextSelected.has(activeThreadId)) {
+            const remaining = threads.filter((thread) => !nextSelected.has(thread.id));
+            setActiveThreadId(remaining[0]?.id ?? null);
+        }
+
+        await deleteAssistantChatThreads(user.uid, Array.from(nextSelected));
+    };
+
     const handleLaunchRegistry = (contactId: string) => {
         // 1. Hardcoded Support for Dan/Julie
         if (contactId === 'dan-admin-id') {
@@ -323,13 +435,32 @@ export default function AiDispatchPage() {
         const messageText = commandInput.trim();
         if (!messageText || isThinking) return;
 
+        if (!activeThreadId) {
+            const nextThread = createAssistantChatThread(`Chat ${threads.length + 1}`);
+            setThreads((previous) => [nextThread, ...previous]);
+            setActiveThreadId(nextThread.id);
+        }
+
+        const threadId = activeThreadId ?? (threads[0]?.id ?? 'new-chat');
         const detectedCommand = processCommand(messageText);
         const isActionCommand = detectedCommand.type !== 'unknown' && Boolean(detectedCommand.target);
 
-        // 1. Add user message locally
         const newUserMessage: Message = { role: 'user', content: messageText };
-        const messagesWithUserTurn = [...messages, newUserMessage];
-        setMessages(messagesWithUserTurn);
+        const messagesWithUserTurn = [...(messages || []), newUserMessage];
+
+        if (!activeThreadId) {
+            const newThread = createAssistantChatThread(`Chat ${threads.length + 1}`, messagesWithUserTurn);
+            setThreads((previous) => [newThread, ...previous]);
+            setActiveThreadId(newThread.id);
+            if (user?.uid) {
+                void saveAssistantChatThread(user.uid, { ...newThread, userId: user.uid }).catch((error) => {
+                    console.warn('[AI Dispatch] Failed to create and persist thread before sending:', error);
+                });
+            }
+        } else {
+            persistThreadMessages(threadId, messagesWithUserTurn);
+        }
+
         setCommandInput('');
 
         if (isActionCommand) {
@@ -338,12 +469,7 @@ export default function AiDispatchPage() {
                 content: `${detectedCommand.message}\n\n${detectedCommand.description ?? ''}`,
             };
             const nextMessages = [...messagesWithUserTurn, actionReply];
-            setMessages(nextMessages);
-            if (user?.uid) {
-                void saveAssistantChatSession(user.uid, nextMessages).catch((error) => {
-                    console.warn('[AI Dispatch] Failed to persist direct command turn:', error);
-                });
-            }
+            persistThreadMessages(threadId, nextMessages);
             if (detectedCommand.isExternal) {
                 window.open(detectedCommand.target, '_blank', 'noopener,noreferrer');
             } else if (detectedCommand.target) {
@@ -353,12 +479,6 @@ export default function AiDispatchPage() {
         }
 
         setIsThinking(true);
-
-        if (user?.uid) {
-            void saveAssistantChatSession(user.uid, messagesWithUserTurn).catch((error) => {
-                console.warn('[AI Dispatch] Failed to persist user chat turn:', error);
-            });
-        }
 
         try {
             const response = await fetch('/api/ogeemo-assistant', {
@@ -392,14 +512,7 @@ export default function AiDispatchPage() {
                     : 'No answer returned from Ogeemo Assistant.',
             };
             const nextMessages = [...messagesWithUserTurn, aiReply];
-            setMessages(nextMessages);
-
-            if (user?.uid) {
-                void saveAssistantChatSession(user.uid, nextMessages).catch((error) => {
-                    console.warn('[AI Dispatch] Failed to persist assistant chat turn:', error);
-                });
-            }
-
+            persistThreadMessages(threadId, nextMessages);
         } catch (err: any) {
             console.error("[Ogeemo Dispatch Signal Failure]:", err);
             toast({
@@ -407,252 +520,400 @@ export default function AiDispatchPage() {
                 title: 'Transmission Interrupted',
                 description: err.message || 'The Command Centre is currently stabilizing the bridge. Please try again.',
             });
-
-            if (user?.uid) {
-                void saveAssistantChatSession(user.uid, messagesWithUserTurn).catch((error) => {
-                    console.warn('[AI Dispatch] Failed to persist failed chat turn:', error);
-                });
-            }
         } finally {
             setIsThinking(false);
         }
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] bg-muted/10">
-            {/* Dynamic Header */}
-            <header className="p-4 border-b bg-background flex items-center justify-between shadow-sm shrink-0">
-                <div className="flex items-center gap-4">
-                    <Button asChild variant="ghost" size="sm">
-                        <Link href="/action-manager"><ArrowLeft className="h-4 w-4" /></Link>
-                    </Button>
+        <div className="flex h-[calc(100vh-64px)] bg-muted/10">
+            <aside className="w-80 border-r bg-background/80 backdrop-blur-sm p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 shadow-sm">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
                             <CoPilotMark className="h-4 w-4 text-primary" />
                         </div>
-                        <h1 className="text-xl font-bold font-headline text-primary tracking-tight">Ogeemo Co-Pilot</h1>
+                        <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">Chats</h2>
                     </div>
+                    <Button variant="outline" size="sm" onClick={handleCreateNewThread} className="h-8 px-2 gap-1">
+                        <Plus className="h-4 w-4" />
+                        New
+                    </Button>
                 </div>
-                <div className="flex items-center gap-3 flex-wrap justify-end">
-                    {orgMemberships.length > 1 ? (
-                        <div className="min-w-[180px] max-w-[220px]">
-                            <Select
-                                value={activeOrgId || ''}
-                                onValueChange={handleOrgSwitch}
-                                disabled={isSwitchingOrg}
-                            >
-                                <SelectTrigger className="h-8 border-primary/20 bg-primary/5 text-primary text-[11px]">
-                                    <SelectValue placeholder="Select tenant" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {orgMemberships.map((membership) => (
-                                        <SelectItem key={membership.orgId} value={membership.orgId}>
-                                            {membership.companyName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+
+                <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 p-2">
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={threads.length > 0 && selectedThreadIds.length === threads.length}
+                            onCheckedChange={(checked) => {
+                                if (checked) {
+                                    setSelectedThreadIds(threads.map((thread) => thread.id));
+                                } else {
+                                    setSelectedThreadIds([]);
+                                }
+                            }}
+                            aria-label="Select all chats"
+                        />
+                        <span className="text-xs text-muted-foreground">Select all</span>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setSelectedThreadIds([])}
+                    >
+                        <ListX className="h-3.5 w-3.5 mr-1" />
+                        Clear
+                    </Button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                    {threads.length === 0 ? (
+                        <div className="rounded-xl border border-dashed p-4 text-xs text-muted-foreground text-center">
+                            No saved chats yet.
                         </div>
                     ) : (
-                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex gap-2 items-center">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                            {activeOrgName}
-                        </Badge>
-                    )}
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">
-                        {roleLabel}
-                    </Badge>
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">v2.1</Badge>
-                </div>
-            </header>
+                        threads.map((thread) => {
+                            const isSelected = selectedThreadIds.includes(thread.id);
+                            const isActive = activeThreadId === thread.id;
 
-            {/* Main Orchestration Layer */}
-            <div className="flex-1 overflow-hidden flex flex-col max-w-4xl w-full mx-auto p-4 space-y-4">
-
-                {/* Chat History Area */}
-                <div
-                    ref={scrollRef}
-                    className="flex-1 overflow-y-auto space-y-5 pr-4 scrollbar-hide pt-4"
-                >
-                    {messages.length === 0 && !isThinking ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-                            <div className="p-6 bg-primary/10 rounded-full border border-primary/20 shadow-inner">
-                                <BrainCircuit className="h-12 w-12 text-primary" />
-                            </div>
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>
-                                <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {messages.map((msg, idx) => (
+                            return (
                                 <div
-                                    key={idx}
+                                    key={thread.id}
                                     className={cn(
-                                        "flex w-full gap-4 animate-in fade-in-0 slide-in-from-bottom-1 duration-200",
-                                        msg.role === 'user' ? "justify-end" : "justify-start"
+                                        'group flex items-center gap-2 rounded-xl border p-2 transition-all',
+                                        isActive ? 'border-primary bg-primary/5' : 'border-transparent bg-card/60 hover:border-border'
                                     )}
                                 >
-                                    <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm", msg.role === 'user' ? "bg-primary text-white" : "bg-card border")}>
-                                        {msg.role === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4 text-primary" />}
-                                    </div>
-                                    <div
-                                        className={cn(
-                                            msg.role === 'user'
-                                                ? "max-w-[78%] p-4 rounded-2xl rounded-tr-none text-sm leading-relaxed shadow-sm bg-primary text-primary-foreground"
-                                                : "max-w-[92%] rounded-2xl rounded-tl-none p-0 text-[15px] leading-relaxed bg-transparent border-0 shadow-none"
-                                        )}
+                                    <Checkbox
+                                        checked={isSelected}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedThreadIds((previous) =>
+                                                checked
+                                                    ? [...new Set([...previous, thread.id])]
+                                                    : previous.filter((id) => id !== thread.id)
+                                            );
+                                        }}
+                                        aria-label={`Select ${thread.title}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenThread(thread.id)}
+                                        className="flex-1 min-w-0 text-left"
                                     >
-                                        {msg.role === 'model' && msg.content.includes('[[LAUNCH_REGISTRY:') ? (
-                                            <>
-                                                <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                                        {msg.content.split('[[LAUNCH_REGISTRY:')[0]}
-                                                    </ReactMarkdown>
-                                                </div>
-                                                {(() => {
-                                                    const idMatches = Array.from(msg.content.matchAll(/\[\[LAUNCH_REGISTRY:(.*?)\]\]/g));
-                                                    return idMatches.map((match, i) => {
-                                                        const contactId = match[1];
-                                                        // Identify the contact details for the chip
-                                                        let contactLabel = "Registry Entry";
-                                                        let contactBiz = "Ogeemo Data";
-
-                                                        if (contactId === 'dan-admin-id') {
-                                                            contactLabel = "Dan (Ogeemo Administrator)";
-                                                            contactBiz = "Ogeemo Mastermind";
-                                                        } else if (contactId === 'julie-support-id') {
-                                                            contactLabel = "Julie (Ogeemo Support)";
-                                                            contactBiz = "Support Specialist";
-                                                        } else {
-                                                            const c = contacts.find(r => r.id === contactId);
-                                                            if (c) {
-                                                                contactLabel = c.name;
-                                                                contactBiz = c.businessName || "Contact";
-                                                            }
+                                        {isEditingThreadTitle === thread.id ? (
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    value={draftThreadTitle}
+                                                    onChange={(event) => setDraftThreadTitle(event.target.value)}
+                                                    className="h-8 text-sm"
+                                                    onKeyDown={(event) => {
+                                                        if (event.key === 'Enter') {
+                                                            void handleRenameThread(thread.id, draftThreadTitle);
                                                         }
-
-                                                        return (
-                                                            <MaterializedContactCard
-                                                                key={i}
-                                                                contact={{ id: contactId, name: contactLabel, businessName: contactBiz } as any}
-                                                                onLaunch={handleLaunchRegistry}
-                                                            />
-                                                        );
-                                                    });
-                                                })()}
-                                                {msg.content.split(']]').slice(-1)[0].trim().length > 0 ? (
-                                                    <div className="mt-2 opacity-80 text-xs">
-                                                        <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
-                                                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                                                {msg.content.split(']]').slice(-1)[0]}
-                                                            </ReactMarkdown>
-                                                        </div>
-                                                    </div>
-                                                ) : null}
-                                            </>
-                                        ) : msg.role === 'model' ? (
-                                            <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                                                    {msg.content}
-                                                </ReactMarkdown>
+                                                        if (event.key === 'Escape') {
+                                                            setIsEditingThreadTitle(null);
+                                                            setDraftThreadTitle('');
+                                                        }
+                                                    }}
+                                                    autoFocus
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => void handleRenameThread(thread.id, draftThreadTitle)}
+                                                >
+                                                    <Check className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         ) : (
-                                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                                            <div className="truncate text-sm font-medium">{thread.title}</div>
                                         )}
+                                    </button>
+                                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => {
+                                                setIsEditingThreadTitle(thread.id);
+                                                setDraftThreadTitle(thread.title);
+                                            }}
+                                        >
+                                            <SquarePen className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive hover:text-destructive"
+                                            onClick={() => {
+                                                const next = threads.filter((item) => item.id !== thread.id);
+                                                setThreads(next);
+                                                if (activeThreadId === thread.id) {
+                                                    setActiveThreadId(next[0]?.id ?? null);
+                                                }
+                                                if (user?.uid) {
+                                                    void deleteAssistantChatThreads(user.uid, [thread.id]);
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
                                     </div>
                                 </div>
-                            ))}
-                            {isThinking && (
-                                <div className="flex gap-4 mr-auto animate-pulse">
-                                    <div className="h-8 w-8 rounded-full bg-card border flex items-center justify-center">
-                                        <Loader2 className="h-4 w-4 text-primary animate-spin" />
-                                    </div>
-                                    <div className="bg-card border p-4 rounded-2xl text-xs font-mono uppercase tracking-widest">
-                                        Thinking...
-                                    </div>
-                                </div>
-                            )}
-                        </>
+                            );
+                        })
                     )}
                 </div>
 
-                {/* Action Preview (Chips) */}
-                {commandInput && commandResult.type !== 'unknown' && !isThinking && (
-                    <Card className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl border-primary shadow-2xl animate-in slide-in-from-bottom-4 duration-300 z-10">
-                        <CardContent className="p-4 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2 rounded-lg">
-                                    <Zap className="h-5 w-5 text-primary" />
+                {selectedThreadIds.length > 0 && (
+                    <Button variant="destructive" size="sm" onClick={() => void handleDeleteSelectedThreads()} className="w-full gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Delete selected ({selectedThreadIds.length})
+                    </Button>
+                )}
+            </aside>
+
+            <main className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 space-y-4">
+                <header className="p-4 border-b bg-background flex items-center justify-between shadow-sm shrink-0 rounded-xl">
+                    <div className="flex items-center gap-4">
+                        <Button asChild variant="ghost" size="sm">
+                            <Link href="/action-manager"><ArrowLeft className="h-4 w-4" /></Link>
+                        </Button>
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 shadow-sm">
+                                <CoPilotMark className="h-4 w-4 text-primary" />
+                            </div>
+                            <h1 className="text-xl font-bold font-headline text-primary tracking-tight">Ogeemo Co-Pilot</h1>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
+                        {orgMemberships.length > 1 ? (
+                            <div className="min-w-[180px] max-w-[220px]">
+                                <Select
+                                    value={activeOrgId || ''}
+                                    onValueChange={handleOrgSwitch}
+                                    disabled={isSwitchingOrg}
+                                >
+                                    <SelectTrigger className="h-8 border-primary/20 bg-primary/5 text-primary text-[11px]">
+                                        <SelectValue placeholder="Select tenant" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {orgMemberships.map((membership) => (
+                                            <SelectItem key={membership.orgId} value={membership.orgId}>
+                                                {membership.companyName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : (
+                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 flex gap-2 items-center">
+                                <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                {activeOrgName}
+                            </Badge>
+                        )}
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">
+                            {roleLabel}
+                        </Badge>
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 uppercase text-[10px]">v2.1</Badge>
+                    </div>
+                </header>
+
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border bg-background/60 p-3">
+                        <div className="text-sm font-semibold text-muted-foreground">Active chat</div>
+                        {activeThread ? (
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                                <span className="truncate max-w-[22rem]">{activeThread.title}</span>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    <div
+                        ref={scrollRef}
+                        className="flex-1 overflow-y-auto space-y-5 pr-4 scrollbar-hide pt-4"
+                    >
+                        {messages.length === 0 && !isThinking ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                <div className="p-6 bg-primary/10 rounded-full border border-primary/20 shadow-inner">
+                                    <BrainCircuit className="h-12 w-12 text-primary" />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm tracking-tight">{commandResult.message}</span>
-                                        <Badge className="text-[10px] h-4">{commandResult.category}</Badge>
-                                    </div>
-                                    <p className="text-[11px] text-muted-foreground">{commandResult.description}</p>
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>
+                                    <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
                                 </div>
                             </div>
-                            <Button size="sm" onClick={handleExecuteAction} className="h-8 font-bold text-xs uppercase">Dispatch</Button>
-                        </CardContent>
-                    </Card>
-                )}
+                        ) : (
+                            <>
+                                {messages.map((msg, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={cn(
+                                            "flex w-full gap-4 animate-in fade-in-0 slide-in-from-bottom-1 duration-200",
+                                            msg.role === 'user' ? "justify-end" : "justify-start"
+                                        )}
+                                    >
+                                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm", msg.role === 'user' ? "bg-primary text-white" : "bg-card border")}>
+                                            {msg.role === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4 text-primary" />}
+                                        </div>
+                                        <div
+                                            className={cn(
+                                                msg.role === 'user'
+                                                    ? "max-w-[78%] p-4 rounded-2xl rounded-tr-none text-sm leading-relaxed shadow-sm bg-primary text-primary-foreground"
+                                                    : "max-w-[92%] rounded-2xl rounded-tl-none p-0 text-[15px] leading-relaxed bg-transparent border-0 shadow-none"
+                                            )}
+                                        >
+                                            {msg.role === 'model' && msg.content.includes('[[LAUNCH_REGISTRY:') ? (
+                                                <>
+                                                    <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                            {msg.content.split('[[LAUNCH_REGISTRY:')[0]}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                    {(() => {
+                                                        const idMatches = Array.from(msg.content.matchAll(/\[\[LAUNCH_REGISTRY:(.*?)\]\]/g));
+                                                        return idMatches.map((match, i) => {
+                                                            const contactId = match[1];
+                                                            let contactLabel = "Registry Entry";
+                                                            let contactBiz = "Ogeemo Data";
 
-                {/* Input Interface */}
-                <div className="p-4 bg-background border-t rounded-3xl shadow-xl border relative">
-                    <div className="flex gap-2 items-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-12 w-12 rounded-full", launcherSpeech.isListening && "bg-destructive text-white")}
-                            onClick={handleMicClick}
-                        >
-                            {launcherSpeech.isListening ? <Square className="h-5 w-5 fill-current" /> : <Mic className="h-6 w-6" />}
-                        </Button>
-                        <Input
-                            ref={launcherInputRef}
-                            value={commandInput}
-                            onChange={(e) => setCommandInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Message Ogeemo Assistant..."
-                            className="flex-1 h-12 border-none shadow-none text-lg focus-visible:ring-0"
-                        />
-                        <Button
-                            size="icon"
-                            className="h-12 w-12 rounded-full shadow-lg"
-                            disabled={!commandInput.trim() || isThinking}
-                            onClick={handleSend}
-                        >
-                            <Send className="h-5 w-5" />
-                        </Button>
+                                                            if (contactId === 'dan-admin-id') {
+                                                                contactLabel = "Dan (Ogeemo Administrator)";
+                                                                contactBiz = "Ogeemo Mastermind";
+                                                            } else if (contactId === 'julie-support-id') {
+                                                                contactLabel = "Julie (Ogeemo Support)";
+                                                                contactBiz = "Support Specialist";
+                                                            } else {
+                                                                const c = contacts.find(r => r.id === contactId);
+                                                                if (c) {
+                                                                    contactLabel = c.name;
+                                                                    contactBiz = c.businessName || "Contact";
+                                                                }
+                                                            }
+
+                                                            return (
+                                                                <MaterializedContactCard
+                                                                    key={i}
+                                                                    contact={{ id: contactId, name: contactLabel, businessName: contactBiz } as any}
+                                                                    onLaunch={handleLaunchRegistry}
+                                                                />
+                                                            );
+                                                        });
+                                                    })()}
+                                                    {msg.content.split(']]').slice(-1)[0].trim().length > 0 ? (
+                                                        <div className="mt-2 opacity-80 text-xs">
+                                                            <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                                    {msg.content.split(']]').slice(-1)[0]}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    ) : null}
+                                                </>
+                                            ) : msg.role === 'model' ? (
+                                                <div className="prose prose-sm max-w-none text-foreground prose-p:my-0 prose-headings:my-0 prose-strong:text-foreground prose-code:text-foreground">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                        {msg.content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            ) : (
+                                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isThinking && (
+                                    <div className="flex gap-4 mr-auto animate-pulse">
+                                        <div className="h-8 w-8 rounded-full bg-card border flex items-center justify-center">
+                                            <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                                        </div>
+                                        <div className="bg-card border p-4 rounded-2xl text-xs font-mono uppercase tracking-widest">
+                                            Thinking...
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
+
+                    {commandInput && commandResult.type !== 'unknown' && !isThinking && (
+                        <Card className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl border-primary shadow-2xl animate-in slide-in-from-bottom-4 duration-300 z-10">
+                            <CardContent className="p-4 flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-primary/10 p-2 rounded-lg">
+                                        <Zap className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-sm tracking-tight">{commandResult.message}</span>
+                                            <Badge className="text-[10px] h-4">{commandResult.category}</Badge>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground">{commandResult.description}</p>
+                                    </div>
+                                </div>
+                                <Button size="sm" onClick={handleExecuteAction} className="h-8 font-bold text-xs uppercase">Dispatch</Button>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <div className="p-4 bg-background border-t rounded-3xl shadow-xl border relative">
+                        <div className="flex gap-2 items-center">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("h-12 w-12 rounded-full", launcherSpeech.isListening && "bg-destructive text-white")}
+                                onClick={handleMicClick}
+                            >
+                                {launcherSpeech.isListening ? <Square className="h-5 w-5 fill-current" /> : <Mic className="h-6 w-6" />}
+                            </Button>
+                            <Input
+                                ref={launcherInputRef}
+                                value={commandInput}
+                                onChange={(e) => setCommandInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                placeholder="Message Ogeemo Assistant..."
+                                className="flex-1 h-12 border-none shadow-none text-lg focus-visible:ring-0"
+                            />
+                            <Button
+                                size="icon"
+                                className="h-12 w-12 rounded-full shadow-lg"
+                                disabled={!commandInput.trim() || isThinking}
+                                onClick={handleSend}
+                            >
+                                <Send className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] pb-2">
+                        Intelligence Instance Stable • Version 3.0
+                    </p>
+
+                    <ContactFormDialog
+                        isOpen={isFormOpen}
+                        onOpenChange={setIsFormOpen}
+                        contactToEdit={contactToEdit}
+                        folders={folders}
+                        onFoldersChange={setFolders}
+                        onSave={(c) => {
+                            if (contactToEdit) {
+                                setContacts(prev => prev.map(old => old.id === c.id ? c : old));
+                            } else {
+                                setContacts(prev => [...prev, c]);
+                            }
+                        }}
+                        companies={companies}
+                        onCompaniesChange={setCompanies}
+                        customIndustries={industries}
+                        onCustomIndustriesChange={setIndustries}
+                    />
                 </div>
-
-                <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] pb-2">
-                    Intelligence Instance Stable • Version 3.0
-                </p>
-
-                {/* Global Registry Form Launcher */}
-                <ContactFormDialog
-                    isOpen={isFormOpen}
-                    onOpenChange={setIsFormOpen}
-                    contactToEdit={contactToEdit}
-                    folders={folders}
-                    onFoldersChange={setFolders}
-                    onSave={(c) => {
-                        if (contactToEdit) {
-                            setContacts(prev => prev.map(old => old.id === c.id ? c : old));
-                        } else {
-                            setContacts(prev => [...prev, c]);
-                        }
-                    }}
-                    companies={companies}
-                    onCompaniesChange={setCompanies}
-                    customIndustries={industries}
-                    onCustomIndustriesChange={setIndustries}
-                />
-            </div>
+            </main>
         </div>
     );
 }

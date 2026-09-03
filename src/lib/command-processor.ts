@@ -119,11 +119,39 @@ function findExactOrAliasCommand(text: string): { target: string; label: string;
 }
 
 /**
+ * Detects whether the input is phrased as an information-seeking question
+ * (e.g., "How do you create a contact?") rather than a direct action request
+ * (e.g., "Create a contact"). Questions must be answered by the Co-Pilot,
+ * never hijacked into navigation.
+ */
+const QUESTION_PATTERNS = [
+    /\?$/,
+    /\bhow\s+(to|do|does|did|can|could|should|would|might|i|you|we)\b/i,
+    /\b(what|where|why|when|who)\s+(is|are|was|were|do|does|did|should|can|would)\b/i,
+    /^(explain|describe|tell\s+me)\b/i,
+];
+
+export function isQuestion(input: string): boolean {
+    const text = (input || '').trim();
+    if (!text) return false;
+    return QUESTION_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/**
  * Processes natural language input through hierarchical intent matching.
  */
 export function processCommand(input: string): CommandResult {
     const rawInput = input.toLowerCase().trim();
     if (!rawInput) return { type: 'unknown', message: 'Awaiting Signal...' };
+
+    // Questions are never commands: route them to the Co-Pilot for an answer.
+    if (isQuestion(rawInput)) {
+        return {
+            type: 'unknown',
+            message: 'Question Detected',
+            description: 'Routing to Ogeemo Co-Pilot for an answer.',
+        };
+    }
 
     const normalizedInput = normalize(rawInput);
     const tokens = rawInput.split(/\s+/).filter(Boolean);

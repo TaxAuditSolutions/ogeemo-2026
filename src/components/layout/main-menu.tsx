@@ -9,7 +9,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList, Landmark, Crown } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList, Landmark, Crown, Chrome } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -31,6 +31,7 @@ export const groupedMenuItems: Record<string, { icon: any; items: string[]; mast
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
     Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
     Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
+    'Google Apps': { icon: Chrome, items: ['/google'] },
 };
 
 const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean, accessLevel: string | null }) => (

@@ -918,7 +918,14 @@ export default function AiDispatchPage() {
                                             <div key={group.name} className="w-full">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setOpenMenuGroup(isExpanded ? null : group.name)}
+                                                    onClick={() => {
+                                                        // Single-item groups go straight to their destination.
+                                                        if (group.items.length === 1) {
+                                                            router.push(group.items[0].href);
+                                                            return;
+                                                        }
+                                                        setOpenMenuGroup(isExpanded ? null : group.name);
+                                                    }}
                                                     className={cn(
                                                         "flex w-full items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
                                                         isExpanded
@@ -931,7 +938,13 @@ export default function AiDispatchPage() {
                                                         {group.name}
                                                         <span className="text-[10px] font-normal text-muted-foreground">({group.items.length})</span>
                                                     </span>
-                                                    {isExpanded ? <X className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                    {group.items.length === 1 ? (
+                                                        <ArrowRight className="h-3 w-3" />
+                                                    ) : isExpanded ? (
+                                                        <X className="h-3 w-3" />
+                                                    ) : (
+                                                        <ChevronDown className="h-3 w-3" />
+                                                    )}
                                                 </button>
                                                 {isExpanded ? (
                                                     <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/60 bg-background/40 p-2">
@@ -940,8 +953,8 @@ export default function AiDispatchPage() {
                                                                 key={item.href}
                                                                 type="button"
                                                                 onClick={() => {
-                                                                    setCommandInput(item.label);
-                                                                    launcherInputRef.current?.focus();
+                                                                    setOpenMenuGroup(null);
+                                                                    router.push(item.href);
                                                                 }}
                                                                 className="rounded-full border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground/80 transition-all hover:border-primary/30 hover:text-primary"
                                                             >

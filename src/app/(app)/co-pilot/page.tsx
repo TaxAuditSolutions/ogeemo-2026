@@ -795,11 +795,11 @@ export default function AiDispatchPage() {
                 </header>
 
                 <div className="flex-1 overflow-hidden flex flex-col">
-                    <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border bg-background/60 p-3">
+                    <div className="mb-3 flex items-center gap-2 rounded-xl border bg-background/60 p-3">
                         <div className="text-sm font-semibold text-muted-foreground">Active chat</div>
                         {activeThread ? (
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                                <span className="truncate max-w-[22rem]">{activeThread.title}</span>
+                            <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-base font-bold">
+                                <span className="truncate text-center">{activeThread.title}</span>
                             </div>
                         ) : null}
                     </div>

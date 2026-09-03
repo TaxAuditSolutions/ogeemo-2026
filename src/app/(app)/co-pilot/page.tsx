@@ -647,6 +647,10 @@ export default function AiDispatchPage() {
                                         tabIndex={0}
                                         onClick={() => handleOpenThread(thread.id)}
                                         onKeyDown={(event) => {
+                                            if (event.target !== event.currentTarget) {
+                                                // Key events from the nested subject/rename input must bubble untouched.
+                                                return;
+                                            }
                                             if (event.key === 'Enter' || event.key === ' ') {
                                                 event.preventDefault();
                                                 handleOpenThread(thread.id);

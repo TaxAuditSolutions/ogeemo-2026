@@ -366,9 +366,9 @@ function buildScrubbedMessages(history: any[] | undefined, message: string): any
 }
 
 function getPageContextGuidance(currentPath?: string): string {
-  const path = (currentPath || '/ai-dispatch').toLowerCase();
+  const path = (currentPath || '/co-pilot').toLowerCase();
   const map: Record<string, string> = {
-    '/ai-dispatch': 'This page is Ogeemo Co-Pilot. Prioritize concise operational help, command routing, search, and immediate follow-up actions.',
+    '/co-pilot': 'This page is Ogeemo Co-Pilot. Prioritize concise operational help, command routing, search, and immediate follow-up actions.',
     '/owner': 'This page is the Owner Console. Only the master tenant or super admin should discuss subscriber management, tenant creation, tenant pause, or tenant deletion.',
     '/tenant-manager': 'This page is Tenant Management. Keep answers focused on active-tenant administration, membership, and tenant lifecycle actions within the current tenant.',
     '/settings': 'This page is Settings. Keep advice focused on profile, organization, and personal account settings. Do not claim access to system-wide admin controls unless the user is clearly a super admin.',
@@ -394,11 +394,11 @@ const ogeemoAgentFlow = ai.defineFlow(
       `orgId: ${runtimeContext.orgId || 'unknown'}`,
       `accessLevel: ${runtimeContext.accessLevel || 'unknown'}`,
       `isMasterTenant: ${runtimeContext.isMasterTenant ? 'true' : 'false'}`,
-      `currentPath: ${runtimeContext.currentPath || '/ai-dispatch'}`,
+      `currentPath: ${runtimeContext.currentPath || '/co-pilot'}`,
       `activeOrgName: ${runtimeContext.activeOrgName || 'unknown'}`,
-    ].join('\n') : `userId: ${userId || 'unknown'}\norgId: unknown\naccessLevel: unknown\nisMasterTenant: false\ncurrentPath: /ai-dispatch\nactiveOrgName: unknown`;
+    ].join('\n') : `userId: ${userId || 'unknown'}\norgId: unknown\naccessLevel: unknown\nisMasterTenant: false\ncurrentPath: /co-pilot\nactiveOrgName: unknown`;
 
-    const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/ai-dispatch');
+    const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/co-pilot');
     const knowledgeBase = getKnowledgeBase();
     const finalSystemPrompt = systemPromptTemplate
       .replace('{{{runtimeContext}}}', runtimeSummary)
@@ -471,7 +471,7 @@ export async function ogeemoAgent(input: { message: string, history: any[], clie
   const localContext = input.localContext || null;
   const runtimeContext = input.runtimeContext || {
     userId,
-    currentPath: '/ai-dispatch',
+    currentPath: '/co-pilot',
     isMasterTenant: false,
   };
   return ogeemoAgentFlow({ ...input, userId, localContext, runtimeContext });
@@ -481,7 +481,7 @@ export async function ogeemoGeneralKnowledgeFallbackAgent(input: { message: stri
   const userId = input.clientUserId || 'ogeemo-guest';
   const runtimeContext = input.runtimeContext || {
     userId,
-    currentPath: '/ai-dispatch',
+    currentPath: '/co-pilot',
     isMasterTenant: false,
   };
   return ogeemoGeneralKnowledgeFallbackFlow({ ...input, userId, runtimeContext });

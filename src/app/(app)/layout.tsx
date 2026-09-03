@@ -136,7 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button asChild size="icon" className="h-11 w-11 rounded-full bg-card text-primary shadow-sm hover:shadow-primary/20 hover:scale-105 transition-all border border-primary/20 p-0">
-                            <Link href="/ai-dispatch" className="flex h-full w-full items-center justify-center">
+                            <Link href="/co-pilot" className="flex h-full w-full items-center justify-center">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
                                   <CoPilotMark className="h-6 w-6" />
                                 </div>

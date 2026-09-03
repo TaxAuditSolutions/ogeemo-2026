@@ -25,7 +25,7 @@ import { canAccessUserManager } from '@/core/rbac';
 const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
     Workspace: { icon: Briefcase, items: ['/master-mind', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/meetings', '/email-hub'] },
-    Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/ai-dispatch'] },
+    Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/co-pilot'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },

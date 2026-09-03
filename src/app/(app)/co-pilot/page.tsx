@@ -613,7 +613,7 @@ export default function AiDispatchPage() {
                     </Button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                <div className="flex-1 overflow-y-auto space-y-1 pr-1">
                     {threads.length === 0 ? (
                         <div className="rounded-xl border border-dashed p-4 text-xs text-muted-foreground text-center">
                             No saved chats yet.

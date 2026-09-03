@@ -48,16 +48,10 @@ const DEFAULT_THREAD_TITLE_PATTERN = /^(chat\s*\d+|untitled chat)$/i;
 const isDefaultThreadTitle = (title: string): boolean =>
     DEFAULT_THREAD_TITLE_PATTERN.test((title || '').trim());
 
-const STARTER_PROMPTS = [
-    'Create a contact',
-    'Start a timer',
-    'How do I create an invoice?',
-    'Sync my receipts',
-    'Open the general ledger',
-];
-
 import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
+import { allMenuItems } from '@/lib/menu-items';
+import { groupedMenuItems } from '@/components/layout/main-menu';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useAuth } from '@/context/auth-context';
 import {
@@ -86,6 +80,7 @@ import {
     ArrowUpRight,
     Check,
     Copy,
+    ChevronDown,
     X,
     Trash2,
     Plus,
@@ -150,6 +145,7 @@ export default function AiDispatchPage() {
     const [chatSearchQuery, setChatSearchQuery] = useState('');
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
     const [copiedChat, setCopiedChat] = useState(false);
+    const [openMenuGroup, setOpenMenuGroup] = useState<string | null>(null);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
     const { user, accessLevel, isMasterTenant } = useAuth();
@@ -308,6 +304,24 @@ export default function AiDispatchPage() {
             thread.messages.some((message) => message.content.toLowerCase().includes(query))
         );
     }, [chatSearchQuery, threads]);
+
+    const menuGroups = useMemo(() => {
+        const toItem = (href: string) => {
+            const menuItem = allMenuItems.find((entry) => entry.href === href);
+            const fallbackLabel = (href.split('/').filter(Boolean).slice(-1)[0] ?? href)
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, (char) => char.toUpperCase());
+            return { href, label: menuItem?.label ?? fallbackLabel };
+        };
+
+        return Object.entries(groupedMenuItems)
+            .filter(([, data]) => !data.masterTenantOnly || isMasterTenant || accessLevel === 'super_admin')
+            .map(([name, data]) => ({
+                name,
+                icon: data.icon,
+                items: data.items.map(toItem),
+            }));
+    }, [isMasterTenant, accessLevel]);
 
     const handleCopyMessage = (idx: number, content: string) => {
         void navigator.clipboard?.writeText(content).then(() => {
@@ -896,20 +910,49 @@ export default function AiDispatchPage() {
                                         <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-wrap items-center justify-center gap-2 max-w-md">
-                                    {STARTER_PROMPTS.map((prompt) => (
-                                        <button
-                                            key={prompt}
-                                            type="button"
-                                            onClick={() => {
-                                                setCommandInput(prompt);
-                                                launcherInputRef.current?.focus();
-                                            }}
-                                            className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-all hover:bg-primary/10 hover:shadow-sm"
-                                        >
-                                            {prompt}
-                                        </button>
-                                    ))}
+                                <div className="flex w-full max-w-md flex-col items-stretch gap-1.5">
+                                    {menuGroups.map((group) => {
+                                        const GroupIcon = group.icon;
+                                        const isExpanded = openMenuGroup === group.name;
+                                        return (
+                                            <div key={group.name} className="w-full">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenMenuGroup(isExpanded ? null : group.name)}
+                                                    className={cn(
+                                                        "flex w-full items-center justify-between gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                                                        isExpanded
+                                                            ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                                                            : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                                                    )}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        {GroupIcon ? <GroupIcon className="h-3.5 w-3.5" /> : null}
+                                                        {group.name}
+                                                        <span className="text-[10px] font-normal text-muted-foreground">({group.items.length})</span>
+                                                    </span>
+                                                    {isExpanded ? <X className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                </button>
+                                                {isExpanded ? (
+                                                    <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/60 bg-background/40 p-2">
+                                                        {group.items.map((item) => (
+                                                            <button
+                                                                key={item.href}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setCommandInput(item.label);
+                                                                    launcherInputRef.current?.focus();
+                                                                }}
+                                                                className="rounded-full border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground/80 transition-all hover:border-primary/30 hover:text-primary"
+                                                            >
+                                                                {item.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ) : (

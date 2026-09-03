@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
     ArrowLeft,
-    BrainCircuit,
     Cpu,
     Zap,
     Mic,
@@ -43,6 +42,12 @@ const CoPilotMark = ({ className = 'h-6 w-6' }: { className?: string }) => (
     </svg>
 );
 import { useToast } from '@/hooks/use-toast';
+
+const DEFAULT_THREAD_TITLE_PATTERN = /^(chat\s*\d+|untitled chat)$/i;
+
+const isDefaultThreadTitle = (title: string): boolean =>
+    DEFAULT_THREAD_TITLE_PATTERN.test((title || '').trim());
+
 import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
@@ -310,12 +315,51 @@ export default function AiDispatchPage() {
         });
     };
 
+    const autoTitleThread = async (threadId: string, userMessage: string, assistantReply?: string) => {
+        if (!user?.uid || !threadId) {
+            return;
+        }
+
+        const currentTitle = threads.find((thread) => thread.id === threadId)?.title ?? '';
+        if (!isDefaultThreadTitle(currentTitle)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/ogeemo-chat-title', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userMessage, assistantReply }),
+            });
+            const data = await response.json().catch(() => null);
+            const generatedTitle = typeof data?.title === 'string' ? data.title.trim() : '';
+
+            if (!response.ok || !generatedTitle) {
+                return;
+            }
+
+            setThreads((previous) =>
+                previous.map((thread) =>
+                    thread.id === threadId && isDefaultThreadTitle(thread.title)
+                        ? { ...thread, title: generatedTitle, updatedAt: new Date() }
+                        : thread
+                )
+            );
+
+            await updateAssistantChatThreadTitle(user.uid, threadId, generatedTitle);
+        } catch (error) {
+            console.warn('[AI Dispatch] Failed to generate chat title:', error);
+        }
+    };
+
     const handleCreateNewThread = () => {
         const newThread = createAssistantChatThread(`Chat ${threads.length + 1}`);
         const nextThreadId = newThread.id;
         setThreads((previous) => [newThread, ...previous]);
         setActiveThreadId(nextThreadId);
         setSelectedThreadIds([]);
+        setIsEditingThreadTitle(nextThreadId);
+        setDraftThreadTitle('');
 
         if (user?.uid) {
             void saveAssistantChatThread(user.uid, { ...newThread, userId: user.uid }).catch((error) => {
@@ -470,6 +514,7 @@ export default function AiDispatchPage() {
             };
             const nextMessages = [...messagesWithUserTurn, actionReply];
             persistThreadMessages(threadId, nextMessages);
+            void autoTitleThread(threadId, messageText, detectedCommand.message || messageText);
             if (detectedCommand.isExternal) {
                 window.open(detectedCommand.target, '_blank', 'noopener,noreferrer');
             } else if (detectedCommand.target) {
@@ -513,6 +558,7 @@ export default function AiDispatchPage() {
             };
             const nextMessages = [...messagesWithUserTurn, aiReply];
             persistThreadMessages(threadId, nextMessages);
+            void autoTitleThread(threadId, messageText, aiReply.content);
         } catch (err: any) {
             console.error("[Ogeemo Dispatch Signal Failure]:", err);
             toast({
@@ -613,10 +659,16 @@ export default function AiDispatchPage() {
                                                 <Input
                                                     value={draftThreadTitle}
                                                     onChange={(event) => setDraftThreadTitle(event.target.value)}
+                                                    placeholder="Type a subject (optional)"
                                                     className="h-8 text-sm"
                                                     onKeyDown={(event) => {
                                                         if (event.key === 'Enter') {
-                                                            void handleRenameThread(thread.id, draftThreadTitle);
+                                                            if (draftThreadTitle.trim()) {
+                                                                void handleRenameThread(thread.id, draftThreadTitle);
+                                                            } else {
+                                                                setIsEditingThreadTitle(null);
+                                                                setDraftThreadTitle('');
+                                                            }
                                                         }
                                                         if (event.key === 'Escape') {
                                                             setIsEditingThreadTitle(null);
@@ -630,7 +682,14 @@ export default function AiDispatchPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8"
-                                                    onClick={() => void handleRenameThread(thread.id, draftThreadTitle)}
+                                                    onClick={() => {
+                                                        if (draftThreadTitle.trim()) {
+                                                            void handleRenameThread(thread.id, draftThreadTitle);
+                                                        } else {
+                                                            setIsEditingThreadTitle(null);
+                                                            setDraftThreadTitle('');
+                                                        }
+                                                    }}
                                                 >
                                                     <Check className="h-4 w-4" />
                                                 </Button>
@@ -748,7 +807,7 @@ export default function AiDispatchPage() {
                         {messages.length === 0 && !isThinking ? (
                             <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
                                 <div className="p-6 bg-primary/10 rounded-full border border-primary/20 shadow-inner">
-                                    <BrainCircuit className="h-12 w-12 text-primary" />
+                                    <CoPilotMark className="h-12 w-12 text-primary" />
                                 </div>
                                 <div className="space-y-2">
                                     <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>

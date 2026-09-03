@@ -627,7 +627,7 @@ export default function AiDispatchPage() {
                                 <div
                                     key={thread.id}
                                     className={cn(
-                                        'group flex items-center gap-2 rounded-xl border p-2 transition-all',
+                                        'group flex items-center gap-2 rounded-xl border px-2 py-0.5 transition-all',
                                         isActive ? 'border-primary bg-primary/5' : 'border-transparent bg-card/60 hover:border-border'
                                     )}
                                 >
@@ -664,7 +664,7 @@ export default function AiDispatchPage() {
                                                     value={draftThreadTitle}
                                                     onChange={(event) => setDraftThreadTitle(event.target.value)}
                                                     placeholder="Type a subject (optional)"
-                                                    className="h-8 text-sm"
+                                                    className="h-6 text-sm"
                                                     onKeyDown={(event) => {
                                                         if (event.key === 'Enter') {
                                                             if (draftThreadTitle.trim()) {
@@ -685,7 +685,7 @@ export default function AiDispatchPage() {
                                                     type="button"
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8"
+                                                    className="h-6 w-6"
                                                     onClick={() => {
                                                         if (draftThreadTitle.trim()) {
                                                             void handleRenameThread(thread.id, draftThreadTitle);
@@ -695,11 +695,11 @@ export default function AiDispatchPage() {
                                                         }
                                                     }}
                                                 >
-                                                    <Check className="h-4 w-4" />
+                                                    <Check className="h-3.5 w-3.5" />
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <div className="truncate text-sm font-medium">{thread.title}</div>
+                                            <div className="truncate text-sm font-medium leading-tight">{thread.title}</div>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -707,19 +707,19 @@ export default function AiDispatchPage() {
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="h-7 w-7"
+                                            className="h-5 w-5"
                                             onClick={() => {
                                                 setIsEditingThreadTitle(thread.id);
                                                 setDraftThreadTitle(thread.title);
                                             }}
                                         >
-                                            <SquarePen className="h-3.5 w-3.5" />
+                                            <SquarePen className="h-3 w-3" />
                                         </Button>
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            className="h-7 w-7 text-destructive hover:text-destructive"
+                                            className="h-5 w-5 text-destructive hover:text-destructive"
                                             onClick={() => {
                                                 const next = threads.filter((item) => item.id !== thread.id);
                                                 setThreads(next);
@@ -731,7 +731,7 @@ export default function AiDispatchPage() {
                                                 }
                                             }}
                                         >
-                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <Trash2 className="h-3 w-3" />
                                         </Button>
                                     </div>
                                 </div>

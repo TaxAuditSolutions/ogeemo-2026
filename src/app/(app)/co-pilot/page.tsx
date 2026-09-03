@@ -138,6 +138,7 @@ export default function AiDispatchPage() {
     const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
     const [isEditingThreadTitle, setIsEditingThreadTitle] = useState<string | null>(null);
     const [draftThreadTitle, setDraftThreadTitle] = useState('');
+    const [chatSearchQuery, setChatSearchQuery] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
     const { user, accessLevel, isMasterTenant } = useAuth();
@@ -285,6 +286,17 @@ export default function AiDispatchPage() {
         };
         loadSupportData();
     }, [user]);
+
+    const filteredThreads = useMemo(() => {
+        const query = chatSearchQuery.trim().toLowerCase();
+        if (!query) {
+            return threads;
+        }
+        return threads.filter((thread) =>
+            thread.title.toLowerCase().includes(query) ||
+            thread.messages.some((message) => message.content.toLowerCase().includes(query))
+        );
+    }, [chatSearchQuery, threads]);
 
     const persistThreadMessages = (nextThreadId: string, nextMessages: Message[]) => {
         if (!user?.uid) {
@@ -587,15 +599,28 @@ export default function AiDispatchPage() {
                     </Button>
                 </div>
 
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        value={chatSearchQuery}
+                        onChange={(event) => setChatSearchQuery(event.target.value)}
+                        placeholder="Search chats by subject or content"
+                        className="h-8 pl-8 text-sm"
+                    />
+                </div>
                 <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 p-2">
                     <div className="flex items-center gap-2">
                         <Checkbox
-                            checked={threads.length > 0 && selectedThreadIds.length === threads.length}
+                            checked={filteredThreads.length > 0 && filteredThreads.every((thread) => selectedThreadIds.includes(thread.id))}
                             onCheckedChange={(checked) => {
                                 if (checked) {
-                                    setSelectedThreadIds(threads.map((thread) => thread.id));
+                                    setSelectedThreadIds((previous) => [
+                                        ...new Set([...previous, ...filteredThreads.map((thread) => thread.id)]),
+                                    ]);
                                 } else {
-                                    setSelectedThreadIds([]);
+                                    setSelectedThreadIds((previous) =>
+                                        previous.filter((id) => !filteredThreads.some((thread) => thread.id === id))
+                                    );
                                 }
                             }}
                             aria-label="Select all chats"
@@ -614,12 +639,12 @@ export default function AiDispatchPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-                    {threads.length === 0 ? (
+                    {filteredThreads.length === 0 ? (
                         <div className="rounded-xl border border-dashed p-4 text-xs text-muted-foreground text-center">
-                            No saved chats yet.
+                            {chatSearchQuery.trim() ? `No chats match "${chatSearchQuery.trim()}".` : 'No saved chats yet.'}
                         </div>
                     ) : (
-                        threads.map((thread) => {
+                        filteredThreads.map((thread) => {
                             const isSelected = selectedThreadIds.includes(thread.id);
                             const isActive = activeThreadId === thread.id;
 

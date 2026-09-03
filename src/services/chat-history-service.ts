@@ -8,6 +8,8 @@ export type AssistantChatRole = 'user' | 'model';
 export interface AssistantChatMessage {
     role: AssistantChatRole;
     content: string;
+    /** ISO timestamp of when the message was created (optional for legacy chats). */
+    timestamp?: string;
 }
 
 export interface AssistantChatThread {
@@ -60,6 +62,7 @@ export function normalizeMessages(messages: AssistantChatMessage[]): AssistantCh
         .map((message) => ({
             role: message.role,
             content: typeof message.content === 'string' ? message.content : String(message.content ?? ''),
+            ...(typeof message.timestamp === 'string' && message.timestamp ? { timestamp: message.timestamp } : {}),
         }))
         .filter((message) => message.content.trim().length > 0)
         .slice(-MAX_HISTORY_MESSAGES);

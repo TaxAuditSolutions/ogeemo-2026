@@ -48,6 +48,14 @@ const DEFAULT_THREAD_TITLE_PATTERN = /^(chat\s*\d+|untitled chat)$/i;
 const isDefaultThreadTitle = (title: string): boolean =>
     DEFAULT_THREAD_TITLE_PATTERN.test((title || '').trim());
 
+const STARTER_PROMPTS = [
+    'Create a contact',
+    'Start a timer',
+    'How do I create an invoice?',
+    'Sync my receipts',
+    'Open the general ledger',
+];
+
 import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
@@ -77,6 +85,7 @@ import {
     LayoutDashboard,
     ArrowUpRight,
     Check,
+    Copy,
     X,
     Trash2,
     Plus,
@@ -139,6 +148,8 @@ export default function AiDispatchPage() {
     const [isEditingThreadTitle, setIsEditingThreadTitle] = useState<string | null>(null);
     const [draftThreadTitle, setDraftThreadTitle] = useState('');
     const [chatSearchQuery, setChatSearchQuery] = useState('');
+    const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+    const [copiedChat, setCopiedChat] = useState(false);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
     const { user, accessLevel, isMasterTenant } = useAuth();
@@ -297,6 +308,32 @@ export default function AiDispatchPage() {
             thread.messages.some((message) => message.content.toLowerCase().includes(query))
         );
     }, [chatSearchQuery, threads]);
+
+    const handleCopyMessage = (idx: number, content: string) => {
+        void navigator.clipboard?.writeText(content).then(() => {
+            setCopiedIdx(idx);
+            setTimeout(() => setCopiedIdx((current) => (current === idx ? null : current)), 1500);
+        }).catch((error) => {
+            console.warn('[AI Dispatch] Failed to copy message:', error);
+        });
+    };
+
+    const handleCopyChat = () => {
+        if (!activeThread || activeThread.messages.length === 0) {
+            return;
+        }
+
+        const transcript = activeThread.messages
+            .map((message) => `${message.role === 'user' ? '**You:**' : '**Ogeemo:**'} ${message.content}`)
+            .join('\n\n');
+
+        void navigator.clipboard?.writeText(`# ${activeThread.title}\n\n${transcript}`).then(() => {
+            setCopiedChat(true);
+            setTimeout(() => setCopiedChat(false), 1500);
+        }).catch((error) => {
+            console.warn('[AI Dispatch] Failed to copy chat:', error);
+        });
+    };
 
     const persistThreadMessages = (nextThreadId: string, nextMessages: Message[]) => {
         if (!user?.uid) {
@@ -501,7 +538,7 @@ export default function AiDispatchPage() {
         const detectedCommand = processCommand(messageText);
         const isActionCommand = detectedCommand.type !== 'unknown' && Boolean(detectedCommand.target);
 
-        const newUserMessage: Message = { role: 'user', content: messageText };
+        const newUserMessage: Message = { role: 'user', content: messageText, timestamp: new Date().toISOString() };
         const messagesWithUserTurn = [...(messages || []), newUserMessage];
 
         if (!activeThreadId) {
@@ -523,6 +560,7 @@ export default function AiDispatchPage() {
             const actionReply: Message = {
                 role: 'model',
                 content: `${detectedCommand.message}\n\n${detectedCommand.description ?? ''}`,
+                timestamp: new Date().toISOString(),
             };
             const nextMessages = [...messagesWithUserTurn, actionReply];
             persistThreadMessages(threadId, nextMessages);
@@ -567,6 +605,7 @@ export default function AiDispatchPage() {
                 content: typeof data?.answer === 'string' && data.answer.trim().length > 0
                     ? data.answer
                     : 'No answer returned from Ogeemo Assistant.',
+                timestamp: new Date().toISOString(),
             };
             const nextMessages = [...messagesWithUserTurn, aiReply];
             persistThreadMessages(threadId, nextMessages);
@@ -827,6 +866,19 @@ export default function AiDispatchPage() {
                                 <span className="truncate text-center">{activeThread.title}</span>
                             </div>
                         ) : null}
+                        {activeThread && activeThread.messages.length > 0 ? (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                                aria-label="Copy chat transcript"
+                                title="Copy chat transcript"
+                                onClick={handleCopyChat}
+                            >
+                                {copiedChat ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            </Button>
+                        ) : null}
                     </div>
 
                     <div
@@ -834,13 +886,30 @@ export default function AiDispatchPage() {
                         className="flex-1 overflow-y-auto space-y-5 pr-4 scrollbar-hide pt-4"
                     >
                         {messages.length === 0 && !isThinking ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-                                <div className="p-6 bg-primary/10 rounded-full border border-primary/20 shadow-inner">
-                                    <CoPilotMark className="h-12 w-12 text-primary" />
+                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="space-y-4 opacity-50">
+                                    <div className="p-6 bg-primary/10 rounded-full border border-primary/20 shadow-inner">
+                                        <CoPilotMark className="h-12 w-12 text-primary" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>
+                                        <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-2xl font-headline uppercase tracking-tighter">Ogeemo Co-Pilot</h2>
-                                    <p className="text-sm max-w-sm text-muted-foreground">Your AI partner for work, search, and operational guidance.</p>
+                                <div className="flex flex-wrap items-center justify-center gap-2 max-w-md">
+                                    {STARTER_PROMPTS.map((prompt) => (
+                                        <button
+                                            key={prompt}
+                                            type="button"
+                                            onClick={() => {
+                                                setCommandInput(prompt);
+                                                launcherInputRef.current?.focus();
+                                            }}
+                                            className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-all hover:bg-primary/10 hover:shadow-sm"
+                                        >
+                                            {prompt}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         ) : (
@@ -919,6 +988,29 @@ export default function AiDispatchPage() {
                                             ) : (
                                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                                             )}
+                                            <div
+                                                className={cn(
+                                                    "mt-1 flex items-center gap-1.5 text-[10px]",
+                                                    msg.role === 'user' ? "justify-end text-primary-foreground/70" : "text-muted-foreground"
+                                                )}
+                                            >
+                                                {msg.timestamp ? (
+                                                    <span>
+                                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                ) : null}
+                                                {msg.role === 'model' && msg.content ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCopyMessage(idx, msg.content)}
+                                                        className="rounded p-0.5 transition-colors hover:bg-muted hover:text-foreground"
+                                                        aria-label="Copy response"
+                                                        title="Copy response"
+                                                    >
+                                                        {copiedIdx === idx ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                                                    </button>
+                                                ) : null}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

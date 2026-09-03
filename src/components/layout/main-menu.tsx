@@ -9,7 +9,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, Wand2, PlayCircle, ClipboardList, Landmark, Crown, Chrome } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -39,6 +39,41 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }
         {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
             const ownerConsoleVisible = groupData.masterTenantOnly && (isMasterTenant || accessLevel === 'super_admin');
             if (groupData.masterTenantOnly && !ownerConsoleVisible) return null;
+
+            // The Google Apps group renders external Google apps instead of internal routes.
+            if (groupName === 'Google Apps') {
+                return (
+                    <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
+                        <AccordionTrigger className="p-0 hover:no-underline">
+                            <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                                <Chrome className="h-4 w-4" />
+                                Google Apps
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-1 pl-4">
+                            <div className="space-y-1">
+                                {allGoogleApps.map(app => {
+                                    const AppIcon = app.icon;
+                                    return (
+                                        <Button
+                                            key={app.href}
+                                            asChild
+                                            variant="ghost"
+                                            className="w-full justify-start gap-3 h-9 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                        >
+                                            <a href={app.href} target="_blank" rel="noopener noreferrer">
+                                                <AppIcon className="h-4 w-4" />
+                                                <span>{app.name}</span>
+                                                <ExternalLink className="ml-auto h-3 w-3" />
+                                            </a>
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                );
+            }
 
             const CategoryIcon = groupData.icon;
             const groupItems = groupData.items
@@ -79,35 +114,6 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }
                 </AccordionItem>
             );
         })}
-        <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
-            <AccordionTrigger className="p-0 hover:no-underline">
-                <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                    <Wand2 className="h-4 w-4" />
-                    Google Apps
-                </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 pl-4">
-                <div className="space-y-1">
-                    {allGoogleApps.map(app => {
-                        const AppIcon = app.icon;
-                        return (
-                            <Button
-                                key={app.href}
-                                asChild
-                                variant="ghost"
-                                className="w-full justify-start gap-3 h-9 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                            >
-                                <a href={app.href} target="_blank" rel="noopener noreferrer">
-                                    <AppIcon className="h-4 w-4" />
-                                    <span>{app.name}</span>
-                                    <ExternalLink className="ml-auto h-3 w-3" />
-                                </a>
-                            </Button>
-                        );
-                    })}
-                </div>
-            </AccordionContent>
-        </AccordionItem>
     </Accordion>
 ));
 

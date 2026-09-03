@@ -86,9 +86,9 @@ export function GoogleIntegrationView() {
                         </CardDescription>
                          <div className="absolute top-4 right-4">
                             <Button asChild variant="ghost" size="icon">
-                                <Link href="/document-manager">
+                                <Link href="/co-pilot">
                                     <X className="h-5 w-5" />
-                                    <span className="sr-only">Back to Document Manager</span>
+                                    <span className="sr-only">Back to Ogeemo Co-Pilot</span>
                                 </Link>
                             </Button>
                         </div>

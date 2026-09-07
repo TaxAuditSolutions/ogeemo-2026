@@ -12,16 +12,22 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LoaderCircle, Save, ArrowLeft, StickyNote } from 'lucide-react';
+import { LoaderCircle, Save, ArrowLeft, StickyNote, Printer } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUserNote, saveUserNote, deleteUserNote, deriveNoteTitle, type UserNote } from '@/services/user-notes-service';
+import { saveNoteToDrive } from '@/services/google-drive-notes-service';
+import { format } from 'date-fns';
+
+function escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 export default function NoteEditorPage() {
     const params = useParams<{ id: string }>();
     const noteId = params?.id ?? '';
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, getGoogleAccessToken } = useAuth();
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +43,7 @@ export default function NoteEditorPage() {
     // and lets a deferred navigation be cancelled if the user leaves first.
     const isMountedRef = useRef(true);
     const navigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const driveFileIdRef = useRef<string | undefined>(undefined);
     useEffect(() => {
         isMountedRef.current = true;
         return () => {
@@ -76,6 +83,7 @@ export default function NoteEditorPage() {
             setContent(note.content || '');
             setBaselineTitle(note.title || '');
             setBaselineContent(note.content || '');
+            driveFileIdRef.current = note.driveFileId;
         } catch (error: any) {
             console.error('Failed to load note:', error);
             setNotFound(true);
@@ -93,8 +101,37 @@ export default function NoteEditorPage() {
         setIsSaving(true);
         try {
             const trimmedTitle = title.trim() || deriveNoteTitle(content);
-            await saveUserNote(user.uid, { id: noteId, title: trimmedTitle, content, userId: user.uid });
-            toast({ title: 'Note Saved', description: `"${trimmedTitle}" has been stored.` });
+
+            // Google Drive sync (best-effort): the PDF copy in the user's
+            // "Ogeemo Notes" folder is a mirror — the note itself always saves.
+            let driveFileId = driveFileIdRef.current;
+            let driveError = '';
+            try {
+                const accessToken = await getGoogleAccessToken();
+                if (accessToken) {
+                    const result = await saveNoteToDrive(accessToken, trimmedTitle, content, driveFileId);
+                    driveFileId = result.fileId;
+                    driveFileIdRef.current = result.fileId;
+                } else {
+                    driveError = 'Google Drive access has not been granted in this session.';
+                }
+            } catch (error: any) {
+                driveError = error.message;
+            }
+
+            await saveUserNote(user.uid, {
+                id: noteId,
+                title: trimmedTitle,
+                content,
+                userId: user.uid,
+                ...(driveFileId ? { driveFileId } : {}),
+            });
+            toast({
+                title: 'Note Saved',
+                description: driveError
+                    ? `"${trimmedTitle}" saved. (Google Drive sync failed: ${driveError})`
+                    : `"${trimmedTitle}" saved and synced to Google Drive.`,
+            });
             // Defer the navigation by a tick: pushing synchronously here races
             // the spinner-swap re-render below while Next tears this page down,
             // which crashes with "insertBefore ... not a child of this node".
@@ -106,7 +143,7 @@ export default function NoteEditorPage() {
             // only update state if it is still mounted.
             if (isMountedRef.current) setIsSaving(false);
         }
-    }, [isSaving, user, noteId, title, content, isDirty, router, toast]);
+    }, [isSaving, user, noteId, title, content, isDirty, router, toast, getGoogleAccessToken]);
 
     // Ctrl/Cmd + S saves from anywhere on the page (same as the Save button:
     // store the note, then return to the User Notes landing page).
@@ -120,6 +157,56 @@ export default function NoteEditorPage() {
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     });
+
+    // Prints the current editor content through a hidden, print-styled iframe —
+    // only the note (subject + content + timestamp) goes on paper, never the
+    // app chrome. Works even when the latest typing has not been saved yet.
+    const handlePrint = useCallback(() => {
+        const printSubject = title.trim() || deriveNoteTitle(content);
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) {
+            iframe.remove();
+            return;
+        }
+
+        doc.open();
+        doc.write(`<!DOCTYPE html>
+<html>
+<head>
+<title>${escapeHtml(printSubject)}</title>
+<style>
+  @page { margin: 18mm; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #111; line-height: 1.5; margin: 24px; }
+  .pn-subject { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
+  .pn-meta { font-size: 11px; color: #555; margin: 0 0 18px; }
+  .pn-body { white-space: pre-wrap; overflow-wrap: break-word; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="pn-subject">${escapeHtml(printSubject)}</div>
+  <div class="pn-meta">Printed ${format(new Date(), 'PPp')}</div>
+  <div class="pn-body">${escapeHtml(content)}</div>
+</body>
+</html>`);
+        doc.close();
+
+        const cleanup = () => iframe.remove();
+        iframe.contentWindow?.addEventListener('afterprint', cleanup);
+        setTimeout(cleanup, 60000);
+
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+    }, [title, content]);
 
     const handleLeaveWithoutSaving = () => {
         // Deferred by a tick so the state update commits before the route
@@ -226,6 +313,10 @@ export default function NoteEditorPage() {
                             {content.length} character{content.length === 1 ? '' : 's'}
                         </p>
                         <div className="flex items-center gap-2">
+                            <Button variant="outline" onClick={handlePrint}>
+                                <Printer className="mr-2 h-4 w-4" />
+                                Print
+                            </Button>
                             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                                 Cancel
                             </Button>

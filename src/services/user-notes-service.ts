@@ -14,6 +14,8 @@ export interface UserNote {
     title: string;
     content: string;
     userId: string;
+    driveFileId?: string;
+    driveSyncedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -65,7 +67,7 @@ export function deriveNoteTitle(content: string): string {
 
 function normalizeNote(raw: any, fallbackUserId: string): UserNote | null {
     if (!raw || typeof raw !== 'object') return null;
-    return {
+    const note: UserNote = {
         id: raw.id || newId(),
         title: typeof raw.title === 'string' ? raw.title : '',
         content: typeof raw.content === 'string' ? raw.content : '',
@@ -73,6 +75,12 @@ function normalizeNote(raw: any, fallbackUserId: string): UserNote | null {
         createdAt: toDate(raw.createdAt) || new Date(),
         updatedAt: toDate(raw.updatedAt) || new Date(),
     };
+    // Optional Drive linkage — conditionally assigned so no undefined values
+    // ever reach Firestore (it rejects undefined field values).
+    if (typeof raw.driveFileId === 'string' && raw.driveFileId) note.driveFileId = raw.driveFileId;
+    const syncedAt = toDate(raw.driveSyncedAt);
+    if (syncedAt) note.driveSyncedAt = syncedAt;
+    return note;
 }
 
 function notesFromSnapshot(snapshot: any, userId: string): UserNote[] {

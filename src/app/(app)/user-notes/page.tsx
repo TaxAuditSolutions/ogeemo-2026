@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   LoaderCircle, Plus, MoreVertical, Trash2, StickyNote, Search, Pencil, Edit,
-  ArrowUp, ArrowDown, ChevronsUpDown,
+  ArrowUp, ArrowDown, ChevronsUpDown, Cloud, ExternalLink,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -359,6 +359,11 @@ export default function UserNotesPage() {
                               <span className="max-w-[420px] truncate font-medium">
                                 {note.title || 'Untitled Note'}
                               </span>
+                              {note.driveFileId && (
+                                <span title="Synced to Google Drive" className="shrink-0">
+                                  <Cloud className="h-3.5 w-3.5 text-emerald-600" />
+                                </span>
+                              )}
                             </button>
                           </TableCell>
                           <TableCell className="max-w-[220px] truncate text-muted-foreground" title={ownerLabel}>
@@ -376,6 +381,11 @@ export default function UserNotesPage() {
                                 <DropdownMenuItem onSelect={() => router.push(`/user-notes/${note.id}`)}>
                                   <Edit className="mr-2 h-4 w-4" /> Open
                                 </DropdownMenuItem>
+                                {note.driveFileId && (
+                                  <DropdownMenuItem onSelect={() => window.open(`https://drive.google.com/file/d/${note.driveFileId}/view`, '_blank', 'noopener,noreferrer')}>
+                                    <ExternalLink className="mr-2 h-4 w-4" /> Open in Drive
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onSelect={() => { setNoteToRename(note); setRenameValue(note.title); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Rename
                                 </DropdownMenuItem>

@@ -39,7 +39,8 @@ import {
   ClipboardList,
   Award,
   Crown,
-  Building2
+  Building2,
+  StickyNote
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -85,6 +86,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/to-do", label: "To-Do List", icon: ListChecks },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/document-manager", label: "Document Manager", icon: Folder },
+  { href: "/user-notes", label: "User Notes", icon: StickyNote },
   { href: "/meetings", label: "Meetings", icon: Users },
   { href: "/idea-board", label: "Idea Board", icon: Lightbulb },
   { href: "/reports", label: "Reports Hub", icon: ClipboardList },

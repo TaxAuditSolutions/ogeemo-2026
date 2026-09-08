@@ -8,15 +8,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { LoaderCircle, Save, ArrowLeft, StickyNote, Printer, Info, X, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getUserNote, saveUserNote, deleteUserNote, deriveNoteTitle, type UserNote } from '@/services/user-notes-service';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { LoaderCircle, Save, ArrowLeft, StickyNote, Printer } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { getUserNote, saveUserNote, deleteUserNote, deriveNoteTitle, type UserNote } from '@/services/user-notes-service';
-import { saveNoteToDrive } from '@/services/google-drive-notes-service';
 import { format } from 'date-fns';
 
 function escapeHtml(text: string): string {
@@ -27,7 +27,7 @@ export default function NoteEditorPage() {
     const params = useParams<{ id: string }>();
     const noteId = params?.id ?? '';
     const { toast } = useToast();
-    const { user, getGoogleAccessToken } = useAuth();
+    const { user } = useAuth();
     const router = useRouter();
 
     const [isLoading, setIsLoading] = useState(true);
@@ -38,12 +38,13 @@ export default function NoteEditorPage() {
     const [baselineContent, setBaselineContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Guards against state updates after the route change unmounts this page,
     // and lets a deferred navigation be cancelled if the user leaves first.
     const isMountedRef = useRef(true);
     const navigateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const driveFileIdRef = useRef<string | undefined>(undefined);
     useEffect(() => {
         isMountedRef.current = true;
         return () => {
@@ -83,7 +84,6 @@ export default function NoteEditorPage() {
             setContent(note.content || '');
             setBaselineTitle(note.title || '');
             setBaselineContent(note.content || '');
-            driveFileIdRef.current = note.driveFileId;
         } catch (error: any) {
             console.error('Failed to load note:', error);
             setNotFound(true);
@@ -101,37 +101,8 @@ export default function NoteEditorPage() {
         setIsSaving(true);
         try {
             const trimmedTitle = title.trim() || deriveNoteTitle(content);
-
-            // Google Drive sync (best-effort): the PDF copy in the user's
-            // "Ogeemo Notes" folder is a mirror — the note itself always saves.
-            let driveFileId = driveFileIdRef.current;
-            let driveError = '';
-            try {
-                const accessToken = await getGoogleAccessToken();
-                if (accessToken) {
-                    const result = await saveNoteToDrive(accessToken, trimmedTitle, content, driveFileId);
-                    driveFileId = result.fileId;
-                    driveFileIdRef.current = result.fileId;
-                } else {
-                    driveError = 'Google Drive access has not been granted in this session.';
-                }
-            } catch (error: any) {
-                driveError = error.message;
-            }
-
-            await saveUserNote(user.uid, {
-                id: noteId,
-                title: trimmedTitle,
-                content,
-                userId: user.uid,
-                ...(driveFileId ? { driveFileId } : {}),
-            });
-            toast({
-                title: 'Note Saved',
-                description: driveError
-                    ? `"${trimmedTitle}" saved. (Google Drive sync failed: ${driveError})`
-                    : `"${trimmedTitle}" saved and synced to Google Drive.`,
-            });
+            await saveUserNote(user.uid, { id: noteId, title: trimmedTitle, content, userId: user.uid });
+            toast({ title: 'Note Saved', description: `"${trimmedTitle}" has been stored.` });
             // Defer the navigation by a tick: pushing synchronously here races
             // the spinner-swap re-render below while Next tears this page down,
             // which crashes with "insertBefore ... not a child of this node".
@@ -143,7 +114,7 @@ export default function NoteEditorPage() {
             // only update state if it is still mounted.
             if (isMountedRef.current) setIsSaving(false);
         }
-    }, [isSaving, user, noteId, title, content, isDirty, router, toast, getGoogleAccessToken]);
+    }, [isSaving, user, noteId, title, content, isDirty, router, toast]);
 
     // Ctrl/Cmd + S saves from anywhere on the page (same as the Save button:
     // store the note, then return to the User Notes landing page).
@@ -241,6 +212,24 @@ export default function NoteEditorPage() {
         handleLeaveWithoutSaving();
     };
 
+    const handleDeleteRequest = () => {
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (isDeleting || !user || !noteId) return;
+        setIsDeleting(true);
+        try {
+            await deleteUserNote(user.uid, noteId);
+            toast({ title: 'Note Deleted', description: `"${title.trim() || deriveNoteTitle(content)}" has been deleted.` });
+            navigateTimerRef.current = setTimeout(() => router.push('/user-notes'), 50);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
+        } finally {
+            if (isMountedRef.current) setIsDeleting(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-full w-full items-center justify-center p-4">
@@ -276,6 +265,17 @@ export default function NoteEditorPage() {
                             ? 'Unsaved changes — click Save Note (or press Ctrl+S) to save and return'
                             : 'No new changes'}
                     </span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                        aria-label="Close and return to User Notes"
+                        title="Close"
+                        className="text-muted-foreground hover:text-destructive"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
                 </div>
                 <Card>
                     <CardHeader>
@@ -313,9 +313,36 @@ export default function NoteEditorPage() {
                             {content.length} character{content.length === 1 ? '' : 's'}
                         </p>
                         <div className="flex items-center gap-2">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span
+                                            className="flex h-9 cursor-help items-center justify-center rounded-md px-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                                            aria-label="How to keep a PDF copy in Google Drive"
+                                        >
+                                            <Info className="h-4 w-4" />
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                        <p className="font-semibold text-foreground">Keep a PDF copy in Google Drive</p>
+                                        <p className="text-foreground/90">
+                                            Click Print → set the destination to &quot;Save as PDF&quot; → click Save →
+                                            choose your Google Drive notes folder as the location.
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                             <Button variant="outline" onClick={handlePrint}>
                                 <Printer className="mr-2 h-4 w-4" />
                                 Print
+                            </Button>
+                            <Button variant="destructive" onClick={handleDeleteRequest} disabled={isSaving || isDeleting}>
+                                {isDeleting ? (
+                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                )}
+                                Delete
                             </Button>
                             <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                                 Cancel
@@ -344,6 +371,23 @@ export default function NoteEditorPage() {
                         <AlertDialogCancel>Keep editing</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDiscard} className="bg-destructive hover:bg-destructive/90">
                             Discard changes
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete &quot;{title.trim() || deriveNoteTitle(content)}&quot; and its saved
+                            content. This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90">
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   LoaderCircle, Plus, MoreVertical, Trash2, StickyNote, Search, Pencil, Edit,
-  ArrowUp, ArrowDown, ChevronsUpDown, Cloud, ExternalLink,
+  ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -315,7 +315,7 @@ export default function UserNotesPage() {
           <Card className="mx-auto max-w-6xl">
             <CardContent className="p-0">
               <div className="overflow-hidden rounded-md border">
-                <Table>
+                <Table className="[&_th]:h-8 [&_th]:px-4 [&_td]:py-1.5 [&_td]:px-4">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[40px]">
@@ -355,15 +355,10 @@ export default function UserNotesPage() {
                               className="flex items-center gap-2 text-left hover:underline"
                               title={note.title || 'Untitled Note'}
                             >
-                              <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <StickyNote className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                               <span className="max-w-[420px] truncate font-medium">
                                 {note.title || 'Untitled Note'}
                               </span>
-                              {note.driveFileId && (
-                                <span title="Synced to Google Drive" className="shrink-0">
-                                  <Cloud className="h-3.5 w-3.5 text-emerald-600" />
-                                </span>
-                              )}
                             </button>
                           </TableCell>
                           <TableCell className="max-w-[220px] truncate text-muted-foreground" title={ownerLabel}>
@@ -375,17 +370,12 @@ export default function UserNotesPage() {
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6"><MoreVertical className="h-3.5 w-3.5" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onSelect={() => router.push(`/user-notes/${note.id}`)}>
                                   <Edit className="mr-2 h-4 w-4" /> Open
                                 </DropdownMenuItem>
-                                {note.driveFileId && (
-                                  <DropdownMenuItem onSelect={() => window.open(`https://drive.google.com/file/d/${note.driveFileId}/view`, '_blank', 'noopener,noreferrer')}>
-                                    <ExternalLink className="mr-2 h-4 w-4" /> Open in Drive
-                                  </DropdownMenuItem>
-                                )}
                                 <DropdownMenuItem onSelect={() => { setNoteToRename(note); setRenameValue(note.title); }}>
                                   <Pencil className="mr-2 h-4 w-4" /> Rename
                                 </DropdownMenuItem>

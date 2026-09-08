@@ -7,10 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   LoaderCircle, Plus, MoreVertical, Trash2, StickyNote, Search, Pencil, Edit,
-  ArrowUp, ArrowDown, ChevronsUpDown,
+  ArrowUp, ArrowDown, ChevronsUpDown, Info,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -251,7 +252,34 @@ export default function UserNotesPage() {
             <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
                 <StickyNote className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold font-headline text-primary">User Notes</h1>
+            <div className="flex items-center justify-center gap-2">
+                <h1 className="text-2xl font-bold font-headline text-primary">User Notes</h1>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span
+                                className="flex h-6 w-6 cursor-help items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+                                aria-label="What is User Notes?"
+                            >
+                                <Info className="h-4 w-4" />
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-sm">
+                            <p className="font-semibold text-foreground">What is User Notes?</p>
+                            <p className="mt-1 text-foreground/90">
+                                Your private notepad inside Ogeemo. Jot down thoughts, follow-ups, research —
+                                anything you want to keep. Only you can see these notes.
+                            </p>
+                            <p className="mt-2 text-foreground/80">
+                                Click <span className="font-medium">New Note</span> to write one — it saves when you
+                                click <span className="font-medium">Save Note</span>. Click a subject in the list to
+                                reopen it, use <span className="font-medium">Print</span> for a PDF copy (Save as PDF
+                                into your Google Drive), and sort or search the list to find anything fast.
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
             <p className="text-sm text-muted-foreground">
                 Your personal notes — click a subject to open it.
             </p>

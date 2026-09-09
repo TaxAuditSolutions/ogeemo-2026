@@ -3,8 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
-import { ArrowRight, Sparkles, HeartHandshake, ShieldCheck, User, X, Building2, Check } from 'lucide-react';
+import {
+  ArrowRight, Sparkles, HeartHandshake, ShieldCheck, User, X, Building2, Check,
+  BookOpen, LayoutDashboard, Bot,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -147,16 +151,45 @@ export default function WelcomePage() {
           <ImagePlaceholder id="welcome-graphic" className="object-cover" />
         </div>
 
-        <div className="flex justify-center pt-4">
-          <Button 
-            asChild 
-            size="lg" 
-            className="h-16 px-12 text-xl font-bold rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 active:translate-y-0"
-          >
-            <Link href="/action-manager">
-              Get Started! <ArrowRight className="ml-2 h-6 w-6" />
-            </Link>
-          </Button>
+        <div className="grid gap-4 pt-4 sm:grid-cols-3">
+          {[
+            {
+              href: '/learn',
+              icon: BookOpen,
+              title: 'Learn Ogeemo',
+              description: 'New here, or sharpening up? A guided path through the whole engine.',
+            },
+            {
+              href: '/action-manager',
+              icon: LayoutDashboard,
+              title: 'Get to Work',
+              description: 'Straight to your Action Manager — tasks, actions, and your day.',
+            },
+            {
+              href: '/co-pilot',
+              icon: Bot,
+              title: 'Ask the Co-Pilot',
+              description: 'Your AI assistant for Ogeemo and your work.',
+            },
+          ].map((door) => {
+            const DoorIcon = door.icon;
+            return (
+              <Link key={door.href} href={door.href} className="group">
+                <Card className="h-full transition-all hover:-translate-y-1 hover:shadow-xl">
+                  <CardContent className="flex h-full flex-col gap-2 p-6">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <DoorIcon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-lg font-bold">{door.title}</p>
+                    <p className="text-sm text-muted-foreground">{door.description}</p>
+                    <span className="mt-auto flex items-center gap-1 pt-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                      Open <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

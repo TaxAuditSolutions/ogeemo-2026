@@ -176,9 +176,9 @@ export default function WelcomePage() {
             return (
               <Link key={door.href} href={door.href} className="group">
                 <Card className="h-full transition-all hover:-translate-y-1 hover:shadow-xl">
-                  <CardContent className="flex h-full flex-col gap-2 p-6">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <DoorIcon className="h-5 w-5 text-primary" />
+                  <CardContent className="flex h-full flex-col items-center gap-2 p-6 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                      <DoorIcon className="h-6 w-6 text-primary" strokeWidth={2.25} />
                     </div>
                     <p className="text-lg font-bold">{door.title}</p>
                     <p className="text-sm text-muted-foreground">{door.description}</p>

@@ -16,12 +16,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { registerOrganization } from '@/app/actions/org-actions';
+import { strongPasswordSchema } from '@/lib/password-policy';
 
 const registerSchema = z.object({
     orgName: z.string().min(2, { message: "Organization name must be at least 2 characters." }),
     name: z.string().min(2, { message: "Name must be at least 2 characters." }),
     email: z.string().email({ message: "Please enter a valid email." }),
-    password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+    password: strongPasswordSchema,
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -139,11 +140,11 @@ export default function RegisterPage() {
                                 <FormLabel>Password</FormLabel>
                                 <FormControl>
                                     <div className="relative">
-                                        <Input 
-                                            type={showPassword ? "text" : "password"} 
-                                            placeholder="••••••••" 
-                                            {...field} 
-                                            disabled={isLoading} 
+                                        <Input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            {...field}
+                                            disabled={isLoading}
                                         />
                                         <Button
                                             type="button"

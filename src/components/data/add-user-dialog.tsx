@@ -42,6 +42,7 @@ import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { strongPasswordSchema } from '@/lib/password-policy';
 
 const menuAccessOptions = [
     { value: 'inherit', label: 'Inherit default role visibility' },
@@ -52,7 +53,7 @@ const userSchema = z.object({
     name: z.string().min(2, { message: 'Name is required.' }),
     email: z.string().email({ message: 'A valid email is required.' }),
     employeeNumber: z.string().optional(),
-    password: z.string().optional(),
+    password: z.union([z.literal(''), strongPasswordSchema]).optional(),
     notes: z.string().optional(),
     accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer', 'none']).default('viewer'),
     companyName: z.string().optional(),
@@ -184,7 +185,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 mode: 'allowlist',
                 allowedMenuItems: Array.from(selectedSidebarTargets).sort(),
             };
-        
+
         try {
             if (userToEdit) {
                 await updateUserInTenant({
@@ -212,8 +213,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 });
                 toast({ title: 'Tenant Created', description: `"${values.companyName}" has been provisioned with ${values.email} as its super admin.` });
             } else {
-                if (!values.password || values.password.length < 6) {
-                    setError('password', { message: 'Password must be at least 6 characters.' });
+                if (!values.password) {
+                    setError('password', { message: 'Password is required.' });
                     setIsSaving(false);
                     return;
                 }
@@ -235,7 +236,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
         } finally {
-            
+
             setIsSaving(false);
         }
     };

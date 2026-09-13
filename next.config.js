@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
-const isProductionBuild = process.env.NEXT_DIST_DIR === ".next-build";
+const { PHASE_PRODUCTION_BUILD } = require("next/constants");
 
-const nextConfig = {
+const createNextConfig = (phase) => ({
   distDir: process.env.NEXT_DIST_DIR || ".next",
   typescript: {
     ignoreBuildErrors: true,
-    tsconfigPath: isProductionBuild ? "tsconfig.build.json" : "tsconfig.json",
+    tsconfigPath: phase === PHASE_PRODUCTION_BUILD ? "tsconfig.build.json" : "tsconfig.json",
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -57,6 +57,6 @@ const nextConfig = {
     '@genkit-ai/googleai',
     '@opentelemetry/sdk-node',
   ],
-};
+});
 
-module.exports = nextConfig;
+module.exports = createNextConfig;

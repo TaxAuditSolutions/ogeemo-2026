@@ -32,13 +32,15 @@
     }
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src/types/mermaid.d.ts"
+    "next-env.d.ts",
+    "src/types/mermaid.d.ts",
+    ".next-dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    ".next-build"
   ]
 }

@@ -20,9 +20,10 @@ import { useToast } from '@/hooks/use-toast';
 import { type UserProfile } from '@/core/user-profile-service';
 import { updateUserAuth } from '@/core/user-profile-service';
 import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
+import { strongPasswordSchema } from '@/lib/password-policy';
 
 const passwordSchema = z.object({
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: strongPasswordSchema,
 });
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
@@ -52,25 +53,25 @@ export function ChangePasswordDialog({ isOpen, onOpenChange, user, onPasswordCha
 
   const onSubmit = async (values: PasswordFormData) => {
     if (!user) {
-        toast({ variant: 'destructive', title: 'No User Selected' });
-        return;
+      toast({ variant: 'destructive', title: 'No User Selected' });
+      return;
     }
     setIsSaving(true);
     try {
-        const result = await updateUserAuth(user.id, { password: values.password });
-        console.log('Password update function returned successfully with result:', result);
-        toast({ title: 'Password Updated', description: `The password for ${user.displayName} has been changed.` });
-        onPasswordChanged();
-        onOpenChange(false);
+      const result = await updateUserAuth(user.id, { password: values.password });
+      console.log('Password update function returned successfully with result:', result);
+      toast({ title: 'Password Updated', description: `The password for ${user.displayName} has been changed.` });
+      onPasswordChanged();
+      onOpenChange(false);
     } catch (error: any) {
-        console.error('Password update failed. Full error object:', error);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Update Failed', 
-            description: `Code: ${error.code || 'N/A'}. Message: ${error.message || 'An unknown error occurred.'}. Details: ${JSON.stringify(error.details)}` 
-        });
+      console.error('Password update failed. Full error object:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: `Code: ${error.code || 'N/A'}. Message: ${error.message || 'An unknown error occurred.'}. Details: ${JSON.stringify(error.details)}`
+      });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 

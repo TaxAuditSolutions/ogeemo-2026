@@ -23,13 +23,13 @@ interface DragItem {
   type: string;
 }
 
-const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMenuItemProps>(({ 
-    item, 
-    index, 
-    isActive, 
-    moveMenuItem, 
-    isDraggable = false, 
-    isCompact = false 
+const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMenuItemProps>(({
+  item,
+  index,
+  isActive,
+  moveMenuItem,
+  isDraggable = false,
+  isCompact = false
 }, forwardedRef) => {
   const localRef = useRef<HTMLDivElement>(null);
   const ref = (forwardedRef as React.RefObject<HTMLDivElement> | undefined) ?? localRef;
@@ -71,8 +71,8 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
 
   const buttonContent = (
     <>
-      <Icon className="h-4 w-4" />
-      <span>{item.label}</span>
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
     </>
   );
 
@@ -83,41 +83,43 @@ const DraggableMenuItemComponent = React.forwardRef<HTMLDivElement, DraggableMen
     >
       <div ref={setRefs as React.Ref<HTMLDivElement>} className="flex items-center">
         {isExternal ? (
-           <Button
+          <Button
             asChild
             variant={isActive ? "secondary" : "ghost"}
             className={cn(
-                "w-full justify-start gap-3",
-                isDraggable ? "pl-8" : "pl-3",
-                isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
-                isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              "w-full justify-start gap-3",
+              isDraggable ? "pl-8" : "pl-3",
+              isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
+              "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:!px-2",
+              isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
-            >
-                <a href={item.href} target="_blank" rel="noopener noreferrer">
-                    {buttonContent}
-                </a>
-            </Button>
+          >
+            <a href={item.href} target="_blank" rel="noopener noreferrer" aria-label={item.label}>
+              {buttonContent}
+            </a>
+          </Button>
         ) : (
-            <Button
+          <Button
             asChild
             variant={isActive ? "secondary" : "ghost"}
             className={cn(
-                "w-full justify-start gap-3",
-                isDraggable ? "pl-8" : "pl-3",
-                isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
-                isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              "w-full justify-start gap-3",
+              isDraggable ? "pl-8" : "pl-3",
+              isCompact ? "h-9 text-sm" : "h-9 text-sm py-1",
+              "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:!px-2",
+              isActive ? "" : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
-            >
-            <Link href={item.href}>
-                {buttonContent}
+          >
+            <Link href={item.href} aria-label={item.label}>
+              {buttonContent}
             </Link>
-            </Button>
+          </Button>
         )}
-       
+
         {isDraggable && (
-            <GripVertical
-            className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-sidebar-foreground/50 cursor-move"
-            />
+          <GripVertical
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-5 w-5 text-sidebar-foreground/50 cursor-move group-data-[collapsible=icon]:hidden"
+          />
         )}
       </div>
     </div>

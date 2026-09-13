@@ -51,7 +51,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'starttimer': { target: '/master-mind?startTimer=true', label: 'Master Mind Timer', category: 'Workspace' },
     'logtime': { target: '/master-mind?startTimer=true', label: 'Master Mind Timer', category: 'Workspace' },
     'tracktime': { target: '/master-mind?startTimer=true', label: 'Master Mind Timer', category: 'Workspace' },
-    
+
     // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
     'finance': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -75,7 +75,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'inventory': { target: '/inventory-manager/track', label: 'Inventory', category: 'Operations' },
     'pettycash': { target: '/accounting/petty-cash', label: 'Petty Cash', category: 'Finances' },
     'cashaccounting': { target: '/accounting/petty-cash', label: 'Petty Cash', category: 'Finances' },
-    
+
     // Relationships
     'contact': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'contacts': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
@@ -87,7 +87,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'workers': { target: '/contacts', label: 'Workers', category: 'HR' },
     'crm': { target: '/crm/plan', label: 'CRM Hub', category: 'Relationships' },
     'leads': { target: '/crm/plan', label: 'Leads', category: 'Relationships' },
-    
+
     // Projects & Tasks
     'projects': { target: '/projects/all', label: 'Project List', category: 'Operations' },
     'projectlist': { target: '/projects/all', label: 'Project List', category: 'Operations' },
@@ -167,13 +167,10 @@ export function processCommand(input: string): CommandResult {
         const normalizedParam = normalize(param);
 
         if (normalizedParam.includes('contact')) {
-            const name = cleanParam(param.replace(/contact/i, ''));
             return {
-                type: 'action',
-                target: `/contacts?action=new${name ? `&name=${encodeURIComponent(name)}` : ''}`,
-                message: 'Action: [Create Contact]',
-                description: name ? `Starting record for "${name}".` : 'Opening contact creator.',
-                category: 'Relationships',
+                type: 'unknown',
+                message: 'Contact Assistance',
+                description: 'Routing contact creation to Ogeemo Co-Pilot.',
             };
         }
 
@@ -332,8 +329,8 @@ export function processCommand(input: string): CommandResult {
         };
     }
 
-    const menuItemMatch = allMenuItems.find(item => 
-        normalize(item.label) === normalizedInput || 
+    const menuItemMatch = allMenuItems.find(item =>
+        normalize(item.label) === normalizedInput ||
         (normalizedInput.length > 3 && normalize(item.label).includes(normalizedInput))
     );
     if (menuItemMatch) {

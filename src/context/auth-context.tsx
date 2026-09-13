@@ -26,7 +26,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicPaths = ['/login', '/register'];
+const authEntryPaths = ['/login', '/register'];
+const emailActionPaths = ['/reset-password'];
 const marketingPaths = [
   '/website',
   '/features',
@@ -182,11 +183,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthLoading && pathname) {
-      const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
+      const isAuthEntryPath = authEntryPaths.some(p => pathname.startsWith(p));
+      const isPublicPath = isAuthEntryPath || emailActionPaths.some(p => pathname.startsWith(p));
       const isMarketingPath = marketingPaths.some(p => pathname.startsWith(p)) || pathname === '/';
 
-      // If the user is authenticated and on a public page (login/register), send them to welcome
-      if (user && isPublicPath) {
+      // Authenticated users may still need to process an emailed account action.
+      if (user && isAuthEntryPath) {
         router.push('/welcome');
       }
 

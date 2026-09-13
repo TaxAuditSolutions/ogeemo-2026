@@ -28,8 +28,19 @@ export const updateUserAuth = onCall(async (request) => {
     throw new HttpsError("permission-denied", "You are not allowed to change this password.");
   }
 
-  if (!password || password.length < 6) {
-    throw new HttpsError("invalid-argument", "Password must be at least 6 characters long.");
+  const isStrongPassword =
+    !!password &&
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9\s]/.test(password);
+
+  if (!isStrongPassword) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Password must be at least 8 characters and include uppercase, lowercase, numeric, and special characters."
+    );
   }
 
   await auth.updateUser(uid, { password });

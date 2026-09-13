@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { calculateMembershipPrice } from "@/core/organization-service";
+import { strongPasswordSchema } from "@/lib/password-policy";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: strongPasswordSchema,
   businessName: z.string().min(2, { message: "Business name is required for membership." }),
   seatCount: z.coerce.number().min(1).max(100).default(5),
 });
@@ -88,12 +89,12 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                   <FormLabel className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Secure Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        className="h-12 w-full pr-11 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" 
-                        {...field} 
-                        disabled={isLoading} 
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="h-12 w-full pr-11 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+                        {...field}
+                        disabled={isLoading}
                       />
                       <Button
                         type="button"
@@ -139,7 +140,7 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                 ${totalPrice}.00 / mo
               </Badge>
             </div>
-            
+
             <FormField
               control={form.control}
               name="seatCount"
@@ -147,12 +148,12 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                 <FormItem>
                   <FormControl>
                     <div className="space-y-4">
-                      <Input 
-                        type="range" 
-                        min="1" 
-                        max="50" 
+                      <Input
+                        type="range"
+                        min="1"
+                        max="50"
                         className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
-                        {...field} 
+                        {...field}
                         disabled={isLoading}
                       />
                       <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -173,17 +174,17 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
         </div>
 
         <div className="pt-2">
-            <div className="flex items-center gap-3 p-4 bg-slate-950 text-white rounded-2xl mb-6 shadow-xl border border-white/10">
-                <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
-                <p className="text-xs leading-relaxed opacity-90">
-                    <strong>Founders Commitment:</strong> By joining today, you lock in this pricing for the life of your organization. No tiers, no traps, no hidden fees.
-                </p>
-            </div>
-            
-            <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all" disabled={isLoading}>
-                {isLoading ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
-                {isLoading ? "Provisioning..." : "Claim Your Membership"}
-            </Button>
+          <div className="flex items-center gap-3 p-4 bg-slate-950 text-white rounded-2xl mb-6 shadow-xl border border-white/10">
+            <ShieldCheck className="h-6 w-6 text-primary shrink-0" />
+            <p className="text-xs leading-relaxed opacity-90">
+              <strong>Founders Commitment:</strong> By joining today, you lock in this pricing for the life of your organization. No tiers, no traps, no hidden fees.
+            </p>
+          </div>
+
+          <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all" disabled={isLoading}>
+            {isLoading ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+            {isLoading ? "Provisioning..." : "Claim Your Membership"}
+          </Button>
         </div>
       </form>
     </Form>
@@ -191,9 +192,9 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
 }
 
 function Badge({ children, className, variant }: any) {
-    return (
-        <span className={`px-3 py-1 rounded-full text-xs font-bold ${className}`}>
-            {children}
-        </span>
-    );
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold ${className}`}>
+      {children}
+    </span>
+  );
 }

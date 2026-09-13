@@ -57,5 +57,25 @@ The app code itself was not the main blocker. Firebase Auth rejected sign-ins on
 ### Safe runtime fallback
 The app now includes a default fallback auth domain so local and dev environments continue working even before the custom domain is fully configured.
 
+## Firebase Password Reset Setup
+
+The `/login` password-recovery flow uses Firebase Authentication's built-in email sender and the custom handler at `/reset-password`. Complete these steps in the Firebase project before testing the deployed flow:
+
+1. Go to Authentication > Sign-in method and confirm Email/Password is enabled.
+2. Go to Authentication > Settings and enable email enumeration protection so password-reset requests do not reveal whether an account exists.
+3. Under Password policy, select Require and configure:
+   - Minimum length: 8
+   - Lowercase character required
+   - Uppercase character required
+   - Numeric character required
+   - Non-alphanumeric character required
+4. Do not enable forced password upgrades on sign-in. Existing users may continue signing in with their current passwords until they create, change, or reset a password.
+5. Go to Authentication > Templates > Password reset and customize the sender name, subject, and body for Ogeemo.
+6. Set the password-reset template's custom action URL to `https://app.ogeemo.com/reset-password`. Firebase appends the single-use `mode` and `oobCode` parameters used by the page.
+7. Confirm `app.ogeemo.com`, `ogeemo.com` when used, and `localhost` are listed under Authentication > Settings > Authorized domains.
+8. Send a production smoke-test email and confirm its action link uses HTTPS, opens the Ogeemo reset page, expires after one hour, and cannot be reused after a successful reset.
+
+Firebase Authentication is the selected no-cost email option for this feature. Its current no-cost quota is 150 password-reset emails per day. Reassess the delivery provider if production volume or deliverability requirements outgrow that limit.
+
 ---
 *Page last updated Mar 25, 2026 1:04 AM EST*

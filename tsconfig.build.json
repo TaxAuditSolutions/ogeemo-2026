@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.json",
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "next-env.d.ts",
+        "src/types/mermaid.d.ts",
+        ".next-build/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        ".next",
+        ".next-dev"
+    ]
+}

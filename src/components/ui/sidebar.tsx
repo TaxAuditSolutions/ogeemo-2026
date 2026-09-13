@@ -20,8 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_PINNED_STORAGE_KEY = "ogeemo.sidebar.pinned"
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -30,7 +29,12 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 type SidebarContext = {
   state: "expanded" | "collapsed"
   open: boolean
-  setOpen: (open: boolean) => void
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  isPinned: boolean
+  setPinned: React.Dispatch<React.SetStateAction<boolean>>
+  togglePinned: () => void
+  setPointerInside: (inside: boolean) => void
+  setFocusInside: (inside: boolean) => void
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
@@ -70,11 +74,23 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [pointerInside, setPointerInside] = React.useState(false)
+    const [focusInside, setFocusInside] = React.useState(false)
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
+
+    React.useEffect(() => {
+      if (openProp !== undefined) return
+
+      const storedPinned = window.localStorage.getItem(SIDEBAR_PINNED_STORAGE_KEY)
+      if (storedPinned !== null) {
+        _setOpen(storedPinned === "true")
+      }
+    }, [openProp])
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
@@ -84,18 +100,21 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState)
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        window.localStorage.setItem(SIDEBAR_PINNED_STORAGE_KEY, String(openState))
       },
       [setOpenProp, open]
     )
+
+    const togglePinned = React.useCallback(() => {
+      setOpen((pinned) => !pinned)
+    }, [setOpen])
 
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+        : togglePinned()
+    }, [isMobile, setOpenMobile, togglePinned])
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -115,19 +134,24 @@ const SidebarProvider = React.forwardRef<
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.
-    const state = open ? "expanded" : "collapsed"
+    const state = open || pointerInside || focusInside ? "expanded" : "collapsed"
 
     const contextValue = React.useMemo<SidebarContext>(
       () => ({
         state,
         open,
         setOpen,
+        isPinned: open,
+        setPinned: setOpen,
+        togglePinned,
+        setPointerInside,
+        setFocusInside,
         isMobile,
         openMobile,
         setOpenMobile,
         toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, togglePinned, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
 
     return (
@@ -172,11 +196,23 @@ const Sidebar = React.forwardRef<
       collapsible = "icon",
       className,
       children,
+      onPointerEnter,
+      onPointerLeave,
+      onFocusCapture,
+      onBlurCapture,
       ...props
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const {
+      isMobile,
+      state,
+      isPinned,
+      openMobile,
+      setOpenMobile,
+      setPointerInside,
+      setFocusInside,
+    } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -221,12 +257,14 @@ const Sidebar = React.forwardRef<
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        data-pinned={isPinned}
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
             "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
             "group-data-[collapsible=offcanvas]:w-0",
+            "group-data-[pinned=false]:w-[--sidebar-width-icon]",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
               ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
@@ -245,6 +283,24 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
+          onPointerEnter={(event) => {
+            setPointerInside(true)
+            onPointerEnter?.(event)
+          }}
+          onPointerLeave={(event) => {
+            setPointerInside(false)
+            onPointerLeave?.(event)
+          }}
+          onFocusCapture={(event) => {
+            setFocusInside((event.target as HTMLElement).matches(":focus-visible"))
+            onFocusCapture?.(event)
+          }}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setFocusInside(false)
+            }
+            onBlurCapture?.(event)
+          }}
           {...props}
         >
           <div
@@ -264,7 +320,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { isMobile, openMobile, isPinned, toggleSidebar } = useSidebar()
 
   return (
     <Button
@@ -273,6 +329,9 @@ const SidebarTrigger = React.forwardRef<
       variant="ghost"
       size="icon"
       className={cn("h-7 w-7", className)}
+      aria-label={isMobile ? "Toggle sidebar" : isPinned ? "Unpin sidebar" : "Pin sidebar"}
+      aria-expanded={isMobile ? openMobile : isPinned}
+      aria-pressed={isMobile ? undefined : isPinned}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -280,7 +339,7 @@ const SidebarTrigger = React.forwardRef<
       {...props}
     >
       <PanelLeft />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{isMobile ? "Toggle sidebar" : isPinned ? "Unpin sidebar" : "Pin sidebar"}</span>
     </Button>
   )
 })
@@ -290,16 +349,17 @@ const SidebarRail = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button">
 >(({ className, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { isPinned, toggleSidebar } = useSidebar()
 
   return (
     <button
       ref={ref}
       data-sidebar="rail"
-      aria-label="Toggle Sidebar"
+      aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+      aria-pressed={isPinned}
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex",
         "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",
@@ -617,7 +677,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
       {...props}

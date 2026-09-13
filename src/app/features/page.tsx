@@ -137,10 +137,10 @@ export default function FeaturesPage() {
             ]
         },
         commandCentre: {
-            title: "Command Centre",
+            title: "Activity Manager",
             description: "High-fidelity temporal execution engine.",
             icon: BrainCircuit,
-            overview: "Built on a Temporal Matrix, the Command Centre allows you to divide every hour into 5-minute increments. This provides the granularity needed to track 'invisible work'—the quick client calls and rapid administrative tasks that usually go unrecorded.",
+            overview: "Built on a Temporal Matrix, the Activity Manager allows you to divide every hour into 5-minute increments. This provides the granularity needed to track 'invisible work'—the quick client calls and rapid administrative tasks that usually go unrecorded.",
             usageSteps: [
                 { title: "Schedule with Fidelity", description: "Drag tasks from your project Forge directly into the calendar. Use the slots to define exactly when work will happen.", icon: Calendar },
                 { title: "Start Live Sessions", description: "Use the 'Master Mind' card to start a live timer. Your active context follows you across the app as you work.", icon: Timer },
@@ -240,7 +240,7 @@ export default function FeaturesPage() {
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <BrainCircuit className="h-6 w-6" />
                                 </div>
-                                <CardTitle>Command Centre</CardTitle>
+                                <CardTitle>Activity Manager</CardTitle>
                                 <CardDescription>High-fidelity temporal execution engine.</CardDescription>
                             </CardHeader>
                             <CardContent className="text-sm text-muted-foreground space-y-2">

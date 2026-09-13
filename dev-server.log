@@ -1,0 +1,258 @@
+
+> nextn@0.1.1 dev
+> npx -y node@22 ./node_modules/next/dist/bin/next dev -p 9002
+
+   ▲ Next.js 15.2.8
+   - Local:        http://localhost:9002
+   - Network:      http://192.168.2.49:9002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.9s
+ ○ Compiling / ...
+ ✓ Compiled / in 7.4s (1392 modules)
+ GET / 200 in 9100ms
+ GET / 200 in 261ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /api/auth/session in 799ms (895 modules)
+ ✓ Compiled in 1255ms (514 modules)
+[Firebase Admin] Credential source: firebase_service_account_key_env
+ GET /favicon.ico 200 in 4802ms
+ GET / 200 in 2610ms
+ POST /api/auth/session 200 in 4295ms
+ GET /favicon.ico 200 in 336ms
+ ○ Compiling /welcome ...
+ ✓ Compiled /welcome in 3.4s (1899 modules)
+ GET /welcome 200 in 3841ms
+ POST /welcome 200 in 1338ms
+ POST /welcome 200 in 413ms
+ POST /welcome 200 in 418ms
+ POST /welcome 200 in 392ms
+ POST /welcome 200 in 382ms
+ POST /welcome 200 in 375ms
+ GET / 200 in 694ms
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 700ms (1162 modules)
+ POST /api/auth/session 200 in 1208ms
+ ✓ Compiled in 1065ms (770 modules)
+ GET / 200 in 863ms
+ ✓ Compiled in 1076ms (770 modules)
+ GET / 200 in 181ms
+ ✓ Compiled in 1007ms (770 modules)
+ GET / 200 in 158ms
+ ✓ Compiled in 693ms (770 modules)
+ GET / 200 in 188ms
+ ✓ Compiled in 848ms (770 modules)
+ GET / 200 in 181ms
+ ⨯ ./src/components/landing/gateway.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\landing\gateway.tsx[0m:82:1]
+ [2m79[0m |             : 'ring-0 shadow-lg border-primary/10';
+ [2m80[0m | 
+ [2m81[0m |     return (
+ [2m82[0m |         <div className="flex flex-col min-h-screen bg-background">
+    : [35;1m         ^^^[0m
+ [2m83[0m |             <SiteHeader />
+ [2m84[0m | 
+ [2m84[0m |             <main className="flex-1">
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/gateway.tsx
+./src/app/page.tsx
+ ⨯ ./src/components/landing/gateway.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\landing\gateway.tsx[0m:82:1]
+ [2m79[0m |             : 'ring-0 shadow-lg border-primary/10';
+ [2m80[0m | 
+ [2m81[0m |     return (
+ [2m82[0m |         <div className="flex flex-col min-h-screen bg-background">
+    : [35;1m         ^^^[0m
+ [2m83[0m |             <SiteHeader />
+ [2m84[0m | 
+ [2m84[0m |             <main className="flex-1">
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/gateway.tsx
+./src/app/page.tsx
+ ⨯ ./src/components/landing/gateway.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\landing\gateway.tsx[0m:82:1]
+ [2m79[0m |             : 'ring-0 shadow-lg border-primary/10';
+ [2m80[0m | 
+ [2m81[0m |     return (
+ [2m82[0m |         <div className="flex flex-col min-h-screen bg-background">
+    : [35;1m         ^^^[0m
+ [2m83[0m |             <SiteHeader />
+ [2m84[0m | 
+ [2m84[0m |             <main className="flex-1">
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/gateway.tsx
+./src/app/page.tsx
+ ⨯ ./src/components/landing/gateway.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\landing\gateway.tsx[0m:82:1]
+ [2m79[0m |             : 'ring-0 shadow-lg border-primary/10';
+ [2m80[0m | 
+ [2m81[0m |     return (
+ [2m82[0m |         <div className="flex flex-col min-h-screen bg-background">
+    : [35;1m         ^^^[0m
+ [2m83[0m |             <SiteHeader />
+ [2m84[0m | 
+ [2m84[0m |             <main className="flex-1">
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/gateway.tsx
+./src/app/page.tsx
+ ○ Compiling /_error ...
+ ⨯ ./src/components/landing/gateway.tsx
+Error:   [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\landing\gateway.tsx[0m:82:1]
+ [2m79[0m |             : 'ring-0 shadow-lg border-primary/10';
+ [2m80[0m | 
+ [2m81[0m |     return (
+ [2m82[0m |         <div className="flex flex-col min-h-screen bg-background">
+    : [35;1m         ^^^[0m
+ [2m83[0m |             <SiteHeader />
+ [2m84[0m | 
+ [2m84[0m |             <main className="flex-1">
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/gateway.tsx
+./src/app/page.tsx
+ GET / 500 in 4046ms
+ GET / 500 in 1771ms
+ GET / 500 in 131ms
+ GET / 500 in 131ms
+ ✓ Compiled /_error in 3.3s (2197 modules)
+ ○ Compiling /_not-found ...
+ GET / 200 in 970ms
+ ✓ Compiled /_not-found in 1688ms (2187 modules)
+ ✓ Compiled /favicon.ico in 379ms (1204 modules)
+ GET /favicon.ico 200 in 2831ms
+ ✓ Compiled /api/auth/session in 435ms (1209 modules)
+ POST /api/auth/session 200 in 915ms
+ GET / 200 in 385ms
+ ○ Compiling /about ...
+ ✓ Compiled /about in 1525ms (2244 modules)
+ GET /about 200 in 2301ms
+ GET / 200 in 858ms
+ ○ Compiling /empowerment/tas-manifesto ...
+ ✓ Compiled /empowerment/tas-manifesto in 3.3s (2245 modules)
+ GET /empowerment/tas-manifesto 200 in 3868ms
+ GET /favicon.ico 200 in 3724ms
+ ○ Compiling /pricing ...
+ ✓ Compiled /pricing in 1189ms (2258 modules)
+ GET /pricing 200 in 1728ms
+ ○ Compiling /lead-to-ledger ...
+ ✓ Compiled /lead-to-ledger in 1933ms (2287 modules)
+ GET /lead-to-ledger 200 in 2606ms
+ ○ Compiling /explore ...
+ ✓ Compiled /explore in 847ms (2297 modules)
+ GET /explore 307 in 1318ms
+ ○ Compiling /features ...
+ ✓ Compiled /features in 891ms (2312 modules)
+ GET /features 200 in 1466ms
+ GET /about 200 in 137ms
+ GET /pricing 200 in 137ms
+ ✓ Compiled in 3s (2257 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 452ms
+ ⨯ ReferenceError: Crown is not defined
+    at Gateway (src\components\landing\gateway.tsx:145:45)
+  143 |                                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
+  144 |                                         <p className="flex items-center gap-2 text-sm font-bold text-primary">
+> 145 |                                             <Crown className="h-4 w-4 shrink-0" /> The Founding 100
+      |                                             ^
+  146 |                                         </p>
+  147 |                                         <p className="text-xs text-muted-foreground leading-relaxed">
+  148 |                                             Claim 1 of 100 Founding Builder spots — <span className="font-semibold text-foreground">6 months free + 50% off for life.</span> {
+  digest: '1487611219'
+}
+ GET / 500 in 521ms
+ ✓ Compiled /favicon.ico in 429ms (1224 modules)
+ GET /favicon.ico 200 in 920ms
+ ✓ Compiled in 2.7s (2273 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 777ms
+ GET /favicon.ico 200 in 353ms
+ ✓ Compiled /api/auth/session in 403ms (1229 modules)
+ POST /api/auth/session 200 in 999ms
+ GET / 200 in 392ms
+ GET / 200 in 249ms
+ GET /favicon.ico 200 in 318ms
+ POST /api/auth/session 200 in 342ms
+ GET /about 200 in 148ms
+ GET /about 200 in 134ms
+ ○ Compiling /features ...
+ ✓ Compiled /features in 1669ms (1239 modules)
+ GET /features 200 in 1966ms
+ GET /features 200 in 695ms
+ GET /favicon.ico 200 in 334ms
+ POST /api/auth/session 200 in 389ms
+ GET /features 200 in 290ms
+ GET /favicon.ico 200 in 334ms
+ POST /api/auth/session 200 in 310ms
+ ✓ Compiled in 3s (2288 modules)
+ GET /features 200 in 263ms
+ ✓ Compiled in 2.1s (2288 modules)
+ GET /favicon.ico 200 in 2479ms
+ GET /features 200 in 344ms
+ GET /favicon.ico 200 in 570ms
+ ✓ Compiled in 3.7s (1049 modules)
+ GET /features 200 in 176ms
+ ✓ Compiled in 927ms (1049 modules)
+ GET /features 200 in 163ms
+ GET /features 200 in 606ms
+ ○ Compiling /lead-to-ledger ...
+ ✓ Compiled /lead-to-ledger in 1590ms (1249 modules)
+ GET /lead-to-ledger 200 in 2455ms
+ ○ Compiling /sarah ...
+ ✓ Compiled /sarah in 2s (2296 modules)
+ GET /sarah 200 in 2686ms
+ ○ Compiling /register ...
+ ✓ Compiled /register in 3.3s (2317 modules)
+ GET /register 200 in 3683ms
+ GET /register 200 in 141ms
+ GET /welcome 200 in 158ms
+ POST /welcome 200 in 858ms
+ POST /welcome 200 in 409ms
+ POST /welcome 200 in 360ms
+ POST /welcome 200 in 412ms
+ POST /welcome 200 in 393ms
+ POST /welcome 200 in 389ms
+ ○ Compiling /co-pilot ...
+ ✓ Compiled /co-pilot in 3.3s (2882 modules)
+ GET /co-pilot 200 in 3769ms
+ POST /co-pilot 200 in 558ms
+ POST /co-pilot 200 in 386ms
+ ○ Compiling /action-manager ...
+ ✓ Compiled /action-manager in 2.8s (2877 modules)
+ GET /action-manager 200 in 3171ms
+ ○ Compiling /calendar ...
+ ✓ Compiled /calendar in 2.6s (3036 modules)
+ GET /calendar 200 in 2996ms
+ ○ Compiling /user-notes ...
+ ✓ Compiled /user-notes in 1366ms (3047 modules)
+ GET /user-notes 200 in 1675ms
+ GET /calendar 200 in 554ms

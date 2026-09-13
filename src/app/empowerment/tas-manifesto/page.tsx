@@ -148,7 +148,7 @@ export default function TASManifestoPage() {
         {/* Final CTA */}
         <section className="py-24 text-center">
             <div className="container px-4 space-y-12">
-                <h2 className="text-3xl md:text-5xl font-bold font-headline text-white">Ready to join the movement?</h2>
+                <h2 className="text-3xl md:text-5xl font-bold font-headline text-white">Ready to become a member?</h2>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
                     <Button asChild size="lg" className="h-16 px-12 text-xl font-bold shadow-2xl hover:scale-105 transition-transform">
                         <Link href="/register">Join the Collective</Link>

@@ -55,7 +55,7 @@ export function AboutContent() {
 
                                 <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
                                     <Button asChild size="lg" className="h-14 px-8 text-lg font-bold shadow-lg hover:shadow-xl transition-all">
-                                        <Link href="/pricing">Join the Movement</Link>
+                                        <Link href="/pricing">Become a Member</Link>
                                     </Button>
                                     <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg">
                                         <Link href="/solutions">Explore Solutions</Link>

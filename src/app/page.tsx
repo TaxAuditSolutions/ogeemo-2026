@@ -1,12 +1,12 @@
 'use client';
 
-import { AboutContent } from '@/components/landing/about-content';
+import { Gateway } from '@/components/landing/gateway';
 
 /**
  * @fileOverview The root landing page.
- * Displays the About content as the home page.
- * No automatic redirection to allow users to see the marketing site.
+ * Displays the "Ogeemo Gateway": an intent-based entry page that asks visitors
+ * who they are and why they are here. The full brand story remains at /about.
  */
 export default function Home() {
-  return <AboutContent />;
+  return <Gateway />;
 }

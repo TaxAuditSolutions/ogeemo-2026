@@ -60,7 +60,7 @@ const pipelineStages = [
         step: 4,
         title: "Track Every Minute",
         icon: Clock,
-        description: "The Command Centre captures time in 5-minute increments. Start a live session tied to a specific work order—no invisible work, no assumptive liability, no lost billable hours.",
+        description: "The Activity Manager captures time in 5-minute increments. Start a live session tied to a specific work order—no invisible work, no assumptive liability, no lost billable hours.",
         points: ["5-Minute Granularity", "Live Session Timer", "Auto-Sync to Billing"],
     },
     {

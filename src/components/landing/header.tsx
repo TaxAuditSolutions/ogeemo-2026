@@ -39,9 +39,8 @@ export function SiteHeader() {
             <Button variant="link" asChild className="shrink-0"><Link href="/solutions">Solutions</Link></Button>
 
             <Button variant="link" asChild className="shrink-0"><Link href="/about">About</Link></Button>
-            <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Members</Link></Button>
+            <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Membership</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/partners">Partners</Link></Button>
-            <Button variant="link" asChild className="shrink-0"><Link href="/pricing">Pricing</Link></Button>
             <Button variant="link" asChild className="shrink-0"><Link href="/contact">Contact</Link></Button>
         </nav>
         <div className="flex items-center justify-end space-x-4 ml-4">

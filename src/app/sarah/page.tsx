@@ -132,7 +132,7 @@ export default function SarahStoryPage() {
                     <div className="flex gap-6 items-start p-6 bg-card rounded-2xl border border-primary/5 hover:border-primary/20 transition-all shadow-sm">
                         <div className="p-3 bg-primary/10 rounded-xl shrink-0"><BrainCircuit className="h-6 w-6 text-primary"/></div>
                         <div>
-                            <h4 className="font-bold text-xl mb-2">The Command Centre (The Calendar)</h4>
+                            <h4 className="font-bold text-xl mb-2">The Activity Manager (The Calendar)</h4>
                             <p className="text-muted-foreground leading-relaxed">For Sarah, the Ogeemo Calendar became the brain of her business. When she dragged an Idea into a time slot, Ogeemo’s "Action-to-Protocol Bridge" did the heavy lifting. It wasn't just an "event" anymore; it was a billable project that automatically updated her ledgers.</p>
                         </div>
                     </div>

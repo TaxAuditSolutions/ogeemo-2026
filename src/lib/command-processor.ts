@@ -9,7 +9,9 @@ import { allMenuItems } from './menu-items';
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
     target?: string;
+    label?: string;
     message: string;
+    assistantMessage?: string;
     description?: string;
     isExternal?: boolean;
     category?: string;
@@ -105,14 +107,48 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'settings': { target: '/settings', label: 'Settings', category: 'Administration' },
 };
 
+/** Shortest alias length allowed to match a token prefix or an unseparated phrase. */
+const MIN_PREFIX_ALIAS_LENGTH = 3;
+const MIN_EMBEDDED_ALIAS_LENGTH = 4;
+const MAX_PHRASE_TOKENS = 3;
+
+function tokenize(text: string): string[] {
+    return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+/**
+ * Collects each token plus the concatenation of up to three adjacent tokens so
+ * multi-word destinations like "general ledger" still resolve to their alias.
+ */
+function collectPhrases(tokens: string[]): Set<string> {
+    const phrases = new Set<string>();
+
+    for (let start = 0; start < tokens.length; start += 1) {
+        let joined = '';
+        for (let end = start; end < Math.min(start + MAX_PHRASE_TOKENS, tokens.length); end += 1) {
+            joined += normalize(tokens[end]);
+            if (joined) phrases.add(joined);
+        }
+    }
+
+    return phrases;
+}
+
 function findExactOrAliasCommand(text: string): { target: string; label: string; category: string } | undefined {
     const normalizedText = normalize(text);
     if (!normalizedText) return undefined;
 
     if (commandMap[normalizedText]) return commandMap[normalizedText];
 
+    const tokens = tokenize(text);
+    const phrases = collectPhrases(tokens);
+
     const matchingEntries = Object.entries(commandMap)
-        .filter(([key]) => normalizedText.includes(key) || key.includes(normalizedText))
+        .filter(([key]) => {
+            if (phrases.has(key)) return true;
+            if (key.length >= MIN_PREFIX_ALIAS_LENGTH && tokens.some((token) => token.startsWith(key))) return true;
+            return key.length >= MIN_EMBEDDED_ALIAS_LENGTH && normalizedText.includes(key);
+        })
         .sort((a, b) => b[0].length - a[0].length);
 
     return matchingEntries[0]?.[1];
@@ -179,8 +215,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/projects/create${name ? `?title=${encodeURIComponent(name)}` : ''}`,
+                label: 'Project Planner',
                 message: 'Action: [Start Project]',
-                description: name ? `Planning project "${name}".` : 'Opening project planner.',
+                description: name ? `Project "${name}" is ready to plan.` : 'Project planner is ready.',
                 category: 'Operations',
             };
         }
@@ -191,8 +228,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/master-mind?title=${encodeURIComponent(title)}`,
+                label: 'Meeting Scheduler',
                 message: 'Action: [Schedule Meeting]',
-                description: name ? `Planning a meeting with "${name}".` : 'Opening the scheduling flow.',
+                description: name ? `A meeting with "${name}" is ready to schedule.` : 'Scheduling flow is ready.',
                 category: 'Workspace',
             };
         }
@@ -201,8 +239,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: '/accounting/quotes/create',
+                label: 'Quote Generator',
                 message: 'Action: [New Quote]',
-                description: 'Opening quote generator.',
+                description: 'Quote generator is ready.',
                 category: 'Finances',
             };
         }
@@ -213,8 +252,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/accounting/invoices/create?${customerName ? 'contactName=' + encodeURIComponent(invoiceName) : ''}`,
+                label: 'Invoice Generator',
                 message: 'Action: [New Invoice]',
-                description: invoiceName ? `Preparing invoice for "${invoiceName}".` : 'Opening invoice generator.',
+                description: invoiceName ? `An invoice for "${invoiceName}" is ready to prepare.` : 'Invoice generator is ready.',
                 category: 'Finances',
             };
         }
@@ -224,8 +264,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/master-mind${title ? `?title=${encodeURIComponent(title)}` : ''}`,
+                label: 'Master Mind',
                 message: 'Action: [Schedule Entry]',
-                description: title ? `Adding "${title}" to timeline.` : 'Opening scheduler.',
+                description: title ? `"${title}" is ready to add to the timeline.` : 'Scheduler is ready.',
                 category: 'Workspace',
             };
         }
@@ -234,8 +275,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'navigation',
                 target: '/backup',
+                label: 'Backup Manager',
                 message: 'Action: [Backup Manager]',
-                description: 'Opening backup and data protection tools.',
+                description: 'Backup and data protection tools are ready.',
                 category: 'Administration',
             };
         }
@@ -251,8 +293,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'navigation',
                 target: routeMatch.target,
-                message: `Executing: [Open ${routeMatch.label}]`,
-                description: 'Routing to your requested hub.',
+                label: routeMatch.label,
+                message: `Ready: [Open ${routeMatch.label}]`,
+                description: 'Your requested hub is ready.',
                 category: routeMatch.category,
             };
         }
@@ -262,8 +305,9 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'navigation',
                 target: `/accounting/ledgers?tab=${isIncome ? 'income' : 'expenses'}`,
-                message: `Executing: [Open ${isIncome ? 'Income' : 'Expense'} Ledger]`,
-                description: `Opening the ${isIncome ? 'income' : 'expense'} ledger view.`,
+                label: `${isIncome ? 'Income' : 'Expense'} Ledger`,
+                message: `Ready: [Open ${isIncome ? 'Income' : 'Expense'} Ledger]`,
+                description: `The ${isIncome ? 'income' : 'expense'} ledger view is ready.`,
                 category: 'Finances',
             };
         }
@@ -276,7 +320,8 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'navigation',
                 target: menuMatch.href,
-                message: `Executing: [Open ${menuMatch.label}]`,
+                label: menuMatch.label,
+                message: `Ready: [Open ${menuMatch.label}]`,
                 description: 'Target found in application menu.',
                 category: 'Navigation',
             };
@@ -311,20 +356,34 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/master-mind?startTimer=true${titleTarget}`,
+                label: 'Master Mind Timer',
                 message: `Timer: [${derivedTitle || target || 'Start timer'}]`,
-                description: derivedTitle ? `Starting a timer for "${derivedTitle}".` : 'Starting a live recording session.',
+                description: derivedTitle ? `A timer for "${derivedTitle}" is ready to start.` : 'A live recording session is ready to start.',
                 category: 'Operations',
             };
         }
     }
 
-    const directCmd = findExactOrAliasCommand(normalizedInput);
+    if (/\b(assist|help)\b.*\b(creat(?:e|ing)|add(?:ing)?)\b.*\bcontact\b/i.test(rawInput)) {
+        return {
+            type: 'navigation',
+            target: '/contacts',
+            label: 'Contacts Hub',
+            message: 'Ready: [Contacts Hub]',
+            assistantMessage: "You can create a new contact in Contacts Hub. Click 'Contacts Hub' below to open it.",
+            description: 'Contacts Hub is ready.',
+            category: 'Relationships',
+        };
+    }
+
+    const directCmd = findExactOrAliasCommand(rawInput);
     if (directCmd) {
         return {
             type: 'navigation',
             target: directCmd.target,
+            label: directCmd.label,
             message: `Dispatch: [${directCmd.label}]`,
-            description: `Navigating directly to ${directCmd.label}.`,
+            description: `${directCmd.label} is ready to open.`,
             category: directCmd.category,
         };
     }
@@ -337,6 +396,7 @@ export function processCommand(input: string): CommandResult {
         return {
             type: 'navigation',
             target: menuItemMatch.href,
+            label: menuItemMatch.label,
             message: `Dispatch: [${menuItemMatch.label}]`,
             description: 'Match found in application registry.',
             category: 'Navigation',

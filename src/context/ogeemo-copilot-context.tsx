@@ -1,10 +1,11 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { processCommand } from '@/lib/command-processor';
+import { shouldProcessAsCommand } from '@/lib/copilot-routing';
 import { getUserProfile } from '@/core/user-profile-service';
 import {
     createAssistantChatThread,
@@ -28,7 +29,6 @@ interface OgeemoCopilotContextValue {
     input: string;
     isLoading: boolean;
     isThinking: boolean;
-    pendingAction: unknown;
     setSearchQuery: (query: string) => void;
     setInput: (input: string) => void;
     createThread: () => void;
@@ -36,7 +36,6 @@ interface OgeemoCopilotContextValue {
     renameThread: (threadId: string, title: string) => Promise<void>;
     deleteThread: (threadId: string) => Promise<void>;
     sendMessage: () => Promise<void>;
-    clearPendingAction: () => void;
 }
 
 const OgeemoCopilotContext = createContext<OgeemoCopilotContextValue | null>(null);
@@ -44,7 +43,6 @@ const OgeemoCopilotContext = createContext<OgeemoCopilotContextValue | null>(nul
 export function OgeemoCopilotProvider({ children }: { children: React.ReactNode }) {
     const { user, accessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
-    const router = useRouter();
     const pathname = usePathname();
     const [threads, setThreads] = useState<AssistantChatThread[]>([]);
     const threadsRef = useRef<AssistantChatThread[]>([]);
@@ -53,7 +51,6 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isThinking, setIsThinking] = useState(false);
-    const [pendingAction, setPendingAction] = useState<unknown>(undefined);
     const [activeOrgId, setActiveOrgId] = useState<string | undefined>();
 
     const replaceThreads = useCallback((nextThreads: AssistantChatThread[]) => {
@@ -178,13 +175,23 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
 
         try {
             await persistThread({ ...thread, messages: messagesWithUserTurn });
-            const command = processCommand(messageText);
+            const command = shouldProcessAsCommand(messageText, thread.messages)
+                ? processCommand(messageText)
+                : null;
             let assistantContent: string;
+            let assistantAction: AssistantChatMessage['action'];
 
-            if (command.type !== 'unknown' && command.target) {
-                assistantContent = `${command.message}\n\n${command.description ?? ''}`.trim();
-                if (command.isExternal) window.open(command.target, '_blank', 'noopener,noreferrer');
-                else router.push(command.target);
+            if (command && command.type !== 'unknown' && command.target) {
+                const label = command.label || 'Requested destination';
+                assistantContent = command.assistantMessage
+                    || `${label} is ready. Click '${label}' below to open it.`;
+                assistantAction = {
+                    type: 'dispatch',
+                    target: command.target,
+                    isExternal: Boolean(command.isExternal),
+                    label,
+                    ...(command.category ? { category: command.category } : {}),
+                };
             } else {
                 setIsThinking(true);
                 const response = await fetch('/api/ogeemo-assistant', {
@@ -207,7 +214,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 if (!response.ok) {
                     throw new Error(data?.details || data?.error || 'Failed to connect to Ogeemo Co-Pilot.');
                 }
-                setPendingAction(data?.action);
+                assistantAction = data?.action;
                 assistantContent = typeof data?.answer === 'string' && data.answer.trim()
                     ? data.answer
                     : 'No answer returned from Ogeemo Co-Pilot.';
@@ -217,6 +224,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 role: 'model',
                 content: assistantContent,
                 timestamp: new Date().toISOString(),
+                ...(assistantAction ? { action: assistantAction } : {}),
             };
             const completedThread = {
                 ...thread,
@@ -254,7 +262,6 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         persistThread,
         renameThread,
         replaceThreads,
-        router,
         toast,
         user?.uid,
     ]);
@@ -268,7 +275,6 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         input,
         isLoading,
         isThinking,
-        pendingAction,
         setSearchQuery,
         setInput,
         createThread,
@@ -276,7 +282,6 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         renameThread,
         deleteThread,
         sendMessage,
-        clearPendingAction: () => setPendingAction(undefined),
     }), [
         threads,
         filteredThreads,
@@ -286,7 +291,6 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         input,
         isLoading,
         isThinking,
-        pendingAction,
         createThread,
         renameThread,
         deleteThread,

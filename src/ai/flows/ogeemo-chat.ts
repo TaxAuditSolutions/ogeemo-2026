@@ -11,7 +11,7 @@ import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { getContacts } from '@/services/contact-service';
 import { getProjects } from '@/services/project-service';
 import { allMenuItems } from '@/lib/menu-items';
-import { AssistantClientActionSchema } from '@/ai/assistant-actions';
+import { AssistantCapabilityActionSchema } from '@/ai/assistant-actions';
 import fs from 'fs';
 import path from 'path';
 
@@ -368,7 +368,7 @@ const ContactCapabilityInputSchema = z.object({
 const ContactCapabilityResultSchema = z.object({
   handled: z.boolean(),
   reply: z.string(),
-  action: AssistantClientActionSchema.optional(),
+  action: AssistantCapabilityActionSchema.optional(),
 });
 
 export type ContactCapabilityResult = z.infer<typeof ContactCapabilityResultSchema>;
@@ -385,14 +385,24 @@ const contactCapabilityFlow = ai.defineFlow(
     const folderCatalog = input.folders.map(folder => `${folder.name}: ${folder.id}`).join('\n') || 'No contact folders are available.';
 
     const system = `
-You are Ogeemo Co-Pilot's contact-management capability evaluator. Decide semantically whether the conversation concerns creating a contact or learning how to create one.
+You are Ogeemo Co-Pilot's Contacts Hub capability evaluator. Decide semantically whether the conversation concerns Contacts Hub: creating a contact, learning how to create one, opening the hub, finding or opening an existing contact, editing a contact, or working with contact folders and categories.
 
 Return handled=false for unrelated conversations. When handled=false, reply may be an empty string and no action is allowed.
+
+Always read the conversation history first. If an earlier turn established a Contacts Hub intent, continue that exchange. A short reply such as "prepare the form", "the instructions", or "yes" answers your previous question and must never be reinterpreted as a new or unrelated request.
+
+You may offer the user exactly one clickable control by returning an action:
+- open_destination with destination "new_contact" opens the New Contact form in Contacts Hub. Use it when the user should fill the form in themselves.
+- open_destination with destination "contacts_hub" opens Contacts Hub. Use it for browsing, searching, folders, or general hub navigation.
+- open_contact_form opens a form you have prepared from details gathered in the conversation.
+- open_contact opens one specific existing contact by its real ID.
+Never invent a URL or path. Never navigate on the user's behalf; the control only appears and the user chooses to click it. Describe the control by its name, for example "Click 'New Contact' below".
 
 When the conversation concerns contact creation:
 - You are an intelligent conversational agent, not a fixed questionnaire.
 - On the first ambiguous inquiry, ask whether the user wants step-by-step instructions or wants you to assist by preparing the form. Do not repeat this choice when history already makes it clear.
-- For instructions, explain how to open Contacts Hub, select a folder, choose New Contact, complete the form, and submit. Return no action.
+- For instructions, explain how to open Contacts Hub, select a folder, choose New Contact, complete the form, and submit. Offer the "new_contact" destination so the user can start immediately.
+- If the user wants to create the contact themselves rather than have you prepare it, explain that New Contact in Contacts Hub is the function to use and offer the "new_contact" destination.
 - For assistance, infer and retain details already volunteered. Required draft data is a full name of at least two characters and one folder from the catalog below. Ask only for required missing information or a genuinely useful clarification.
 - The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
@@ -400,6 +410,10 @@ When the conversation concerns contact creation:
 - When requirements are complete and duplicate handling is resolved, briefly say the form is ready for review and return open_contact_form. Use only folder IDs from the catalog.
 - Never claim the contact has been created. The user must review and submit the form.
 - Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft.
+
+For other Contacts Hub requests:
+- To find someone, call searchContacts. If you find a likely match, return open_contact with its real ID. If nothing matches, say so and offer the "contacts_hub" destination.
+- For browsing, folders, categories, or editing an existing record, explain the steps in Contacts Hub and offer the "contacts_hub" destination.
 
 Available tenant folders:
 ${folderCatalog}

@@ -13,6 +13,31 @@ test('retains ordinary Contacts Hub navigation', () => {
 
     assert.equal(result.type, 'navigation');
     assert.equal(result.target, '/contacts');
+    assert.equal(result.label, 'Contacts Hub');
+    assert.match(result.message, /^Ready:/);
+    assert.doesNotMatch(`${result.message} ${result.description}`, /executing|opening|routing|navigating/i);
+});
+
+test('does not match short aliases embedded inside unrelated words', () => {
+    assert.equal(processCommand('prepare the form').type, 'unknown');
+    assert.equal(processCommand('prepare form').type, 'unknown');
+
+    const accountsReceivable = processCommand('open ar');
+    assert.equal(accountsReceivable.target, '/accounting/accounts-receivable');
+    assert.equal(processCommand('open taxes').target, '/accounting/tax');
+});
+
+test('offers Contacts Hub for conversational contact-creation assistance', () => {
+    const result = processCommand('can you assist me with creating a contact');
+
+    assert.equal(result.type, 'navigation');
+    assert.equal(result.target, '/contacts');
+    assert.equal(result.label, 'Contacts Hub');
+    assert.equal(
+        result.assistantMessage,
+        "You can create a new contact in Contacts Hub. Click 'Contacts Hub' below to open it.",
+    );
+    assert.doesNotMatch(result.assistantMessage, /click dispatch/i);
 });
 
 test('retains unrelated creation commands', () => {
@@ -20,4 +45,14 @@ test('retains unrelated creation commands', () => {
 
     assert.equal(result.type, 'action');
     assert.match(result.target || '', /^\/projects\/create/);
+    assert.doesNotMatch(`${result.message} ${result.description}`, /executing|opening|routing|navigating/i);
+});
+
+test('keeps timer parameters while waiting for explicit dispatch', () => {
+    const result = processCommand('start timer for client work');
+
+    assert.equal(result.type, 'action');
+    assert.match(result.target || '', /^\/master-mind\?startTimer=true/);
+    assert.match(result.target || '', /title=client/);
+    assert.match(result.description || '', /ready to start/i);
 });

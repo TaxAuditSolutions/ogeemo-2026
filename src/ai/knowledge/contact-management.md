@@ -2,6 +2,14 @@
 
 Ogeemo Co-Pilot can either explain contact creation or assist the user by preparing the existing contact form.
 
+## Contacts Hub Operations
+
+Contacts Hub is the home for people and organizations. From the hub the user can browse contacts, filter them by folder, search for a record, open a contact to view or edit it, and create a new contact with **New Contact**.
+
+Contact folders act as categories. Selecting a folder filters the list, and every new contact is filed into one folder.
+
+**New Contact** is the correct function whenever the user wants to add someone who is not already in the system. Co-Pilot never navigates on the user's behalf. It explains the step and offers a clickable control, such as **New Contact** or **Contacts Hub**, that the user chooses to click.
+
 ## Instructions
 
 To create a contact manually, open Contacts Hub, select the appropriate contact folder, choose **New Contact**, complete the form, and submit it. Creating contacts requires Editor, Organization Administrator, or Super Administrator access.

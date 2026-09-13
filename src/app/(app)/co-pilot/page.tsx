@@ -33,7 +33,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 import { cn } from '@/lib/utils';
-import { processCommand } from '@/lib/command-processor';
 import { allMenuItems } from '@/lib/menu-items';
 import { groupedMenuItems } from '@/components/layout/main-menu';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
@@ -41,11 +40,16 @@ import { useAuth } from '@/context/auth-context';
 import { type AssistantChatMessage } from '@/services/chat-history-service';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
+import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { parseAssistantClientAction, type AssistantContactDraft } from '@/ai/assistant-actions';
+import {
+    parseAssistantClientAction,
+    type AssistantContactDraft,
+    type AssistantMessageAction,
+} from '@/ai/assistant-actions';
 import { getUserProfile } from '@/core/user-profile-service';
 import { getOrganization } from '@/core/organization-service';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -124,13 +128,11 @@ export default function AiDispatchPage() {
         searchQuery: chatSearchQuery,
         setSearchQuery: setChatSearchQuery,
         isThinking,
-        pendingAction,
         createThread,
         selectThread,
         renameThread,
         deleteThread,
         sendMessage,
-        clearPendingAction,
     } = useOgeemoCopilot();
     const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
     const [isEditingThreadTitle, setIsEditingThreadTitle] = useState<string | null>(null);
@@ -175,7 +177,6 @@ export default function AiDispatchPage() {
         },
     });
 
-    const commandResult = useMemo(() => processCommand(commandInput), [commandInput]);
     const messages: Message[] = activeThread?.messages ?? [];
 
     useEffect(() => {
@@ -345,35 +346,6 @@ export default function AiDispatchPage() {
         }
     };
 
-    useEffect(() => {
-        if (!pendingAction) return;
-
-        let isCancelled = false;
-        const consumeAction = async () => {
-            let action = parseAssistantClientAction(pendingAction, folders.map((folder) => folder.id));
-            if (!action && user?.uid) {
-                const refreshedFolders = await getFolders(user.uid).catch(() => []);
-                if (isCancelled) return;
-                if (refreshedFolders.length > 0) setFolders(refreshedFolders);
-                action = parseAssistantClientAction(pendingAction, refreshedFolders.map((folder) => folder.id));
-            }
-
-            if (action?.type === 'open_contact_form') {
-                setContactToEdit(null);
-                setContactDraft(action.draft);
-                setIsFormOpen(true);
-            } else if (action?.type === 'open_contact') {
-                handleLaunchRegistry(action.contactId);
-            }
-            clearPendingAction();
-        };
-
-        void consumeAction();
-        return () => {
-            isCancelled = true;
-        };
-    }, [clearPendingAction, folders, pendingAction, user?.uid]);
-
     const handleMicClick = () => {
         if (launcherSpeech.isListening) {
             launcherSpeech.stopListening();
@@ -384,11 +356,35 @@ export default function AiDispatchPage() {
         }
     };
 
-    const handleExecuteAction = () => {
-        if (commandResult.type === 'unknown') return;
-        if (commandResult.target) {
-            if (commandResult.isExternal) window.open(commandResult.target, '_blank');
-            else router.push(commandResult.target);
+    const handleMessageAction = async (action: AssistantMessageAction) => {
+        if (action.type === 'dispatch') {
+            if (action.isExternal) window.open(action.target, '_blank', 'noopener,noreferrer');
+            else router.push(action.target);
+            return;
+        }
+
+        let validatedAction = parseAssistantClientAction(action, folders.map((folder) => folder.id));
+        if (!validatedAction && user?.uid) {
+            const refreshedFolders = await getFolders(user.uid).catch(() => []);
+            if (refreshedFolders.length > 0) setFolders(refreshedFolders);
+            validatedAction = parseAssistantClientAction(action, refreshedFolders.map((folder) => folder.id));
+        }
+
+        if (!validatedAction) {
+            toast({
+                title: 'Action unavailable',
+                description: 'This saved action is no longer valid for the active tenant.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (validatedAction.type === 'open_contact_form') {
+            setContactToEdit(null);
+            setContactDraft(validatedAction.draft);
+            setIsFormOpen(true);
+        } else {
+            handleLaunchRegistry(validatedAction.contactId);
         }
     };
 
@@ -820,6 +816,32 @@ export default function AiDispatchPage() {
                                             ) : (
                                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                                             )}
+                                            {msg.role === 'model' && msg.action ? (
+                                                <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
+                                                    {msg.action.type === 'dispatch' ? (
+                                                        <AssistantDispatchLink action={msg.action} />
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {msg.action.type === 'open_contact_form'
+                                                                    ? 'Review the prepared contact before saving.'
+                                                                    : 'Open the matching registry entry.'}
+                                                            </span>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                className="h-8"
+                                                                onClick={() => void handleMessageAction(msg.action!)}
+                                                            >
+                                                                {msg.action.type === 'open_contact_form'
+                                                                    ? 'Review Contact'
+                                                                    : 'Open Contact'}
+                                                                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ) : null}
                                             <div
                                                 className={cn(
                                                     "mt-1 flex items-center gap-1.5 text-[10px]",
@@ -859,26 +881,6 @@ export default function AiDispatchPage() {
                             </>
                         )}
                     </div>
-
-                    {commandInput && commandResult.type !== 'unknown' && !isThinking && (
-                        <Card className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl border-primary shadow-2xl animate-in slide-in-from-bottom-4 duration-300 z-10">
-                            <CardContent className="p-4 flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-primary/10 p-2 rounded-lg">
-                                        <Zap className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-sm tracking-tight">{commandResult.message}</span>
-                                            <Badge className="text-[10px] h-4">{commandResult.category}</Badge>
-                                        </div>
-                                        <p className="text-[11px] text-muted-foreground">{commandResult.description}</p>
-                                    </div>
-                                </div>
-                                <Button size="sm" onClick={handleExecuteAction} className="h-8 font-bold text-xs uppercase">Dispatch</Button>
-                            </CardContent>
-                        </Card>
-                    )}
 
                     <div className="p-4 bg-background border-t rounded-3xl shadow-xl border relative">
                         <div className="flex gap-2 items-center">

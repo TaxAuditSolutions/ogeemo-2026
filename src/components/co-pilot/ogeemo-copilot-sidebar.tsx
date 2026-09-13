@@ -18,6 +18,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
+import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -244,6 +245,11 @@ function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
                                 ) : (
                                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                                 )}
+                                {message.role === 'model' && message.action?.type === 'dispatch' ? (
+                                    <div className="mt-2 border-t border-border/60 pt-2">
+                                        <AssistantDispatchLink action={message.action} />
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
                     ))}

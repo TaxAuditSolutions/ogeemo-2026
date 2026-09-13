@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
+const isProductionBuild = process.env.NEXT_DIST_DIR === ".next-build";
+
 const nextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   typescript: {
     ignoreBuildErrors: true,
+    tsconfigPath: isProductionBuild ? "tsconfig.build.json" : "tsconfig.json",
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -46,7 +50,13 @@ const nextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: [
+    'firebase-admin',
+    'genkit',
+    '@genkit-ai/core',
+    '@genkit-ai/googleai',
+    '@opentelemetry/sdk-node',
+  ],
 };
 
 module.exports = nextConfig;

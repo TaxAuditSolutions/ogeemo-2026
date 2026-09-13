@@ -27,9 +27,10 @@ export function ActionChipMenu({ chips, isLoading }: ActionChipMenuProps) {
 
     if (chips.length === 0) {
         return (
-            <div className="text-center text-sm text-muted-foreground p-4">
-                <p>No dashboard actions found.</p>
-                <Button variant="link" asChild className="p-1 h-auto">
+            <div className="text-center text-sm text-muted-foreground p-4 group-data-[collapsible=icon]:p-2">
+                <Wand2 className="mx-auto hidden h-4 w-4 group-data-[collapsible=icon]:block" aria-hidden="true" />
+                <p className="group-data-[collapsible=icon]:hidden">No dashboard actions found.</p>
+                <Button variant="link" asChild className="p-1 h-auto group-data-[collapsible=icon]:hidden">
                     <Link href="/action-manager/manage">
                         Add some shortcuts
                     </Link>
@@ -55,13 +56,14 @@ export function ActionChipMenu({ chips, isLoading }: ActionChipMenuProps) {
                         className={cn(
                             "w-full justify-start gap-3",
                             "h-9 text-sm py-1 border-b-4 border-transparent",
+                            "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2",
                             isActive ? "border-sidebar-primary" : "border-black",
                             "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
                     >
-                        <Link href={chip.href}>
-                            <Icon className="h-4 w-4" />
-                            <span>{label}</span>
+                        <Link href={chip.href} aria-label={label}>
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="group-data-[collapsible=icon]:hidden">{label}</span>
                         </Link>
                     </Button>
                 );

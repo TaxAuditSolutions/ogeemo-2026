@@ -9,7 +9,7 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome } from 'lucide-react';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -21,6 +21,7 @@ import { useSidebarView } from '@/context/sidebar-view-context';
 import { cn } from '@/lib/utils';
 import { getUserProfile, type AccessLevel, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
+import { useSidebar } from '@/components/ui/sidebar';
 
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
@@ -44,13 +45,13 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }
             if (groupName === 'Google Apps') {
                 return (
                     <AccordionItem value="google-apps" key="google-apps" className="border-b-0">
-                        <AccordionTrigger className="p-0 hover:no-underline">
-                            <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                        <AccordionTrigger aria-label="Google Apps" className="p-0 hover:no-underline group-data-[collapsible=icon]:[&>svg]:hidden">
+                            <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
                                 <Chrome className="h-4 w-4" />
-                                Google Apps
+                                <span className="group-data-[collapsible=icon]:hidden">Google Apps</span>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="pt-1 pl-4">
+                        <AccordionContent className="pt-1 pl-4 group-data-[collapsible=icon]:hidden">
                             <div className="space-y-1">
                                 {allGoogleApps.map(app => {
                                     const AppIcon = app.icon;
@@ -90,13 +91,13 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }
 
             return (
                 <AccordionItem value={groupName} key={groupName} className="border-b-0">
-                    <AccordionTrigger className="p-0 hover:no-underline">
-                        <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <AccordionTrigger aria-label={groupName} className="p-0 hover:no-underline group-data-[collapsible=icon]:[&>svg]:hidden">
+                        <div className="flex h-9 w-full items-center justify-start gap-2 rounded-md p-2 text-sm font-bold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
                             <CategoryIcon className="h-4 w-4" />
-                            {groupName}
+                            <span className="group-data-[collapsible=icon]:hidden">{groupName}</span>
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-1 pl-4">
+                    <AccordionContent className="pt-1 pl-4 group-data-[collapsible=icon]:hidden">
                         <div className="space-y-1">
                             {filteredItems.map(item => (
                                 <DraggableMenuItem
@@ -130,6 +131,7 @@ export function MainMenu() {
     const [isLoadingChips, setIsLoadingChips] = useState(true);
     const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
     const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
+    const { isPinned, togglePinned } = useSidebar();
 
     useEffect(() => {
         if (!user) {
@@ -263,7 +265,7 @@ export function MainMenu() {
 
     return (
         <div className="flex flex-col h-full p-2">
-            <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2 text-black">
+            <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2 text-black group-data-[collapsible=icon]:hidden">
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -316,6 +318,21 @@ export function MainMenu() {
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom"><p>Set as Default View</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="flex-1 h-8 w-full text-black"
+                                onClick={togglePinned}
+                                aria-label={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
+                                aria-pressed={isPinned}
+                            >
+                                {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p>{isPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}</p></TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </div>

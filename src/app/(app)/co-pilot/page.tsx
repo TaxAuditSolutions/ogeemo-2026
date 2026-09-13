@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -30,23 +30,7 @@ import {
     UserCircle
 } from 'lucide-react';
 
-const CoPilotMark = ({ className = 'h-6 w-6' }: { className?: string }) => (
-    <svg viewBox="0 0 64 64" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" fill="currentColor" opacity="0.12" />
-        <path d="M20 12H44C49.523 12 54 16.477 54 22V42C54 47.523 49.523 52 44 52H20C14.477 52 10 47.523 10 42V22C10 16.477 14.477 12 20 12Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
-        <path d="M22 20H35V25H22V20Z" fill="currentColor" />
-        <path d="M22 29H35V34H22V29Z" fill="currentColor" />
-        <path d="M22 38H35V43H22V38Z" fill="currentColor" />
-        <path d="M38 20H46V43H38V20Z" fill="currentColor" opacity="0.92" />
-        <path d="M38 18L49 18L49 20L38 20V18Z" fill="currentColor" opacity="0.92" />
-    </svg>
-);
 import { useToast } from '@/hooks/use-toast';
-
-const DEFAULT_THREAD_TITLE_PATTERN = /^(chat\s*\d+|untitled chat)$/i;
-
-const isDefaultThreadTitle = (title: string): boolean =>
-    DEFAULT_THREAD_TITLE_PATTERN.test((title || '').trim());
 
 import { cn } from '@/lib/utils';
 import { processCommand } from '@/lib/command-processor';
@@ -54,20 +38,14 @@ import { allMenuItems } from '@/lib/menu-items';
 import { groupedMenuItems } from '@/components/layout/main-menu';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useAuth } from '@/context/auth-context';
-import {
-    loadAssistantChatThreads,
-    saveAssistantChatThread,
-    updateAssistantChatThreadTitle,
-    deleteAssistantChatThreads,
-    createAssistantChatThread,
-    normalizeMessages,
-    type AssistantChatMessage,
-    type AssistantChatThread,
-} from '@/services/chat-history-service';
+import { type AssistantChatMessage } from '@/services/chat-history-service';
+import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
+import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { parseAssistantClientAction, type AssistantContactDraft } from '@/ai/assistant-actions';
 import { getUserProfile } from '@/core/user-profile-service';
 import { getOrganization } from '@/core/organization-service';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -136,21 +114,33 @@ const MaterializedContactCard = ({ contact, onLaunch }: { contact: Contact, onLa
 };
 
 export default function AiDispatchPage() {
-    const [commandInput, setCommandInput] = useState('');
-    const [threads, setThreads] = useState<AssistantChatThread[]>([]);
-    const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+    const {
+        input: commandInput,
+        setInput: setCommandInput,
+        threads,
+        filteredThreads,
+        activeThread,
+        activeThreadId,
+        searchQuery: chatSearchQuery,
+        setSearchQuery: setChatSearchQuery,
+        isThinking,
+        pendingAction,
+        createThread,
+        selectThread,
+        renameThread,
+        deleteThread,
+        sendMessage,
+        clearPendingAction,
+    } = useOgeemoCopilot();
     const [selectedThreadIds, setSelectedThreadIds] = useState<string[]>([]);
     const [isEditingThreadTitle, setIsEditingThreadTitle] = useState<string | null>(null);
     const [draftThreadTitle, setDraftThreadTitle] = useState('');
-    const [chatSearchQuery, setChatSearchQuery] = useState('');
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
     const [copiedChat, setCopiedChat] = useState(false);
     const [openMenuGroup, setOpenMenuGroup] = useState<string | null>(null);
-    const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
     const { user, accessLevel, isMasterTenant } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [activeOrgName, setActiveOrgName] = useState('Current Tenant');
     const [activeOrgId, setActiveOrgId] = useState<string | undefined>(undefined);
@@ -172,6 +162,7 @@ export default function AiDispatchPage() {
     const [industries, setIndustries] = useState<Industry[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+    const [contactDraft, setContactDraft] = useState<AssistantContactDraft | undefined>(undefined);
 
     const launcherInputRef = useRef<HTMLInputElement>(null);
     const launcherBaseTextRef = useRef('');
@@ -185,10 +176,6 @@ export default function AiDispatchPage() {
     });
 
     const commandResult = useMemo(() => processCommand(commandInput), [commandInput]);
-    const activeThread = useMemo(
-        () => threads.find((thread) => thread.id === activeThreadId) ?? threads[0] ?? null,
-        [threads, activeThreadId]
-    );
     const messages: Message[] = activeThread?.messages ?? [];
 
     useEffect(() => {
@@ -196,40 +183,6 @@ export default function AiDispatchPage() {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, isThinking]);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadSession = async () => {
-            if (!user?.uid) {
-                setThreads([]);
-                setActiveThreadId(null);
-                return;
-            }
-
-            try {
-                const savedThreads = await loadAssistantChatThreads(user.uid);
-                if (!isMounted) {
-                    return;
-                }
-
-                setThreads(savedThreads);
-                setActiveThreadId((current) => current && savedThreads.some((thread) => thread.id === current)
-                    ? current
-                    : savedThreads[0]?.id ?? null);
-            } catch (error) {
-                console.warn('[AI Dispatch] Failed to load assistant chat history:', error);
-                setThreads([]);
-                setActiveThreadId(null);
-            }
-        };
-
-        loadSession();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [user?.uid]);
 
     useEffect(() => {
         const loadRuntimeOrgContext = async () => {
@@ -278,13 +231,15 @@ export default function AiDispatchPage() {
         const loadSupportData = async () => {
             if (user?.uid) {
                 try {
-                    const [f, c, i] = await Promise.all([
+                    const [f, contactRecords, companyRecords, i] = await Promise.all([
                         getFolders(user.uid),
+                        getContacts(user.uid),
                         getCompanies(user.uid),
                         getIndustries(user.uid)
                     ]);
                     setFolders(f);
-                    setCompanies(c);
+                    setContacts(contactRecords);
+                    setCompanies(companyRecords);
                     setIndustries(i);
                 } catch (err) {
                     console.warn("[AI Dispatch] Failed to load registry support data:", err);
@@ -293,17 +248,6 @@ export default function AiDispatchPage() {
         };
         loadSupportData();
     }, [user]);
-
-    const filteredThreads = useMemo(() => {
-        const query = chatSearchQuery.trim().toLowerCase();
-        if (!query) {
-            return threads;
-        }
-        return threads.filter((thread) =>
-            thread.title.toLowerCase().includes(query) ||
-            thread.messages.some((message) => message.content.toLowerCase().includes(query))
-        );
-    }, [chatSearchQuery, threads]);
 
     const menuGroups = useMemo(() => {
         const toItem = (href: string) => {
@@ -349,90 +293,13 @@ export default function AiDispatchPage() {
         });
     };
 
-    const persistThreadMessages = (nextThreadId: string, nextMessages: Message[]) => {
-        if (!user?.uid) {
-            return;
-        }
-
-        setThreads((previousThreads) => {
-            const nextThread = previousThreads.find((thread) => thread.id === nextThreadId) ?? createAssistantChatThread('Untitled Chat', nextMessages);
-            const sanitized = normalizeMessages(nextMessages);
-            const updatedThread: AssistantChatThread = {
-                ...nextThread,
-                id: nextThreadId,
-                title: nextThread.title || 'Untitled Chat',
-                userId: user.uid,
-                messages: sanitized,
-                updatedAt: new Date(),
-            };
-
-            const existing = previousThreads.some((thread) => thread.id === nextThreadId)
-                ? previousThreads.map((thread) => (thread.id === nextThreadId ? updatedThread : thread))
-                : [updatedThread, ...previousThreads];
-
-            void saveAssistantChatThread(user.uid, updatedThread).catch((error) => {
-                console.warn('[AI Dispatch] Failed to persist thread state:', error);
-            });
-
-            return existing;
-        });
-    };
-
-    const autoTitleThread = async (threadId: string, userMessage: string, assistantReply?: string) => {
-        if (!user?.uid || !threadId) {
-            return;
-        }
-
-        const currentTitle = threads.find((thread) => thread.id === threadId)?.title ?? '';
-        if (!isDefaultThreadTitle(currentTitle)) {
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/ogeemo-chat-title', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userMessage, assistantReply }),
-            });
-            const data = await response.json().catch(() => null);
-            const generatedTitle = typeof data?.title === 'string' ? data.title.trim() : '';
-
-            if (!response.ok || !generatedTitle) {
-                return;
-            }
-
-            setThreads((previous) =>
-                previous.map((thread) =>
-                    thread.id === threadId && isDefaultThreadTitle(thread.title)
-                        ? { ...thread, title: generatedTitle, updatedAt: new Date() }
-                        : thread
-                )
-            );
-
-            await updateAssistantChatThreadTitle(user.uid, threadId, generatedTitle);
-        } catch (error) {
-            console.warn('[AI Dispatch] Failed to generate chat title:', error);
-        }
-    };
-
     const handleCreateNewThread = () => {
-        const newThread = createAssistantChatThread(`Chat ${threads.length + 1}`);
-        const nextThreadId = newThread.id;
-        setThreads((previous) => [newThread, ...previous]);
-        setActiveThreadId(nextThreadId);
+        createThread();
         setSelectedThreadIds([]);
-        setIsEditingThreadTitle(nextThreadId);
-        setDraftThreadTitle('');
-
-        if (user?.uid) {
-            void saveAssistantChatThread(user.uid, { ...newThread, userId: user.uid }).catch((error) => {
-                console.warn('[AI Dispatch] Failed to create new thread:', error);
-            });
-        }
     };
 
     const handleOpenThread = (threadId: string) => {
-        setActiveThreadId(threadId);
+        selectThread(threadId);
     };
 
     const handleRenameThread = async (threadId: string, title: string) => {
@@ -441,38 +308,21 @@ export default function AiDispatchPage() {
             return;
         }
 
-        setThreads((previous) =>
-            previous.map((thread) =>
-                thread.id === threadId ? { ...thread, title: trimmedTitle, updatedAt: new Date() } : thread
-            )
-        );
-
-        if (user?.uid) {
-            await updateAssistantChatThreadTitle(user.uid, threadId, trimmedTitle);
-        }
-
+        await renameThread(threadId, trimmedTitle);
         setIsEditingThreadTitle(null);
         setDraftThreadTitle('');
     };
 
     const handleDeleteSelectedThreads = async () => {
-        if (!selectedThreadIds.length || !user?.uid) {
-            return;
+        if (!selectedThreadIds.length) return;
+        for (const threadId of selectedThreadIds) {
+            await deleteThread(threadId);
         }
-
-        const nextSelected = new Set(selectedThreadIds);
-        setThreads((previous) => previous.filter((thread) => !nextSelected.has(thread.id)));
         setSelectedThreadIds([]);
-
-        if (activeThreadId && nextSelected.has(activeThreadId)) {
-            const remaining = threads.filter((thread) => !nextSelected.has(thread.id));
-            setActiveThreadId(remaining[0]?.id ?? null);
-        }
-
-        await deleteAssistantChatThreads(user.uid, Array.from(nextSelected));
     };
 
     const handleLaunchRegistry = (contactId: string) => {
+        setContactDraft(undefined);
         // 1. Hardcoded Support for Dan/Julie
         if (contactId === 'dan-admin-id') {
             setContactToEdit({ id: 'dan', name: 'Dan (Ogeemo Administrator)', email: 'dan@ogeemo.com', businessName: 'Ogeemo Mastermind', businessPhone: '555-0199', cellPhone: '555-0100', folderId: folders[0]?.id || 'default' } as any);
@@ -494,6 +344,35 @@ export default function AiDispatchPage() {
             toast({ title: "Registry Link Broken", description: "I couldn't find the record in your local database.", variant: "destructive" });
         }
     };
+
+    useEffect(() => {
+        if (!pendingAction) return;
+
+        let isCancelled = false;
+        const consumeAction = async () => {
+            let action = parseAssistantClientAction(pendingAction, folders.map((folder) => folder.id));
+            if (!action && user?.uid) {
+                const refreshedFolders = await getFolders(user.uid).catch(() => []);
+                if (isCancelled) return;
+                if (refreshedFolders.length > 0) setFolders(refreshedFolders);
+                action = parseAssistantClientAction(pendingAction, refreshedFolders.map((folder) => folder.id));
+            }
+
+            if (action?.type === 'open_contact_form') {
+                setContactToEdit(null);
+                setContactDraft(action.draft);
+                setIsFormOpen(true);
+            } else if (action?.type === 'open_contact') {
+                handleLaunchRegistry(action.contactId);
+            }
+            clearPendingAction();
+        };
+
+        void consumeAction();
+        return () => {
+            isCancelled = true;
+        };
+    }, [clearPendingAction, folders, pendingAction, user?.uid]);
 
     const handleMicClick = () => {
         if (launcherSpeech.isListening) {
@@ -538,103 +417,7 @@ export default function AiDispatchPage() {
         }
     };
 
-    const handleSend = async () => {
-        const messageText = commandInput.trim();
-        if (!messageText || isThinking) return;
-
-        if (!activeThreadId) {
-            const nextThread = createAssistantChatThread(`Chat ${threads.length + 1}`);
-            setThreads((previous) => [nextThread, ...previous]);
-            setActiveThreadId(nextThread.id);
-        }
-
-        const threadId = activeThreadId ?? (threads[0]?.id ?? 'new-chat');
-        const detectedCommand = processCommand(messageText);
-        const isActionCommand = detectedCommand.type !== 'unknown' && Boolean(detectedCommand.target);
-
-        const newUserMessage: Message = { role: 'user', content: messageText, timestamp: new Date().toISOString() };
-        const messagesWithUserTurn = [...(messages || []), newUserMessage];
-
-        if (!activeThreadId) {
-            const newThread = createAssistantChatThread(`Chat ${threads.length + 1}`, messagesWithUserTurn);
-            setThreads((previous) => [newThread, ...previous]);
-            setActiveThreadId(newThread.id);
-            if (user?.uid) {
-                void saveAssistantChatThread(user.uid, { ...newThread, userId: user.uid }).catch((error) => {
-                    console.warn('[AI Dispatch] Failed to create and persist thread before sending:', error);
-                });
-            }
-        } else {
-            persistThreadMessages(threadId, messagesWithUserTurn);
-        }
-
-        setCommandInput('');
-
-        if (isActionCommand) {
-            const actionReply: Message = {
-                role: 'model',
-                content: `${detectedCommand.message}\n\n${detectedCommand.description ?? ''}`,
-                timestamp: new Date().toISOString(),
-            };
-            const nextMessages = [...messagesWithUserTurn, actionReply];
-            persistThreadMessages(threadId, nextMessages);
-            void autoTitleThread(threadId, messageText, detectedCommand.message || messageText);
-            if (detectedCommand.isExternal) {
-                window.open(detectedCommand.target, '_blank', 'noopener,noreferrer');
-            } else if (detectedCommand.target) {
-                router.push(detectedCommand.target);
-            }
-            return;
-        }
-
-        setIsThinking(true);
-
-        try {
-            const response = await fetch('/api/ogeemo-assistant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    question: messageText,
-                    sessionId: user?.uid || 'ogeemo-guest',
-                    history: messagesWithUserTurn,
-                    runtimeContext: {
-                        userId: user?.uid,
-                        orgId: activeOrgId,
-                        accessLevel: accessLevel || undefined,
-                        isMasterTenant,
-                        currentPath: pathname,
-                        activeOrgName,
-                    },
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data?.details || data?.error || 'Failed to connect to Ogeemo Assistant.');
-            }
-
-            const aiReply: Message = {
-                role: 'model',
-                content: typeof data?.answer === 'string' && data.answer.trim().length > 0
-                    ? data.answer
-                    : 'No answer returned from Ogeemo Assistant.',
-                timestamp: new Date().toISOString(),
-            };
-            const nextMessages = [...messagesWithUserTurn, aiReply];
-            persistThreadMessages(threadId, nextMessages);
-            void autoTitleThread(threadId, messageText, aiReply.content);
-        } catch (err: any) {
-            console.error("[Ogeemo Dispatch Signal Failure]:", err);
-            toast({
-                variant: 'destructive',
-                title: 'Transmission Interrupted',
-                description: err.message || 'The Command Centre is currently stabilizing the bridge. Please try again.',
-            });
-        } finally {
-            setIsThinking(false);
-        }
-    };
+    const handleSend = sendMessage;
 
     return (
         <div className="flex h-[calc(100vh-64px)] bg-muted/10">
@@ -799,14 +582,7 @@ export default function AiDispatchPage() {
                                             size="icon"
                                             className="h-5 w-5 text-destructive hover:text-destructive"
                                             onClick={() => {
-                                                const next = threads.filter((item) => item.id !== thread.id);
-                                                setThreads(next);
-                                                if (activeThreadId === thread.id) {
-                                                    setActiveThreadId(next[0]?.id ?? null);
-                                                }
-                                                if (user?.uid) {
-                                                    void deleteAssistantChatThreads(user.uid, [thread.id]);
-                                                }
+                                                void deleteThread(thread.id);
                                             }}
                                         >
                                             <Trash2 className="h-3 w-3" />
@@ -1139,11 +915,15 @@ export default function AiDispatchPage() {
 
                     <ContactFormDialog
                         isOpen={isFormOpen}
-                        onOpenChange={setIsFormOpen}
+                        onOpenChange={(open) => {
+                            setIsFormOpen(open);
+                            if (!open) setContactDraft(undefined);
+                        }}
                         contactToEdit={contactToEdit}
                         folders={folders}
                         onFoldersChange={setFolders}
                         onSave={(c) => {
+                            setContactDraft(undefined);
                             if (contactToEdit) {
                                 setContacts(prev => prev.map(old => old.id === c.id ? c : old));
                             } else {
@@ -1154,6 +934,7 @@ export default function AiDispatchPage() {
                         onCompaniesChange={setCompanies}
                         customIndustries={industries}
                         onCustomIndustriesChange={setIndustries}
+                        initialData={contactDraft}
                     />
                 </div>
             </main>

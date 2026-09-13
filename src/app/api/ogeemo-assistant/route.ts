@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent } from '@/ai/flows/ogeemo-chat';
+import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCapability } from '@/ai/flows/ogeemo-chat';
+import { parseAssistantClientAction } from '@/ai/assistant-actions';
+import { getCurrentSessionContext } from '@/app/actions';
+import { getAdminDb } from '@/core/firebase-admin';
 
 const DEFAULT_ASSISTANT_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
 
@@ -103,6 +106,40 @@ export async function POST(request: NextRequest) {
 
         if (!question) {
             return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
+        }
+
+        try {
+            const sessionContext = await getCurrentSessionContext();
+            if (sessionContext) {
+                const db = getAdminDb();
+                const folderSnapshot = db && sessionContext.orgId
+                    ? await db.collection('contactFolders').where('orgId', '==', sessionContext.orgId).get()
+                    : null;
+                const folders = folderSnapshot?.docs.map((folderDoc) => ({
+                    id: folderDoc.id,
+                    name: String(folderDoc.data().name || ''),
+                })).filter((folder) => folder.name) ?? [];
+
+                const capabilityResult = await orchestrateContactCapability({
+                    message: question,
+                    history,
+                    userId: sessionContext.userId,
+                    orgId: sessionContext.orgId,
+                    accessLevel: sessionContext.accessLevel,
+                    folders,
+                });
+
+                if (capabilityResult.handled) {
+                    const action = capabilityResult.action
+                        ? parseAssistantClientAction(capabilityResult.action, folders.map((folder) => folder.id))
+                        : undefined;
+                    const answer = capabilityResult.reply.trim() || 'I can help you with that contact.';
+
+                    return NextResponse.json({ answer, ...(action ? { action } : {}) }, { status: 200 });
+                }
+            }
+        } catch (capabilityError) {
+            console.warn('/api/ogeemo-assistant contact-capability-error', capabilityError);
         }
 
         const assistantUrl = process.env.OGEEMO_ASSISTANT_URL || DEFAULT_ASSISTANT_URL;

@@ -11,6 +11,7 @@ import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { getContacts } from '@/services/contact-service';
 import { getProjects } from '@/services/project-service';
 import { allMenuItems } from '@/lib/menu-items';
+import { AssistantClientActionSchema } from '@/ai/assistant-actions';
 import fs from 'fs';
 import path from 'path';
 
@@ -81,14 +82,24 @@ const searchContactsTool = ai.defineTool(
   },
   async (input, { context }) => {
     const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
-    if (!userId) return { success: false, contacts: [], message: "User not authenticated." };
+    const orgId = context && typeof context === 'object' && 'orgId' in context ? (context as any).orgId : undefined;
+    if (!userId || !orgId) return { success: false, contacts: [], message: "User or tenant not authenticated." };
 
     try {
       const db = getAdminDb();
       if (!db) throw new Error("Database not available.");
 
-      const snapshot = await db.collection('contacts').where('userId', '==', userId).get();
-      const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const snapshot = await db.collection('contacts').where('orgId', '==', orgId).get();
+      const contacts = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          businessName: data.businessName,
+          email: data.email,
+          folderId: data.folderId,
+        };
+      });
 
       const term = input.searchTerm.toLowerCase();
       const results = contacts.filter((c: any) =>
@@ -345,6 +356,75 @@ Respond conversationally in Markdown.
 If you are genuinely uncertain, say so briefly and suggest the closest practical next step.
 `;
 
+const ContactCapabilityInputSchema = z.object({
+  message: z.string(),
+  history: z.array(z.any()).optional(),
+  userId: z.string(),
+  orgId: z.string().optional(),
+  accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer']).optional(),
+  folders: z.array(z.object({ id: z.string(), name: z.string() })),
+});
+
+const ContactCapabilityResultSchema = z.object({
+  handled: z.boolean(),
+  reply: z.string(),
+  action: AssistantClientActionSchema.optional(),
+});
+
+export type ContactCapabilityResult = z.infer<typeof ContactCapabilityResultSchema>;
+
+const contactCapabilityFlow = ai.defineFlow(
+  {
+    name: 'contactCapabilityFlow',
+    inputSchema: ContactCapabilityInputSchema,
+    outputSchema: ContactCapabilityResultSchema,
+  },
+  async (input) => {
+    const messages = buildScrubbedMessages(input.history, input.message);
+    const canCreate = input.accessLevel === 'editor' || input.accessLevel === 'org_admin' || input.accessLevel === 'super_admin';
+    const folderCatalog = input.folders.map(folder => `${folder.name}: ${folder.id}`).join('\n') || 'No contact folders are available.';
+
+    const system = `
+You are Ogeemo Co-Pilot's contact-management capability evaluator. Decide semantically whether the conversation concerns creating a contact or learning how to create one.
+
+Return handled=false for unrelated conversations. When handled=false, reply may be an empty string and no action is allowed.
+
+When the conversation concerns contact creation:
+- You are an intelligent conversational agent, not a fixed questionnaire.
+- On the first ambiguous inquiry, ask whether the user wants step-by-step instructions or wants you to assist by preparing the form. Do not repeat this choice when history already makes it clear.
+- For instructions, explain how to open Contacts Hub, select a folder, choose New Contact, complete the form, and submit. Return no action.
+- For assistance, infer and retain details already volunteered. Required draft data is a full name of at least two characters and one folder from the catalog below. Ask only for required missing information or a genuinely useful clarification.
+- The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
+- Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
+- Before returning open_contact_form, call searchContacts using the best available name or email. If a likely existing contact is returned, warn the user and offer to open it or explicitly continue with a new record. Do not return a new-contact action until the user confirms continuation. If the user chooses the existing match, return open_contact with its real ID.
+- When requirements are complete and duplicate handling is resolved, briefly say the form is ready for review and return open_contact_form. Use only folder IDs from the catalog.
+- Never claim the contact has been created. The user must review and submit the form.
+- Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft.
+
+Available tenant folders:
+${folderCatalog}
+`;
+
+    const result = await ai.generate({
+      model: STABLE_GEMINI_MODEL,
+      messages,
+      tools: [searchContactsTool],
+      context: { userId: input.userId, orgId: input.orgId },
+      system,
+      output: { schema: ContactCapabilityResultSchema },
+      config: { temperature: 0.1 },
+    });
+
+    return ContactCapabilityResultSchema.parse(result.output);
+  }
+);
+
+export async function orchestrateContactCapability(
+  input: z.infer<typeof ContactCapabilityInputSchema>,
+): Promise<ContactCapabilityResult> {
+  return contactCapabilityFlow(input);
+}
+
 function buildScrubbedMessages(history: any[] | undefined, message: string): any[] {
   const scrubbedMessages: any[] = (history || []).map(msg => {
     const rawRole = (msg.role || 'user').toLowerCase();
@@ -362,7 +442,11 @@ function buildScrubbedMessages(history: any[] | undefined, message: string): any
     return { role, content: scrubbedContent };
   });
 
-  scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
+  const lastMessage = scrubbedMessages[scrubbedMessages.length - 1];
+  const lastText = lastMessage?.content?.map((part: any) => part.text || '').join('').trim();
+  if (lastMessage?.role !== 'user' || lastText !== message.trim()) {
+    scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
+  }
   return scrubbedMessages;
 }
 

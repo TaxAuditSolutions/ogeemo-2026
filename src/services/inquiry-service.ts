@@ -1,42 +1,75 @@
 'use client';
 
-import { collection, addDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
-export interface ContactInquiry {
-  firstName: string;
-  lastName: string;
-  email: string;
-  subject: string;
-  message: string;
-  createdAt: string;
+export interface InquiryRecord {
+  id: string;
+  /** Which form produced this inquiry: 'contact' | 'partnership'. */
+  type: string;
+  /** 'new' | 'read' */
+  status: string;
+  /** Whether the team notification email was sent for this submission. */
+  notified?: boolean;
+  notifiedAt?: unknown;
+  notifyError?: string | null;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  company?: string;
+  focus?: string;
+  website?: string;
+  subject?: string;
+  message?: string;
+  targetEmail?: string;
+  createdAt: Date | null;
+}
+
+const INQUIRIES_COLLECTION = 'inquiries';
+
+function docToInquiry(snap: any): InquiryRecord {
+  const data = snap.data() || {};
+  let createdAt: Date | null = null;
+  const raw = data.createdAt;
+  if (raw && typeof raw.toDate === 'function') {
+    createdAt = raw.toDate();
+  } else if (typeof raw === 'string') {
+    const parsed = new Date(raw);
+    createdAt = isNaN(parsed.getTime()) ? null : parsed;
+  } else if (raw && typeof raw.seconds === 'number') {
+    createdAt = new Date(raw.seconds * 1000);
+  }
+  return { id: snap.id, ...data, createdAt } as InquiryRecord;
 }
 
 /**
- * Records a message submitted via the public contact form.
+ * Lists all inquiries (contact + partnership submissions) for the admin
+ * Inquiries inbox. Sorted newest-first. Sorting happens client-side so a
+ * single-collection query works no matter how createdAt was stored
+ * (serverTimestamp vs ISO string from older submissions).
  */
-export function submitInquiry(data: Omit<ContactInquiry, 'createdAt'>) {
+export async function getInquiries(): Promise<InquiryRecord[]> {
   const { db } = getFirebaseServices();
-  const inquiryData = {
-    ...data,
-    createdAt: new Date().toISOString(),
-  };
-  
-  const collectionRef = collection(db, 'inquiries');
+  if (!db) {
+    throw new Error('Firestore is not initialized');
+  }
+  const snapshot = await getDocs(collection(db, INQUIRIES_COLLECTION));
+  return snapshot.docs
+    .map(docToInquiry)
+    .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+}
 
-  // Mutation is non-blocking to leverage optimistic UI and background synchronization.
-  addDoc(collectionRef, inquiryData)
-    .catch(async (serverError) => {
-      // Construct a detailed, contextual error for the developer overlay.
-      const permissionError = new FirestorePermissionError({
-        path: collectionRef.path,
-        operation: 'create',
-        requestResourceData: inquiryData,
-      } satisfies SecurityRuleContext);
-
-      // Emit the error centrally so the listener can trigger the dev overlay.
-      errorEmitter.emit('permission-error', permissionError);
-    });
+/** Marks an inquiry as read (or back to new). */
+export async function setInquiryStatus(inquiryId: string, status: 'new' | 'read'): Promise<void> {
+  const { db } = getFirebaseServices();
+  if (!db) {
+    throw new Error('Firestore is not initialized');
+  }
+  await updateDoc(doc(db, INQUIRIES_COLLECTION, inquiryId), { status });
 }

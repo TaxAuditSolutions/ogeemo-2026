@@ -40,7 +40,8 @@ import {
   Award,
   Crown,
   Building2,
-  StickyNote
+  StickyNote,
+  Inbox
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -81,6 +82,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/tenant-manager", label: "Tenant Manager", icon: Building2, masterTenantOnly: true },
   { href: "/logout", label: "Logout", icon: LogOut },
   { href: "/email-hub", label: "Email Hub", icon: Mail },
+  { href: "/inquiries", label: "Inquiries", icon: Inbox, adminOnly: true },
   { href: "/contacts", label: "Contacts Hub", icon: Contact },
   { href: "/projects/all", label: "Projects", icon: Briefcase },
   { href: "/to-do", label: "To-Do List", icon: ListChecks },

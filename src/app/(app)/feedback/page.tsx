@@ -34,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { LoaderCircle, Megaphone, FileText } from 'lucide-react';
 import { submitFeedback } from '@/services/feedback-service';
+import { notifyFeedbackSubmission } from '@/app/actions/notification-actions';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
@@ -73,6 +74,16 @@ export default function FeedbackPage() {
         ...values,
         date: new Date().toISOString(),
       });
+
+      // Team notification (fire-and-forget — never blocks or fails the user's submission)
+      notifyFeedbackSubmission({
+        reporterName: values.reporterName,
+        topic: values.topic,
+        type: values.type,
+        feedback: values.feedback,
+        submittedAt: new Date().toISOString(),
+      }).catch(() => {});
+
       toast({
         title: 'Feedback Submitted',
         description: "Thank you! We've received your feedback and appreciate your input.",

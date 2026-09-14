@@ -1,43 +1,50 @@
 'use client';
 
 import Link from 'next/link';
+import React, { useState } from 'react';
 import { SiteHeader } from '@/components/landing/header';
 import { SiteFooter } from '@/components/landing/footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Building2, CircleDollarSign, Handshake, Mail, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2, CircleDollarSign, Handshake, LoaderCircle, Mail, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { submitPartnershipApplication } from './actions';
 
 export default function PartnersPage() {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const name = String(formData.get('name') || '').trim();
-    const company = String(formData.get('company') || '').trim();
-    const email = String(formData.get('email') || '').trim();
-    const focus = String(formData.get('focus') || '').trim();
-    const website = String(formData.get('website') || '').trim();
-    const message = String(formData.get('message') || '').trim();
 
-    const subject = encodeURIComponent(`Partnership Inquiry from ${name || 'New Applicant'}`);
-    const body = encodeURIComponent(
-      [
-        'Partnership Application',
-        '',
-        `Name: ${name}`,
-        `Organization: ${company}`,
-        `Email: ${email}`,
-        `Partnership Focus: ${focus}`,
-        `Website: ${website || 'Not provided'}`,
-        '',
-        'Message:',
-        message,
-      ].join('\n')
-    );
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await submitPartnershipApplication({
+        name: String(formData.get('name') || ''),
+        company: String(formData.get('company') || ''),
+        email: String(formData.get('email') || ''),
+        focus: String(formData.get('focus') || ''),
+        website: String(formData.get('website') || ''),
+        message: String(formData.get('message') || ''),
+      });
 
-    window.location.href = `mailto:info@ogeemo.com?subject=${subject}&body=${body}`;
+      if (result.success) {
+        setIsSubmitted(true);
+        form.reset();
+      } else {
+        setSubmitError(result.error || 'Something went wrong. Please try again.');
+      }
+    } catch (error: any) {
+      setSubmitError(error?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -62,7 +69,7 @@ export default function PartnersPage() {
                   <Link href="#apply">Apply to Partner</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base font-bold">
-                  <Link href="mailto:info@ogeemo.com">Email Us</Link>
+                  <Link href="mailto:dan@ogeemo.com">Email Us</Link>
                 </Button>
               </div>
             </div>
@@ -240,19 +247,44 @@ export default function PartnersPage() {
                     <textarea id="message" name="message" required rows={6} className="w-full rounded-md border border-input bg-background px-3 py-3 text-sm outline-none ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" placeholder="Share your business, your audience, what you believe the partnership could deliver, and how you’d like to collaborate." />
                   </div>
 
+                  {isSubmitted && (
+                    <div className="rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-800">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                        <div>
+                          <p className="font-semibold">Application received!</p>
+                          <p>
+                            Your application has been emailed to the Ogeemo partnerships team and
+                            logged in our Inquiries inbox. We review applications on a rolling basis
+                            and will follow up with next steps.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
+                      {submitError}
+                    </div>
+                  )}
+
                   <div className="rounded-xl border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
                     <div className="flex items-start gap-3">
                       <Mail className="mt-0.5 h-5 w-5 text-primary shrink-0" />
                       <p>
-                        Please forward your application to <a href="mailto:info@ogeemo.com" className="font-semibold text-primary underline">info@ogeemo.com</a>. We will review it and follow up with next steps.
+                        Submitting this form emails your application directly to{' '}
+                        <a href="mailto:dan@ogeemo.com" className="font-semibold text-primary underline">dan@ogeemo.com</a>{' '}
+                        and logs it in the Ogeemo Inquiries inbox.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <p className="text-sm text-muted-foreground">We review partnership applications on a rolling basis.</p>
-                    <Button type="submit" size="lg" className="h-12 px-8 text-base font-bold">
-                      Send application
+                    <Button type="submit" size="lg" className="h-12 px-8 text-base font-bold" disabled={isSubmitting}>
+                      {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {isSubmitting ? 'Sending...' : 'Send application'}
                     </Button>
                   </div>
                 </form>

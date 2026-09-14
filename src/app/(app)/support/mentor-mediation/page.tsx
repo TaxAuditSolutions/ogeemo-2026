@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { submitMentorReview } from '@/services/mentor-service';
+import { notifyMediationRequest } from '@/app/actions/notification-actions';
 import { getUsers, type UserProfile } from '@/core/user-profile-service';
 import {
   Popover,
@@ -81,6 +82,18 @@ export default function MentorMediationPage() {
                 target_mentor_id: selectedMentorId,
                 dispute_description: dispute.trim(),
             });
+
+            // Team notification (fire-and-forget — the request is already recorded)
+            const mentorProfile: any = mentors.find((m) => m.id === selectedMentorId);
+            const userAny: any = user;
+            notifyMediationRequest({
+                requesterName: userAny?.displayName || userAny?.email || 'Ogeemo user',
+                requesterEmail: userAny?.email || undefined,
+                mentorName: mentorProfile?.displayName || mentorProfile?.email || 'Unknown Mentor',
+                dispute: dispute.trim(),
+                submittedAt: new Date().toISOString(),
+            }).catch(() => {});
+
             setIsSuccess(true);
             toast({ title: 'Mediation Recorded', description: 'The Lead Mentor Team has been notified.' });
         } catch (error: any) {

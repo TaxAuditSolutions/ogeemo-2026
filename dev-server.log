@@ -59,3 +59,98 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
  GET /welcome 200 in 321ms
  POST /welcome 200 in 527ms
  POST /welcome 200 in 461ms
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 1209ms (1452 modules)
+ DELETE /api/auth/session 200 in 1706ms
+ DELETE /api/auth/session 200 in 187ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.8s (2538 modules)
+ GET /login 200 in 3612ms
+ GET /login 200 in 151ms
+ ✓ Compiled in 878ms (1070 modules)
+ GET /login 200 in 129ms
+ GET /welcome 200 in 204ms
+ ⨯ Error: Unauthorized: No session cookie found.
+    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
+  569 |     const cookieStore = await cookies();
+  570 |     const sessionCookie = cookieStore.get('session')?.value;
+> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
+      |                              ^
+  572 |
+  573 |     let decodedToken;
+  574 |     try { {
+  digest: '902441344'
+}
+ POST /api/auth/session 200 in 710ms
+ POST /welcome 500 in 510ms
+ POST /welcome 200 in 348ms
+ POST /welcome 200 in 358ms
+ POST /welcome 200 in 365ms
+ POST /welcome 200 in 378ms
+ POST /welcome 200 in 378ms
+ ○ Compiling /user-notes ...
+ ✓ Compiled /user-notes in 3.4s (2623 modules)
+ GET /user-notes 200 in 3889ms
+ GET /user-notes 200 in 147ms
+ ○ Compiling /user-notes/[id] ...
+ ✓ Compiled /user-notes/[id] in 1270ms (2637 modules)
+ GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 2419ms
+ GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 187ms
+ GET /user-notes 200 in 145ms
+ GET /user-notes/92d2714e-9429-42ab-a31f-534702805422 200 in 183ms
+ GET /user-notes 200 in 127ms
+ GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 175ms
+ GET /user-notes 200 in 125ms
+ GET /user-notes/99496709-b68f-4e1b-a2d5-2f833f6d2453 200 in 153ms
+ GET /user-notes 200 in 118ms
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 830ms (1530 modules)
+ DELETE /api/auth/session 200 in 3205ms
+ DELETE /api/auth/session 200 in 164ms
+ GET /login 200 in 375ms
+ GET /login 200 in 120ms
+ GET /welcome 200 in 170ms
+ ⨯ Error: Unauthorized: No session cookie found.
+    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
+  569 |     const cookieStore = await cookies();
+  570 |     const sessionCookie = cookieStore.get('session')?.value;
+> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
+      |                              ^
+  572 |
+  573 |     let decodedToken;
+  574 |     try { {
+  digest: '902441344'
+}
+ POST /welcome 500 in 521ms
+ ⨯ Error: Unauthorized: No session cookie found.
+    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
+  569 |     const cookieStore = await cookies();
+  570 |     const sessionCookie = cookieStore.get('session')?.value;
+> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
+      |                              ^
+  572 |
+  573 |     let decodedToken;
+  574 |     try { {
+  digest: '902441344'
+}
+ POST /api/auth/session 200 in 1076ms
+ POST /welcome 500 in 402ms
+ POST /welcome 200 in 713ms
+ POST /welcome 200 in 401ms
+ POST /welcome 200 in 445ms
+ POST /welcome 200 in 367ms
+ GET /welcome 200 in 123ms
+ GET / 200 in 140ms
+ ✓ Compiled in 3.6s (2637 modules)
+ GET / 200 in 318ms
+ GET / 200 in 788ms
+ GET /welcome 200 in 163ms
+ POST /welcome 200 in 883ms
+ POST /welcome 200 in 448ms
+ POST /welcome 200 in 399ms
+ POST /welcome 200 in 396ms
+ POST /welcome 200 in 362ms
+ POST /welcome 200 in 369ms
+ GET /welcome 200 in 123ms
+ GET /welcome 200 in 126ms
+ GET / 200 in 1139ms

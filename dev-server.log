@@ -55,3 +55,7 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
    Reload env: .env.local
  ✓ Compiled in 1967ms (2464 modules)
  GET /welcome 200 in 326ms
+ ✓ Compiled in 3s (2492 modules)
+ GET /welcome 200 in 321ms
+ POST /welcome 200 in 527ms
+ POST /welcome 200 in 461ms

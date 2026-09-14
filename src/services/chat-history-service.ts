@@ -2,6 +2,10 @@
 
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import {
+    parseAssistantMessageAction,
+    type AssistantMessageAction,
+} from '@/ai/assistant-actions';
 
 export type AssistantChatRole = 'user' | 'model';
 
@@ -10,6 +14,7 @@ export interface AssistantChatMessage {
     content: string;
     /** ISO timestamp of when the message was created (optional for legacy chats). */
     timestamp?: string;
+    action?: AssistantMessageAction;
 }
 
 export interface AssistantChatThread {
@@ -59,11 +64,15 @@ function toDate(value: any): Date | undefined {
 export function normalizeMessages(messages: AssistantChatMessage[]): AssistantChatMessage[] {
     return messages
         .filter((message) => message && (message.role === 'user' || message.role === 'model'))
-        .map((message) => ({
-            role: message.role,
-            content: typeof message.content === 'string' ? message.content : String(message.content ?? ''),
-            ...(typeof message.timestamp === 'string' && message.timestamp ? { timestamp: message.timestamp } : {}),
-        }))
+        .map((message) => {
+            const action = parseAssistantMessageAction(message.action);
+            return {
+                role: message.role,
+                content: typeof message.content === 'string' ? message.content : String(message.content ?? ''),
+                ...(typeof message.timestamp === 'string' && message.timestamp ? { timestamp: message.timestamp } : {}),
+                ...(action ? { action } : {}),
+            };
+        })
         .filter((message) => message.content.trim().length > 0)
         .slice(-MAX_HISTORY_MESSAGES);
 }

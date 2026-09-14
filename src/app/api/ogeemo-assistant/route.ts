@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCapability } from '@/ai/flows/ogeemo-chat';
-import { parseAssistantClientAction } from '@/ai/assistant-actions';
+import { resolveAssistantCapabilityAction } from '@/ai/assistant-actions';
 import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminDb } from '@/core/firebase-admin';
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
                 if (capabilityResult.handled) {
                     const action = capabilityResult.action
-                        ? parseAssistantClientAction(capabilityResult.action, folders.map((folder) => folder.id))
+                        ? resolveAssistantCapabilityAction(capabilityResult.action, folders.map((folder) => folder.id))
                         : undefined;
                     const answer = capabilityResult.reply.trim() || 'I can help you with that contact.';
 

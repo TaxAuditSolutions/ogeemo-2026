@@ -51,10 +51,59 @@ export const AssistantClientActionSchema = z.discriminatedUnion('type', [
 
 export type AssistantClientAction = z.infer<typeof AssistantClientActionSchema>;
 
+const AssistantDispatchActionSchema = z.object({
+    type: z.literal('dispatch'),
+    target: z.string().trim().min(1),
+    isExternal: z.boolean(),
+    label: z.string().trim().min(1),
+    category: z.string().trim().min(1).optional(),
+}).strict().superRefine((action, context) => {
+    if (action.isExternal) {
+        try {
+            const url = new URL(action.target);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                context.addIssue({ code: 'custom', message: 'External dispatch targets must use HTTP(S).' });
+            }
+        } catch {
+            context.addIssue({ code: 'custom', message: 'External dispatch target must be a valid URL.' });
+        }
+        return;
+    }
+
+    if (!action.target.startsWith('/') || action.target.startsWith('//')) {
+        context.addIssue({ code: 'custom', message: 'Internal dispatch targets must be application-relative paths.' });
+    }
+});
+
+export const AssistantMessageActionSchema = z.union([
+    AssistantDispatchActionSchema,
+    AssistantClientActionSchema,
+]);
+
+export type AssistantMessageAction = z.infer<typeof AssistantMessageActionSchema>;
+
 export const AssistantApiResponseSchema = z.object({
     answer: z.string(),
-    action: AssistantClientActionSchema.optional(),
+    action: AssistantMessageActionSchema.optional(),
 }).strict();
+
+/** The only destinations a capability flow may offer; the model never supplies a raw path. */
+export const ASSISTANT_DESTINATIONS = {
+    contacts_hub: { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
+    new_contact: { target: '/contacts?action=new', label: 'New Contact', category: 'Relationships' },
+} as const;
+
+export type AssistantDestinationKey = keyof typeof ASSISTANT_DESTINATIONS;
+
+export const AssistantCapabilityActionSchema = z.union([
+    z.object({
+        type: z.literal('open_destination'),
+        destination: z.enum(Object.keys(ASSISTANT_DESTINATIONS) as [AssistantDestinationKey, ...AssistantDestinationKey[]]),
+    }).strict(),
+    AssistantClientActionSchema,
+]);
+
+export type AssistantCapabilityAction = z.infer<typeof AssistantCapabilityActionSchema>;
 
 export function parseAssistantClientAction(
     value: unknown,
@@ -69,4 +118,34 @@ export function parseAssistantClientAction(
     }
 
     return parsed.data;
+}
+
+export function parseAssistantMessageAction(value: unknown): AssistantMessageAction | undefined {
+    const parsed = AssistantMessageActionSchema.safeParse(value);
+    return parsed.success ? parsed.data : undefined;
+}
+
+/**
+ * Resolves a capability-supplied action into a persistable message action,
+ * mapping destination keys through the allowlist rather than trusting a path.
+ */
+export function resolveAssistantCapabilityAction(
+    value: unknown,
+    validFolderIds: Iterable<string>,
+): AssistantMessageAction | undefined {
+    const parsed = AssistantCapabilityActionSchema.safeParse(value);
+    if (!parsed.success) return undefined;
+
+    if (parsed.data.type === 'open_destination') {
+        const destination = ASSISTANT_DESTINATIONS[parsed.data.destination];
+        return {
+            type: 'dispatch',
+            target: destination.target,
+            isExternal: false,
+            label: destination.label,
+            category: destination.category,
+        };
+    }
+
+    return parseAssistantClientAction(parsed.data, validFolderIds);
 }

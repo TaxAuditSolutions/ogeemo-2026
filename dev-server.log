@@ -154,3 +154,5 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
  GET /welcome 200 in 123ms
  GET /welcome 200 in 126ms
  GET / 200 in 1139ms
+ ✓ Compiled in 2.2s (2637 modules)
+ GET / 200 in 248ms

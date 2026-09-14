@@ -156,3 +156,65 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
  GET / 200 in 1139ms
  ✓ Compiled in 2.2s (2637 modules)
  GET / 200 in 248ms
+ GET /welcome 200 in 190ms
+ POST /welcome 200 in 1052ms
+ POST /welcome 200 in 427ms
+ POST /welcome 200 in 341ms
+ POST /welcome 200 in 575ms
+ POST /welcome 200 in 377ms
+ POST /welcome 200 in 344ms
+ ○ Compiling /api/ogeemo-assistant ...
+ ✓ Compiled /api/ogeemo-assistant in 2.9s (2743 modules)
+[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.
+/api/ogeemo-assistant contact-capability-error Error [GenkitError]: NOT_FOUND: Model 'googleai/gemini-2.5-flash' not found
+    at async eval (src\ai\flows\ogeemo-chat.ts:422:19)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:123:41)
+  420 | `;
+  421 |
+> 422 |     const result = await ai.generate({
+      |                   ^
+  423 |       model: STABLE_GEMINI_MODEL,
+  424 |       messages,
+  425 |       tools: [searchContactsTool], {
+  source: undefined,
+  status: 'NOT_FOUND',
+  detail: undefined,
+  code: 404,
+  originalMessage: "Model 'googleai/gemini-2.5-flash' not found",
+  traceId: '5bfc8ddda253c9841b41c7c58afde067',
+  ignoreFailedSpan: true
+}
+ GET /welcome 200 in 3743ms
+ ✓ Compiled in 4s (1124 modules)
+ GET /welcome 200 in 146ms
+/api/ogeemo-assistant source {
+  source: 'functions_primary',
+  reason: 'functions_answer_accepted',
+  decisionPath: 'functions_primary',
+  functionsRefusal: false,
+  refusalReason: 'none',
+  genkitAttempted: false,
+  upstreamFailureKind: 'none'
+}
+ POST /api/ogeemo-assistant 200 in 11964ms
+ ○ Compiling /api/ogeemo-chat-title ...
+ ✓ Compiled /api/ogeemo-chat-title in 1261ms (2747 modules)
+[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.
+[generateChatTitleFlow] Title generation failed: NOT_FOUND: Model 'googleai/gemini-2.5-flash' not found
+ POST /api/ogeemo-chat-title 200 in 1462ms
+ GET /welcome 200 in 322ms
+ ○ Compiling /user-manager ...
+ ✓ Compiled /user-manager in 4.5s (2694 modules)
+ GET /user-manager 200 in 5051ms
+ GET /user-notes 200 in 3387ms
+ GET /user-notes 200 in 131ms
+ GET /user-notes/ff87ad1f-e1f9-4873-b5f3-cc27f420ad8b 200 in 271ms
+ GET /user-notes 200 in 119ms
+ GET /user-notes 200 in 1828ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /api/auth/session in 888ms (1529 modules)
+ ✓ Compiled (1532 modules)
+ GET /favicon.ico 200 in 2285ms
+ POST /api/auth/session 200 in 1971ms
+ POST /user-notes 200 in 2387ms
+ POST /user-notes 200 in 429ms

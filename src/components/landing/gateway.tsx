@@ -25,7 +25,7 @@ import { useState } from 'react';
 
 /**
  * @fileOverview The "Ogeemo Gateway" landing page.
- * Asks visitors who they are and why they are here, then routes each intent
+ * Welcomes visitors, asks what brings them in today, then routes each intent
  * to the appropriate part of the marketing site or the member Suite.
  */
 
@@ -92,7 +92,7 @@ export function Gateway() {
                             One business. One system.
                         </Badge>
                         <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight leading-tight">
-                            Who are you, and why are you here?
+                            Welcome! What brings you in today?
                         </h1>
                         <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
                             Ogeemo is an anti-greed, success-scaled business operating system — and a community

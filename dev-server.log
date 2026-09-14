@@ -52,3 +52,6 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
  POST /welcome 200 in 355ms
  POST /welcome 200 in 364ms
  POST /welcome 200 in 342ms
+   Reload env: .env.local
+ ✓ Compiled in 1967ms (2464 modules)
+ GET /welcome 200 in 326ms

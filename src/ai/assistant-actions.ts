@@ -259,6 +259,8 @@ export function resolveAssistantCapabilityActionWithRepair(
     return undefined;
 }
 
+const DETERMINISTIC_FOLDER_PHRASE_PATTERN = /\bcontact\s+in\s+(?:the\s+)?([^.!?]+?)\s+folder\b[.,!]?\s*(.*)$/i;
+
 /**
  * Deterministic fallback for the AI contact capability: extracts a name (and
  * optional email/phone) from a plain sentence such as "Make a contact for Nick
@@ -282,6 +284,16 @@ export function buildDeterministicContactDraft(
         working = working.replace(entry.match, ' ');
     }
 
+    // Folder-first phrasing: "create a new contact in the friends folder. John
+    // Test with email address John@gmail.com" — the folder precedes the name.
+    let capturedFolderName: string | undefined;
+    let postFolderText: string | undefined;
+    const folderPhraseMatch = DETERMINISTIC_FOLDER_PHRASE_PATTERN.exec(working);
+    if (folderPhraseMatch) {
+        capturedFolderName = folderPhraseMatch[1].trim();
+        postFolderText = folderPhraseMatch[2] ?? '';
+    }
+
     let nameCandidate: string | undefined;
     for (const pattern of DETERMINISTIC_NAME_PATTERNS) {
         const match = pattern.exec(working);
@@ -291,6 +303,9 @@ export function buildDeterministicContactDraft(
         nameCandidate = stripped;
         break;
     }
+    if (!nameCandidate && postFolderText) {
+        nameCandidate = stripDeterministicTrailingNoise(postFolderText.replace(/^for\s+/i, ''));
+    }
 
     if (!nameCandidate || nameCandidate.includes('@')) return undefined;
     const name = nameCandidate.replace(/\s+/g, ' ').trim();
@@ -298,6 +313,15 @@ export function buildDeterministicContactDraft(
 
     let folderId = folders[0].id;
     let resolvedName = name;
+
+    const wantedFolder = (capturedFolderName ?? '').toLowerCase();
+    const matchedFolder = wantedFolder
+        ? folders.find((folder) => folder.name.trim().toLowerCase() === wantedFolder)
+        : undefined;
+    if (matchedFolder) {
+        folderId = matchedFolder.id;
+    }
+
     for (const folder of folders) {
         if (!folder.name) continue;
         const folderSuffix = new RegExp(

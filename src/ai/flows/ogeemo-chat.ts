@@ -482,7 +482,10 @@ ${folderCatalog}
       // Genkit throws INVALID_ARGUMENT ("Provided data: null") when the model
       // ends its turn on a tool call (e.g. the mandatory duplicate check)
       // instead of the structured JSON. Fall through to a retry without tools.
-      console.warn('[contact-capability] first generate failed, retrying without tools', firstError);
+      console.warn('[contact-capability] first generate failed, retrying without tools', {
+        roles: messages.map((m) => m.role).join(','),
+        error: firstError,
+      });
     }
 
     // Retry with tools removed: the response schema becomes the only possible
@@ -536,6 +539,14 @@ function buildScrubbedMessages(history: any[] | undefined, message: string): any
 
     return { role, content: scrubbedContent };
   });
+
+  // Gemini rejects request contents that do not start with a user turn
+  // ("First content should be with role 'user', got model"). Truncation or
+  // odd thread states can put a model turn first, so strip leading non-user
+  // messages until the conversation starts with the user.
+  while (scrubbedMessages.length > 0 && scrubbedMessages[0].role !== 'user') {
+    scrubbedMessages.shift();
+  }
 
   const lastMessage = scrubbedMessages[scrubbedMessages.length - 1];
   const lastText = lastMessage?.content?.map((part: any) => part.text || '').join('').trim();

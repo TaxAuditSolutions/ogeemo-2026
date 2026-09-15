@@ -4,6 +4,7 @@
  * Run: node --env-file=.env.local --import tsx tmp/diag-firestore.ts
  */
 import { getAdminDb } from '../src/core/firebase-admin';
+import fs from 'fs';
 
 async function main() {
   const db = getAdminDb();
@@ -61,40 +62,17 @@ async function main() {
 
   const sessions = await db.collection('userAssistantChatSessions').get();
   console.log(`=== chat sessions (${sessions.size}) ===`);
-  let droppedCount = 0;
   for (const d of sessions.docs) {
     const data = d.data();
     const messages = Array.isArray(data.messages) ? data.messages : [];
-    messages.forEach((m: any, idx: number) => {
-      if (m.role !== 'model') return;
-      const text = String(m.content);
-      const promisesButton = /click|below|ready for review/i.test(text);
-      if (promisesButton && !m.action) {
-        droppedCount += 1;
-        console.log(`DROPPED-ACTION session=${d.id} msg#${idx}: ${text.substring(0, 100)}`);
-      }
-    });
     const flat = JSON.stringify(messages);
-    if (flat.includes('Joe Blow') || flat.includes('Sam Sneed') || flat.includes('friends folder')) {
-      console.log(`userId: ${d.id}  (matches test conversation)`);
-      const profile = await db.collection('users').doc(d.id).get();
-      if (profile.exists) {
-        const p = profile.data()!;
-        console.log(JSON.stringify({ profileOrgId: p.orgId ?? null, profileAccessLevel: p.accessLevel ?? null }));
-      }
-      const profileOrgId = profile.exists ? profile.data()!.orgId : null;
-      const orgFolders = await db.collection('contactFolders').where('orgId', '==', profileOrgId).get();
-      console.log(`=== folders for org ${profileOrgId} (${orgFolders.size}) ===`);
-      orgFolders.forEach((f) => console.log(JSON.stringify({ id: f.id, name: f.data().name })));
-      const lastMessages = messages.slice(-6);
-      lastMessages.forEach((m: any) => {
-        console.log(`  [${m.role}] ${String(m.content).substring(0, 110)}`);
-        if (m.action) console.log(`  ACTION: ${JSON.stringify(m.action)}`);
-        if (m.degraded) console.log('  DEGRADED: true');
-      });
+    if (flat.includes('John Test')) {
+      console.log(`userId: ${d.id} — thread containing 'John Test'`);
+      fs.writeFileSync('tmp/john-test-thread.json', JSON.stringify(messages, null, 2));
+      console.log('full thread written to tmp/john-test-thread.json');
+      console.log('roles:', messages.map((m: any) => m.role[0]).join(''));
     }
   }
-  console.log(`=== model messages promising a button with NO action attached: ${droppedCount} ===`);
 }
 
 main().catch((error) => {

@@ -235,6 +235,21 @@ test('extracts phone numbers into draft fields and keeps the name clean', () => 
     });
 });
 
+test('handles folder-first phrasing with the name in a follow-up fragment', () => {
+    const action = buildDeterministicContactDraft(
+        'create a new contact in the friends folder.  John Test with email address John@gmail.com',
+        [
+            { id: 'misc', name: 'Miscellaneous' },
+            { id: 'friends', name: 'Friends' },
+        ],
+    );
+
+    assert.deepEqual(action, {
+        type: 'open_contact_form',
+        draft: { name: 'John Test', folderId: 'friends', email: 'John@gmail.com' },
+    });
+});
+
 test('maps labelled phones to their draft fields alongside an email', () => {
     const action = buildDeterministicContactDraft(
         'Add a contact named Dana White, email dana@example.com, work 416-555-0123',

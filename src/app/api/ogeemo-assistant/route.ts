@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCapability } from '@/ai/flows/ogeemo-chat';
-import { buildDeterministicContactDraft, resolveAssistantCapabilityAction, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
+import { buildDeterministicContactDraft, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
 import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminDb } from '@/core/firebase-admin';
 
@@ -54,6 +54,37 @@ function normalizeAnswerText(value: unknown): string {
 function hasLegacyRefusalPattern(answer: string): boolean {
     const normalized = answer.toLowerCase();
     return FUNCTIONS_REFUSAL_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
+/**
+ * Last-resort draft builder: runs the deterministic contact extractor and
+ * validates the result against the tenant folder allowlist. Returns the
+ * degraded API response payload, or undefined when the message contains no
+ * extractable contact.
+ */
+function buildDeterministicDraftResponse(question: string, tenantFolders: Array<{ id: string; name: string }>) {
+    if (tenantFolders.length === 0) return undefined;
+    const draftAction = buildDeterministicContactDraft(question, tenantFolders);
+    if (!draftAction) return undefined;
+    const action = resolveAssistantCapabilityActionWithRepair(draftAction, tenantFolders);
+    if (action?.type !== 'open_contact_form') return undefined;
+    const draft = action.draft;
+    const detail = [draft.name, draft.email, draft.cellPhone, draft.businessPhone, draft.homePhone].filter(Boolean).join(' • ');
+    return {
+        action,
+        answer: `I prepared a draft contact for you${detail ? ` (${detail})` : ''}. It's open now — select the folder, add any extra details, and save when you're ready.`,
+    };
+}
+
+/**
+ * True when the message is a direct imperative contact-creation request
+ * ("create a new contact for John Test ...") rather than an informational
+ * question ("how do I create a contact ...").
+ */
+function isImperativeContactRequest(question: string): boolean {
+    const imperative = /\b(create|make|add|new)\b[\s\S]{0,40}\bcontact\b/i.test(question);
+    const informational = /\bhow\s+(?:do|to|can)\b/i.test(question);
+    return imperative && !informational;
 }
 
 function parseUpstreamMetadata(value: unknown): UpstreamAssistantMetadata | undefined {
@@ -143,39 +174,53 @@ export async function POST(request: NextRequest) {
                     }
                     const answer = capabilityResult.reply.trim() || 'I can help you with that contact.';
 
+                    // The capability handled the conversation but produced no form
+                    // action. For imperative contact-creation requests, prefer the
+                    // deterministic draft over instructions-only text.
+                    if (!action && isImperativeContactRequest(question)) {
+                        const deterministic = buildDeterministicDraftResponse(question, tenantFolders);
+                        if (deterministic) {
+                            console.info('/api/ogeemo-assistant source', {
+                                source: 'deterministic_contact_fallback',
+                                reason: 'capability_handled_without_action',
+                                decisionPath: 'capability_handled->deterministic_contact_fallback',
+                            });
+                            return NextResponse.json({ ...deterministic, degraded: true }, { status: 200 });
+                        }
+                    }
+
                     return NextResponse.json({ answer, ...(action ? { action } : {}) }, { status: 200 });
+                }
+
+                // The capability explicitly declined the conversation. If the
+                // message is nevertheless an imperative contact-creation request,
+                // still prepare a draft rather than losing it to the generic
+                // text assistant.
+                if (isImperativeContactRequest(question)) {
+                    const deterministic = buildDeterministicDraftResponse(question, tenantFolders);
+                    if (deterministic) {
+                        console.info('/api/ogeemo-assistant source', {
+                            source: 'deterministic_contact_fallback',
+                            reason: 'capability_declined',
+                            decisionPath: 'capability_declined->deterministic_contact_fallback',
+                        });
+                        return NextResponse.json({ ...deterministic, degraded: true }, { status: 200 });
+                    }
                 }
             }
         } catch (capabilityError) {
             console.warn('/api/ogeemo-assistant contact-capability-error', capabilityError);
 
             // Deterministic fallback: keep the core "fill the contact form from my
-            // sentence" UX alive even when the AI capability flow is unavailable
-            // (e.g. GEMINI_API_KEY missing or the model call failing).
-            const draftAction = buildDeterministicContactDraft(question, tenantFolders);
-            const fallbackAction = draftAction
-                ? resolveAssistantCapabilityAction(draftAction, tenantFolders.map((folder) => folder.id))
-                : undefined;
-
-            if (fallbackAction?.type === 'open_contact_form') {
+            // sentence" UX alive even when the AI capability flow is unavailable.
+            const deterministic = buildDeterministicDraftResponse(question, tenantFolders);
+            if (deterministic) {
                 console.info('/api/ogeemo-assistant source', {
                     source: 'deterministic_contact_fallback',
                     reason: 'contact_capability_error',
                     decisionPath: 'contact_capability_error->deterministic_contact_fallback',
                 });
-                const draft = fallbackAction.draft;
-                const detail = [
-                    draft.name,
-                    draft.email,
-                    draft.cellPhone,
-                    draft.businessPhone,
-                    draft.homePhone,
-                ].filter(Boolean).join(' • ');
-                return NextResponse.json({
-                    answer: `I couldn't run the full AI contact flow right now, so I prepared a basic draft from your request${detail ? ` (${detail})` : ''}. Please review and complete it before saving.`,
-                    action: fallbackAction,
-                    degraded: true,
-                }, { status: 200 });
+                return NextResponse.json({ ...deterministic, degraded: true }, { status: 200 });
             }
         }
 

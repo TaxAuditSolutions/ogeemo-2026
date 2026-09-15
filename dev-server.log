@@ -2133,3 +2133,59 @@ Import trace for requested module:
  POST /contacts 200 in 1303ms
  Γ£ô Compiled in 2.7s (3027 modules)
  GET /contacts 200 in 461ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1007ms (1716 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+[contact-capability] first generate failed, retrying without tools Error: [GoogleGenerativeAI Error]: First content should be with role 'user', got model
+    at async eval (src\ai\flows\ogeemo-chat.ts:476:21)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
+  474 |
+  475 |     try {
+> 476 |       const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool] });
+      |                     ^
+  477 |       if (result.output) {
+  478 |         return ContactCapabilityResultSchema.parse(result.output);
+  479 |       } {
+  traceId: 'f4f0b01e1d5d1c0df51eb4397c4bc128',
+  ignoreFailedSpan: true
+}
+/api/ogeemo-assistant contact-capability-error Error: [GoogleGenerativeAI Error]: First content should be with role 'user', got model
+    at async eval (src\ai\flows\ogeemo-chat.ts:495:24)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
+  493 | Important for this retry turn: the searchContacts tool is temporarily unavailable, so skip the duplicate check and never block or delay the open_contact_form action because of it. Never ask the user which folder to use: choose the catalog folder whose name best matches the user's wording, otherwise the first catalog folder. Return the open_contact_form action now when the full name is known.`;
+  494 |
+> 495 |     const retryResult = await ai.generate({
+      |                        ^
+  496 |       ...baseOptions,
+  497 |       system: retrySystem,
+  498 |       messages: [ {
+  traceId: 'f4f0b01e1d5d1c0df51eb4397c4bc128',
+  ignoreFailedSpan: true
+}
+/api/ogeemo-assistant source {
+  source: 'functions_primary',
+  reason: 'functions_answer_accepted',
+  decisionPath: 'functions_primary',
+  functionsRefusal: false,
+  refusalReason: 'none',
+  genkitAttempted: false,
+  upstreamFailureKind: 'none'
+}
+ POST /api/ogeemo-assistant 200 in 7262ms
+ Γ£ô Compiled in 1984ms (3027 modules)
+ Γ£ô Compiled in 1327ms (3013 modules)
+ POST /contacts 200 in 3587ms
+ GET /contacts 200 in 154ms
+ POST /contacts 200 in 1012ms
+ Γ£ô Compiled in 1577ms (3013 modules)
+ POST /contacts 200 in 586ms
+ Γ£ô Compiled in 1123ms (1417 modules)
+ GET /contacts 200 in 514ms
+ Γ£ô Compiled in 906ms (1417 modules)
+ GET /contacts 200 in 144ms
+ Γ£ô Compiled in 704ms (1417 modules)
+ GET /contacts 200 in 138ms
+ Γ£ô Compiled in 649ms (1417 modules)
+ GET /contacts 200 in 210ms
+ Γ£ô Compiled in 3.8s (3027 modules)
+ GET /contacts 200 in 429ms

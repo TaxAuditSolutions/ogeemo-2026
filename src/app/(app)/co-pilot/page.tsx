@@ -964,7 +964,7 @@ export default function AiDispatchPage() {
                     </div>
 
                     <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] pb-2">
-                        Intelligence Instance Stable • Version 3.0
+                        Intelligence Instance Stable • Version 3.1 — Contact Form Flow
                     </p>
 
                     <ContactFormDialog

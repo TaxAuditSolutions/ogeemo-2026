@@ -214,6 +214,7 @@ export default function AiDispatchPage() {
         if (lastAutoOpenedActionRef.current === actionKey) return;
         lastAutoOpenedActionRef.current = actionKey;
         console.info('[co-pilot] auto-opening contact form', draft ?? '(blank)');
+        toast({ title: draft ? 'Opening your prepared contact form' : 'Opening a blank contact form', description: 'Select the folder, add any details, then save.' });
         setContactToEdit(null);
         setContactDraft(draft);
         setIsFormOpen(true);

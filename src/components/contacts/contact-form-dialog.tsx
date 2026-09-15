@@ -183,9 +183,13 @@ export default function ContactFormDialog({
                 <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none flex flex-col p-0 text-black">
                     <DialogHeader className="p-6 pb-4 border-b bg-muted/10 shrink-0 relative">
                         <DialogTitle className="text-2xl font-bold font-headline text-primary">
-                            {contactToEdit ? "Edit Unified Identity" : "New Unified Identity"}
+                            {contactToEdit ? "Edit Contact" : "Create Contact"}
                         </DialogTitle>
-                        <DialogDescription>Registry entry for Clients, Workers, Suppliers, and Leads.</DialogDescription>
+                        <DialogDescription>
+                            {contactToEdit
+                                ? "Update this registry entry."
+                                : "Review the prepared details, select the folder, add anything else, then save."}
+                        </DialogDescription>
                         {contactToEdit?.documentFolderId && (
                             <div className="absolute top-6 left-6">
                                 <Button variant="outline" size="sm" className="h-8" onClick={() => router.push(`/document-manager?highlight=${contactToEdit.documentFolderId}`)}>

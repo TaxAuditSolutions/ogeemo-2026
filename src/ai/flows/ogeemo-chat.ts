@@ -451,7 +451,7 @@ When the conversation concerns contact creation:
 - The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Before returning open_contact_form, call searchContacts using the best available name or email. If a likely existing contact is returned, warn the user and offer to open it or explicitly continue with a new record. Do not return a new-contact action until the user confirms continuation. If the user chooses the existing match, return open_contact with its real ID.
-- When requirements are complete and duplicate handling is resolved, briefly say the form is ready for review and return open_contact_form. Use only folder IDs from the catalog.
+- When requirements are complete and duplicate handling is resolved, briefly confirm the contact form has been opened for review and return open_contact_form. The UI opens the form automatically — NEVER tell the user to click a button or link for it. Use only folder IDs from the catalog.
 - Never claim the contact has been created. The user must review and submit the form.
 - Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft.
 
@@ -493,7 +493,7 @@ ${folderCatalog}
     // duplicate check is unavailable in this turn, so instruct the model to
     // proceed with the form anyway instead of stalling on it.
     const retrySystem = `${system}
-Important for this retry turn: the searchContacts tool is temporarily unavailable, so skip the duplicate check and never block or delay the open_contact_form action because of it. Never ask the user which folder to use: choose the catalog folder whose name best matches the user's wording, otherwise the first catalog folder. Return the open_contact_form action now when the full name is known.`;
+Important for this retry turn: the searchContacts tool is temporarily unavailable, so skip the duplicate check and never block or delay the open_contact_form action because of it. Never ask the user which folder to use: choose the catalog folder whose name best matches the user's wording, otherwise the first catalog folder. Return the open_contact_form action now when the full name is known. The reply must confirm the form was opened for review — never instruct the user to click a button.`;
 
     const retryResult = await ai.generate({
       ...baseOptions,

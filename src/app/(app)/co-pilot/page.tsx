@@ -200,6 +200,7 @@ export default function AiDispatchPage() {
         const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
         if (lastAutoOpenedActionRef.current === actionKey) return;
         lastAutoOpenedActionRef.current = actionKey;
+        console.info('[co-pilot] auto-opening prepared contact form', last.action.draft);
         setContactToEdit(null);
         setContactDraft(last.action.draft);
         setIsFormOpen(true);

@@ -2189,3 +2189,25 @@ Import trace for requested module:
  GET /contacts 200 in 210ms
  Γ£ô Compiled in 3.8s (3027 modules)
  GET /contacts 200 in 429ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1535ms (1716 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /contacts 200 in 398ms
+ POST /api/ogeemo-assistant 200 in 4910ms
+ GET /contacts 200 in 1293ms
+ Γùï Compiling /api/auth/session ...
+ POST /contacts 200 in 692ms
+ Γ£ô Compiled /api/auth/session in 633ms (1718 modules)
+ POST /api/auth/session 200 in 1010ms
+ POST /contacts 200 in 722ms
+ GET /contacts 200 in 140ms
+ Γùï Compiling /accounting ...
+ Γ£ô Compiled /accounting in 3.4s (3036 modules)
+ GET /accounting 200 in 3775ms
+ GET /accounting 200 in 164ms
+ GET /contacts 200 in 152ms
+ GET /contacts 200 in 2153ms
+ Γ£ô Compiled in 2.6s (3030 modules)
+ Γ£ô Compiled in 2.6s (3030 modules)
+ GET /contacts 200 in 2952ms
+ GET /contacts 200 in 150ms

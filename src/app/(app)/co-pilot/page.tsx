@@ -47,6 +47,7 @@ import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import {
+    ASSISTANT_DESTINATIONS,
     parseAssistantClientAction,
     type AssistantContactDraft,
     type AssistantMessageAction,
@@ -194,15 +195,27 @@ export default function AiDispatchPage() {
     const lastAutoOpenedActionRef = useRef<string | null>(null);
     useEffect(() => {
         const last = messages[messages.length - 1];
-        if (!last || last.role !== 'model' || last.action?.type !== 'open_contact_form') return;
+        if (!last || last.role !== 'model' || !last.action) return;
+
+        // A drafted contact opens the form pre-filled; the "New Contact"
+        // destination opens a blank form. Anything else is not a form action.
+        let draft: AssistantContactDraft | undefined;
+        if (last.action.type === 'open_contact_form') {
+            draft = last.action.draft;
+        } else if (last.action.type === 'dispatch' && last.action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
+            draft = undefined;
+        } else {
+            return;
+        }
+
         const messageAgeMs = last.timestamp ? Date.now() - new Date(last.timestamp).getTime() : Infinity;
         if (messageAgeMs > 3 * 60 * 1000) return;
         const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
         if (lastAutoOpenedActionRef.current === actionKey) return;
         lastAutoOpenedActionRef.current = actionKey;
-        console.info('[co-pilot] auto-opening prepared contact form', last.action.draft);
+        console.info('[co-pilot] auto-opening contact form', draft ?? '(blank)');
         setContactToEdit(null);
-        setContactDraft(last.action.draft);
+        setContactDraft(draft);
         setIsFormOpen(true);
     }, [messages, activeThreadId]);
 
@@ -379,8 +392,17 @@ export default function AiDispatchPage() {
 
     const handleMessageAction = async (action: AssistantMessageAction) => {
         if (action.type === 'dispatch') {
-            if (action.isExternal) window.open(action.target, '_blank', 'noopener,noreferrer');
-            else router.push(action.target);
+            if (action.isExternal) {
+                window.open(action.target, '_blank', 'noopener,noreferrer');
+            } else if (action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
+                // The New Contact destination opens the create-contact form right
+                // here in the conversation instead of navigating away.
+                setContactToEdit(null);
+                setContactDraft(undefined);
+                setIsFormOpen(true);
+            } else {
+                router.push(action.target);
+            }
             return;
         }
 

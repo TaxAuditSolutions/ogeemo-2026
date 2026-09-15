@@ -2233,3 +2233,17 @@ Import trace for requested module:
  Γ£ô Compiled in 1084ms (3025 modules)
  POST /welcome 200 in 1913ms
  POST /welcome 200 in 379ms
+ GET /welcome 200 in 1654ms
+ Γùï Compiling /api/auth/session ...
+ POST /welcome 200 in 1083ms
+ Γ£ô Compiled /api/auth/session in 1464ms (1628 modules)
+ POST /api/auth/session 200 in 2330ms
+ POST /welcome 200 in 1758ms
+ POST /welcome 200 in 362ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1066ms (1719 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /welcome 200 in 509ms
+ POST /api/ogeemo-assistant 200 in 2757ms
+ GET /contacts?action=new 200 in 144ms
+ GET /contacts 200 in 120ms

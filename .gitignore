@@ -23,3 +23,4 @@ test.js
 # Firebase service account key
 keys/ogeemo-firebase-firebase-adminsdk-fbsvc-ef0acfe30c.json
 GOOGLE_APPLICATION_CREDjson
+tmp/thread-*.json

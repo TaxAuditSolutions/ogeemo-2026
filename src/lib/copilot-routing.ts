@@ -29,12 +29,27 @@ export function isAwaitingAssistantReply(history: CopilotRoutingMessage[]): bool
 }
 
 /**
+ * Contact-creation requests ("create a new contact for John", "open new
+ * contact form") belong in the Co-Pilot conversation, which auto-opens the
+ * prepared form. Only plain hub navigation ("open contacts", "contacts hub")
+ * stays a command.
+ */
+const CONTACT_CREATION_PATTERN = /\bcontact\b/i;
+
+export function isContactCreationRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!CONTACT_CREATION_PATTERN.test(text)) return false;
+    return /\b(create|new|add|form)\b/i.test(text);
+}
+
+/**
  * Outside an open assistant question the command processor still decides; inside
  * one only an explicit command verb may interrupt the conversation.
  */
 export function shouldProcessAsCommand(message: string, history: CopilotRoutingMessage[]): boolean {
     const text = (message || '').trim();
     if (!text) return false;
+    if (isContactCreationRequest(text)) return false;
     if (!isAwaitingAssistantReply(history)) return true;
     return COMMAND_VERBS.has(firstToken(text));
 }

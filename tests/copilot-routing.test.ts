@@ -26,6 +26,12 @@ test('routes ordinary turns through the command processor', () => {
     );
 });
 
+test('routes contact-creation requests to the conversation, not the command path', () => {
+    assert.equal(shouldProcessAsCommand('open create a new contact form', []), false);
+    assert.equal(shouldProcessAsCommand('create a new contact for John Test', []), false);
+    assert.equal(shouldProcessAsCommand('add a new contact named Dana White', []), false);
+});
+
 test('ignores empty input', () => {
     assert.equal(shouldProcessAsCommand('   ', []), false);
 });

@@ -5,6 +5,7 @@
  */
 
 import { allMenuItems } from './menu-items';
+import { isContactCreationRequest } from './copilot-routing';
 
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
@@ -287,6 +288,16 @@ export function processCommand(input: string): CommandResult {
     if (['go', 'open', 'show', 'view', 'launch', 'navigate', 'goto'].includes(verb) && remaining) {
         const cleaned = cleanParam(remaining);
         const searchTarget = normalize(cleaned);
+
+        // Contact-creation requests route to the Co-Pilot conversation (which
+        // auto-opens the prepared form), never to a plain hub navigation.
+        if (isContactCreationRequest(rawInput)) {
+            return {
+                type: 'unknown',
+                message: 'Contact Assistance',
+                description: 'Routing contact creation to Ogeemo Co-Pilot.',
+            };
+        }
 
         const routeMatch = findExactOrAliasCommand(searchTarget) || findExactOrAliasCommand(cleaned);
         if (routeMatch) {

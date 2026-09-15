@@ -27,6 +27,13 @@ test('does not match short aliases embedded inside unrelated words', () => {
     assert.equal(processCommand('open taxes').target, '/accounting/tax');
 });
 
+test('routes contact-form requests to the Co-Pilot conversation instead of the hub', () => {
+    const result = processCommand('open create a new contact form');
+
+    assert.equal(result.type, 'unknown');
+    assert.equal(result.message, 'Contact Assistance');
+});
+
 test('offers Contacts Hub for conversational contact-creation assistance', () => {
     const result = processCommand('can you assist me with creating a contact');
 

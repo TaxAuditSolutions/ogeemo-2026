@@ -2211,3 +2211,25 @@ Import trace for requested module:
  Γ£ô Compiled in 2.6s (3030 modules)
  GET /contacts 200 in 2952ms
  GET /contacts 200 in 150ms
+ Γùï Compiling / ...
+ Γ£ô Compiled / in 3.1s (3053 modules)
+ GET / 200 in 3860ms
+ Γùï Compiling /api/auth/session ...
+ Γ£ô Compiled /api/auth/session in 928ms (1640 modules)
+ POST /api/auth/session 200 in 1386ms
+ GET /welcome 200 in 217ms
+ POST /welcome 200 in 880ms
+ POST /welcome 200 in 405ms
+ POST /welcome 200 in 434ms
+ POST /welcome 200 in 388ms
+ POST /welcome 200 in 384ms
+ POST /welcome 200 in 410ms
+ Γ£ô Compiled in 1639ms (3025 modules)
+ POST /welcome 200 in 1296ms
+ Γ£ô Compiled in 1755ms (3025 modules)
+ POST /welcome 200 in 2233ms
+ POST /welcome 200 in 367ms
+ POST /welcome 200 in 378ms
+ Γ£ô Compiled in 1084ms (3025 modules)
+ POST /welcome 200 in 1913ms
+ POST /welcome 200 in 379ms

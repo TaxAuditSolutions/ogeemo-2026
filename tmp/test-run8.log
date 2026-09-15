@@ -1,0 +1,49 @@
+
+> nextn@0.1.1 test
+> node --import tsx --test tests/*.test.ts
+
+Γ£ö resolves allowlisted capability destinations into dispatch actions (1.6357ms)
+Γ£ö rejects capability actions that supply their own destination (1.5391ms)
+Γ£ö still applies tenant folder validation to prepared contact forms (1.5366ms)
+Γ£ö accepts safe internal and external dispatch targets (0.3893ms)
+Γ£ö rejects unsafe or mismatched dispatch targets (0.237ms)
+Γ£ö accepts an allowlisted contact draft in a valid tenant folder (0.2494ms)
+Γ£ö rejects drafts containing server-owned or unknown fields (0.1107ms)
+Γ£ö rejects a draft whose folder is not in the active tenant catalog (0.0849ms)
+Γ£ö accepts opening an existing contact without requiring a folder (0.1054ms)
+Γ£ö builds a deterministic contact draft from a full contact request sentence (0.9699ms)
+Γ£ö omits the email when the request sentence has none (0.3317ms)
+Γ£ö returns no draft when no contact name can be extracted (0.4404ms)
+Γ£ö defaults to the first tenant folder and honours an in-folder mention (0.376ms)
+Γ£ö extracts phone numbers into draft fields and keeps the name clean (0.3589ms)
+Γ£ö handles folder-first phrasing with the name in a follow-up fragment (0.3973ms)
+Γ£ö maps labelled phones to their draft fields alongside an email (0.2347ms)
+Γ£ö preserves a valid persisted message action (1.8691ms)
+Γ£ö drops an invalid action without dropping its message (0.5552ms)
+Γ£ö continues to normalize legacy messages without actions (0.225ms)
+Γ£ö routes direct contact creation requests into the OCP conversation (1.3927ms)
+Γ£ö retains ordinary Contacts Hub navigation (0.3611ms)
+Γ£ö does not match short aliases embedded inside unrelated words (0.7454ms)
+Γ£ö offers Contacts Hub for conversational contact-creation assistance (0.1537ms)
+Γ£ö retains unrelated creation commands (0.169ms)
+Γ£ö keeps timer parameters while waiting for explicit dispatch (0.2203ms)
+Γ£ö treats a reply to an assistant question as conversation, not a command (1.3217ms)
+Γ£ö still honors an explicit command verb during an open exchange (0.2401ms)
+Γ£ö routes ordinary turns through the command processor (0.1766ms)
+Γ£ö ignores empty input (0.1222ms)
+Γ£ö uses a 300px default for a missing or malformed stored width (1.1586ms)
+Γ£ö rounds and clamps preferred width to 240-600px (0.2195ms)
+Γ£ö caps effective width to preserve main content space (0.198ms)
+Γ£ö builds the subject line from the heading (1.6751ms)
+Γ£ö renders every non-empty field in the text body (0.2192ms)
+Γ£ö escapes HTML in field values so submissions cannot inject markup (0.1402ms)
+Γ£ö default recipients are the Ogeemo team mailboxes (0.0758ms)
+Γ£ö escapeHtml neutralises quotes and angle brackets (0.3119ms)
+Γä╣ tests 37
+Γä╣ suites 0
+Γä╣ pass 37
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 836.3221

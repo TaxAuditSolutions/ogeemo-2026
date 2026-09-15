@@ -1,0 +1,18 @@
+[
+  {
+    "role": "user",
+    "content": "Can you do quotes?"
+  },
+  {
+    "role": "model",
+    "content": "Yes, you can generate quotes within Ogeemo.\n\nFor example, when starting lead work from an email using an Action Chip, you can generate quotes directly from that flow, along with time logs and Kanban tasks, while preserving all related linkages."
+  },
+  {
+    "role": "user",
+    "content": "is there a quote manager?"
+  },
+  {
+    "role": "model",
+    "content": "Hello there! As your Ogeemo Assistant, I can tell you that while the guide doesn't explicitly mention a dedicated 'Quote Manager' hub, Ogeemo does allow you to generate quotes as part of your workflows.\n\nFor example, you can generate quotes directly from an Action Chip when starting lead work from an email, and these quotes will be linked to your overall operational workflow."
+  }
+]

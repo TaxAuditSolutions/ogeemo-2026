@@ -1,0 +1,34 @@
+[
+  {
+    "role": "user",
+    "content": "what app do i use to capture reciept photos?"
+  },
+  {
+    "role": "model",
+    "content": "Dispatch: [Accounts Payable]\n\nNavigating directly to Accounts Payable."
+  },
+  {
+    "role": "user",
+    "content": "where can i store photo images of my purchases reciepts"
+  },
+  {
+    "role": "model",
+    "content": "You can store photo images of your purchase receipts in your Google Drive. Ogeemo's document management system is designed to work with a dedicated \"Receipts\" folder within your Google Drive. You can also use the \"Images\" folder for general image storage.\n\nOnce your receipts are in the \"Receipts\" folder, Ogeemo can scan and sync them."
+  },
+  {
+    "role": "user",
+    "content": "can you also extract the text/numbers from the reciept photos that I provide and add them to my accounting?"
+  },
+  {
+    "role": "model",
+    "content": "Dispatch: [Accounting Hub]\n\nNavigating directly to Accounting Hub."
+  },
+  {
+    "role": "user",
+    "content": "can you also extract the text/numbers from the reciept photos that I provide and add them to my expenses/purchases, etc??"
+  },
+  {
+    "role": "model",
+    "content": "Dispatch: [Expense Ledger]\n\nNavigating directly to Expense Ledger."
+  }
+]

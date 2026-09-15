@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev -p 9002",
+    "dev:win": "pwsh -NoProfile -File scripts/start-dev.ps1",
     "build": "next build",
     "start": "next start -p 3000",
     "test": "node --import tsx --test tests/*.test.ts",

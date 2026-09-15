@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+    buildDeterministicContactDraft,
     parseAssistantClientAction,
     parseAssistantMessageAction,
     resolveAssistantCapabilityAction,
@@ -157,4 +158,97 @@ test('accepts opening an existing contact without requiring a folder', () => {
     }, []);
 
     assert.deepEqual(action, { type: 'open_contact', contactId: 'contact-123' });
+});
+
+test('builds a deterministic contact draft from a full contact request sentence', () => {
+    const action = buildDeterministicContactDraft(
+        'Make a contact for Nick Illiopoulos email address of nick@ogeemo.com',
+        [{ id: 'clients', name: 'Clients' }],
+    );
+
+    assert.deepEqual(action, {
+        type: 'open_contact_form',
+        draft: {
+            name: 'Nick Illiopoulos',
+            folderId: 'clients',
+            email: 'nick@ogeemo.com',
+        },
+    });
+});
+
+test('omits the email when the request sentence has none', () => {
+    const action = buildDeterministicContactDraft(
+        'Add a contact named Dana White',
+        [{ id: 'clients', name: 'Clients' }],
+    );
+
+    assert.deepEqual(action, {
+        type: 'open_contact_form',
+        draft: {
+            name: 'Dana White',
+            folderId: 'clients',
+        },
+    });
+});
+
+test('returns no draft when no contact name can be extracted', () => {
+    const folders = [{ id: 'clients', name: 'Clients' }];
+
+    assert.equal(buildDeterministicContactDraft('What is Ogeemo?', folders), undefined);
+    assert.equal(buildDeterministicContactDraft('Add nick@ogeemo.com as a contact', folders), undefined);
+    assert.equal(buildDeterministicContactDraft('Make a contact for me', folders), undefined);
+    assert.equal(buildDeterministicContactDraft('', folders), undefined);
+});
+
+test('defaults to the first tenant folder and honours an in-folder mention', () => {
+    const folders = [
+        { id: 'clients', name: 'Clients' },
+        { id: 'vendors', name: 'Vendors' },
+    ];
+
+    const defaultAction = buildDeterministicContactDraft('Create a contact for Bob Example', folders);
+    assert.equal(defaultAction?.type === 'open_contact_form' ? defaultAction.draft.folderId : undefined, 'clients');
+
+    const vendorAction = buildDeterministicContactDraft('Create a contact for Bob Example in Vendors folder', folders);
+    assert.deepEqual(vendorAction, {
+        type: 'open_contact_form',
+        draft: { name: 'Bob Example', folderId: 'vendors' },
+    });
+
+    assert.equal(buildDeterministicContactDraft('Create a contact for Bob Example', []), undefined);
+});
+
+test('extracts phone numbers into draft fields and keeps the name clean', () => {
+    const action = buildDeterministicContactDraft(
+        'create a contact for Sam Sneed, cell #4166666797',
+        [{ id: 'clients', name: 'Clients' }],
+    );
+
+    assert.deepEqual(action, {
+        type: 'open_contact_form',
+        draft: {
+            name: 'Sam Sneed',
+            folderId: 'clients',
+            cellPhone: '4166666797',
+            primaryPhoneType: 'cellPhone',
+        },
+    });
+});
+
+test('maps labelled phones to their draft fields alongside an email', () => {
+    const action = buildDeterministicContactDraft(
+        'Add a contact named Dana White, email dana@example.com, work 416-555-0123',
+        [{ id: 'clients', name: 'Clients' }],
+    );
+
+    assert.deepEqual(action, {
+        type: 'open_contact_form',
+        draft: {
+            name: 'Dana White',
+            folderId: 'clients',
+            email: 'dana@example.com',
+            businessPhone: '416-555-0123',
+            primaryPhoneType: 'businessPhone',
+        },
+    });
 });

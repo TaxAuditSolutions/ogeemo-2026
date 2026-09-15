@@ -247,6 +247,10 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
                 requestResourceData: dataToSave,
             } satisfies SecurityRuleContext));
         }
+        // Re-throw so callers surface the real failure ("Save Failed") instead
+        // of a false "Contact Created" toast with nothing written to Firestore.
+        console.error('[contact-service] addContact Firestore write failed:', error);
+        throw error;
     });
 
     return mapContactDataToContact(docRef.id, dataToSave);

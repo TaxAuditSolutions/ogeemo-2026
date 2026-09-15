@@ -11,7 +11,6 @@ import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { getContacts } from '@/services/contact-service';
 import { getProjects } from '@/services/project-service';
 import { allMenuItems } from '@/lib/menu-items';
-import { AssistantCapabilityActionSchema } from '@/ai/assistant-actions';
 import fs from 'fs';
 import path from 'path';
 
@@ -365,10 +364,55 @@ const ContactCapabilityInputSchema = z.object({
   folders: z.array(z.object({ id: z.string(), name: z.string() })),
 });
 
+/**
+ * Gemini-safe shape of the capability action for `responseSchema`.
+ * Gemini's structured-output subset rejects `const` and `$ref` keywords, so
+ * this schema avoids z.literal(), shared zod instances (which Genkit renders
+ * as $refs), and .nullable(). It is deliberately loose — the route re-validates
+ * the returned action with the strict AssistantCapabilityActionSchema.
+ */
+const ContactCapabilityActionSchema = z.object({
+  type: z.string(),
+  destination: z.string().optional(),
+  contactId: z.string().optional(),
+  draft: z.object({
+    name: z.string(),
+    folderId: z.string(),
+    email: z.string().optional(),
+    birthDate: z.string().optional(),
+    website: z.string().optional(),
+    businessName: z.string().optional(),
+    employeeNumber: z.string().optional(),
+    industryCode: z.string().optional(),
+    craProgramAccountNumber: z.string().optional(),
+    streetAddress: z.string().optional(),
+    city: z.string().optional(),
+    provinceState: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    businessPhone: z.string().optional(),
+    cellPhone: z.string().optional(),
+    homePhone: z.string().optional(),
+    faxNumber: z.string().optional(),
+    primaryPhoneType: z.string().optional(),
+    notes: z.string().optional(),
+    sin: z.string().optional(),
+    workerType: z.string().optional(),
+    payType: z.string().optional(),
+    payRate: z.number().optional(),
+    hireDate: z.string().optional(),
+    startDate: z.string().optional(),
+    emergencyContactName: z.string().optional(),
+    emergencyContactPhone: z.string().optional(),
+    hasContract: z.boolean().optional(),
+    specialNeeds: z.string().optional(),
+  }).optional(),
+});
+
 const ContactCapabilityResultSchema = z.object({
   handled: z.boolean(),
   reply: z.string(),
-  action: AssistantCapabilityActionSchema.optional(),
+  action: ContactCapabilityActionSchema.optional(),
 });
 
 export type ContactCapabilityResult = z.infer<typeof ContactCapabilityResultSchema>;
@@ -400,10 +444,10 @@ Never invent a URL or path. Never navigate on the user's behalf; the control onl
 
 When the conversation concerns contact creation:
 - You are an intelligent conversational agent, not a fixed questionnaire.
-- On the first ambiguous inquiry, ask whether the user wants step-by-step instructions or wants you to assist by preparing the form. Do not repeat this choice when history already makes it clear.
+- If the user's request already includes a full name (for example "create a new contact for Joe Blow, email joe@gmail.com"), skip all questions: call searchContacts for the duplicate check if needed, then choose the best folder yourself and return open_contact_form immediately. Only ask whether the user wants step-by-step instructions or wants you to prepare the form when the request is vague and no name was given. Do not repeat that choice when history already makes it clear.
 - For instructions, explain how to open Contacts Hub, select a folder, choose New Contact, complete the form, and submit. Offer the "new_contact" destination so the user can start immediately.
 - If the user wants to create the contact themselves rather than have you prepare it, explain that New Contact in Contacts Hub is the function to use and offer the "new_contact" destination.
-- For assistance, infer and retain details already volunteered. Required draft data is a full name of at least two characters and one folder from the catalog below. Ask only for required missing information or a genuinely useful clarification.
+- For assistance, infer and retain details already volunteered. The draft requires a full name of at least two characters and one folder from the catalog below. Never ask the user which folder to use: pick the catalog folder whose name best matches the user's wording (for example "friends folder" -> the Friends folder), otherwise the first catalog folder, mention your folder choice briefly in the reply, and return open_contact_form. The user can change the folder in the form before saving. Ask a follow-up only when the full name itself is missing or genuinely ambiguous.
 - The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Before returning open_contact_form, call searchContacts using the best available name or email. If a likely existing contact is returned, warn the user and offer to open it or explicitly continue with a new record. Do not return a new-contact action until the user confirms continuation. If the user chooses the existing match, return open_contact with its real ID.
@@ -419,17 +463,54 @@ Available tenant folders:
 ${folderCatalog}
 `;
 
-    const result = await ai.generate({
+    const baseOptions = {
       model: STABLE_GEMINI_MODEL,
       messages,
-      tools: [searchContactsTool],
       context: { userId: input.userId, orgId: input.orgId },
       system,
       output: { schema: ContactCapabilityResultSchema },
       config: { temperature: 0.1 },
+    };
+
+    try {
+      const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool] });
+      if (result.output) {
+        return ContactCapabilityResultSchema.parse(result.output);
+      }
+      console.warn('[contact-capability] first generate returned no structured output');
+    } catch (firstError) {
+      // Genkit throws INVALID_ARGUMENT ("Provided data: null") when the model
+      // ends its turn on a tool call (e.g. the mandatory duplicate check)
+      // instead of the structured JSON. Fall through to a retry without tools.
+      console.warn('[contact-capability] first generate failed, retrying without tools', firstError);
+    }
+
+    // Retry with tools removed: the response schema becomes the only possible
+    // output shape, so the model must return the structured JSON reply. The
+    // duplicate check is unavailable in this turn, so instruct the model to
+    // proceed with the form anyway instead of stalling on it.
+    const retrySystem = `${system}
+Important for this retry turn: the searchContacts tool is temporarily unavailable, so skip the duplicate check and never block or delay the open_contact_form action because of it. Never ask the user which folder to use: choose the catalog folder whose name best matches the user's wording, otherwise the first catalog folder. Return the open_contact_form action now when the full name is known.`;
+
+    const retryResult = await ai.generate({
+      ...baseOptions,
+      system: retrySystem,
+      messages: [
+        ...messages,
+        {
+          role: 'user',
+          content: [{
+            text: 'Respond now with the required JSON reply. Everything already established in the conversation stands; do not ask further questions. If the required details (full name and a folder from the catalog) are available, return the open_contact_form action now. If the user answered a question you asked, act on that answer.',
+          }],
+        },
+      ],
     });
 
-    return ContactCapabilityResultSchema.parse(result.output);
+    if (!retryResult.output) {
+      throw new Error('Contact capability produced no structured output, even without tools.');
+    }
+
+    return ContactCapabilityResultSchema.parse(retryResult.output);
   }
 );
 

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
+    AlertTriangle,
     ArrowLeft,
     Cpu,
     Zap,
@@ -816,6 +817,14 @@ export default function AiDispatchPage() {
                                             ) : (
                                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                                             )}
+                                            {msg.role === 'model' && msg.degraded ? (
+                                                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                                                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                                    <span>
+                                                        AI capability degraded — GEMINI_API_KEY is missing or the AI contact flow failed, so a basic draft was prepared instead.
+                                                    </span>
+                                                </div>
+                                            ) : null}
                                             {msg.role === 'model' && msg.action ? (
                                                 <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
                                                     {msg.action.type === 'dispatch' ? (

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCapability } from '@/ai/flows/ogeemo-chat';
-import { resolveAssistantCapabilityAction } from '@/ai/assistant-actions';
+import { buildDeterministicContactDraft, resolveAssistantCapabilityAction, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
 import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminDb } from '@/core/firebase-admin';
 
@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
         }
 
+        let tenantFolders: Array<{ id: string; name: string }> = [];
         try {
             const sessionContext = await getCurrentSessionContext();
             if (sessionContext) {
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
                 const folderSnapshot = db && sessionContext.orgId
                     ? await db.collection('contactFolders').where('orgId', '==', sessionContext.orgId).get()
                     : null;
-                const folders = folderSnapshot?.docs.map((folderDoc) => ({
+                tenantFolders = folderSnapshot?.docs.map((folderDoc) => ({
                     id: folderDoc.id,
                     name: String(folderDoc.data().name || ''),
                 })).filter((folder) => folder.name) ?? [];
@@ -126,13 +127,20 @@ export async function POST(request: NextRequest) {
                     userId: sessionContext.userId,
                     orgId: sessionContext.orgId,
                     accessLevel: sessionContext.accessLevel,
-                    folders,
+                    folders: tenantFolders,
                 });
 
                 if (capabilityResult.handled) {
-                    const action = capabilityResult.action
-                        ? resolveAssistantCapabilityAction(capabilityResult.action, folders.map((folder) => folder.id))
-                        : undefined;
+                    let action: AssistantMessageAction | undefined;
+                    if (capabilityResult.action) {
+                        action = resolveAssistantCapabilityActionWithRepair(capabilityResult.action, tenantFolders);
+                        if (!action) {
+                            console.warn('/api/ogeemo-assistant capability action dropped by strict validation', {
+                                rawAction: capabilityResult.action,
+                                tenantFolderIds: tenantFolders.map((folder) => folder.id),
+                            });
+                        }
+                    }
                     const answer = capabilityResult.reply.trim() || 'I can help you with that contact.';
 
                     return NextResponse.json({ answer, ...(action ? { action } : {}) }, { status: 200 });
@@ -140,6 +148,35 @@ export async function POST(request: NextRequest) {
             }
         } catch (capabilityError) {
             console.warn('/api/ogeemo-assistant contact-capability-error', capabilityError);
+
+            // Deterministic fallback: keep the core "fill the contact form from my
+            // sentence" UX alive even when the AI capability flow is unavailable
+            // (e.g. GEMINI_API_KEY missing or the model call failing).
+            const draftAction = buildDeterministicContactDraft(question, tenantFolders);
+            const fallbackAction = draftAction
+                ? resolveAssistantCapabilityAction(draftAction, tenantFolders.map((folder) => folder.id))
+                : undefined;
+
+            if (fallbackAction?.type === 'open_contact_form') {
+                console.info('/api/ogeemo-assistant source', {
+                    source: 'deterministic_contact_fallback',
+                    reason: 'contact_capability_error',
+                    decisionPath: 'contact_capability_error->deterministic_contact_fallback',
+                });
+                const draft = fallbackAction.draft;
+                const detail = [
+                    draft.name,
+                    draft.email,
+                    draft.cellPhone,
+                    draft.businessPhone,
+                    draft.homePhone,
+                ].filter(Boolean).join(' • ');
+                return NextResponse.json({
+                    answer: `I couldn't run the full AI contact flow right now, so I prepared a basic draft from your request${detail ? ` (${detail})` : ''}. Please review and complete it before saving.`,
+                    action: fallbackAction,
+                    degraded: true,
+                }, { status: 200 });
+            }
         }
 
         const assistantUrl = process.env.OGEEMO_ASSISTANT_URL || DEFAULT_ASSISTANT_URL;

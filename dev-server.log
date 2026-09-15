@@ -1,174 +1,283 @@
-   ▲ Next.js 15.2.8
+   Γû▓ Next.js 15.2.8
    - Local:        http://localhost:9002
    - Network:      http://192.168.2.49:9002
    - Environments: .env.local
 
- ✓ Starting...
- ✓ Ready in 3.5s
- ○ Compiling /contact ...
- ✓ Compiled /contact in 10.7s (1420 modules)
- GET /contact 200 in 210ms
- ○ Compiling /welcome ...
- ✓ Compiled /welcome in 9s (2441 modules)
- GET /welcome 200 in 10025ms
- GET /welcome 200 in 232ms
- ✓ Compiled in 1449ms (1036 modules)
- GET /welcome 200 in 392ms
-[Error: Failed to find Server Action "0092b274691727f6f16344a795f61482f186987cf6". This request might be from an older or newer deployment. Original error: Cannot read properties of undefined (reading 'workers')
-Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
- POST /welcome 200 in 2540ms
-[Error: Failed to find Server Action "0092b274691727f6f16344a795f61482f186987cf6". This request might be from an older or newer deployment. Original error: Cannot read properties of undefined (reading 'workers')
-Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
- POST /welcome 200 in 2197ms
- ○ Compiling / ...
- ✓ Compiled / in 1501ms (2463 modules)
- GET / 200 in 2512ms
- ○ Compiling /api/auth/session ...
- ✓ Compiled /api/auth/session in 818ms (2469 modules)
+ Γ£ô Starting...
+ Γ£ô Ready in 3.1s
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 2.2s (511 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /api/ogeemo-assistant 405 in 6797ms
+ Γùï Compiling /user-notes/[id] ...
+ Γ£ô Compiled /user-notes/[id] in 7.5s (2501 modules)
+ GET /user-notes/0f364485-92b6-4633-bee7-9f1b02475b69 200 in 9972ms
+ Γùï Compiling /favicon.ico ...
+ Γ£ô Compiled /api/auth/session in 816ms (1462 modules)
+ Γ£ô Compiled in 4.5s (1069 modules)
+ POST /api/auth/session 200 in 4997ms
 [Firebase Admin] Credential source: firebase_service_account_key_env
- POST /api/auth/session 200 in 3044ms
- GET /welcome 200 in 270ms
- POST /welcome 200 in 1097ms
- POST /welcome 200 in 444ms
- POST /welcome 200 in 391ms
- POST /welcome 200 in 388ms
- POST /welcome 200 in 378ms
- POST /welcome 200 in 454ms
- GET /welcome 200 in 119ms
- GET /welcome 200 in 151ms
- GET /welcome 200 in 273ms
- GET /welcome 200 in 223ms
- GET / 200 in 135ms
- GET / 200 in 1672ms
- ○ Compiling /favicon.ico ...
- ✓ Compiled /api/auth/session in 910ms (1435 modules)
- ✓ Compiled (1440 modules)
- GET /favicon.ico 200 in 1646ms
- POST /api/auth/session 200 in 1493ms
- GET /welcome 200 in 306ms
- POST /welcome 200 in 992ms
- POST /welcome 200 in 398ms
- POST /welcome 200 in 392ms
- POST /welcome 200 in 355ms
- POST /welcome 200 in 364ms
- POST /welcome 200 in 342ms
-   Reload env: .env.local
- ✓ Compiled in 1967ms (2464 modules)
- GET /welcome 200 in 326ms
- ✓ Compiled in 3s (2492 modules)
- GET /welcome 200 in 321ms
- POST /welcome 200 in 527ms
- POST /welcome 200 in 461ms
- ○ Compiling /api/auth/session ...
- ✓ Compiled /api/auth/session in 1209ms (1452 modules)
- DELETE /api/auth/session 200 in 1706ms
- DELETE /api/auth/session 200 in 187ms
- ○ Compiling /login ...
- ✓ Compiled /login in 2.8s (2538 modules)
- GET /login 200 in 3612ms
- GET /login 200 in 151ms
- ✓ Compiled in 878ms (1070 modules)
- GET /login 200 in 129ms
- GET /welcome 200 in 204ms
- ⨯ Error: Unauthorized: No session cookie found.
-    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
-  569 |     const cookieStore = await cookies();
-  570 |     const sessionCookie = cookieStore.get('session')?.value;
-> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-      |                              ^
-  572 |
-  573 |     let decodedToken;
-  574 |     try { {
-  digest: '902441344'
+ GET /favicon.ico 200 in 6289ms
+ Γ£ô Compiled in 983ms (1069 modules)
+ POST /user-notes/0f364485-92b6-4633-bee7-9f1b02475b69 200 in 6953ms
+ POST /user-notes/0f364485-92b6-4633-bee7-9f1b02475b69 200 in 487ms
+ GET /user-notes/0f364485-92b6-4633-bee7-9f1b02475b69 200 in 193ms
+ GET /user-notes/0f364485-92b6-4633-bee7-9f1b02475b69 200 in 166ms
+ GET /favicon.ico 200 in 353ms
+ Γ£ô Compiled /api/ogeemo-assistant in 468ms (1558 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ POST /api/ogeemo-assistant 200 in 2712ms
+/api/ogeemo-assistant contact-capability-error Error [GenkitError]: INVALID_ARGUMENT: Schema validation failed. Parse Errors:
+
+- (root): must be object
+
+Provided data:
+
+null
+
+Required JSON schema:
+
+{
+  "type": "object",
+  "properties": {
+    "handled": {
+      "type": "boolean"
+    },
+    "reply": {
+      "type": "string"
+    },
+    "action": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "open_destination"
+            },
+            "destination": {
+              "type": "string",
+              "enum": [
+                "contacts_hub",
+                "new_contact"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "destination"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact_form"
+                },
+                "draft": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2
+                    },
+                    "folderId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "email": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "not": {}
+                            },
+                            {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": ""
+                        }
+                      ]
+                    },
+                    "birthDate": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "website": {
+                      "type": "string"
+                    },
+                    "businessName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "employeeNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "industryCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "craProgramAccountNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "streetAddress": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "city": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "provinceState": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "postalCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "country": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "businessPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "cellPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "homePhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "faxNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "primaryPhoneType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "businessPhone",
+                            "cellPhone",
+                            "homePhone"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "sin": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "workerType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "employee",
+                            "contractor"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "hourly",
+                            "salary"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payRate": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hireDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "startDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "emergencyContactName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "emergencyContactPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "hasContract": {
+                      "type": "boolean"
+                    },
+                    "specialNeeds": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "folderId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "draft"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact"
+                },
+                "contactId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "contactId"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "handled",
+    "reply"
+  ],
+  "additionalProperties": true,
+  "$schema": "http://json-schema.org/draft-07/schema#"
 }
- POST /api/auth/session 200 in 710ms
- POST /welcome 500 in 510ms
- POST /welcome 200 in 348ms
- POST /welcome 200 in 358ms
- POST /welcome 200 in 365ms
- POST /welcome 200 in 378ms
- POST /welcome 200 in 378ms
- ○ Compiling /user-notes ...
- ✓ Compiled /user-notes in 3.4s (2623 modules)
- GET /user-notes 200 in 3889ms
- GET /user-notes 200 in 147ms
- ○ Compiling /user-notes/[id] ...
- ✓ Compiled /user-notes/[id] in 1270ms (2637 modules)
- GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 2419ms
- GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 187ms
- GET /user-notes 200 in 145ms
- GET /user-notes/92d2714e-9429-42ab-a31f-534702805422 200 in 183ms
- GET /user-notes 200 in 127ms
- GET /user-notes/d8c708fc-c71e-424a-9624-a1004539df21 200 in 175ms
- GET /user-notes 200 in 125ms
- GET /user-notes/99496709-b68f-4e1b-a2d5-2f833f6d2453 200 in 153ms
- GET /user-notes 200 in 118ms
- ○ Compiling /api/auth/session ...
- ✓ Compiled /api/auth/session in 830ms (1530 modules)
- DELETE /api/auth/session 200 in 3205ms
- DELETE /api/auth/session 200 in 164ms
- GET /login 200 in 375ms
- GET /login 200 in 120ms
- GET /welcome 200 in 170ms
- ⨯ Error: Unauthorized: No session cookie found.
-    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
-  569 |     const cookieStore = await cookies();
-  570 |     const sessionCookie = cookieStore.get('session')?.value;
-> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-      |                              ^
-  572 |
-  573 |     let decodedToken;
-  574 |     try { {
-  digest: '902441344'
-}
- POST /welcome 500 in 521ms
- ⨯ Error: Unauthorized: No session cookie found.
-    at listMyOrgMemberships (src\app\actions\org-actions.ts:571:30)
-  569 |     const cookieStore = await cookies();
-  570 |     const sessionCookie = cookieStore.get('session')?.value;
-> 571 |     if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-      |                              ^
-  572 |
-  573 |     let decodedToken;
-  574 |     try { {
-  digest: '902441344'
-}
- POST /api/auth/session 200 in 1076ms
- POST /welcome 500 in 402ms
- POST /welcome 200 in 713ms
- POST /welcome 200 in 401ms
- POST /welcome 200 in 445ms
- POST /welcome 200 in 367ms
- GET /welcome 200 in 123ms
- GET / 200 in 140ms
- ✓ Compiled in 3.6s (2637 modules)
- GET / 200 in 318ms
- GET / 200 in 788ms
- GET /welcome 200 in 163ms
- POST /welcome 200 in 883ms
- POST /welcome 200 in 448ms
- POST /welcome 200 in 399ms
- POST /welcome 200 in 396ms
- POST /welcome 200 in 362ms
- POST /welcome 200 in 369ms
- GET /welcome 200 in 123ms
- GET /welcome 200 in 126ms
- GET / 200 in 1139ms
- ✓ Compiled in 2.2s (2637 modules)
- GET / 200 in 248ms
- GET /welcome 200 in 190ms
- POST /welcome 200 in 1052ms
- POST /welcome 200 in 427ms
- POST /welcome 200 in 341ms
- POST /welcome 200 in 575ms
- POST /welcome 200 in 377ms
- POST /welcome 200 in 344ms
- ○ Compiling /api/ogeemo-assistant ...
- ✓ Compiled /api/ogeemo-assistant in 2.9s (2743 modules)
-[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.
-/api/ogeemo-assistant contact-capability-error Error [GenkitError]: NOT_FOUND: Model 'googleai/gemini-2.5-flash' not found
     at async eval (src\ai\flows\ogeemo-chat.ts:422:19)
-    at async POST (src\app\api\ogeemo-assistant\route.ts:123:41)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
   420 | `;
   421 |
 > 422 |     const result = await ai.generate({
@@ -177,16 +286,261 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
   424 |       messages,
   425 |       tools: [searchContactsTool], {
   source: undefined,
-  status: 'NOT_FOUND',
-  detail: undefined,
-  code: 404,
-  originalMessage: "Model 'googleai/gemini-2.5-flash' not found",
-  traceId: '5bfc8ddda253c9841b41c7c58afde067',
-  ignoreFailedSpan: true
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Schema validation failed. Parse Errors:\n' +
+    '\n' +
+    '- (root): must be object\n' +
+    '\n' +
+    'Provided data:\n' +
+    '\n' +
+    'null\n' +
+    '\n' +
+    'Required JSON schema:\n' +
+    '\n' +
+    '{\n' +
+    '  "type": "object",\n' +
+    '  "properties": {\n' +
+    '    "handled": {\n' +
+    '      "type": "boolean"\n' +
+    '    },\n' +
+    '    "reply": {\n' +
+    '      "type": "string"\n' +
+    '    },\n' +
+    '    "action": {\n' +
+    '      "anyOf": [\n' +
+    '        {\n' +
+    '          "type": "object",\n' +
+    '          "properties": {\n' +
+    '            "type": {\n' +
+    '              "type": "string",\n' +
+    '              "const": "open_destination"\n' +
+    '            },\n' +
+    '            "destination": {\n' +
+    '              "type": "string",\n' +
+    '              "enum": [\n' +
+    '                "contacts_hub",\n' +
+    '                "new_contact"\n' +
+    '              ]\n' +
+    '            }\n' +
+    '          },\n' +
+    '          "required": [\n' +
+    '            "type",\n' +
+    '            "destination"\n' +
+    '          ],\n' +
+    '          "additionalProperties": false\n' +
+    '        },\n' +
+    '        {\n' +
+    '          "anyOf": [\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact_form"\n' +
+    '                },\n' +
+    '                "draft": {\n' +
+    '                  "type": "object",\n' +
+    '                  "properties": {\n' +
+    '                    "name": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 2\n' +
+    '                    },\n' +
+    '                    "folderId": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 1\n' +
+    '                    },\n' +
+    '                    "email": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "anyOf": [\n' +
+    '                            {\n' +
+    '                              "not": {}\n' +
+    '                            },\n' +
+    '                            {\n' +
+    '                              "type": "string",\n' +
+    '                              "format": "email"\n' +
+    '                            }\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "const": ""\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "birthDate": {\n' +
+    '                      "type": "string",\n' +
+    '                      "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"\n' +
+    '                    },\n' +
+    '                    "website": {\n' +
+    '                      "type": "string"\n' +
+    '                    },\n' +
+    '                    "businessName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "employeeNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "industryCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "craProgramAccountNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "streetAddress": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "city": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "provinceState": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "postalCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "country": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "businessPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "cellPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "homePhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "faxNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "primaryPhoneType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "businessPhone",\n' +
+    '                            "cellPhone",\n' +
+    '                            "homePhone"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "notes": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "sin": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "workerType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "employee",\n' +
+    '                            "contractor"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "hourly",\n' +
+    '                            "salary"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payRate": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "number",\n' +
+    '                          "minimum": 0\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "hireDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "startDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "emergencyContactName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "emergencyContactPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "hasContract": {\n' +
+    '                      "type": "boolean"\n' +
+    '                    },\n' +
+    '                    "specialNeeds": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    }\n' +
+    '                  },\n' +
+    '                  "required": [\n' +
+    '                    "name",\n' +
+    '                    "folderId"\n' +
+    '                  ],\n' +
+    '                  "additionalProperties": false\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "draft"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            },\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact"\n' +
+    '                },\n' +
+    '                "contactId": {\n' +
+    '                  "type": "string",\n' +
+    '                  "minLength": 1\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "contactId"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            }\n' +
+    '          ]\n' +
+    '        }\n' +
+    '      ]\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "required": [\n' +
+    '    "handled",\n' +
+    '    "reply"\n' +
+    '  ],\n' +
+    '  "additionalProperties": true,\n' +
+    '  "$schema": "http://json-schema.org/draft-07/schema#"\n' +
+    '}',
+  ignoreFailedSpan: true,
+  traceId: '880122a430c06b043da8eb0a8f538f04'
 }
- GET /welcome 200 in 3743ms
- ✓ Compiled in 4s (1124 modules)
- GET /welcome 200 in 146ms
 /api/ogeemo-assistant source {
   source: 'functions_primary',
   reason: 'functions_answer_accepted',
@@ -196,25 +550,1573 @@ Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
   genkitAttempted: false,
   upstreamFailureKind: 'none'
 }
- POST /api/ogeemo-assistant 200 in 11964ms
- ○ Compiling /api/ogeemo-chat-title ...
- ✓ Compiled /api/ogeemo-chat-title in 1261ms (2747 modules)
-[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.
-[generateChatTitleFlow] Title generation failed: NOT_FOUND: Model 'googleai/gemini-2.5-flash' not found
- POST /api/ogeemo-chat-title 200 in 1462ms
- GET /welcome 200 in 322ms
- ○ Compiling /user-manager ...
- ✓ Compiled /user-manager in 4.5s (2694 modules)
- GET /user-manager 200 in 5051ms
- GET /user-notes 200 in 3387ms
- GET /user-notes 200 in 131ms
- GET /user-notes/ff87ad1f-e1f9-4873-b5f3-cc27f420ad8b 200 in 271ms
- GET /user-notes 200 in 119ms
- GET /user-notes 200 in 1828ms
- ○ Compiling /favicon.ico ...
- ✓ Compiled /api/auth/session in 888ms (1529 modules)
- ✓ Compiled (1532 modules)
- GET /favicon.ico 200 in 2285ms
- POST /api/auth/session 200 in 1971ms
- POST /user-notes 200 in 2387ms
- POST /user-notes 200 in 429ms
+ POST /api/ogeemo-assistant 200 in 5509ms
+/api/ogeemo-assistant contact-capability-error Error [GenkitError]: INVALID_ARGUMENT: Schema validation failed. Parse Errors:
+
+- (root): must be object
+
+Provided data:
+
+null
+
+Required JSON schema:
+
+{
+  "type": "object",
+  "properties": {
+    "handled": {
+      "type": "boolean"
+    },
+    "reply": {
+      "type": "string"
+    },
+    "action": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "open_destination"
+            },
+            "destination": {
+              "type": "string",
+              "enum": [
+                "contacts_hub",
+                "new_contact"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "destination"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact_form"
+                },
+                "draft": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2
+                    },
+                    "folderId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "email": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "not": {}
+                            },
+                            {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": ""
+                        }
+                      ]
+                    },
+                    "birthDate": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "website": {
+                      "type": "string"
+                    },
+                    "businessName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "employeeNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "industryCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "craProgramAccountNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "streetAddress": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "city": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "provinceState": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "postalCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "country": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "businessPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "cellPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "homePhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "faxNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "primaryPhoneType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "businessPhone",
+                            "cellPhone",
+                            "homePhone"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "sin": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "workerType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "employee",
+                            "contractor"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "hourly",
+                            "salary"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payRate": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hireDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "startDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "emergencyContactName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "emergencyContactPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "hasContract": {
+                      "type": "boolean"
+                    },
+                    "specialNeeds": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "folderId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "draft"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact"
+                },
+                "contactId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "contactId"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "handled",
+    "reply"
+  ],
+  "additionalProperties": true,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+    at async eval (src\ai\flows\ogeemo-chat.ts:422:19)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
+  420 | `;
+  421 |
+> 422 |     const result = await ai.generate({
+      |                   ^
+  423 |       model: STABLE_GEMINI_MODEL,
+  424 |       messages,
+  425 |       tools: [searchContactsTool], {
+  source: undefined,
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Schema validation failed. Parse Errors:\n' +
+    '\n' +
+    '- (root): must be object\n' +
+    '\n' +
+    'Provided data:\n' +
+    '\n' +
+    'null\n' +
+    '\n' +
+    'Required JSON schema:\n' +
+    '\n' +
+    '{\n' +
+    '  "type": "object",\n' +
+    '  "properties": {\n' +
+    '    "handled": {\n' +
+    '      "type": "boolean"\n' +
+    '    },\n' +
+    '    "reply": {\n' +
+    '      "type": "string"\n' +
+    '    },\n' +
+    '    "action": {\n' +
+    '      "anyOf": [\n' +
+    '        {\n' +
+    '          "type": "object",\n' +
+    '          "properties": {\n' +
+    '            "type": {\n' +
+    '              "type": "string",\n' +
+    '              "const": "open_destination"\n' +
+    '            },\n' +
+    '            "destination": {\n' +
+    '              "type": "string",\n' +
+    '              "enum": [\n' +
+    '                "contacts_hub",\n' +
+    '                "new_contact"\n' +
+    '              ]\n' +
+    '            }\n' +
+    '          },\n' +
+    '          "required": [\n' +
+    '            "type",\n' +
+    '            "destination"\n' +
+    '          ],\n' +
+    '          "additionalProperties": false\n' +
+    '        },\n' +
+    '        {\n' +
+    '          "anyOf": [\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact_form"\n' +
+    '                },\n' +
+    '                "draft": {\n' +
+    '                  "type": "object",\n' +
+    '                  "properties": {\n' +
+    '                    "name": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 2\n' +
+    '                    },\n' +
+    '                    "folderId": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 1\n' +
+    '                    },\n' +
+    '                    "email": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "anyOf": [\n' +
+    '                            {\n' +
+    '                              "not": {}\n' +
+    '                            },\n' +
+    '                            {\n' +
+    '                              "type": "string",\n' +
+    '                              "format": "email"\n' +
+    '                            }\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "const": ""\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "birthDate": {\n' +
+    '                      "type": "string",\n' +
+    '                      "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"\n' +
+    '                    },\n' +
+    '                    "website": {\n' +
+    '                      "type": "string"\n' +
+    '                    },\n' +
+    '                    "businessName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "employeeNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "industryCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "craProgramAccountNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "streetAddress": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "city": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "provinceState": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "postalCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "country": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "businessPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "cellPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "homePhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "faxNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "primaryPhoneType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "businessPhone",\n' +
+    '                            "cellPhone",\n' +
+    '                            "homePhone"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "notes": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "sin": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "workerType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "employee",\n' +
+    '                            "contractor"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "hourly",\n' +
+    '                            "salary"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payRate": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "number",\n' +
+    '                          "minimum": 0\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "hireDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "startDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "emergencyContactName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "emergencyContactPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "hasContract": {\n' +
+    '                      "type": "boolean"\n' +
+    '                    },\n' +
+    '                    "specialNeeds": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    }\n' +
+    '                  },\n' +
+    '                  "required": [\n' +
+    '                    "name",\n' +
+    '                    "folderId"\n' +
+    '                  ],\n' +
+    '                  "additionalProperties": false\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "draft"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            },\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact"\n' +
+    '                },\n' +
+    '                "contactId": {\n' +
+    '                  "type": "string",\n' +
+    '                  "minLength": 1\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "contactId"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            }\n' +
+    '          ]\n' +
+    '        }\n' +
+    '      ]\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "required": [\n' +
+    '    "handled",\n' +
+    '    "reply"\n' +
+    '  ],\n' +
+    '  "additionalProperties": true,\n' +
+    '  "$schema": "http://json-schema.org/draft-07/schema#"\n' +
+    '}',
+  ignoreFailedSpan: true,
+  traceId: 'cc9e3059512495ea4ea2c5a6fd29e5c5'
+}
+/api/ogeemo-assistant source {
+  source: 'deterministic_contact_fallback',
+  reason: 'contact_capability_error',
+  decisionPath: 'contact_capability_error->deterministic_contact_fallback'
+}
+ POST /api/ogeemo-assistant 200 in 2622ms
+ DELETE /api/auth/session 200 in 151ms
+ DELETE /api/auth/session 200 in 172ms
+ Γùï Compiling /login ...
+ Γ£ô Compiled /login in 1740ms (2640 modules)
+ GET /login 200 in 2196ms
+ GET /login 200 in 118ms
+ Γùï Compiling /welcome ...
+ Γ£ô Compiled /welcome in 1794ms (2584 modules)
+ GET /welcome 200 in 2141ms
+ POST /api/auth/session 200 in 2202ms
+ POST /welcome 200 in 430ms
+ POST /welcome 200 in 823ms
+ POST /welcome 200 in 380ms
+ POST /welcome 200 in 400ms
+ POST /welcome 200 in 385ms
+ POST /welcome 200 in 376ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 640ms (1591 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+/api/ogeemo-assistant contact-capability-error Error [GenkitError]: INVALID_ARGUMENT: Schema validation failed. Parse Errors:
+
+- (root): must be object
+
+Provided data:
+
+null
+
+Required JSON schema:
+
+{
+  "type": "object",
+  "properties": {
+    "handled": {
+      "type": "boolean"
+    },
+    "reply": {
+      "type": "string"
+    },
+    "action": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "open_destination"
+            },
+            "destination": {
+              "type": "string",
+              "enum": [
+                "contacts_hub",
+                "new_contact"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "destination"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact_form"
+                },
+                "draft": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2
+                    },
+                    "folderId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "email": {
+                      "anyOf": [
+                        {
+                          "anyOf": [
+                            {
+                              "not": {}
+                            },
+                            {
+                              "type": "string",
+                              "format": "email"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "const": ""
+                        }
+                      ]
+                    },
+                    "birthDate": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "website": {
+                      "type": "string"
+                    },
+                    "businessName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "employeeNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "industryCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "craProgramAccountNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "streetAddress": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "city": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "provinceState": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "postalCode": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "country": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "businessPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "cellPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "homePhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "faxNumber": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "primaryPhoneType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "businessPhone",
+                            "cellPhone",
+                            "homePhone"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "notes": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "sin": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "workerType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "employee",
+                            "contractor"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payType": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "hourly",
+                            "salary"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "payRate": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "hireDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "startDate": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"
+                    },
+                    "emergencyContactName": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "emergencyContactPhone": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    },
+                    "hasContract": {
+                      "type": "boolean"
+                    },
+                    "specialNeeds": {
+                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "folderId"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "draft"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "open_contact"
+                },
+                "contactId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "type",
+                "contactId"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "handled",
+    "reply"
+  ],
+  "additionalProperties": true,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+    at async eval (src\ai\flows\ogeemo-chat.ts:422:19)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
+  420 | `;
+  421 |
+> 422 |     const result = await ai.generate({
+      |                   ^
+  423 |       model: STABLE_GEMINI_MODEL,
+  424 |       messages,
+  425 |       tools: [searchContactsTool], {
+  source: undefined,
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Schema validation failed. Parse Errors:\n' +
+    '\n' +
+    '- (root): must be object\n' +
+    '\n' +
+    'Provided data:\n' +
+    '\n' +
+    'null\n' +
+    '\n' +
+    'Required JSON schema:\n' +
+    '\n' +
+    '{\n' +
+    '  "type": "object",\n' +
+    '  "properties": {\n' +
+    '    "handled": {\n' +
+    '      "type": "boolean"\n' +
+    '    },\n' +
+    '    "reply": {\n' +
+    '      "type": "string"\n' +
+    '    },\n' +
+    '    "action": {\n' +
+    '      "anyOf": [\n' +
+    '        {\n' +
+    '          "type": "object",\n' +
+    '          "properties": {\n' +
+    '            "type": {\n' +
+    '              "type": "string",\n' +
+    '              "const": "open_destination"\n' +
+    '            },\n' +
+    '            "destination": {\n' +
+    '              "type": "string",\n' +
+    '              "enum": [\n' +
+    '                "contacts_hub",\n' +
+    '                "new_contact"\n' +
+    '              ]\n' +
+    '            }\n' +
+    '          },\n' +
+    '          "required": [\n' +
+    '            "type",\n' +
+    '            "destination"\n' +
+    '          ],\n' +
+    '          "additionalProperties": false\n' +
+    '        },\n' +
+    '        {\n' +
+    '          "anyOf": [\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact_form"\n' +
+    '                },\n' +
+    '                "draft": {\n' +
+    '                  "type": "object",\n' +
+    '                  "properties": {\n' +
+    '                    "name": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 2\n' +
+    '                    },\n' +
+    '                    "folderId": {\n' +
+    '                      "type": "string",\n' +
+    '                      "minLength": 1\n' +
+    '                    },\n' +
+    '                    "email": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "anyOf": [\n' +
+    '                            {\n' +
+    '                              "not": {}\n' +
+    '                            },\n' +
+    '                            {\n' +
+    '                              "type": "string",\n' +
+    '                              "format": "email"\n' +
+    '                            }\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "const": ""\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "birthDate": {\n' +
+    '                      "type": "string",\n' +
+    '                      "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"\n' +
+    '                    },\n' +
+    '                    "website": {\n' +
+    '                      "type": "string"\n' +
+    '                    },\n' +
+    '                    "businessName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "employeeNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "industryCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "craProgramAccountNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "streetAddress": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "city": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "provinceState": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "postalCode": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "country": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "businessPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "cellPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "homePhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "faxNumber": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "primaryPhoneType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "businessPhone",\n' +
+    '                            "cellPhone",\n' +
+    '                            "homePhone"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "notes": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "sin": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "workerType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "employee",\n' +
+    '                            "contractor"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payType": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "string",\n' +
+    '                          "enum": [\n' +
+    '                            "hourly",\n' +
+    '                            "salary"\n' +
+    '                          ]\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "payRate": {\n' +
+    '                      "anyOf": [\n' +
+    '                        {\n' +
+    '                          "type": "number",\n' +
+    '                          "minimum": 0\n' +
+    '                        },\n' +
+    '                        {\n' +
+    '                          "type": "null"\n' +
+    '                        }\n' +
+    '                      ]\n' +
+    '                    },\n' +
+    '                    "hireDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "startDate": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/birthDate"\n' +
+    '                    },\n' +
+    '                    "emergencyContactName": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "emergencyContactPhone": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    },\n' +
+    '                    "hasContract": {\n' +
+    '                      "type": "boolean"\n' +
+    '                    },\n' +
+    '                    "specialNeeds": {\n' +
+    '                      "$ref": "#/properties/action/anyOf/1/anyOf/0/properties/draft/properties/website"\n' +
+    '                    }\n' +
+    '                  },\n' +
+    '                  "required": [\n' +
+    '                    "name",\n' +
+    '                    "folderId"\n' +
+    '                  ],\n' +
+    '                  "additionalProperties": false\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "draft"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            },\n' +
+    '            {\n' +
+    '              "type": "object",\n' +
+    '              "properties": {\n' +
+    '                "type": {\n' +
+    '                  "type": "string",\n' +
+    '                  "const": "open_contact"\n' +
+    '                },\n' +
+    '                "contactId": {\n' +
+    '                  "type": "string",\n' +
+    '                  "minLength": 1\n' +
+    '                }\n' +
+    '              },\n' +
+    '              "required": [\n' +
+    '                "type",\n' +
+    '                "contactId"\n' +
+    '              ],\n' +
+    '              "additionalProperties": false\n' +
+    '            }\n' +
+    '          ]\n' +
+    '        }\n' +
+    '      ]\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "required": [\n' +
+    '    "handled",\n' +
+    '    "reply"\n' +
+    '  ],\n' +
+    '  "additionalProperties": true,\n' +
+    '  "$schema": "http://json-schema.org/draft-07/schema#"\n' +
+    '}',
+  ignoreFailedSpan: true,
+  traceId: 'e7a9f0628cfaeb5997bfbdf908cdfe27'
+}
+/api/ogeemo-assistant source {
+  source: 'deterministic_contact_fallback',
+  reason: 'contact_capability_error',
+  decisionPath: 'contact_capability_error->deterministic_contact_fallback'
+}
+ POST /api/ogeemo-assistant 200 in 2972ms
+ Γ£ô Compiled in 608ms (1485 modules)
+ Γ£ô Compiled in 1188ms (2567 modules)
+ POST /welcome 200 in 1065ms
+ POST /welcome 200 in 658ms
+ Γ£ô Compiled in 732ms (1096 modules)
+ GET /welcome 200 in 203ms
+ GET /welcome 200 in 1729ms
+ Γùï Compiling /favicon.ico ...
+ Γ£ô Compiled /api/auth/session in 913ms (1501 modules)
+ Γ£ô Compiled (1504 modules)
+ GET /favicon.ico 200 in 1862ms
+ POST /api/auth/session 200 in 1569ms
+ POST /welcome 200 in 2116ms
+ POST /welcome 200 in 434ms
+ POST /welcome 200 in 400ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 960ms (1595 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /welcome 200 in 485ms
+ GET /favicon.ico 200 in 324ms
+[contact-capability] first generate failed, retrying without tools Error [GenkitError]: INVALID_ARGUMENT: Schema validation failed. Parse Errors:
+
+- (root): must be object
+
+Provided data:
+
+null
+
+Required JSON schema:
+
+{
+  "type": "object",
+  "properties": {
+    "handled": {
+      "type": "boolean"
+    },
+    "reply": {
+      "type": "string"
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "contactId": {
+          "type": "string"
+        },
+        "draft": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "folderId": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "birthDate": {
+              "type": "string"
+            },
+            "website": {
+              "type": "string"
+            },
+            "businessName": {
+              "type": "string"
+            },
+            "employeeNumber": {
+              "type": "string"
+            },
+            "industryCode": {
+              "type": "string"
+            },
+            "craProgramAccountNumber": {
+              "type": "string"
+            },
+            "streetAddress": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "provinceState": {
+              "type": "string"
+            },
+            "postalCode": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            },
+            "businessPhone": {
+              "type": "string"
+            },
+            "cellPhone": {
+              "type": "string"
+            },
+            "homePhone": {
+              "type": "string"
+            },
+            "faxNumber": {
+              "type": "string"
+            },
+            "primaryPhoneType": {
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            },
+            "sin": {
+              "type": "string"
+            },
+            "workerType": {
+              "type": "string"
+            },
+            "payType": {
+              "type": "string"
+            },
+            "payRate": {
+              "type": "number"
+            },
+            "hireDate": {
+              "type": "string"
+            },
+            "startDate": {
+              "type": "string"
+            },
+            "emergencyContactName": {
+              "type": "string"
+            },
+            "emergencyContactPhone": {
+              "type": "string"
+            },
+            "hasContract": {
+              "type": "boolean"
+            },
+            "specialNeeds": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "folderId"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "handled",
+    "reply"
+  ],
+  "additionalProperties": true,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
+    at async eval (src\ai\flows\ogeemo-chat.ts:476:21)
+    at async POST (src\app\api\ogeemo-assistant\route.ts:124:41)
+  474 |
+  475 |     try {
+> 476 |       const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool] });
+      |                     ^
+  477 |       if (result.output) {
+  478 |         return ContactCapabilityResultSchema.parse(result.output);
+  479 |       } {
+  source: undefined,
+  status: 'INVALID_ARGUMENT',
+  detail: [Object],
+  code: 400,
+  originalMessage: 'Schema validation failed. Parse Errors:\n' +
+    '\n' +
+    '- (root): must be object\n' +
+    '\n' +
+    'Provided data:\n' +
+    '\n' +
+    'null\n' +
+    '\n' +
+    'Required JSON schema:\n' +
+    '\n' +
+    '{\n' +
+    '  "type": "object",\n' +
+    '  "properties": {\n' +
+    '    "handled": {\n' +
+    '      "type": "boolean"\n' +
+    '    },\n' +
+    '    "reply": {\n' +
+    '      "type": "string"\n' +
+    '    },\n' +
+    '    "action": {\n' +
+    '      "type": "object",\n' +
+    '      "properties": {\n' +
+    '        "type": {\n' +
+    '          "type": "string"\n' +
+    '        },\n' +
+    '        "destination": {\n' +
+    '          "type": "string"\n' +
+    '        },\n' +
+    '        "contactId": {\n' +
+    '          "type": "string"\n' +
+    '        },\n' +
+    '        "draft": {\n' +
+    '          "type": "object",\n' +
+    '          "properties": {\n' +
+    '            "name": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "folderId": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "email": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "birthDate": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "website": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "businessName": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "employeeNumber": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "industryCode": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "craProgramAccountNumber": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "streetAddress": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "city": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "provinceState": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "postalCode": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "country": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "businessPhone": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "cellPhone": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "homePhone": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "faxNumber": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "primaryPhoneType": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "notes": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "sin": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "workerType": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "payType": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "payRate": {\n' +
+    '              "type": "number"\n' +
+    '            },\n' +
+    '            "hireDate": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "startDate": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "emergencyContactName": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "emergencyContactPhone": {\n' +
+    '              "type": "string"\n' +
+    '            },\n' +
+    '            "hasContract": {\n' +
+    '              "type": "boolean"\n' +
+    '            },\n' +
+    '            "specialNeeds": {\n' +
+    '              "type": "string"\n' +
+    '            }\n' +
+    '          },\n' +
+    '          "required": [\n' +
+    '            "name",\n' +
+    '            "folderId"\n' +
+    '          ],\n' +
+    '          "additionalProperties": true\n' +
+    '        }\n' +
+    '      },\n' +
+    '      "required": [\n' +
+    '        "type"\n' +
+    '      ],\n' +
+    '      "additionalProperties": true\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "required": [\n' +
+    '    "handled",\n' +
+    '    "reply"\n' +
+    '  ],\n' +
+    '  "additionalProperties": true,\n' +
+    '  "$schema": "http://json-schema.org/draft-07/schema#"\n' +
+    '}',
+  ignoreFailedSpan: true
+}
+ POST /api/ogeemo-assistant 200 in 26618ms
+ POST /api/ogeemo-assistant 200 in 2726ms
+ Γùï Compiling /contacts ...
+ Γ£ô Compiled /contacts in 4.2s (2706 modules)
+ GET /contacts 200 in 4898ms
+ GET /contacts 200 in 166ms
+ Γ£ô Compiled in 1000ms (1158 modules)
+ GET /contacts 200 in 134ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 860ms (1654 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /contacts 200 in 448ms
+ POST /api/ogeemo-assistant 200 in 4362ms
+ GET /contacts 200 in 1113ms
+ Γùï Compiling /favicon.ico ...
+ Γ£ô Compiled /favicon.ico in 530ms (1656 modules)
+ GET /favicon.ico 200 in 1039ms
+ Γ£ô Compiled /api/auth/session in 495ms (1658 modules)
+ POST /contacts 200 in 1058ms
+ POST /api/auth/session 200 in 1025ms
+ POST /contacts 200 in 457ms
+ DELETE /api/auth/session 200 in 117ms
+ DELETE /api/auth/session 200 in 164ms
+ GET /login 200 in 275ms
+ GET /welcome 200 in 195ms
+ POST /api/auth/session 200 in 359ms
+ POST /welcome 200 in 407ms
+ POST /welcome 200 in 595ms
+ POST /welcome 200 in 2407ms
+ POST /welcome 200 in 364ms
+ POST /welcome 200 in 396ms
+ POST /welcome 200 in 410ms
+ GET /contacts 200 in 133ms
+ Γùï Compiling /co-pilot ...
+ Γ£ô Compiled /co-pilot in 3.3s (2735 modules)
+ GET /co-pilot 200 in 3644ms
+ GET /co-pilot 200 in 141ms
+ POST /co-pilot 200 in 796ms
+ POST /co-pilot 200 in 398ms
+ Γùï Compiling /action-manager ...
+ Γ£ô Compiled /action-manager in 1356ms (2736 modules)
+ GET /action-manager 200 in 1629ms
+ Γ£ô Compiled in 1938ms (2727 modules)
+ ΓÜá Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /action-manager 200 in 1322ms
+ Γ¿» ./src/ai/assistant-actions.ts
+Error:   x Expression expected
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+  x Expected ';', '}' or <eof>
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^^^^^|^^^^ ^^^^^
+     :       `-- This is the expression part of an expression statement
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/ai/assistant-actions.ts
+./src/app/(app)/co-pilot/page.tsx
+ Γùï Compiling /favicon.ico ...
+ Γ¿» ./src/ai/assistant-actions.ts
+Error:   x Expression expected
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+  x Expected ';', '}' or <eof>
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^^^^^|^^^^ ^^^^^
+     :       `-- This is the expression part of an expression statement
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/ai/assistant-actions.ts
+./src/app/(app)/co-pilot/page.tsx
+ Γ¿» ./src/ai/assistant-actions.ts
+Error:   x Expression expected
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+  x Expected ';', '}' or <eof>
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^^^^^|^^^^ ^^^^^
+     :       `-- This is the expression part of an expression statement
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/ai/assistant-actions.ts
+./src/app/(app)/co-pilot/page.tsx
+ Γ¿» ./src/ai/assistant-actions.ts
+Error:   x Expression expected
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+  x Expected ';', '}' or <eof>
+     ,-[C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\ai\assistant-actions.ts:261:1]
+ 258 | 
+ 259 |     return undefined;
+ 260 | }
+ 261 |  * optional email/phone) from a plain sentence such as "Make a contact for Nick
+     :  ^^^^^|^^^^ ^^^^^
+     :       `-- This is the expression part of an expression statement
+ 262 |  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
+ 263 |  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
+ 263 |  * the first tenant folder as the default. Returns `undefined` when no usable
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/ai/assistant-actions.ts
+./src/app/(app)/co-pilot/page.tsx
+ POST /action-manager 500 in 8761ms
+ POST /action-manager 500 in 1344ms
+ GET /action-manager 500 in 147ms
+ GET /action-manager 500 in 138ms
+ GET /action-manager 500 in 147ms
+ Γ£ô Compiled /_error in 4.1s (3093 modules)
+ ΓÜá Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/6d12ef7bb86681b8.webpack.hot-update.json 404 in 3944ms
+ GET /action-manager 200 in 978ms
+ POST /api/auth/session 200 in 476ms
+ POST /action-manager 200 in 843ms
+ POST /action-manager 200 in 394ms
+ Γ£ô Compiled in 789ms (1421 modules)
+ GET /action-manager 200 in 145ms
+ GET /contacts 200 in 395ms

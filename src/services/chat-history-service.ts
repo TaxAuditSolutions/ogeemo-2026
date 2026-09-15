@@ -15,6 +15,8 @@ export interface AssistantChatMessage {
     /** ISO timestamp of when the message was created (optional for legacy chats). */
     timestamp?: string;
     action?: AssistantMessageAction;
+    /** True when the assistant replied via the deterministic fallback (AI capability degraded). */
+    degraded?: boolean;
 }
 
 export interface AssistantChatThread {
@@ -71,6 +73,7 @@ export function normalizeMessages(messages: AssistantChatMessage[]): AssistantCh
                 content: typeof message.content === 'string' ? message.content : String(message.content ?? ''),
                 ...(typeof message.timestamp === 'string' && message.timestamp ? { timestamp: message.timestamp } : {}),
                 ...(action ? { action } : {}),
+                ...(message.degraded === true ? { degraded: true } : {}),
             };
         })
         .filter((message) => message.content.trim().length > 0)

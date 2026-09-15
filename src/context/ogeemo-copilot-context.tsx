@@ -180,6 +180,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 : null;
             let assistantContent: string;
             let assistantAction: AssistantChatMessage['action'];
+            let assistantDegraded = false;
 
             if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
@@ -215,6 +216,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                     throw new Error(data?.details || data?.error || 'Failed to connect to Ogeemo Co-Pilot.');
                 }
                 assistantAction = data?.action;
+                assistantDegraded = data?.degraded === true;
                 assistantContent = typeof data?.answer === 'string' && data.answer.trim()
                     ? data.answer
                     : 'No answer returned from Ogeemo Co-Pilot.';
@@ -225,6 +227,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 content: assistantContent,
                 timestamp: new Date().toISOString(),
                 ...(assistantAction ? { action: assistantAction } : {}),
+                ...(assistantDegraded ? { degraded: true } : {}),
             };
             const completedThread = {
                 ...thread,

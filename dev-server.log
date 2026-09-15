@@ -5,3 +5,32 @@
 
  Γ£ô Starting...
  Γ£ô Ready in 3.4s
+ Γùï Compiling /co-pilot ...
+ Γ£ô Compiled /co-pilot in 11.7s (2517 modules)
+ GET /co-pilot 200 in 13573ms
+ Γùï Compiling / ...
+ Γ£ô Compiled / in 1324ms (1774 modules)
+ GET / 200 in 2209ms
+ Γùï Compiling /api/auth/session ...
+ Γ£ô Compiled /api/auth/session in 551ms (1786 modules)
+[Firebase Admin] Credential source: firebase_service_account_key_env
+ POST /api/auth/session 200 in 2420ms
+ Γùï Compiling /welcome ...
+ Γ£ô Compiled /welcome in 993ms (2519 modules)
+ GET /welcome 200 in 1350ms
+ GET /welcome 200 in 124ms
+ POST /welcome 200 in 1093ms
+ POST /welcome 200 in 417ms
+ POST /welcome 200 in 390ms
+ POST /welcome 200 in 2373ms
+ POST /welcome 200 in 421ms
+ POST /welcome 200 in 419ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1316ms (2610 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ POST /api/ogeemo-assistant 200 in 6702ms
+ POST /api/ogeemo-assistant 200 in 1275ms
+ Γùï Compiling /contacts ...
+ Γ£ô Compiled /contacts in 4s (2800 modules)
+ GET /contacts?action=new 200 in 4368ms
+ GET /contacts 200 in 143ms

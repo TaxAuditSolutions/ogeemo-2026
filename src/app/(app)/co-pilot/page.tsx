@@ -186,6 +186,25 @@ export default function AiDispatchPage() {
         }
     }, [messages, isThinking]);
 
+    // Auto-open the prepared contact form as soon as the co-pilot returns an
+    // open_contact_form action: the form pops up filled with the drafted data
+    // and stays open for the user to pick the folder, add more info, and save.
+    // Freshness window prevents stale thread messages from re-opening the form
+    // when switching between chats or reloading the page.
+    const lastAutoOpenedActionRef = useRef<string | null>(null);
+    useEffect(() => {
+        const last = messages[messages.length - 1];
+        if (!last || last.role !== 'model' || last.action?.type !== 'open_contact_form') return;
+        const messageAgeMs = last.timestamp ? Date.now() - new Date(last.timestamp).getTime() : Infinity;
+        if (messageAgeMs > 3 * 60 * 1000) return;
+        const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
+        if (lastAutoOpenedActionRef.current === actionKey) return;
+        lastAutoOpenedActionRef.current = actionKey;
+        setContactToEdit(null);
+        setContactDraft(last.action.draft);
+        setIsFormOpen(true);
+    }, [messages, activeThreadId]);
+
     useEffect(() => {
         const loadRuntimeOrgContext = async () => {
             if (!user?.uid) {

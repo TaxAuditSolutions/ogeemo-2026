@@ -1,7 +1,7 @@
 'use server';
 
-import { getFirebaseServices } from '@/firebase';
-import { collection, addDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/core/firebase-admin';
 import { sendFormNotification } from '@/core/email-service';
 
 export async function sendConnectionSignal(data: {
@@ -12,15 +12,20 @@ export async function sendConnectionSignal(data: {
     message: string;
 }) {
     try {
-        const { db } = getFirebaseServices();
+        // Server actions must use the Admin SDK: the client SDK's
+        // getFirebaseServices() cannot be invoked from the server.
+        const db = getAdminDb();
+        if (!db) {
+            throw new Error('Database is not available. Please try again later.');
+        }
 
-        const inquiryRef = await addDoc(collection(db, 'inquiries'), {
+        const inquiryRef = await db.collection('inquiries').add({
             ...data,
             type: 'contact',
             targetEmail: 'dan@ogeemo.com',
             status: 'new',
             notified: false,
-            createdAt: serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
         });
 
         const result = await sendFormNotification({
@@ -35,9 +40,9 @@ export async function sendConnectionSignal(data: {
             replyTo: data.email,
         });
 
-        await updateDoc(inquiryRef, {
+        await inquiryRef.update({
             notified: result.sent,
-            notifiedAt: serverTimestamp(),
+            notifiedAt: FieldValue.serverTimestamp(),
             notifyError: result.error || null,
         });
 

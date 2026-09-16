@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { usePathname, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
+    ArrowRight,
     Check,
     ExternalLink,
     Loader2,
@@ -33,10 +35,37 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { useOgeemoCopilotSidebar } from '@/context/ogeemo-copilot-sidebar-context';
+import { getContacts, type Contact } from '@/services/contact-service';
+import { getFolders, type FolderData } from '@/services/contact-folder-service';
+import { getCompanies, type Company } from '@/core/accounting-service';
+import { getIndustries, type Industry } from '@/services/industry-service';
+import {
+    ASSISTANT_DESTINATIONS,
+    resolveAssistantCapabilityActionWithRepair,
+    type AssistantContactDraft,
+    type AssistantMessageAction,
+} from '@/ai/assistant-actions';
 
-function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
+const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
+    ssr: false,
+    loading: () => (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
+        </div>
+    ),
+});
+
+function CopilotPanelContent({
+    mobile = false,
+    onMessageAction,
+}: {
+    mobile?: boolean;
+    onMessageAction?: (action: AssistantMessageAction) => void | Promise<void>;
+}) {
     const {
         filteredThreads,
         activeThread,
@@ -245,9 +274,29 @@ function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
                                 ) : (
                                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
                                 )}
-                                {message.role === 'model' && message.action?.type === 'dispatch' ? (
+                                {message.role === 'model' && message.action ? (
                                     <div className="mt-2 border-t border-border/60 pt-2">
-                                        <AssistantDispatchLink action={message.action} />
+                                        {message.action.type === 'dispatch' ? (
+                                            <AssistantDispatchLink action={message.action} />
+                                        ) : (
+                                            <>
+                                                <p className="text-[11px] leading-4 text-muted-foreground">
+                                                    {message.action.type === 'open_contact_form'
+                                                        ? 'Review the prepared contact before saving.'
+                                                        : 'Open the matching registry entry.'}
+                                                </p>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="mt-1.5 h-7 w-full text-xs"
+                                                    onClick={() => void onMessageAction?.(message.action!)}
+                                                >
+                                                    {message.action.type === 'open_contact_form' ? 'Review Contact' : 'Open Contact'}
+                                                    <ArrowRight className="ml-1 h-3 w-3" />
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                 ) : null}
                             </div>
@@ -319,6 +368,10 @@ function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
 
 export function OgeemoCopilotSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const { activeThread, activeThreadId } = useOgeemoCopilot();
     const {
         state,
         isMobile,
@@ -334,15 +387,154 @@ export function OgeemoCopilotSidebar() {
         setIsResizing,
     } = useOgeemoCopilotSidebar();
 
+    // Assistant contact actions: the sidebar mirrors the full Co-Pilot
+    // workspace so an open_contact_form action opens the ContactFormDialog
+    // right here, pre-filled with the assistant draft.
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
+    const [contactDraft, setContactDraft] = useState<AssistantContactDraft | undefined>(undefined);
+    const [folders, setFolders] = useState<FolderData[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [industries, setIndustries] = useState<Industry[]>([]);
+    const supportDataRef = useRef<{ folders: FolderData[]; companies: Company[]; industries: Industry[] } | null>(null);
+
+    const ensureSupportData = useCallback(async () => {
+        if (supportDataRef.current) return supportDataRef.current;
+        if (!user?.uid) throw new Error('You must be signed in to open the contact form.');
+        const [nextFolders, nextCompanies, nextIndustries] = await Promise.all([
+            getFolders(user.uid),
+            getCompanies(user.uid).catch((error) => {
+                console.warn('[CoPilotSidebar] Failed to load companies:', error);
+                return [] as Company[];
+            }),
+            getIndustries(user.uid).catch((error) => {
+                console.warn('[CoPilotSidebar] Failed to load industries:', error);
+                return [] as Industry[];
+            }),
+        ]);
+        supportDataRef.current = { folders: nextFolders, companies: nextCompanies, industries: nextIndustries };
+        setFolders(nextFolders);
+        setCompanies(nextCompanies);
+        setIndustries(nextIndustries);
+        return supportDataRef.current;
+    }, [user?.uid]);
+
+    const handleFoldersChange = useCallback((nextFolders: FolderData[]) => {
+        supportDataRef.current = supportDataRef.current
+            ? { ...supportDataRef.current, folders: nextFolders }
+            : { folders: nextFolders, companies: [], industries: [] };
+        setFolders(nextFolders);
+    }, []);
+
+    const handleMessageAction = useCallback(async (action: AssistantMessageAction) => {
+        if (action.type === 'dispatch') {
+            if (action.isExternal) {
+                window.open(action.target, '_blank', 'noopener,noreferrer');
+            } else if (action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
+                // The New Contact destination opens the create-contact form
+                // right here instead of navigating away.
+                setContactToEdit(null);
+                setContactDraft(undefined);
+                setIsFormOpen(true);
+            } else {
+                router.push(action.target);
+            }
+            return;
+        }
+
+        try {
+            const support = await ensureSupportData();
+
+            if (action.type === 'open_contact_form') {
+                const resolved = resolveAssistantCapabilityActionWithRepair(action, support.folders);
+                if (resolved?.type === 'open_contact_form') {
+                    setContactToEdit(null);
+                    setContactDraft(resolved.draft);
+                    setIsFormOpen(true);
+                    return;
+                }
+            } else if (action.type === 'open_contact') {
+                const contacts = user?.uid ? await getContacts(user.uid) : [];
+                const contact = contacts.find((entry) => entry.id === action.contactId);
+                if (contact) {
+                    setContactDraft(undefined);
+                    setContactToEdit(contact);
+                    setIsFormOpen(true);
+                    return;
+                }
+                toast({
+                    title: 'Registry link broken',
+                    description: "I couldn't find the record in your local database.",
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            toast({
+                title: 'Action unavailable',
+                description: 'This saved action is no longer valid for the active tenant.',
+                variant: 'destructive',
+            });
+        } catch (error) {
+            console.warn('[CoPilotSidebar] Failed to open assistant contact action:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Action unavailable',
+                description: error instanceof Error ? error.message : 'Please try again.',
+            });
+        }
+    }, [ensureSupportData, router, toast, user?.uid]);
+
+    // Auto-open the prepared contact form as soon as the co-pilot returns an
+    // open_contact_form action (mirrors the full Co-Pilot workspace). The
+    // freshness window prevents stale thread messages from re-opening the form
+    // when switching between chats or reloading the page.
+    const lastAutoOpenedActionRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (pathname === '/co-pilot' || pathname.startsWith('/co-pilot/')) return;
+        const messages = activeThread?.messages ?? [];
+        const last = messages[messages.length - 1];
+        if (!last || last.role !== 'model' || last.action?.type !== 'open_contact_form') return;
+        const messageAgeMs = last.timestamp ? Date.now() - new Date(last.timestamp).getTime() : Infinity;
+        if (messageAgeMs > 3 * 60 * 1000) return;
+        const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
+        if (lastAutoOpenedActionRef.current === actionKey) return;
+        lastAutoOpenedActionRef.current = actionKey;
+        toast({ title: 'Opening your prepared contact form', description: 'Select the folder, add any details, then save.' });
+        void handleMessageAction(last.action);
+    }, [activeThread?.messages, activeThreadId, handleMessageAction, pathname, toast]);
+
     if (pathname === '/co-pilot' || pathname.startsWith('/co-pilot/')) return null;
+
+    const contactFormDialog = (
+        <ContactFormDialog
+            isOpen={isFormOpen}
+            onOpenChange={(open) => {
+                setIsFormOpen(open);
+                if (!open) setContactDraft(undefined);
+            }}
+            contactToEdit={contactToEdit}
+            folders={folders}
+            onFoldersChange={handleFoldersChange}
+            onSave={() => {}}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={industries}
+            onCustomIndustriesChange={setIndustries}
+            initialData={contactDraft}
+        />
+    );
 
     if (isMobile) {
         return (
-            <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
-                <SheetContent side="right" className="w-[min(92vw,420px)] p-0 sm:max-w-[420px]">
-                    <CopilotPanelContent mobile />
-                </SheetContent>
-            </Sheet>
+            <>
+                <Sheet open={isMobileOpen} onOpenChange={setMobileOpen}>
+                    <SheetContent side="right" className="w-[min(92vw,420px)] p-0 sm:max-w-[420px]">
+                        <CopilotPanelContent mobile onMessageAction={handleMessageAction} />
+                    </SheetContent>
+                </Sheet>
+                {contactFormDialog}
+            </>
         );
     }
 
@@ -369,60 +561,63 @@ export function OgeemoCopilotSidebar() {
     };
 
     return (
-        <div
-            className="hidden shrink-0 print:hidden md:block"
-            data-state={state}
-            style={{ width: layoutWidth }}
-            aria-label="Ogeemo Co-Pilot sidebar"
-        >
-            <aside
-                className={cn(
-                    'fixed inset-y-0 right-0 z-20 flex overflow-hidden border-l border-sidebar-border bg-sidebar shadow-sm',
-                    !isResizing && 'transition-[width] duration-200 ease-linear'
-                )}
+        <>
+            <div
+                className="hidden shrink-0 print:hidden md:block"
+                data-state={state}
                 style={{ width: layoutWidth }}
-                onPointerEnter={() => setPointerInside(true)}
-                onPointerLeave={() => setPointerInside(false)}
-                onFocusCapture={() => setFocusInside(true)}
-                onBlurCapture={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusInside(false);
-                }}
+                aria-label="Ogeemo Co-Pilot sidebar"
             >
-                <div
-                    role="separator"
-                    aria-label="Resize Co-Pilot sidebar"
-                    aria-orientation="vertical"
-                    aria-valuemin={240}
-                    aria-valuemax={600}
-                    aria-valuenow={Math.round(effectiveWidth)}
-                    tabIndex={state === 'expanded' ? 0 : -1}
-                    className="absolute inset-y-0 left-0 z-30 w-2 -translate-x-1/2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px hover:after:bg-primary focus-visible:after:bg-primary"
-                    onPointerDown={startResize}
-                    onPointerMove={moveResize}
-                    onPointerUp={stopResize}
-                    onPointerCancel={stopResize}
-                    onKeyDown={(event) => {
-                        if (event.key === 'ArrowLeft') {
-                            event.preventDefault();
-                            setPreferredWidth(preferredWidth + 10);
-                        }
-                        if (event.key === 'ArrowRight') {
-                            event.preventDefault();
-                            setPreferredWidth(preferredWidth - 10);
-                        }
+                <aside
+                    className={cn(
+                        'fixed inset-y-0 right-0 z-20 flex overflow-hidden border-l border-sidebar-border bg-sidebar shadow-sm',
+                        !isResizing && 'transition-[width] duration-200 ease-linear'
+                    )}
+                    style={{ width: layoutWidth }}
+                    onPointerEnter={() => setPointerInside(true)}
+                    onPointerLeave={() => setPointerInside(false)}
+                    onFocusCapture={() => setFocusInside(true)}
+                    onBlurCapture={(event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusInside(false);
                     }}
-                />
-                {state === 'collapsed' ? (
-                    <div className="flex h-full w-12 flex-col items-center pt-3 text-primary">
-                        <CoPilotMark className="h-6 w-6" />
-                        <span className="sr-only">Hover or focus to open Ogeemo Co-Pilot</span>
-                    </div>
-                ) : (
-                    <div className="h-full min-w-0 flex-1">
-                        <CopilotPanelContent />
-                    </div>
-                )}
-            </aside>
-        </div>
+                >
+                    <div
+                        role="separator"
+                        aria-label="Resize Co-Pilot sidebar"
+                        aria-orientation="vertical"
+                        aria-valuemin={240}
+                        aria-valuemax={600}
+                        aria-valuenow={Math.round(effectiveWidth)}
+                        tabIndex={state === 'expanded' ? 0 : -1}
+                        className="absolute inset-y-0 left-0 z-30 w-2 -translate-x-1/2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px hover:after:bg-primary focus-visible:after:bg-primary"
+                        onPointerDown={startResize}
+                        onPointerMove={moveResize}
+                        onPointerUp={stopResize}
+                        onPointerCancel={stopResize}
+                        onKeyDown={(event) => {
+                            if (event.key === 'ArrowLeft') {
+                                event.preventDefault();
+                                setPreferredWidth(preferredWidth + 10);
+                            }
+                            if (event.key === 'ArrowRight') {
+                                event.preventDefault();
+                                setPreferredWidth(preferredWidth - 10);
+                            }
+                        }}
+                    />
+                    {state === 'collapsed' ? (
+                        <div className="flex h-full w-12 flex-col items-center pt-3 text-primary">
+                            <CoPilotMark className="h-6 w-6" />
+                            <span className="sr-only">Hover or focus to open Ogeemo Co-Pilot</span>
+                        </div>
+                    ) : (
+                        <div className="h-full min-w-0 flex-1">
+                            <CopilotPanelContent onMessageAction={handleMessageAction} />
+                        </div>
+                    )}
+                </aside>
+            </div>
+            {contactFormDialog}
+        </>
     );
 }

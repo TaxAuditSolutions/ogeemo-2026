@@ -32,6 +32,38 @@ test('routes contact-creation requests to the conversation, not the command path
     assert.equal(shouldProcessAsCommand('add a new contact named Dana White', []), false);
 });
 
+test('keeps every contact workflow answer in the assistant conversation', () => {
+    const turns = [
+        { role: 'user' as const, content: 'I want to create a contact' },
+        { role: 'model' as const, content: 'Would you like instructions, or should I create the contact for you?' },
+    ];
+    assert.equal(shouldProcessAsCommand('create it for me', turns), false);
+
+    turns.push(
+        { role: 'user', content: 'create it for me' },
+        { role: 'model', content: 'Should you fill the contact form, or should I fill it?' },
+    );
+    assert.equal(shouldProcessAsCommand('you fill it out', turns), false);
+
+    turns.push(
+        { role: 'user', content: 'you fill it out' },
+        { role: 'model', content: "What is the contact's Full Legal Name?" },
+    );
+    assert.equal(shouldProcessAsCommand('Jane Doe', turns), false);
+
+    turns.push(
+        { role: 'user', content: 'Jane Doe' },
+        { role: 'model', content: 'Which Folder/Category should I use for this contact?' },
+    );
+    assert.equal(shouldProcessAsCommand('Clients', turns), false);
+
+    turns.push(
+        { role: 'user', content: 'Clients' },
+        { role: 'model', content: 'Create Jane Doe in Clients?' },
+    );
+    assert.equal(shouldProcessAsCommand('Yes', turns), false);
+});
+
 test('ignores empty input', () => {
     assert.equal(shouldProcessAsCommand('   ', []), false);
 });

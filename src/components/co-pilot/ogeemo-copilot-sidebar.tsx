@@ -20,6 +20,7 @@ import {
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
 import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
     AlertDialog,
@@ -35,6 +36,16 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { useOgeemoCopilotSidebar } from '@/context/ogeemo-copilot-sidebar-context';
+import type { AssistantMessageAction } from '@/ai/assistant-actions';
+
+function getWorkflowStatus(action?: AssistantMessageAction): string | undefined {
+    if (!action) return undefined;
+    if (action.type === 'dispatch' && action.target === '/contacts?action=new') return 'Navigated to Contacts';
+    if (action.type === 'open_contact_form') return 'Navigated to Contacts';
+    if (action.type === 'update_contact_draft') return 'Drafting Contact';
+    if (action.type === 'submit_contact_form') return 'Submitted';
+    return undefined;
+}
 
 function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
     const {
@@ -225,34 +236,43 @@ function CopilotPanelContent({ mobile = false }: { mobile?: boolean }) {
                             <CoPilotMark className="h-9 w-9 text-primary/70" />
                             <p className="text-xs">Ask Ogeemo Co-Pilot about your work.</p>
                         </div>
-                    ) : activeThread?.messages.map((message, index) => (
-                        <div
-                            key={`${message.timestamp ?? index}-${index}`}
-                            className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
-                        >
+                    ) : activeThread?.messages.map((message, index) => {
+                        const workflowStatus = getWorkflowStatus(message.action);
+                        return (
                             <div
-                                className={cn(
-                                    'max-w-[90%] overflow-hidden rounded-lg px-2.5 py-2 text-xs leading-5',
-                                    message.role === 'user'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'border bg-card text-card-foreground'
-                                )}
+                                key={`${message.timestamp ?? index}-${index}`}
+                                className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
                             >
-                                {message.role === 'model' ? (
-                                    <div className="prose prose-sm max-w-none break-words text-current prose-p:my-1 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:text-[11px]">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                                    </div>
-                                ) : (
-                                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                                )}
-                                {message.role === 'model' && message.action?.type === 'dispatch' ? (
-                                    <div className="mt-2 border-t border-border/60 pt-2">
-                                        <AssistantDispatchLink action={message.action} />
-                                    </div>
-                                ) : null}
+                                <div
+                                    className={cn(
+                                        'max-w-[90%] overflow-hidden rounded-lg px-2.5 py-2 text-xs leading-5',
+                                        message.role === 'user'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'border bg-card text-card-foreground'
+                                    )}
+                                >
+                                    {message.role === 'model' ? (
+                                        <div className="prose prose-sm max-w-none break-words text-current prose-p:my-1 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:text-[11px]">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                    )}
+                                    {message.role === 'model' && message.action?.type === 'dispatch' ? (
+                                        <div className="mt-2 border-t border-border/60 pt-2">
+                                            <AssistantDispatchLink action={message.action} />
+                                        </div>
+                                    ) : null}
+                                    {message.role === 'model' && workflowStatus ? (
+                                        <Badge variant="secondary" className="mt-2 gap-1 text-[10px] font-medium">
+                                            <Check className="h-3 w-3" />
+                                            {workflowStatus}
+                                        </Badge>
+                                    ) : null}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {isThinking ? (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />

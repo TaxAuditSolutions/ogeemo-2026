@@ -9,8 +9,11 @@ firestore-debug.log
 # Next.js cache
 .next/
 .next-dev/
+.next-dev-9003/
 .next-build/
 node_modules
+dist/
+coverage/
 
 # TypeScript build info (auto-generated, changes every build)
 *.tsbuildinfo

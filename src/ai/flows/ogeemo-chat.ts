@@ -407,6 +407,38 @@ const ContactCapabilityActionSchema = z.object({
     hasContract: z.boolean().optional(),
     specialNeeds: z.string().optional(),
   }).optional(),
+  patch: z.object({
+    name: z.string().optional(),
+    folderId: z.string().optional(),
+    email: z.string().optional(),
+    birthDate: z.string().optional(),
+    website: z.string().optional(),
+    businessName: z.string().optional(),
+    employeeNumber: z.string().optional(),
+    industryCode: z.string().optional(),
+    craProgramAccountNumber: z.string().optional(),
+    streetAddress: z.string().optional(),
+    city: z.string().optional(),
+    provinceState: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    businessPhone: z.string().optional(),
+    cellPhone: z.string().optional(),
+    homePhone: z.string().optional(),
+    faxNumber: z.string().optional(),
+    primaryPhoneType: z.string().optional(),
+    notes: z.string().optional(),
+    sin: z.string().optional(),
+    workerType: z.string().optional(),
+    payType: z.string().optional(),
+    payRate: z.number().optional(),
+    hireDate: z.string().optional(),
+    startDate: z.string().optional(),
+    emergencyContactName: z.string().optional(),
+    emergencyContactPhone: z.string().optional(),
+    hasContract: z.boolean().optional(),
+    specialNeeds: z.string().optional(),
+  }).optional(),
 });
 
 const ContactCapabilityResultSchema = z.object({
@@ -436,23 +468,29 @@ Return handled=false for unrelated conversations. When handled=false, reply may 
 Always read the conversation history first. If an earlier turn established a Contacts Hub intent, continue that exchange. A short reply such as "prepare the form", "the instructions", or "yes" answers your previous question and must never be reinterpreted as a new or unrelated request.
 
 You may offer the user exactly one clickable control by returning an action:
-- open_destination with destination "new_contact" opens the New Contact form in Contacts Hub. Use it when the user should fill the form in themselves.
+- open_destination with destination "new_contact" navigates to Contacts Hub and opens the New Contact form.
 - open_destination with destination "contacts_hub" opens Contacts Hub. Use it for browsing, searching, folders, or general hub navigation.
 - open_contact_form opens a form you have prepared from details gathered in the conversation.
+- update_contact_draft with a non-empty patch updates fields in the already-open Create Contact form.
+- submit_contact_form submits the already-open Create Contact form after explicit confirmation.
 - open_contact opens one specific existing contact by its real ID.
-Never invent a URL or path. Never navigate on the user's behalf; the control only appears and the user chooses to click it. Describe the control by its name, for example "Click 'New Contact' below".
+Never invent a URL or path. The client executes contact-workflow actions automatically.
 
 When the conversation concerns contact creation:
-- You are an intelligent conversational agent, not a fixed questionnaire.
-- If the user's request already includes a full name (for example "create a new contact for Joe Blow, email joe@gmail.com"), skip all questions: call searchContacts for the duplicate check if needed, then choose the best folder yourself and return open_contact_form immediately. Only ask whether the user wants step-by-step instructions or wants you to prepare the form when the request is vague and no name was given. Do not repeat that choice when history already makes it clear.
-- For instructions, explain how to open Contacts Hub, select a folder, choose New Contact, complete the form, and submit. Offer the "new_contact" destination so the user can start immediately.
-- If the user wants to create the contact themselves rather than have you prepare it, explain that New Contact in Contacts Hub is the function to use and offer the "new_contact" destination.
-- For assistance, infer and retain details already volunteered. The draft requires a full name of at least two characters and one folder from the catalog below. Never ask the user which folder to use: pick the catalog folder whose name best matches the user's wording (for example "friends folder" -> the Friends folder), otherwise the first catalog folder, mention your folder choice briefly in the reply, and return open_contact_form. The user can change the folder in the form before saving. Ask a follow-up only when the full name itself is missing or genuinely ambiguous.
+- Treat this as a strict state machine. Infer the current state from the complete conversation history and never repeat a completed state.
+- Turn 1, intent choice: when the user broadly asks to create a contact and has not chosen a mode, ask whether they want step-by-step instructions or want you to create it for them. Return no action.
+- Instructions mode: explain how to use Contacts Hub and return open_destination with destination "new_contact". Do not continue the agent-filling workflow unless the user later asks you to take over.
+- Turn 2, launch: when the user chooses agent creation, return open_destination with destination "new_contact" and ask whether they want to fill the open form themselves or want you to fill it. Do not ask for the name yet.
+- Self-fill choice: explain that the form is ready and stop prompting. Return no additional action.
+- Turn 3, agent-fill choice: when the user asks you to fill it, ask for the contact's Full Legal Name. Return no action.
+- Turn 4, name: when the user supplies the requested name, return update_contact_draft with patch containing only name, then ask which Folder/Category to use. List the available folder names. Do not choose a folder for the user.
+- Turn 5, folder: resolve the user's folder wording to exactly one ID from the catalog. Return update_contact_draft with patch containing only folderId. Summarize the Full Legal Name and folder name retained from history, then ask for explicit confirmation to create the contact.
+- Turn 6, confirmation: only an unambiguous affirmative response to the summary permits submit_contact_form. Return that action and say you are submitting the contact. For a negative or ambiguous answer, do not submit; ask what should change or ask again for confirmation.
+- If the initial request already includes details, retain them, but still perform intent disambiguation unless the user explicitly asked the agent to create and fill the contact. Never submit without the separate confirmation turn.
 - The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
-- Before returning open_contact_form, call searchContacts using the best available name or email. If a likely existing contact is returned, warn the user and offer to open it or explicitly continue with a new record. Do not return a new-contact action until the user confirms continuation. If the user chooses the existing match, return open_contact with its real ID.
-- When requirements are complete and duplicate handling is resolved, briefly confirm the contact form has been opened for review and return open_contact_form. The UI opens the form automatically — NEVER tell the user to click a button or link for it. Use only folder IDs from the catalog.
-- Never claim the contact has been created. The user must review and submit the form.
+- Use only folder IDs from the catalog. Never place a folder name in folderId.
+- After submit_contact_form, do not claim persistence succeeded; say submission was requested because the client form remains authoritative for validation and save feedback.
 - Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft.
 
 For other Contacts Hub requests:
@@ -493,7 +531,7 @@ ${folderCatalog}
     // duplicate check is unavailable in this turn, so instruct the model to
     // proceed with the form anyway instead of stalling on it.
     const retrySystem = `${system}
-Important for this retry turn: the searchContacts tool is temporarily unavailable, so skip the duplicate check and never block or delay the open_contact_form action because of it. Never ask the user which folder to use: choose the catalog folder whose name best matches the user's wording, otherwise the first catalog folder. Return the open_contact_form action now when the full name is known. The reply must confirm the form was opened for review — never instruct the user to click a button.`;
+Important for this retry turn: the searchContacts tool is temporarily unavailable. Continue the exact state machine from history and return only the action allowed for the current turn. Do not skip questions, combine turns, or submit without explicit confirmation.`;
 
     const retryResult = await ai.generate({
       ...baseOptions,
@@ -503,7 +541,7 @@ Important for this retry turn: the searchContacts tool is temporarily unavailabl
         {
           role: 'user',
           content: [{
-            text: 'Respond now with the required JSON reply. Everything already established in the conversation stands; do not ask further questions. If the required details (full name and a folder from the catalog) are available, return the open_contact_form action now. If the user answered a question you asked, act on that answer.',
+            text: 'Respond now with the required JSON reply. Everything already established in the conversation stands. Continue only the next state in the contact workflow and never combine multiple state transitions.',
           }],
         },
       ],

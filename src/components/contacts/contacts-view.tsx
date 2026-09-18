@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { AssistantContactDraft } from '@/ai/assistant-actions';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
@@ -36,6 +37,7 @@ import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
+import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import {
   Dialog,
   DialogContent,
@@ -282,7 +284,7 @@ export function ContactsView() {
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const actionIntent = searchParams ? searchParams.get('action') : null;
   const prefillName = searchParams ? searchParams.get('name') : null;
-  const [prefillContactData, setPrefillContactData] = useState<Partial<Contact> | undefined>(undefined);
+  const [prefillContactData, setPrefillContactData] = useState<Partial<AssistantContactDraft> | undefined>(undefined);
 
   useEffect(() => {
     if (actionIntent === 'new') {
@@ -291,6 +293,12 @@ export function ContactsView() {
       setIsContactFormOpen(true);
     }
   }, [actionIntent, prefillName]);
+
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:open_contact_form', ({ draft }) => {
+    setContactToEdit(null);
+    setPrefillContactData(draft);
+    setIsContactFormOpen(true);
+  }), []);
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }

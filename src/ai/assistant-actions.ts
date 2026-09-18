@@ -38,10 +38,24 @@ export const AssistantContactDraftSchema = z.object({
 
 export type AssistantContactDraft = z.infer<typeof AssistantContactDraftSchema>;
 
+export const AssistantContactDraftPatchSchema = AssistantContactDraftSchema.partial().refine(
+    (patch) => Object.keys(patch).length > 0,
+    { message: 'Contact draft patches must include at least one field.' },
+);
+
+export type AssistantContactDraftPatch = z.infer<typeof AssistantContactDraftPatchSchema>;
+
 export const AssistantClientActionSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal('open_contact_form'),
         draft: AssistantContactDraftSchema,
+    }).strict(),
+    z.object({
+        type: z.literal('update_contact_draft'),
+        patch: AssistantContactDraftPatchSchema,
+    }).strict(),
+    z.object({
+        type: z.literal('submit_contact_form'),
     }).strict(),
     z.object({
         type: z.literal('open_contact'),
@@ -114,9 +128,12 @@ export function parseAssistantClientAction(
     const parsed = AssistantClientActionSchema.safeParse(value);
     if (!parsed.success) return undefined;
 
-    if (parsed.data.type === 'open_contact_form') {
+    if (parsed.data.type === 'open_contact_form' || parsed.data.type === 'update_contact_draft') {
         const allowedFolders = new Set(validFolderIds);
-        if (!allowedFolders.has(parsed.data.draft.folderId)) return undefined;
+        const folderId = parsed.data.type === 'open_contact_form'
+            ? parsed.data.draft.folderId
+            : parsed.data.patch.folderId;
+        if (folderId !== undefined && !allowedFolders.has(folderId)) return undefined;
     }
 
     return parsed.data;
@@ -233,23 +250,27 @@ export function resolveAssistantCapabilityActionWithRepair(
     if (
         value &&
         typeof value === 'object' &&
-        (value as { type?: unknown }).type === 'open_contact_form' &&
+        ((value as { type?: unknown }).type === 'open_contact_form' ||
+            (value as { type?: unknown }).type === 'update_contact_draft') &&
         folders.length > 0
     ) {
-        const draft = (value as { draft?: Record<string, unknown> }).draft ?? {};
-        const name = typeof draft.name === 'string' ? draft.name.trim() : '';
-        const wantedFolder = typeof draft.folderId === 'string' ? draft.folderId.trim().toLowerCase() : '';
+        const actionType = (value as { type: 'open_contact_form' | 'update_contact_draft' }).type;
+        const payloadKey = actionType === 'open_contact_form' ? 'draft' : 'patch';
+        const payload = (value as Record<string, unknown>)[payloadKey] as Record<string, unknown> | undefined ?? {};
+        const wantedFolder = typeof payload.folderId === 'string' ? payload.folderId.trim().toLowerCase() : '';
+        if (!wantedFolder) return undefined;
         const matchedByName = wantedFolder
             ? folders.find((folder) => folder.name.trim().toLowerCase() === wantedFolder)
             : undefined;
-        const folderId = matchedByName?.id ?? folders[0].id;
+        const folderId = matchedByName?.id ?? (actionType === 'open_contact_form' ? folders[0].id : undefined);
+        if (!folderId) return undefined;
         const repaired = resolveAssistantCapabilityAction(
-            { type: 'open_contact_form', draft: { ...draft, folderId } },
+            { type: actionType, [payloadKey]: { ...payload, folderId } },
             folders.map((folder) => folder.id),
         );
         if (repaired) {
             console.warn('[assistant-actions] repaired capability draft folder id', {
-                originalFolderId: draft.folderId ?? null,
+                originalFolderId: payload.folderId ?? null,
                 repairedFolderId: folderId,
             });
             return repaired;

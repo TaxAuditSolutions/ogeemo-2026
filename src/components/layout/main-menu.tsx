@@ -9,7 +9,8 @@ import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { getUserProfile, type AccessLevel, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { canAccessUserManager } from '@/core/rbac';
 import { useSidebar } from '@/components/ui/sidebar';
+import { filterMenuItems, sortMenuItemsByLabel, type MenuSortDirection } from '@/lib/menu-filter';
 
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
@@ -123,6 +125,7 @@ GroupedMenuView.displayName = "GroupedMenuView";
 export function MainMenu() {
     const pathname = usePathname();
     const [menuItems, setMenuItems] = useState<MenuItem[]>(allMenuItems);
+    const [filterQuery, setFilterQuery] = useState('');
     const [actionChips, setActionChips] = useState<ActionChipData[]>([]);
     const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
     const { user, accessLevel, isMasterTenant } = useAuth();
@@ -189,6 +192,10 @@ export function MainMenu() {
 
     }, [refreshMenuOrder]);
 
+    useEffect(() => {
+        if (view !== 'fullMenu') setFilterQuery('');
+    }, [view]);
+
     const loadChips = useCallback(async () => {
         if (user) {
             setIsLoadingChips(true);
@@ -218,6 +225,10 @@ export function MainMenu() {
             return newItems;
         });
     }, []);
+
+    const handleSortMenuItems = (direction: MenuSortDirection) => {
+        setMenuItems((currentItems) => sortMenuItemsByLabel(currentItems, direction));
+    };
 
     const handleSaveChanges = async () => {
         if (!user) return;
@@ -262,6 +273,7 @@ export function MainMenu() {
 
         return true;
     });
+    const filteredMenuItems = filterMenuItems(displayedMenuItems, filterQuery);
 
     return (
         <div className="flex flex-col h-full p-2">
@@ -337,9 +349,71 @@ export function MainMenu() {
                 </TooltipProvider>
             </div>
 
+            {view === 'fullMenu' && (
+                <div className="mb-2 flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={filterQuery}
+                            onChange={(event) => setFilterQuery(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') setFilterQuery('');
+                            }}
+                            placeholder="Filter menu"
+                            aria-label="Filter Full Menu links"
+                            className="h-8 bg-background pl-8 pr-8 text-xs text-black"
+                        />
+                        {filterQuery && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setFilterQuery('')}
+                                aria-label="Clear menu filter"
+                                className="absolute right-0.5 top-1/2 h-7 w-7 -translate-y-1/2"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+                    </div>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleSortMenuItems('asc')}
+                                    aria-label="Sort Full Menu A-Z"
+                                    className="h-8 w-8 shrink-0 bg-white text-black hover:bg-white/90"
+                                >
+                                    <ArrowDownAZ className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Sort A-Z</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleSortMenuItems('desc')}
+                                    aria-label="Sort Full Menu Z-A"
+                                    className="h-8 w-8 shrink-0 bg-white text-black hover:bg-white/90"
+                                >
+                                    <ArrowUpZA className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Sort Z-A</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            )}
+
             <div className="flex-1 space-y-1">
                 {view === 'fullMenu' ? (
-                    displayedMenuItems.map((item, index) => (
+                    filteredMenuItems.length > 0 ? filteredMenuItems.map((item, index) => (
                         <DraggableMenuItem
                             key={item.href}
                             item={item}
@@ -349,7 +423,11 @@ export function MainMenu() {
                             isDraggable={false}
                             isCompact={true}
                         />
-                    ))
+                    )) : (
+                        <p className="px-2 py-4 text-center text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                            No matching menu items.
+                        </p>
+                    )
                 ) : view === 'dashboard' ? (
                     <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
                 ) : (

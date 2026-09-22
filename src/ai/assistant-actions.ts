@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { resolveDefaultContactFolderId } from '@/lib/contact-folders';
+
 const optionalText = z.string().trim().optional();
 const optionalDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD.').optional();
 
@@ -236,9 +238,9 @@ function extractDeterministicPhones(value: string): Array<{ field: Deterministic
 /**
  * Resolves a capability action like `resolveAssistantCapabilityAction`, but
  * repairs the most common model slip first: echoing the folder NAME (or an
- * unknown id) instead of a real tenant folder id. Falls back to the first
- * tenant folder so the form action survives; the user can still change the
- * folder inside the form before saving.
+ * unknown id) instead of a real tenant folder id. Falls back to the system
+ * "Miscellaneous" folder so the form action survives; the user can still
+ * change the folder inside the form before saving.
  */
 export function resolveAssistantCapabilityActionWithRepair(
     value: unknown,
@@ -262,7 +264,7 @@ export function resolveAssistantCapabilityActionWithRepair(
         const matchedByName = wantedFolder
             ? folders.find((folder) => folder.name.trim().toLowerCase() === wantedFolder)
             : undefined;
-        const folderId = matchedByName?.id ?? (actionType === 'open_contact_form' ? folders[0].id : undefined);
+        const folderId = matchedByName?.id ?? (actionType === 'open_contact_form' ? resolveDefaultContactFolderId(folders) : undefined);
         if (!folderId) return undefined;
         const repaired = resolveAssistantCapabilityAction(
             { type: actionType, [payloadKey]: { ...payload, folderId } },
@@ -287,8 +289,8 @@ const DETERMINISTIC_FOLDER_PHRASE_PATTERN = /\bcontact\s+in\s+(?:the\s+)?([^.!?]
  * optional email/phone) from a plain sentence such as "Make a contact for Nick
  * Illiopoulos email address of nick@ogeemo.com" or "create a contact for Sam
  * Sneed, cell #4166666797", and returns an `open_contact_form` action using
- * the first tenant folder as the default. Returns `undefined` when no usable
- * contact name can be extracted.
+ * the "Miscellaneous" folder (falling back to the first tenant folder) as the
+ * default. Returns `undefined` when no usable contact name can be extracted.
  */
 export function buildDeterministicContactDraft(
     message: string,
@@ -332,7 +334,9 @@ export function buildDeterministicContactDraft(
     const name = nameCandidate.replace(/\s+/g, ' ').trim();
     if (name.length < 2 || DETERMINISTIC_NAME_STOP_WORDS.has(name.toLowerCase())) return undefined;
 
-    let folderId = folders[0].id;
+    const defaultFolderId = resolveDefaultContactFolderId(folders);
+    if (!defaultFolderId) return undefined;
+    let folderId = defaultFolderId;
     let resolvedName = name;
 
     const wantedFolder = (capturedFolderName ?? '').toLowerCase();

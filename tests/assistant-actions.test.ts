@@ -230,6 +230,21 @@ test('repairs a contact patch folder name to its tenant folder ID', () => {
     }, [{ id: 'clients-id', name: 'Clients' }]), undefined);
 });
 
+test('repairs an unmatched contact form folder into Miscellaneous', () => {
+    const folders = [
+        { id: 'admin-id', name: 'Admin', isSystem: true },
+        { id: 'misc-id', name: 'Miscellaneous', isSystem: true },
+    ];
+
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'open_contact_form',
+        draft: { name: 'Ada Lovelace', folderId: 'Unknown' },
+    }, folders), {
+        type: 'open_contact_form',
+        draft: { name: 'Ada Lovelace', folderId: 'misc-id' },
+    });
+});
+
 test('builds a deterministic contact draft from a full contact request sentence', () => {
     const action = buildDeterministicContactDraft(
         'Make a contact for Nick Illiopoulos email address of nick@ogeemo.com',
@@ -270,7 +285,7 @@ test('returns no draft when no contact name can be extracted', () => {
     assert.equal(buildDeterministicContactDraft('', folders), undefined);
 });
 
-test('defaults to the first tenant folder and honours an in-folder mention', () => {
+test('falls back to the first tenant folder when the tenant has no Miscellaneous folder', () => {
     const folders = [
         { id: 'clients', name: 'Clients' },
         { id: 'vendors', name: 'Vendors' },
@@ -286,6 +301,18 @@ test('defaults to the first tenant folder and honours an in-folder mention', () 
     });
 
     assert.equal(buildDeterministicContactDraft('Create a contact for Bob Example', []), undefined);
+});
+
+test('files a deterministic draft with no folder mention into Miscellaneous', () => {
+    const folders = [
+        { id: 'admin-id', name: 'Admin', isSystem: true },
+        { id: 'misc-id', name: 'Miscellaneous', isSystem: true },
+    ];
+
+    assert.deepEqual(buildDeterministicContactDraft('Create a contact for Bob Example', folders), {
+        type: 'open_contact_form',
+        draft: { name: 'Bob Example', folderId: 'misc-id' },
+    });
 });
 
 test('extracts phone numbers into draft fields and keeps the name clean', () => {

@@ -32,6 +32,7 @@ import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
+import { resolveDefaultContactFolderId } from '@/lib/contact-folders';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -125,7 +126,7 @@ export default function ContactFormDialog({
             ? forceFolderId!
             : selectedFolderId !== 'all' && isValidFolder(selectedFolderId)
                 ? selectedFolderId!
-                : folders.find(folder => folder.name === 'Clients')?.id || folders[0]?.id || '';
+                : resolveDefaultContactFolderId(folders) ?? '';
 
         if (contactToEdit) {
             form.reset({

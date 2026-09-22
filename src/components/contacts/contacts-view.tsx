@@ -497,7 +497,7 @@ export function ContactsView() {
                   <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p></div>
                   <div className="flex items-center gap-2">
                     {selectedContactIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-3" /> Delete ({selectedContactIds.length})</Button>}
-                    <Button onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }} disabled={selectedFolderId === 'all'}><Plus className="mr-2 h-4 w-4" /> New Contact</Button>
+                    <Button onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New Contact</Button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-auto">

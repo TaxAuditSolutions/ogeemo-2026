@@ -24,3 +24,131 @@
  POST /welcome 200 in 359ms
  POST /welcome 200 in 2387ms
  GET /welcome 200 in 993ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1045ms (2579 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ POST /api/ogeemo-assistant 200 in 6467ms
+ Γ£ô Compiled in 4.9s (2525 modules)
+ GET /welcome 200 in 699ms
+ Γ£ô Compiled in 1290ms (2525 modules)
+ GET /welcome 200 in 214ms
+ Γ£ô Compiled in 1862ms (2525 modules)
+ GET /welcome 200 in 235ms
+ ΓÜá Fast Refresh had to perform a full reload due to a runtime error.
+ Γ£ô Compiled in 1027ms (2525 modules)
+ Γ¿» ReferenceError: handleMessageAction is not defined
+    at OgeemoCopilotSidebar (src\components\co-pilot\ogeemo-copilot-sidebar.tsx:472:66)
+  470 |                     ) : (
+  471 |                         <div className="h-full min-w-0 flex-1">
+> 472 |                             <CopilotPanelContent onMessageAction={handleMessageAction} />
+      |                                                                  ^
+  473 |                         </div>
+  474 |                     )}
+  475 |                 </aside> {
+  digest: '3939635854'
+}
+ GET /welcome 500 in 1809ms
+ Γ£ô Compiled in 634ms (1073 modules)
+ Γùï Compiling /favicon.ico ...
+ Γ£ô Compiled /favicon.ico in 1058ms (1468 modules)
+ GET /favicon.ico 200 in 1468ms
+ ΓÜá Fast Refresh had to perform a full reload due to a runtime error.
+ Γ£ô Compiled in 940ms (2541 modules)
+ Γ¿» ReferenceError: handleMessageAction is not defined
+    at OgeemoCopilotSidebar (src\components\co-pilot\ogeemo-copilot-sidebar.tsx:476:66)
+  474 |                     ) : (
+  475 |                         <div className="h-full min-w-0 flex-1">
+> 476 |                             <CopilotPanelContent onMessageAction={handleMessageAction} />
+      |                                                                  ^
+  477 |                         </div>
+  478 |                     )}
+  479 |                 </aside> {
+  digest: '1125499906'
+}
+ GET /welcome 500 in 1962ms
+ Γ£ô Compiled in 885ms (2547 modules)
+ GET /favicon.ico 200 in 362ms
+ ΓÜá Fast Refresh had to perform a full reload due to a runtime error.
+ Γ£ô Compiled in 858ms (2547 modules)
+ GET /welcome 200 in 1488ms
+ GET /favicon.ico 200 in 332ms
+ Γ£ô Compiled /api/auth/session in 273ms (1476 modules)
+ POST /api/auth/session 200 in 611ms
+ POST /welcome 200 in 948ms
+ POST /welcome 200 in 482ms
+ POST /welcome 200 in 404ms
+ GET /welcome 200 in 1010ms
+ Γùï Compiling /api/ogeemo-assistant ...
+ Γ£ô Compiled /api/ogeemo-assistant in 1304ms (1563 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ POST /api/ogeemo-assistant 200 in 5833ms
+ Γùï Compiling /master-mind ...
+ Γ£ô Compiled /master-mind in 2.9s (2707 modules)
+ GET /master-mind?title=Meeting+julie+and+dan%2C+next+monday+10am 200 in 3200ms
+ GET /master-mind?title=Meeting+julie+and+dan%2C+next+monday+10am 200 in 138ms
+ GET /welcome 200 in 304ms
+ POST /welcome 200 in 1033ms
+ POST /welcome 200 in 474ms
+ GET / 200 in 608ms
+ Γùï Compiling /api/auth/session ...
+ Γ£ô Compiled /api/auth/session in 642ms (1564 modules)
+ POST /api/auth/session 200 in 1131ms
+ Γùï Compiling /register ...
+ Γ£ô Compiled /register in 2.4s (2743 modules)
+ GET /register 200 in 2887ms
+ GET /register 200 in 233ms
+ Γ£ô Compiled in 693ms (1168 modules)
+ GET /register 200 in 128ms
+ GET /welcome 200 in 147ms
+ POST /welcome 200 in 555ms
+ POST /welcome 200 in 2400ms
+ POST /welcome 200 in 375ms
+ POST /welcome 200 in 376ms
+ POST /welcome 200 in 345ms
+ POST /welcome 200 in 363ms
+ GET /welcome 200 in 127ms
+ POST /welcome 200 in 320ms
+ POST /welcome 200 in 399ms
+ POST /welcome 200 in 367ms
+ POST /welcome 200 in 504ms
+ POST /welcome 200 in 449ms
+ POST /welcome 200 in 365ms
+ GET / 200 in 126ms
+ Γùï Compiling /contact ...
+ Γ£ô Compiled /contact in 2.6s (2934 modules)
+ GET /contact 200 in 3361ms
+ GET /contact 200 in 847ms
+ Γ£ô Compiled in 1497ms (1174 modules)
+ GET /contact 200 in 117ms
+Failed to save inquiry: Error: Attempted to call getFirebaseServices() from the server but getFirebaseServices is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.
+    at <unknown> (C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\.next-dev\server\app\contact\page.js:68:20)
+    at sendConnectionSignal (src\app\contact\actions.ts:15:42)
+  13 | }) {
+  14 |     try {
+> 15 |         const { db } = getFirebaseServices();
+     |                                          ^
+  16 |
+  17 |         const inquiryRef = await addDoc(collection(db, 'inquiries'), {
+  18 |             ...data,
+ POST /contact 200 in 772ms
+Failed to save inquiry: Error: Attempted to call getFirebaseServices() from the server but getFirebaseServices is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.
+    at <unknown> (C:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\.next-dev\server\app\contact\page.js:68:20)
+    at sendConnectionSignal (src\app\contact\actions.ts:15:42)
+  13 | }) {
+  14 |     try {
+> 15 |         const { db } = getFirebaseServices();
+     |                                          ^
+  16 |
+  17 |         const inquiryRef = await addDoc(collection(db, 'inquiries'), {
+  18 |             ...data,
+ POST /contact 200 in 406ms
+ Γ£ô Compiled in 1947ms (2782 modules)
+ GET /contact 200 in 374ms
+ GET /contact 200 in 862ms
+ Γùï Compiling /favicon.ico ...
+ Γ£ô Compiled /api/auth/session in 1396ms (1624 modules)
+ Γ£ô Compiled (1629 modules)
+ GET /favicon.ico 200 in 2438ms
+ POST /api/auth/session 200 in 2238ms
+[Email Service] Failed to send notification: Invalid login: 535 Incorrect authentication data
+ POST /contact 200 in 3105ms

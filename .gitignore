@@ -27,3 +27,5 @@ test.js
 keys/ogeemo-firebase-firebase-adminsdk-fbsvc-ef0acfe30c.json
 GOOGLE_APPLICATION_CREDjson
 tmp/thread-*.json
+# Dev server log (recreated by scripts/start-dev.ps1 -Detached on every run)
+dev-server.log

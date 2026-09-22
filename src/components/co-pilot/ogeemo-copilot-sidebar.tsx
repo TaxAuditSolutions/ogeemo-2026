@@ -22,6 +22,7 @@ import {
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
 import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
     AlertDialog,
@@ -49,6 +50,18 @@ import {
     type AssistantContactDraft,
     type AssistantMessageAction,
 } from '@/ai/assistant-actions';
+
+/**
+ * Status badges only cover the actions that render no interactive control of
+ * their own: `open_contact_form` and `open_contact` render a CTA button instead,
+ * so a badge next to those would duplicate (and contradict) the button copy.
+ */
+function getWorkflowStatus(action?: AssistantMessageAction): string | undefined {
+    if (!action) return undefined;
+    if (action.type === 'update_contact_draft') return 'Drafting Contact';
+    if (action.type === 'submit_contact_form') return 'Submitted';
+    return undefined;
+}
 
 const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-form-dialog'), {
     ssr: false,
@@ -254,54 +267,62 @@ function CopilotPanelContent({
                             <CoPilotMark className="h-9 w-9 text-primary/70" />
                             <p className="text-xs">Ask Ogeemo Co-Pilot about your work.</p>
                         </div>
-                    ) : activeThread?.messages.map((message, index) => (
-                        <div
-                            key={`${message.timestamp ?? index}-${index}`}
-                            className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
-                        >
+                    ) : activeThread?.messages.map((message, index) => {
+                        const workflowStatus = getWorkflowStatus(message.action);
+                        return (
                             <div
-                                className={cn(
-                                    'max-w-[90%] overflow-hidden rounded-lg px-2.5 py-2 text-xs leading-5',
-                                    message.role === 'user'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'border bg-card text-card-foreground'
-                                )}
+                                key={`${message.timestamp ?? index}-${index}`}
+                                className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
                             >
-                                {message.role === 'model' ? (
-                                    <div className="prose prose-sm max-w-none break-words text-current prose-p:my-1 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:text-[11px]">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
-                                    </div>
-                                ) : (
-                                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                                )}
-                                {message.role === 'model' && message.action ? (
-                                    <div className="mt-2 border-t border-border/60 pt-2">
-                                        {message.action.type === 'dispatch' ? (
-                                            <AssistantDispatchLink action={message.action} />
-                                        ) : (
-                                            <>
-                                                <p className="text-[11px] leading-4 text-muted-foreground">
-                                                    {message.action.type === 'open_contact_form'
-                                                        ? 'Review the prepared contact before saving.'
-                                                        : 'Open the matching registry entry.'}
-                                                </p>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mt-1.5 h-7 w-full text-xs"
-                                                    onClick={() => void onMessageAction?.(message.action!)}
-                                                >
-                                                    {message.action.type === 'open_contact_form' ? 'Review Contact' : 'Open Contact'}
-                                                    <ArrowRight className="ml-1 h-3 w-3" />
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : null}
+                                <div
+                                    className={cn(
+                                        'max-w-[90%] overflow-hidden rounded-lg px-2.5 py-2 text-xs leading-5',
+                                        message.role === 'user'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'border bg-card text-card-foreground'
+                                    )}
+                                >
+                                    {message.role === 'model' ? (
+                                        <div className="prose prose-sm max-w-none break-words text-current prose-p:my-1 prose-pre:max-w-full prose-pre:overflow-x-auto prose-pre:text-[11px]">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                    )}
+                                    {message.role === 'model' && message.action ? (
+                                        <div className="mt-2 border-t border-border/60 pt-2">
+                                            {message.action.type === 'dispatch' ? (
+                                                <AssistantDispatchLink action={message.action} />
+                                            ) : workflowStatus ? (
+                                                <Badge variant="secondary" className="gap-1 text-[10px] font-medium">
+                                                    <Check className="h-3 w-3" />
+                                                    {workflowStatus}
+                                                </Badge>
+                                            ) : (
+                                                <>
+                                                    <p className="text-[11px] leading-4 text-muted-foreground">
+                                                        {message.action.type === 'open_contact_form'
+                                                            ? 'Review the prepared contact before saving.'
+                                                            : 'Open the matching registry entry.'}
+                                                    </p>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="mt-1.5 h-7 w-full text-xs"
+                                                        onClick={() => void onMessageAction?.(message.action!)}
+                                                    >
+                                                        {message.action.type === 'open_contact_form' ? 'Review Contact' : 'Open Contact'}
+                                                        <ArrowRight className="ml-1 h-3 w-3" />
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {isThinking ? (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />

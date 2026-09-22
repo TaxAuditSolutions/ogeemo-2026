@@ -31,6 +31,7 @@ import { addFolder } from '@/services/contact-folder-service';
 import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -138,9 +139,33 @@ export default function ContactFormDialog({
             });
         } else {
             const initialFolderId = isValidFolder(initialData?.folderId) ? initialData!.folderId : defaultId;
-            form.reset({ ...defaultFormValues, email: initialEmail, ...initialData, folderId: initialFolderId });
+            form.reset(
+                { ...defaultFormValues, email: initialEmail, ...initialData, folderId: initialFolderId },
+                { keepDirtyValues: true },
+            );
         }
     }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, folders]);
+
+    useEffect(() => {
+        if (!isOpen || contactToEdit) return;
+
+        const unsubscribeDraft = subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
+            for (const [field, value] of Object.entries(patch)) {
+                form.setValue(field as keyof ContactFormData, value as never, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                });
+            }
+        });
+        const unsubscribeSubmit = subscribeToCopilotWorkflowEvent('copilot:submit_contact_form', () => {
+            void form.handleSubmit(onSubmit)();
+        });
+
+        return () => {
+            unsubscribeDraft();
+            unsubscribeSubmit();
+        };
+    }, [contactToEdit, form, isOpen]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;

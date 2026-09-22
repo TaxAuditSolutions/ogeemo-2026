@@ -174,21 +174,6 @@ export async function POST(request: NextRequest) {
                     }
                     const answer = capabilityResult.reply.trim() || 'I can help you with that contact.';
 
-                    // The capability handled the conversation but produced no form
-                    // action. For imperative contact-creation requests, prefer the
-                    // deterministic draft over instructions-only text.
-                    if (!action && isImperativeContactRequest(question)) {
-                        const deterministic = buildDeterministicDraftResponse(question, tenantFolders);
-                        if (deterministic) {
-                            console.info('/api/ogeemo-assistant source', {
-                                source: 'deterministic_contact_fallback',
-                                reason: 'capability_handled_without_action',
-                                decisionPath: 'capability_handled->deterministic_contact_fallback',
-                            });
-                            return NextResponse.json({ ...deterministic, degraded: true }, { status: 200 });
-                        }
-                    }
-
                     return NextResponse.json({ answer, ...(action ? { action } : {}) }, { status: 200 });
                 }
 

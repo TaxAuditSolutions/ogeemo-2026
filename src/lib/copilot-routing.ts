@@ -51,5 +51,9 @@ export function shouldProcessAsCommand(message: string, history: CopilotRoutingM
     if (!text) return false;
     if (isContactCreationRequest(text)) return false;
     if (!isAwaitingAssistantReply(history)) return true;
+    const activeContactWorkflow = history.slice(-8).some((entry) =>
+        /\b(contact|full legal name|folder\/category|create it)\b/i.test(entry.content)
+    );
+    if (activeContactWorkflow) return false;
     return COMMAND_VERBS.has(firstToken(text));
 }

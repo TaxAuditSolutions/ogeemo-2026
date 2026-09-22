@@ -6,6 +6,7 @@ import {
     parseAssistantClientAction,
     parseAssistantMessageAction,
     resolveAssistantCapabilityAction,
+    resolveAssistantCapabilityActionWithRepair,
 } from '../src/ai/assistant-actions';
 
 test('resolves allowlisted capability destinations into dispatch actions', () => {
@@ -158,6 +159,75 @@ test('accepts opening an existing contact without requiring a folder', () => {
     }, []);
 
     assert.deepEqual(action, { type: 'open_contact', contactId: 'contact-123' });
+});
+
+test('accepts incremental contact draft patches and submit actions', () => {
+    assert.deepEqual(parseAssistantClientAction({
+        type: 'update_contact_draft',
+        patch: { name: 'Ada Lovelace' },
+    }, ['clients']), {
+        type: 'update_contact_draft',
+        patch: { name: 'Ada Lovelace' },
+    });
+
+    assert.deepEqual(parseAssistantClientAction({
+        type: 'update_contact_draft',
+        patch: { folderId: 'clients' },
+    }, ['clients']), {
+        type: 'update_contact_draft',
+        patch: { folderId: 'clients' },
+    });
+
+    assert.deepEqual(parseAssistantClientAction({ type: 'submit_contact_form' }, []), {
+        type: 'submit_contact_form',
+    });
+});
+
+test('rejects unsafe or empty incremental contact draft patches', () => {
+    assert.equal(parseAssistantClientAction({
+        type: 'update_contact_draft',
+        patch: { folderId: 'other-tenant-folder' },
+    }, ['clients']), undefined);
+
+    assert.equal(parseAssistantClientAction({
+        type: 'update_contact_draft',
+        patch: { orgId: 'another-tenant' },
+    }, ['clients']), undefined);
+
+    assert.equal(parseAssistantClientAction({
+        type: 'update_contact_draft',
+        patch: {},
+    }, ['clients']), undefined);
+});
+
+test('round-trips workflow actions through persisted JSON', () => {
+    const actions = [
+        { type: 'update_contact_draft', patch: { name: 'Jane Doe', folderId: 'clients' } },
+        { type: 'submit_contact_form' },
+    ];
+
+    for (const action of actions) {
+        const restored = JSON.parse(JSON.stringify(action));
+        assert.deepEqual(parseAssistantMessageAction(restored), action);
+    }
+});
+
+test('repairs a contact patch folder name to its tenant folder ID', () => {
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'update_contact_draft',
+        patch: { folderId: 'Clients' },
+    }, [
+        { id: 'clients-id', name: 'Clients' },
+        { id: 'vendors-id', name: 'Vendors' },
+    ]), {
+        type: 'update_contact_draft',
+        patch: { folderId: 'clients-id' },
+    });
+
+    assert.equal(resolveAssistantCapabilityActionWithRepair({
+        type: 'update_contact_draft',
+        patch: { folderId: 'Unknown' },
+    }, [{ id: 'clients-id', name: 'Clients' }]), undefined);
 });
 
 test('builds a deterministic contact draft from a full contact request sentence', () => {

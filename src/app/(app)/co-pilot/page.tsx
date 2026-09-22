@@ -73,6 +73,7 @@ import {
     ListX
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 
 interface Message extends AssistantChatMessage { }
 
@@ -427,7 +428,11 @@ export default function AiDispatchPage() {
             setContactToEdit(null);
             setContactDraft(validatedAction.draft);
             setIsFormOpen(true);
-        } else {
+        } else if (validatedAction.type === 'update_contact_draft') {
+            dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: validatedAction.patch });
+        } else if (validatedAction.type === 'submit_contact_form') {
+            dispatchCopilotWorkflowEvent('copilot:submit_contact_form', undefined);
+        } else if (validatedAction.type === 'open_contact') {
             handleLaunchRegistry(validatedAction.contactId);
         }
     };
@@ -872,6 +877,10 @@ export default function AiDispatchPage() {
                                                 <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border/60 pt-3">
                                                     {msg.action.type === 'dispatch' ? (
                                                         <AssistantDispatchLink action={msg.action} />
+                                                    ) : msg.action.type === 'update_contact_draft' ? (
+                                                        <Badge variant="secondary">Drafting Contact</Badge>
+                                                    ) : msg.action.type === 'submit_contact_form' ? (
+                                                        <Badge variant="secondary"><Check className="mr-1 h-3 w-3" />Submitted</Badge>
                                                     ) : (
                                                         <>
                                                             <span className="text-xs text-muted-foreground">

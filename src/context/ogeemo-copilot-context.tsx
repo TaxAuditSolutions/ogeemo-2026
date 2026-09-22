@@ -1,12 +1,14 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { processCommand } from '@/lib/command-processor';
 import { shouldProcessAsCommand } from '@/lib/copilot-routing';
+import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile } from '@/core/user-profile-service';
+import { parseAssistantMessageAction } from '@/ai/assistant-actions';
 import {
     createAssistantChatThread,
     deleteAssistantChatThreads,
@@ -44,6 +46,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
     const { user, accessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
     const pathname = usePathname();
+    const router = useRouter();
     const [threads, setThreads] = useState<AssistantChatThread[]>([]);
     const threadsRef = useRef<AssistantChatThread[]>([]);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -215,7 +218,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 if (!response.ok) {
                     throw new Error(data?.details || data?.error || 'Failed to connect to Ogeemo Co-Pilot.');
                 }
-                assistantAction = data?.action;
+                assistantAction = parseAssistantMessageAction(data?.action);
                 assistantDegraded = data?.degraded === true;
                 assistantContent = typeof data?.answer === 'string' && data.answer.trim()
                     ? data.answer
@@ -234,6 +237,23 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 messages: normalizeMessages([...messagesWithUserTurn, assistantMessage]),
             };
             await persistThread(completedThread);
+
+            if (assistantAction?.type === 'dispatch' && assistantAction.target === '/contacts?action=new') {
+                dispatchCopilotWorkflowEvent('copilot:navigate', { target: assistantAction.target });
+                router.push(assistantAction.target);
+            } else if (assistantAction?.type === 'open_contact_form') {
+                if (pathname === '/contacts') {
+                    dispatchCopilotWorkflowEvent('copilot:open_contact_form', { draft: assistantAction.draft });
+                } else {
+                    const params = new URLSearchParams({ action: 'new', name: assistantAction.draft.name });
+                    dispatchCopilotWorkflowEvent('copilot:navigate', { target: `/contacts?${params}` });
+                    router.push(`/contacts?${params}`);
+                }
+            } else if (assistantAction?.type === 'update_contact_draft') {
+                dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: assistantAction.patch });
+            } else if (assistantAction?.type === 'submit_contact_form') {
+                dispatchCopilotWorkflowEvent('copilot:submit_contact_form', undefined);
+            }
 
             if (DEFAULT_THREAD_TITLE_PATTERN.test(thread.title.trim()) && user?.uid) {
                 void fetch('/api/ogeemo-chat-title', {
@@ -265,6 +285,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         persistThread,
         renameThread,
         replaceThreads,
+        router,
         toast,
         user?.uid,
     ]);

@@ -11,7 +11,6 @@ const ROUTE_MAP = {
   'client-statement': '/reports/client-statement',
   'client-time-log': '/reports/client-time-log',
   'document-manager': '/files',
-  'email-hub': '/actions',
   'idea-board': '/ideas',
   'image-generator': '/actions',
   ledgers: '/accounting/ledgers',

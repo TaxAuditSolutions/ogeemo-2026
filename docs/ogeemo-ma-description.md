@@ -68,7 +68,6 @@ The financial engine is the heart of Ogeemo. It is a **cash-basis accounting sys
 - **Calendar** — Centralized scheduling with 5-minute slot granularity
 - **Meetings** — Agenda management and meeting notes
 - **Document Manager** — Cloud storage with Google Drive integration
-- **Email Hub** — Centralized email management
 
 ### 3.5 AI & Automation
 - **AI Dispatch Terminal** — Natural-language command interface (e.g., "Start meeting with Acme Corp" triggers the timer and opens notes)

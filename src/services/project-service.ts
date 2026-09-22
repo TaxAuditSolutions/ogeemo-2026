@@ -39,7 +39,6 @@ const HR_QUICK_NAV_ITEMS_COLLECTION = 'hrQuickNavItems';
 const AVAILABLE_HR_NAV_ITEMS_COLLECTION = 'availableHrNavItems';
 
 const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
-    { label: 'OgeeMail', icon: Mail, href: '/ogeemail' },
     { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
     { label: 'Projects', icon: Briefcase, href: '/projects/all' },
     { label: 'Command Centre', icon: BrainCircuit, href: '/master-mind' },

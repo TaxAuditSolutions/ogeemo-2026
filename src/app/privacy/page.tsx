@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
                                 <li><strong>Account Information:</strong> Your name, email address, and password (encrypted) when you register. If you sign in with Google, we receive your Google account name and email.</li>
                                 <li><strong>Business Data:</strong> The data you voluntarily enter into the platform, including contacts, financial transactions, invoices, payroll information, time logs, project details, and documents you upload.</li>
                                 <li><strong>Usage Data:</strong> Information about how you interact with the platform, including IP address, browser type, device information, and log data for security and troubleshooting purposes.</li>
-                                <li><strong>Communication Data:</strong> Records of communications you send through our platform (e.g., emails logged in the Email Hub, meeting notes).</li>
+                                <li><strong>Communication Data:</strong> Records of communications you create in the platform (e.g., meeting notes, email activity logged to a contact).</li>
                             </ul>
                             <p className="text-muted-foreground leading-relaxed">
                                 <strong>We do not collect sensitive financial information directly.</strong> Payment processing is handled by third-party providers. We do not store credit card numbers on our servers.

@@ -124,7 +124,7 @@ This document provides a list of potential questions a user might ask the Ogeemo
 - **Agent Answer:** "The Action Manager is the central dashboard and your primary starting point in Ogeemo. It gives you a quick overview of workspace activity and features a customizable set of 'Action Chips', which are shortcuts to the tools and managers you use most frequently."
 
 **User Question:** "Does Ogeemo integrate with Google?"
-- **Agent Answer:** "Yes, deep integration with Google Workspace is a core principle of Ogeemo. It leverages Google for functionalities like authentication, email through OgeeMail, calendar management, and file storage to create a seamless experience."
+- **Agent Answer:** "Yes, deep integration with Google Workspace is a core principle of Ogeemo. It leverages Google for functionalities like authentication, email through Gmail in Google Workspace, calendar management, and file storage to create a seamless experience."
 
 ## 3. "How-To" Questions
 

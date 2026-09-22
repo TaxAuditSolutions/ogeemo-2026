@@ -196,28 +196,6 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
     return addFileRecord(newFileRecord);
 }
 
-
-export async function saveEmailForContact(userId: string, contactName: string, email: { to: string, from: string, subject: string; body: string; sourceLink?: string; }): Promise<FileItem> {
-    const contactFolder = await findOrCreateGenericFolder(userId, contactName);
-    if (!contactFolder) {
-        throw new Error("Could not find or create a folder for the contact.");
-    }
-    const sanitizedSubject = (email.subject || "Untitled Email").replace(/[^a-zA-Z0-9._-]/g, '');
-    const dateStamp = new Date().toISOString().split('T')[0];
-    const fileName = `${sanitizedSubject} - ${dateStamp}.html`;
-    const newFileRecord: Omit<FileItem, 'id'> = {
-        name: fileName,
-        type: 'text/html',
-        size: 0,
-        modifiedAt: new Date(),
-        folderId: contactFolder.id,
-        userId: userId,
-        storagePath: '', // Will be set by backend if content is saved
-    };
-
-    return addFileRecord(newFileRecord);
-}
-
 export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
     const folder = await findOrCreateGenericFolder(userId, 'Archived Ideas');
     return addTextFileClient(userId, folder.id, `Archived Idea - ${title}.txt`);

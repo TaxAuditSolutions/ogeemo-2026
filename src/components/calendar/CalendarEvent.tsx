@@ -110,12 +110,12 @@ export function CalendarEvent({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href={`/master-mind?eventId=${event.id}&startTimer=true`}>
+              <Link href={`/event-manager?eventId=${event.id}&startTimer=true`}>
                 <PlayCircle className="mr-2 h-4 w-4" /> Start Timer
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href={`/master-mind?logTimeFor=${event.id}`}>
+              <Link href={`/event-manager?logTimeFor=${event.id}`}>
                 <Clock className="mr-2 h-4 w-4" /> Log Actual Time
               </Link>
             </DropdownMenuItem>

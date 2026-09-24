@@ -267,7 +267,7 @@ function WorkerTimeLogReportContent() {
             notes: entry.notes || entry.details || entry.description || '',
             contactId: entry.contactId || '',
         });
-        router.push(`/master-mind?${query.toString()}`);
+        router.push(`/event-manager?${query.toString()}`);
     };
 
     const workersForSelection = useMemo(() => {
@@ -426,7 +426,7 @@ function WorkerTimeLogReportContent() {
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
-                                                                <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => router.push(`/event-manager?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
                                                      </DropdownMenu>

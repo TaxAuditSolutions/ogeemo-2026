@@ -316,11 +316,11 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleScheduleStep = (step: Partial<ProjectStep>) => {
       const task = tasks.find(t => t.stepId === step.id);
       if (task) {
-        router.push(`/master-mind?eventId=${task.id}`);
+        router.push(`/event-manager?eventId=${task.id}`);
       } else {
         const startTime = new Date();
         const endTime = addMinutes(startTime, 30);
-        router.push(`/master-mind?title=${encodeURIComponent(step.title || '')}&description=${encodeURIComponent(step.description || '')}&projectId=${projectId}&stepId=${step.id}&start=${startTime.toISOString()}&end=${endTime.toISOString()}`);
+        router.push(`/event-manager?title=${encodeURIComponent(step.title || '')}&description=${encodeURIComponent(step.description || '')}&projectId=${projectId}&stepId=${step.id}&start=${startTime.toISOString()}&end=${endTime.toISOString()}`);
       }
     };
     

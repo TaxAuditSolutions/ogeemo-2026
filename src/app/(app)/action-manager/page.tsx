@@ -122,7 +122,7 @@ export default function ActionManagerDashboardPage() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button asChild className="h-9 bg-slate-900 text-white hover:bg-slate-800">
-                              <Link href="/master-mind">
+                              <Link href="/event-manager">
                                   <PlayCircle className="mr-2 h-4 w-4 text-primary" />
                                   Event Manager
                               </Link>
@@ -135,7 +135,7 @@ export default function ActionManagerDashboardPage() {
                        <Tooltip>
                         <TooltipTrigger asChild>
                            <Button asChild variant="outline" className="h-9">
-                                <Link href="/master-mind/gtd-instructions">
+                                <Link href="/event-manager/gtd-instructions">
                                     <BookOpen className="mr-2 h-4 w-4" />
                                     TOM
                                 </Link>

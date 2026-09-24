@@ -242,7 +242,7 @@ export default function ActionPlanContent() {
             notes: action.description || '',
             contactId: contact?.id || '',
         }).toString();
-        router.push(`/master-mind?${query}`);
+        router.push(`/event-manager?${query}`);
     };
 
     const onDropCard = useCallback(async (action: Action, targetStatus: Status) => {

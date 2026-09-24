@@ -174,7 +174,7 @@ export function NewTaskDialog({
     if (values.projectId && values.projectId !== 'unassigned') {
         query.append('projectId', values.projectId);
     }
-    router.push(`/master-mind?${query.toString()}`);
+    router.push(`/event-manager?${query.toString()}`);
     onOpenChange(false);
   };
   

@@ -259,7 +259,7 @@ function ClientTimeLogReportContent() {
             notes: entry.details || entry.notes || '',
             contactId: entry.contactId || '',
         });
-        router.push(`/master-mind?${query.toString()}`);
+        router.push(`/event-manager?${query.toString()}`);
     };
 
     const handleCreateInvoice = (contactId: string | null) => {
@@ -408,7 +408,7 @@ function ClientTimeLogReportContent() {
                                                                 <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                             </>
                                                         ) : (
-                                                            <DropdownMenuItem onSelect={() => router.push(`/master-mind?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => router.push(`/event-manager?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

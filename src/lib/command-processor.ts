@@ -43,18 +43,18 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'copilot': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },
     'aidispatch': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },
     'dispatch': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },
-    'commandcentre': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'commandcenter': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
+    'commandcentre': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'commandcenter': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
     'ogeemoai': { target: '/co-pilot', label: 'Ogeemo Co-Pilot', category: 'Intelligence' },
-    'mastermind': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'eventmanager': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'timemanager': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'timelog': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'timesheet': { target: '/master-mind', label: 'Event Manager', category: 'Workspace' },
-    'timer': { target: '/master-mind?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
-    'starttimer': { target: '/master-mind?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
-    'logtime': { target: '/master-mind?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
-    'tracktime': { target: '/master-mind?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
+    'mastermind': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'eventmanager': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'timemanager': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'timelog': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'timesheet': { target: '/event-manager', label: 'Event Manager', category: 'Workspace' },
+    'timer': { target: '/event-manager?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
+    'starttimer': { target: '/event-manager?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
+    'logtime': { target: '/event-manager?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
+    'tracktime': { target: '/event-manager?startTimer=true', label: 'Event Manager Timer', category: 'Workspace' },
 
     // Finances & Accounting
     'accounting': { target: '/accounting', label: 'Accounting Hub', category: 'Finances' },
@@ -229,7 +229,7 @@ export function processCommand(input: string): CommandResult {
             const title = name ? `Meeting ${name}`.trim() : 'New meeting';
             return {
                 type: 'action',
-                target: `/master-mind?title=${encodeURIComponent(title)}`,
+                target: `/event-manager?title=${encodeURIComponent(title)}`,
                 label: 'Meeting Scheduler',
                 message: 'Action: [Schedule Meeting]',
                 description: name ? `A meeting with "${name}" is ready to schedule.` : 'Scheduling flow is ready.',
@@ -265,7 +265,7 @@ export function processCommand(input: string): CommandResult {
             const title = cleanParam(param.replace(/(task|event|reminder)/gi, ''));
             return {
                 type: 'action',
-                target: `/master-mind${title ? `?title=${encodeURIComponent(title)}` : ''}`,
+                target: `/event-manager${title ? `?title=${encodeURIComponent(title)}` : ''}`,
                 label: 'Event Manager',
                 message: 'Action: [Schedule Entry]',
                 description: title ? `"${title}" is ready to add to the timeline.` : 'Scheduler is ready.',
@@ -367,7 +367,7 @@ export function processCommand(input: string): CommandResult {
             const titleTarget = derivedTitle ? `&title=${encodeURIComponent(derivedTitle)}` : '';
             return {
                 type: 'action',
-                target: `/master-mind?startTimer=true${titleTarget}`,
+                target: `/event-manager?startTimer=true${titleTarget}`,
                 label: 'Event Manager Timer',
                 message: `Timer: [${derivedTitle || target || 'Start timer'}]`,
                 description: derivedTitle ? `A timer for "${derivedTitle}" is ready to start.` : 'A live recording session is ready to start.',

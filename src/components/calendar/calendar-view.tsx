@@ -163,7 +163,7 @@ const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, o
       const calculatedEndTime = addMinutes(slotStartTime, slotDuration);
       const startTimeString = slotStartTime.toISOString();
       const endTimeString = calculatedEndTime.toISOString();
-      router.push(`/master-mind?start=${startTimeString}&end=${endTimeString}`);
+      router.push(`/event-manager?start=${startTimeString}&end=${endTimeString}`);
   };
 
   return (
@@ -315,7 +315,7 @@ export function CalendarView() {
   }));
   
   const handleEditEvent = (event: Event) => {
-    router.push(`/master-mind?eventId=${event.id}`);
+    router.push(`/event-manager?eventId=${event.id}`);
   };
 
   const handleConfirmDelete = async () => {
@@ -398,7 +398,7 @@ export function CalendarView() {
 
   const handleAllDayClick = (date: Date) => {
       const startTimeString = date.toISOString();
-      router.push(`/master-mind?start=${startTimeString}&isAllDay=true`);
+      router.push(`/event-manager?start=${startTimeString}&isAllDay=true`);
   };
 
   if (isLoading) {
@@ -560,7 +560,7 @@ export function CalendarView() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button asChild variant="ghost" size="icon">
-                      <Link href="/master-mind/gtd-instructions">
+                      <Link href="/event-manager/gtd-instructions">
                         <BookOpen className="h-4 w-4" />
                       </Link>
                     </Button>

@@ -10,6 +10,15 @@ const createNextConfig = (phase) => ({
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      // The Events Manager used to live at /master-mind. Keep old bookmarks
+      // and deep links (query strings such as ?eventId= are preserved)
+      // working.
+      { source: '/master-mind', destination: '/event-manager', permanent: false },
+      { source: '/master-mind/:path*', destination: '/event-manager/:path*', permanent: false },
+    ];
+  },
   images: {
     remotePatterns: [
       {

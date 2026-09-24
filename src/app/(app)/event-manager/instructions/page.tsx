@@ -29,7 +29,7 @@ export default function TimeManagerInstructionsPage() {
                 </div>
                 <div className="flex justify-end">
                     <Button asChild variant="outline">
-                        <Link href="/master-mind">
+                        <Link href="/event-manager">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to the Event Manager
                         </Link>

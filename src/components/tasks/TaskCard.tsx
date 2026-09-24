@@ -72,7 +72,7 @@ export function TaskCard({
     if (onSchedule) {
       onSchedule(task);
     } else {
-      router.push(`/master-mind?eventId=${task.id}`);
+      router.push(`/event-manager?eventId=${task.id}`);
     }
   };
 

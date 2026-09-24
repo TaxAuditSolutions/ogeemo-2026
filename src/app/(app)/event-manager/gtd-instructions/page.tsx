@@ -74,7 +74,7 @@ export default function GtdInstructionsPage() {
                             </li>
                         </ul>
                         <p>
-                            <strong>Native Integration:</strong> When you create an entry in the <Link href="/master-mind" className="text-primary hover:underline">Event Manager</Link> and link it to a project, it instantly appears on that project's board and updates your time logs for billing.
+                            <strong>Native Integration:</strong> When you create an entry in the <Link href="/event-manager" className="text-primary hover:underline">Event Manager</Link> and link it to a project, it instantly appears on that project's board and updates your time logs for billing.
                         </p>
                     </div>
 
@@ -94,7 +94,7 @@ export default function GtdInstructionsPage() {
                                     <ul>
                                         <li><strong>For Actions:</strong> Use the <strong><Link href="/projects/inbox/tasks" className="text-primary hover:underline">"Action Items"</Link></strong> project as your primary inbox for to-dos.</li>
                                         <li><strong>For Possibilities:</strong> Use the <strong><Link href="/idea-board" className="text-primary hover:underline">Idea Board</Link></strong> for vague thoughts or future "maybe" items.</li>
-                                        <li><strong>For Appointments:</strong> Schedule fixed commitments directly in the <strong><Link href="/master-mind" className="text-primary hover:underline">Event Manager</Link></strong>.</li>
+                                        <li><strong>For Appointments:</strong> Schedule fixed commitments directly in the <strong><Link href="/event-manager" className="text-primary hover:underline">Event Manager</Link></strong>.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>

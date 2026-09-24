@@ -145,7 +145,7 @@ export function OnboardingView() {
     const handleCreateTask = () => {
         if (!selectedContact) return;
         sessionStorage.setItem(PRESELECTED_CONTACT_ID_KEY, selectedContact.id);
-        router.push('/master-mind');
+        router.push('/event-manager');
     };
 
 

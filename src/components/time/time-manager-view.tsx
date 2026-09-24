@@ -337,7 +337,7 @@ export function TimeManagerView() {
         setIsAllDay(false);
         setSessions([]); setEventToEdit(null);
         broadcastTimerState(null);
-        router.replace('/master-mind');
+        router.replace('/event-manager');
         setTimeout(() => subjectInputRef.current?.focus(), 100);
     };
 
@@ -521,7 +521,7 @@ export function TimeManagerView() {
                         <div className="flex justify-center md:justify-start items-center gap-2">
                             <TooltipProvider>
                                 <Tooltip>
-                                    <TooltipTrigger asChild><Button asChild variant="outline" size="icon" className="h-9 w-9"><Link href="/master-mind/instructions"><Info className="h-4 w-4" /></Link></Button></TooltipTrigger>
+                                    <TooltipTrigger asChild><Button asChild variant="outline" size="icon" className="h-9 w-9"><Link href="/event-manager/instructions"><Info className="h-4 w-4" /></Link></Button></TooltipTrigger>
                                     <TooltipContent><p>Instructions</p></TooltipContent>
                                 </Tooltip>
                                 <Tooltip>

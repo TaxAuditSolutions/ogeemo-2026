@@ -226,7 +226,7 @@ function CrmPlanContent() {
             contactId: lead.id,
         });
         toast({ title: 'Rescheduling...', description: 'Taking you to the scheduler to book your follow-up.' });
-        router.push(`/master-mind?${query.toString()}`);
+        router.push(`/event-manager?${query.toString()}`);
     } 
     
     try {

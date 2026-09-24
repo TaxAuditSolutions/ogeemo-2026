@@ -531,7 +531,7 @@ export function ContactsView() {
                                 <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Time</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push(`/master-mind?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push(`/event-manager?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push(`/reports/work-activity?contactId=${contact.id}`)}><ClipboardList className="mr-2 h-4 w-4" /> Generate Work Report</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push(`/accounting/invoices/create?contactId=${contact.id}`)}><FileDigit className="mr-2 h-4 w-4" /> Create Invoice</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push(`/projects/create?contactId=${contact.id}`)}><Briefcase className="mr-2 h-4 w-4" /> Start Project</DropdownMenuItem>

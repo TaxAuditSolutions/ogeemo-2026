@@ -41,7 +41,7 @@ const AVAILABLE_HR_NAV_ITEMS_COLLECTION = 'availableHrNavItems';
 const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
     { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
     { label: 'Projects', icon: Briefcase, href: '/projects/all' },
-    { label: 'Event Manager', icon: BrainCircuit, href: '/master-mind' },
+    { label: 'Event Manager', icon: BrainCircuit, href: '/event-manager' },
 ];
 
 const iconMap: { [key: string]: LucideIcon } = {

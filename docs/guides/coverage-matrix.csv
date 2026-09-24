@@ -608,7 +608,7 @@ reporting,client-time-log,review-billable-hours-and-total-amount,general,importa
 reporting,client-time-log,redirect-calendar-entry-edit-to-scheduler,general,important,verified,copilot-auto-verify,client-time-log--redirect-calendar-entry-edit-to-scheduler
 reporting,client-time-log,block-direct-delete-for-calendar-sourced-client-entries,general,important,verified,copilot-auto-verify,client-time-log--block-direct-delete-for-calendar-sourced-client-entries
 reporting,client-time-log,resolve-client-time-log-data-load-failure,general,critical,verified,copilot-auto-verify,client-time-log--resolve-client-time-log-data-load-failure
-productivity,calendar,open-command-centre-calendar,general,important,verified,copilot-auto-verify,calendar--open-command-centre-calendar
+productivity,calendar,open-calendar,general,important,verified,copilot-auto-verify,calendar--open-calendar
 productivity,calendar,set-calendar-day-span-view,general,important,verified,copilot-auto-verify,calendar--set-calendar-day-span-view
 productivity,calendar,set-calendar-visible-hour-window,general,important,verified,copilot-auto-verify,calendar--set-calendar-visible-hour-window
 productivity,calendar,set-calendar-slot-granularity-per-hour,general,important,verified,copilot-auto-verify,calendar--set-calendar-slot-granularity-per-hour

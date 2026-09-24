@@ -71,11 +71,11 @@ export default function ForVirtualAssistantsPage() {
                                     <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                                         <BrainCircuit className="h-8 w-8" />
                                     </div>
-                                    <CardTitle className="text-2xl font-bold font-headline tracking-tight">Master the Master Mind</CardTitle>
+                                    <CardTitle className="text-2xl font-bold font-headline tracking-tight">Master the Event Manager</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        When your client shares their Master Mind with you, you can take over the heavy lifting of project planning. You aren't just checking off items; you are orchestrating the timing of their business vision.
+                                        When your client shares their Event Manager with you, you can take over the heavy lifting of project planning. You aren't just checking off items; you are orchestrating the timing of their business vision.
                                     </p>
                                 </CardContent>
                             </Card>

@@ -8,33 +8,33 @@ import test from 'node:test';
  *
  * The page used to be called "Master Mind" / "Command Centre" and lived at
  * /master-mind. It is now the "Event Manager" at /event-manager, with a redirect
- * from the old path. Marketing pages deliberately keep the old phrases as brand
- * copy, and one ledger sentence uses "command center" as a metaphor, so those are
- * allowlisted below.
+ * from the old path (see next.config.js).
+ *
+ * Everything user-facing has been renamed - app copy, marketing pages, the
+ * assistant's knowledge base and the guide seeds that get ingested into the
+ * remote assistant's help_guides corpus - so this test scans all of it and fails
+ * on a regression. There is no allowlist: if a retired name is needed in future,
+ * add it deliberately and document why.
  */
 
-const SRC_ROOT = path.join(import.meta.dirname, '..', 'src');
+const REPO_ROOT = path.join(import.meta.dirname, '..');
 
-// Deliberately untouched marketing/brand copy.
-const MARKETING_ALLOWLIST = new Set([
-    'src/app/empowerment/page.tsx',
-    'src/app/features/page.tsx',
-    'src/app/for-virtual-assistants/page.tsx',
-    'src/app/(app)/marketing-manager/page.tsx',
-]);
+const SCAN_ROOTS = [
+    path.join(REPO_ROOT, 'src'),
+    path.join(REPO_ROOT, 'dev', 'guides'),
+];
 
-// "The BKS General Ledger ... master command center" - a metaphor, not the module.
-const METAPHOR_ALLOWLIST = new Set(['src/components/accounting/ledgers-view.tsx']);
+const SCANNED_EXTENSIONS = /\.(ts|tsx|md|json|csv)$/;
 
-function listSourceFiles(directory: string): string[] {
+function listFiles(directory: string): string[] {
     const entries = readdirSync(directory, { withFileTypes: true });
     const files: string[] = [];
 
     for (const entry of entries) {
         const full = path.join(directory, entry.name);
         if (entry.isDirectory()) {
-            files.push(...listSourceFiles(full));
-        } else if (/\.(ts|tsx|md)$/.test(entry.name)) {
+            files.push(...listFiles(full));
+        } else if (SCANNED_EXTENSIONS.test(entry.name)) {
             files.push(full);
         }
     }
@@ -42,40 +42,43 @@ function listSourceFiles(directory: string): string[] {
     return files;
 }
 
-function findViolations(pattern: RegExp, allowlist: Set<string>) {
+function findViolations(pattern: RegExp): string[] {
     const violations: string[] = [];
 
-    for (const file of listSourceFiles(SRC_ROOT)) {
-        const relative = path.relative(path.join(SRC_ROOT, '..'), file).split(path.sep).join('/');
-        if (allowlist.has(relative)) continue;
-
-        const lines = readFileSync(file, 'utf8').split(/\r?\n/);
-        lines.forEach((line, index) => {
-            if (pattern.test(line)) {
-                violations.push(`${relative}:${index + 1}: ${line.trim()}`);
-            }
-        });
+    for (const root of SCAN_ROOTS) {
+        for (const file of listFiles(root)) {
+            const relative = path.relative(REPO_ROOT, file).split(path.sep).join('/');
+            readFileSync(file, 'utf8')
+                .split(/\r?\n/)
+                .forEach((line, index) => {
+                    if (pattern.test(line)) {
+                        violations.push(`${relative}:${index + 1}: ${line.trim()}`);
+                    }
+                });
+        }
     }
 
     return violations;
 }
 
-test('no source file hardcodes the retired /master-mind route', () => {
-    assert.deepEqual(findViolations(/master-mind/, new Set()), []);
+test('no file hardcodes the retired /master-mind route', () => {
+    assert.deepEqual(findViolations(/master-mind/), []);
 });
 
-test('the retired term "Command Centre" is gone from app copy', () => {
-    const allowlist = new Set([...MARKETING_ALLOWLIST, ...METAPHOR_ALLOWLIST]);
-    assert.deepEqual(findViolations(/command cent/i, allowlist), []);
+test('the retired term "Command Centre" is gone from app copy and guides', () => {
+    assert.deepEqual(findViolations(/command cent/i), []);
 });
 
-test('the retired term "Master Mind" is gone from app copy', () => {
-    assert.deepEqual(findViolations(/master mind/i, MARKETING_ALLOWLIST), []);
+test('the retired term "Master Mind" is gone from app copy and guides', () => {
+    assert.deepEqual(findViolations(/master mind/i), []);
 });
 
-test('the guard test actually scans the source tree', () => {
-    const files = listSourceFiles(SRC_ROOT);
-    assert.ok(files.length > 100, `expected to scan many files, saw ${files.length}`);
-    assert.ok(files.some((file) => file.endsWith('menu-items.ts')));
-    assert.ok(statSync(path.join(SRC_ROOT, 'lib', 'menu-items.ts')).isFile());
+test('the guard test actually scans the source and guide trees', () => {
+    const sourceFiles = listFiles(SCAN_ROOTS[0]).length;
+    const guideFiles = listFiles(SCAN_ROOTS[1]).length;
+
+    assert.ok(sourceFiles > 100, `expected many source files, saw ${sourceFiles}`);
+    assert.ok(guideFiles > 10, `expected guide seeds, saw ${guideFiles}`);
+    assert.ok(statSync(path.join(REPO_ROOT, 'src', 'lib', 'menu-items.ts')).isFile());
+    assert.ok(statSync(path.join(REPO_ROOT, 'dev', 'guides')).isDirectory());
 });

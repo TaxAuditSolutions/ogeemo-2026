@@ -15,7 +15,7 @@
         "Create a new idea entry with a concise title and one-paragraph context.",
         "Add tags for theme, urgency, and strategic area so the idea is easy to retrieve later.",
         "Save the idea and return immediately to your in-progress workflow, such as payroll or task execution.",
-        "During Master Mind or strategy review sessions, filter by tags and pull the idea into discussion.",
+        "During Event Manager or strategy review sessions, filter by tags and pull the idea into discussion.",
         "Promote selected ideas into actionable project pipelines when ready for execution."
     ],
     "validations": [
@@ -40,14 +40,14 @@
         },
         {
             "question": "How do ideas become action?",
-            "answer": "Tag, review in Master Mind sessions, then convert selected ideas into project pipeline items."
+            "answer": "Tag, review in Event Manager sessions, then convert selected ideas into project pipeline items."
         }
     ],
     "keywords": [
         "idea board",
         "quick capture",
         "strategy backlog",
-        "master mind",
+        "event manager",
         "project forge",
         "workflow continuity"
     ],

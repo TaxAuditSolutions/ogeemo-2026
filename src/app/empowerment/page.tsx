@@ -47,7 +47,7 @@ const INSIGHT_POSTS = [
         date: "April 18, 2026", 
         cat: "Growth",
         content: `
-            <p>Scaling a business requires more than just hard work—it requires a clear line of sight into your daily, weekly, and monthly objectives. Ogeemo's centralized dashboard acts as your growth command center.</p>
+            <p>Scaling a business requires more than just hard work—it requires a clear line of sight into your daily, weekly, and monthly objectives. Ogeemo's centralized dashboard acts as your growth hub.</p>
             <p>By unifying your communications, task tracking, and financial ledgers, you eliminate the cognitive load of switching between apps. This unified "Spider Web" of data means you spend less time searching for information and more time acting on it.</p>
             <p>When your foundational operations run smoothly, your team is empowered to focus on what truly matters: serving clients, acquiring new business, and scaling your organization's footprint.</p>
         `
@@ -70,7 +70,7 @@ const INSIGHT_POSTS = [
         cat: "Strategy",
         content: `
             <p>Efficiency isn't about working faster; it's about eliminating the work that doesn't need to be done. Ogeemo's architecture forces a strategic approach to business management.</p>
-            <p>With features like the Idea Board and Master Mind workflows, Ogeemo allows you to capture inspiration instantly, park it safely, and retrieve it when the time is right. Nothing falls through the cracks.</p>
+            <p>With features like the Idea Board and Event Manager workflows, Ogeemo allows you to capture inspiration instantly, park it safely, and retrieve it when the time is right. Nothing falls through the cracks.</p>
             <p>By aligning your long-term strategy with daily Action Chips, you ensure that every micro-task your team completes rolls up into your macro-objectives.</p>
         `
     },

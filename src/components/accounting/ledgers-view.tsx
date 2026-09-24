@@ -737,7 +737,7 @@ export function LedgersView() {
                                         <strong>2. The Expense Ledger:</strong> Your dedicated defense against tax audits. It records cash out and links directly to standard CRA expense categories, storing the physical rationale for every business deduction.
                                     </li>
                                     <li>
-                                        <strong>3. The BKS General Ledger:</strong> The master command center. It combines your Income and Expense ledgers into a single, unified chronological view. This is where you perform high-level analysis, verify net income, and perform sweeping batch operations.
+                                        <strong>3. The BKS General Ledger:</strong> Your central hub. It combines your Income and Expense ledgers into a single, unified chronological view. This is where you perform high-level analysis, verify net income, and perform sweeping batch operations.
                                     </li>
                                 </ul>
                                 <p>

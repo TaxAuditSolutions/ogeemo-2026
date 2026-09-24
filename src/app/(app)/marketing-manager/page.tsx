@@ -93,7 +93,7 @@ export default function MarketingManagerPage() {
           </PlanDetail>
           <PlanDetail title="Key Messaging" icon={MessageSquare}>
             <ul>
-              <li><strong>Tagline:</strong> Ogeemo: Your AI-Powered Business Command Center.</li>
+              <li><strong>Tagline:</strong> Ogeemo: Your AI-Powered Business Hub.</li>
               <li><strong>Value Props:</strong> "Stop juggling apps, start running your business.", "The all-in-one platform that thinks with you.", "From to-do to done, all in one place."</li>
             </ul>
           </PlanDetail>

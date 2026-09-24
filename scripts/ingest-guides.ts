@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { resolveAdminCredential, resolveEmbeddingApiKey } from "./admin-credentials";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 dotenv.config({ path: ".env.local" });
@@ -243,24 +244,16 @@ async function main() {
   const archiveDir = path.join(guidesDir, "archive");
 
   try {
-    if (!process.env.GOOGLE_API_KEY) {
-      throw new Error("Missing GOOGLE_API_KEY in .env.local");
-    }
-
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      throw new Error(
-        "Missing GOOGLE_APPLICATION_CREDENTIALS. Set it to your service account JSON file path."
-      );
-    }
+    const embeddingApiKey = resolveEmbeddingApiKey();
 
     if (getApps().length === 0) {
       initializeApp({
-        credential: applicationDefault(),
+        credential: resolveAdminCredential(),
       });
     }
 
     const db = getFirestore();
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    const genAI = new GoogleGenerativeAI(embeddingApiKey);
     const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
 
     await fs.mkdir(archiveDir, { recursive: true });

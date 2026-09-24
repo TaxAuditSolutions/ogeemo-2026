@@ -6,21 +6,26 @@
  * Renaming or retiring a guide leaves its chunks behind, and the assistant keeps
  * quoting the old wording, so this script removes them by guideId.
  *
- * Credentials (the same service account the ingester uses):
- *   $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\service-account.json"
+ * Credentials come from .env.local, resolved exactly like the app does
+ * (FIREBASE_SERVICE_ACCOUNT_KEY inline JSON, otherwise application default).
  *
  * Usage - always dry run first, it only reports:
  *   node --import tsx scripts/purge-retired-guides.ts
  *   node --import tsx scripts/purge-retired-guides.ts --apply
+ *   node --import tsx scripts/purge-retired-guides.ts --list --prefix calendar--
  *   node --import tsx scripts/purge-retired-guides.ts --apply --id some--guide-id
- *   node --import tsx scripts/purge-retired-guides.ts --apply --prefix other--
  *
  * After purging a renamed guide, re-ingest it so the assistant picks up the new
  * name: move the JSON from dev/guides/archive back into dev/guides and run
  *   node --import tsx scripts/ingest-guides.ts
  */
-import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app';
+import dotenv from 'dotenv';
+import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+
+import { resolveAdminCredential } from './admin-credentials';
+
+dotenv.config({ path: '.env.local' });
 
 const GUIDES_COLLECTION = 'help_guides';
 
@@ -38,6 +43,7 @@ const RETIRED_GUIDE_PREFIXES = [
 async function main() {
     const args = process.argv.slice(2);
     const apply = args.includes('--apply');
+    const listOnly = args.includes('--list');
     const ids = new Set(RETIRED_GUIDE_IDS);
     const prefixes = new Set(RETIRED_GUIDE_PREFIXES);
 
@@ -46,14 +52,8 @@ async function main() {
         if (args[index] === '--prefix' && args[index + 1]) prefixes.add(args[index + 1]);
     }
 
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        throw new Error(
-            'Missing GOOGLE_APPLICATION_CREDENTIALS. Set it to your service account JSON file path.',
-        );
-    }
-
     if (getApps().length === 0) {
-        initializeApp({ credential: applicationDefault() });
+        initializeApp({ credential: resolveAdminCredential() });
     }
 
     const db = getFirestore();
@@ -83,13 +83,24 @@ async function main() {
         .sort((a, b) => a.guideId.localeCompare(b.guideId));
 
     if (rows.length === 0) {
-        console.log('Nothing to purge: no help_guides documents match the retired ids/prefixes.');
+        console.log('No help_guides documents match the requested ids/prefixes.');
         return;
     }
 
-    console.log(`${apply ? 'Purging' : 'Found'} ${rows.length} retired guide(s) in ${GUIDES_COLLECTION}:`);
+    if (listOnly) {
+        console.log(`${rows.length} guide(s) in ${GUIDES_COLLECTION}:`);
+    } else if (!apply) {
+        console.log(`Found ${rows.length} retired guide(s) in ${GUIDES_COLLECTION}:`);
+    } else {
+        console.log(`Purging ${rows.length} retired guide(s) from ${GUIDES_COLLECTION}:`);
+    }
     for (const row of rows) {
         console.log(`- ${row.guideId} (${row.docs} chunk(s))`);
+    }
+
+    if (listOnly) {
+        console.log('\n--list: nothing deleted.');
+        return;
     }
 
     if (!apply) {

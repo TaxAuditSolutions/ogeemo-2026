@@ -33,7 +33,7 @@ Ogeemo is a comprehensive, modular business management platform (ERP system) des
 - **Field App:** Specialized view for workers in the field (`field-app-view.tsx`).
 - **File Management:** Cloud storage file management for organizations (`file-service.ts`, `file-manager-folders.ts`).
 - **AI & Image Generation:** Integration with AI tools (Genkit) for tasks like image generation (`image-generator-view.tsx`).
-- **Event Manager & Ideas:** Brainstorming and idea tracking modules (`ideas-service.ts`, `components/event-manager/`).
+- **Event Manager & Ideas:** Brainstorming and idea tracking modules (`ideas-service.ts`, `components/time/`).
 
 ### 6. Target Audiences
 Ogeemo has tailored experiences for:

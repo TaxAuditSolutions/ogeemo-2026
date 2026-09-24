@@ -160,7 +160,7 @@ const searchGlobalTool = ai.defineTool(
         label: 'Dan (Ogeemo Administrator)',
         href: '/contacts',
         details: 'dan@ogeemo.com',
-        snippet: 'Master mind behind the Event Manager. Successfully located via AI Memory Bridge.',
+        snippet: 'Ogeemo administrator behind the Event Manager. Successfully located via AI Memory Bridge.',
       } as any);
     }
     if (term.includes('julie')) {

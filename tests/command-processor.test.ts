@@ -59,7 +59,7 @@ test('keeps timer parameters while waiting for explicit dispatch', () => {
     const result = processCommand('start timer for client work');
 
     assert.equal(result.type, 'action');
-    assert.match(result.target || '', /^\/master-mind\?startTimer=true/);
+    assert.match(result.target || '', /^\/event-manager\?startTimer=true/);
     assert.match(result.target || '', /title=client/);
     assert.match(result.description || '', /ready to start/i);
 });

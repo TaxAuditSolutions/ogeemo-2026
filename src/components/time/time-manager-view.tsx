@@ -707,24 +707,24 @@ export function TimeManagerView() {
                                     Start a session to record work on this event. Sessions feed the Time Log reports.
                                 </CardDescription>
                             </div>
-                            <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-                                <div>
-                                    <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total on this event</span>
-                                    <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
-                                </div>
-                                <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-primary">
-                                    <Link href="/reports/time-log">
-                                        View time reports <ArrowRight className="ml-1 h-3 w-3" />
-                                    </Link>
-                                </Button>
+                            <div className="shrink-0 text-right">
+                                <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total on this event</span>
+                                <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-0">
                             <div className="flex items-center gap-2 mb-4">
                                 {!timerState?.isActive ? (
-                                    <Button onClick={handleStartTimer} className="flex-1">
-                                        <Play className="mr-2 h-4 w-4" /> Start New Session
-                                    </Button>
+                                    <>
+                                        <Button onClick={handleStartTimer} className="flex-1">
+                                            <Play className="mr-2 h-4 w-4" /> Start New Session
+                                        </Button>
+                                        <Button asChild variant="outline" className="flex-1">
+                                            <Link href="/reports/time-log">
+                                                View Time Reports <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </>
                                 ) : (
                                     <>
                                         {timerState.isPaused ? (
@@ -745,7 +745,7 @@ export function TimeManagerView() {
                             <div className="flex gap-2 items-end">
                                 <div className="flex-1">
                                     <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
-                                    <Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" placeholder="What are you working on right now?" />
+                                    <Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" placeholder="Describe the current session you are working on" />
                                 </div>
                                 <Button onClick={handleLogCurrentSession} variant="outline" size="sm" disabled={!timerState?.isActive} className="h-10">
                                     Log Session

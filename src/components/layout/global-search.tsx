@@ -98,7 +98,7 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
         <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 sm:max-w-md sm:h-auto sm:top-[50%] sm:left-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
             <DialogHeader className="p-4 border-b text-center relative bg-gradient-to-r from-[#3DD5C0] to-[#1E8E86] text-primary-foreground">
               <DialogTitle className="text-2xl font-bold font-headline">
-                Ogeemo Command Centre
+                Ogeemo Co-Pilot
               </DialogTitle>
               <DialogDescription className="text-primary-foreground/90">
                 This feature is currently under development.
@@ -111,7 +111,7 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
                 </div>
                 <h3 className="text-xl font-semibold">Coming Soon!</h3>
                 <p className="text-muted-foreground">
-                    The AI-powered Command Centre is being fine-tuned and will be available shortly. Thank you for your patience!
+                    The AI-powered Co-Pilot is being fine-tuned and will be available shortly. Thank you for your patience!
                 </p>
             </div>
             

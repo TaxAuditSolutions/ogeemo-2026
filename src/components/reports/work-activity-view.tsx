@@ -65,7 +65,7 @@ type CombinedActivity = {
     durationSeconds: number;
     isBillable: boolean;
     billableRate: number;
-    source: 'Manual Log' | 'Command Centre' | 'Field App' | 'Ritual';
+    source: 'Manual Log' | 'Event Manager' | 'Field App' | 'Ritual';
     type: 'Staff / Worker' | 'Ritual';
 };
 
@@ -145,7 +145,7 @@ export function WorkActivityView() {
                 durationSeconds: t.duration || 0,
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
-                source: (t.ritualType ? 'Ritual' : 'Command Centre') as 'Ritual' | 'Command Centre',
+                source: (t.ritualType ? 'Ritual' : 'Event Manager') as 'Ritual' | 'Event Manager',
                 type: (t.ritualType ? 'Ritual' : 'Staff / Worker') as 'Ritual' | 'Staff / Worker'
             }))
         ];

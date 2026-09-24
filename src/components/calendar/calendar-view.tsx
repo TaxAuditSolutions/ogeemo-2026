@@ -413,7 +413,7 @@ export function CalendarView() {
             Activity Manager
           </h1>
           <p className="text-muted-foreground">
-            Your Command Centre for your actions and connection to the nodes of the Spider Web
+            Your Calendar for your actions and connection to the nodes of the Spider Web
           </p>
           <div className="absolute top-0 right-0">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -465,7 +465,7 @@ export function CalendarView() {
                             </Link>
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>How to use the Command Centre</p></TooltipContent>
+                    <TooltipContent><p>How to use the Calendar</p></TooltipContent>
                 </Tooltip>
             </TooltipProvider>
           </div>

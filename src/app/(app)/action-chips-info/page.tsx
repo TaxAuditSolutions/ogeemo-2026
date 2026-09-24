@@ -211,7 +211,7 @@ export default function ActionChipsInfoPage() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                         Your spider web doesn't have to stop at Ogeemo's borders. Use the <strong>'+ Add New Action'</strong> button in the manager and select <strong>'Custom URL'</strong>. 
                         <br/><br/>
-                        By entering a full web address (e.g., https://www.google.com), you can create instant shortcuts to any site outside of Ogeemo, such as your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global Command Centre.
+                        By entering a full web address (e.g., https://www.google.com), you can create instant shortcuts to any site outside of Ogeemo, such as your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global hub.
                     </p>
                 </CardContent>
             </Card>

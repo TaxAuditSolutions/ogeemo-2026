@@ -25,7 +25,7 @@ __Question:__ *"I sit at my desk for 8 hours a day. How can Ogeemo help me avoid
 ### 5. Idea Board / Strategic Planning
 
 
-__Question:__ *"I just had a great idea for a new product, but I'm in the middle of running payroll. Where do I put this?"* __Ogeemo's Answer:__ *"Drop it into the Idea Board! It's designed specifically to capture inspiration instantly without breaking your current workflow. You can tag it, park it safely, and retrieve it later during your Master Mind strategy sessions to convert it into an actionable Project Forge pipeline."*
+__Question:__ *"I just had a great idea for a new product, but I'm in the middle of running payroll. Where do I put this?"* __Ogeemo's Answer:__ *"Drop it into the Idea Board! It's designed specifically to capture inspiration instantly without breaking your current workflow. You can tag it, park it safely, and retrieve it later during your planning sessions to convert it into an actionable Project Forge pipeline."*
 
 
 ### 6. AI Image Generator (Info Icon related)

@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 
 /**
- * @fileOverview Operational instructions for the Command Centre (Calendar).
+ * @fileOverview Operational instructions for the Calendar.
  */
 export default function CalendarInstructionsPage() {
     return (
@@ -49,7 +49,7 @@ export default function CalendarInstructionsPage() {
                         The Ogeemo Execution Engine
                     </h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Your guide to orchestrating your day with the Command Centre.
+                        Your guide to orchestrating your day with the Calendar.
                     </p>
                 </div>
                 <div className="flex-1 flex justify-end">
@@ -67,7 +67,7 @@ export default function CalendarInstructionsPage() {
                     <CardHeader className="bg-primary/5 border-b">
                         <CardTitle className="flex items-center gap-3">
                             <Calendar className="h-6 w-6 text-primary" />
-                            Why we call it the "Command Centre"
+                            Why it's your "Execution Hub"
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
@@ -83,7 +83,7 @@ export default function CalendarInstructionsPage() {
                                     <Zap className="h-5 w-5" />
                                     Interconnected Hub
                                 </div>
-                                <p className="text-sm text-muted-foreground">The Command Centre is designed for high-speed pivots. Process multiple actions from one view: link tasks to projects, set billable rates, and update your ledger instantly.</p>
+                                <p className="text-sm text-muted-foreground">The Calendar is designed for high-speed pivots. Process multiple actions from one view: link tasks to projects, set billable rates, and update your ledger instantly.</p>
                             </div>
                             <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
                                 <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider">
@@ -133,7 +133,7 @@ export default function CalendarInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                        <p>The Command Centre is the bridge between a vague thought and a completed outcome:</p>
+                                        <p>The Calendar is the bridge between a vague thought and a completed outcome:</p>
                                         <ul>
                                             <li><strong>Tasks (Actions):</strong> The individual steps that move a project forward. Manage these on visual Kanban boards.</li>
                                             <li><strong>Projects (Plans):</strong> A group of tasks requiring multiple steps to achieve a goal.</li>
@@ -151,7 +151,7 @@ export default function CalendarInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                        <p>When you initiate a task or project from the Command Centre, you can toggle it as <strong>Billable</strong>. This orchestration automatically:</p>
+                                        <p>When you initiate a task or project from the Calendar, you can toggle it as <strong>Billable</strong>. This orchestration automatically:</p>
                                         <ul>
                                             <li>Updates your billable actions log in real-time.</li>
                                             <li>Syncs with the BKS General Ledger.</li>
@@ -182,7 +182,7 @@ export default function CalendarInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                        <p>The project manager can be used as your sales management tracker. Use the Command Centre to schedule follow-ups that turn prospects and leads into high-value projects.</p>
+                                        <p>The project manager can be used as your sales management tracker. Use the Calendar to schedule follow-ups that turn prospects and leads into high-value projects.</p>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -192,7 +192,7 @@ export default function CalendarInstructionsPage() {
 
                 <div className="bg-muted p-6 rounded-lg text-center border-2 border-dashed">
                     <p className="text-sm text-muted-foreground">
-                        The Command Centre ensures that your business isn't a collection of random records, but a network of interconnected nodes where every signal updates your entire operational web.
+                        The Calendar ensures that your business isn't a collection of random records, but a network of interconnected nodes where every signal updates your entire operational web.
                     </p>
                 </div>
             </div>

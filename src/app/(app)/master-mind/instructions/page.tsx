@@ -21,7 +21,7 @@ export default function TimeManagerInstructionsPage() {
                 </div>
                 <div className="text-center col-span-1">
                     <h1 className="text-2xl font-bold font-headline text-primary">
-                        How to Use The Master Mind
+                        How to Use the Event Manager
                     </h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Your central hub for logging past work, scheduling future events, and tracking time live.
@@ -31,7 +31,7 @@ export default function TimeManagerInstructionsPage() {
                     <Button asChild variant="outline">
                         <Link href="/master-mind">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to The Master Mind
+                            Back to the Event Manager
                         </Link>
                     </Button>
                 </div>
@@ -50,7 +50,7 @@ export default function TimeManagerInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        This manager is your single command center for all time-based entries. Whether you need to log work you've already completed, schedule a future appointment, or track your time live on a task, you start here.
+                                        This manager is your single place for all time-based entries. Whether you need to log work you've already completed, schedule a future appointment, or track your time live on a task, you start here.
                                     </p>
                                 </div>
                             </AccordionContent>

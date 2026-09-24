@@ -131,7 +131,7 @@ export default function UserManagerInstructionsPage() {
                                         <p>Every member of a company tenant shares access to that company’s workspace, governed strictly by their assigned role. The tenant is the company boundary; the role is the permission boundary. In other words, users in the same tenant are meant to work within one shared team environment, while users in different tenants remain isolated.</p>
                                         <ul>
                                             <li><strong>Admin:</strong> Has full, unrestricted system access. Admins are the only users who can access the User Manager, view company-wide billing, and invite/delete team members.</li>
-                                            <li><strong>Editor:</strong> Has comprehensive operational access. Editors can view and modify Project boards, the Command Centre calendar, Ledger finances, and the Document hub.</li>
+                                            <li><strong>Editor:</strong> Has comprehensive operational access. Editors can view and modify Project boards, the Calendar, Ledger finances, and the Document hub.</li>
                                             <li><strong>Viewer:</strong> Has read-only access to operational features. They can see data but cannot make changes, which is beneficial for temporary contractors or auditing purposes.</li>
                                         </ul>
                                     </div>

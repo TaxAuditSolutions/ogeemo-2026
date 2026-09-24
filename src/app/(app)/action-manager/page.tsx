@@ -80,7 +80,7 @@ export default function ActionManagerDashboardPage() {
             Action Manager
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Your quick-access command center. Click an action to get started.
+            Your quick-access hub. Click an action to get started.
           </p>
         </header>
 
@@ -129,7 +129,7 @@ export default function ActionManagerDashboardPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Go to your primary execution hub (Master Mind)</p>
+                          <p>Go to your primary execution hub (Event Manager)</p>
                         </TooltipContent>
                       </Tooltip>
                        <Tooltip>

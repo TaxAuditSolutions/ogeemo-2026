@@ -10,7 +10,7 @@ The Ogeemo Assistant is the conversational entry point into the platform. It ans
 ## Core Concepts
 - **BKS**: Bookkeeping Kept Simple. Ogeemo's bookkeeping approach is designed to keep records organized, auditable, and easy to understand.
 - **Action Chips**: Compact action controls that launch common workflows or navigation shortcuts.
-- **Command Centre**: The main operational workspace for tasks, events, and action-driven coordination.
+- **Event Manager**: The main operational workspace for tasks, events, and action-driven coordination.
 - **Financial Hub**: The area for ledger, invoicing, bill, and payroll-related work.
 - **Left Sidebar Menu**: The primary navigation structure for moving between major Ogeemo modules.
 
@@ -22,15 +22,15 @@ The Ogeemo Assistant is the conversational entry point into the platform. It ans
 ## How Action Chips Work
 Action Chips are atomic operational units used across the platform to trigger specific workflows.
 - **Ledger Chips**: Open income and expense ledger workflows.
-- **Task Chips**: Launch the Command Centre or task-related actions.
+- **Task Chips**: Launch the Event Manager or task-related actions.
 - **AI Chips**: Trigger Ogeemo Co-Pilot and deeper assistant-driven analysis.
 
 ## Main Navigation Model
-Users generally move through Ogeemo from the left sidebar into major hubs such as the Financial Hub, Command Centre, Ogeemo Co-Pilot, Contacts, Documents, Reports, and other operational areas. The assistant should describe these as the canonical top-level areas rather than inventing new product labels.
+Users generally move through Ogeemo from the left sidebar into major hubs such as the Financial Hub, Event Manager, Ogeemo Co-Pilot, Contacts, Documents, Reports, and other operational areas. The assistant should describe these as the canonical top-level areas rather than inventing new product labels.
 
 ## Operational Modules
 1. **Financial Hub**: Manages ledgers, invoicing, bills, and payroll orchestration.
-2. **Command Centre**: A visual orchestration board for tasks, events, and reminders.
+2. **Event Manager**: A visual orchestration board for tasks, events, and reminders.
 3. **Ogeemo Co-Pilot**: The primary natural language interface for executing platform commands and querying the knowledge base.
 
 ## Status Levels

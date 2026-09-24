@@ -54,7 +54,7 @@ export default function MeetingsInstructionsPage() {
                         </p>
                         <ul className="list-disc pl-5 space-y-2">
                             <li>
-                                <strong>When Toggled On:</strong> Ogeemo will automatically sum up the allowed time for all your agenda items and create a corresponding calendar event block in your main Calendar and Command Centre.
+                                <strong>When Toggled On:</strong> Ogeemo will automatically sum up the allowed time for all your agenda items and create a corresponding calendar event block in your main Calendar and Event Manager.
                             </li>
                             <li>
                                 <strong>Linked Access:</strong> Once an agenda is scheduled to the calendar, you can view the calendar event and click the 3-dot menu to select <em>"View Agenda"</em>. This instantly brings you back to the agenda form.

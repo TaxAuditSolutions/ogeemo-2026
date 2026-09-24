@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Calendar, Save, Link as LinkIcon, Info, MoreVertical, Pencil, MessageSquare } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, Save, Link as LinkIcon, Info, Pencil, Trash2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import {
   Accordion,
@@ -84,7 +84,7 @@ export default function TimeManagerInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        The <strong>Time Log</strong> card allows you to track work in focused "sessions" as it happens.
+                                        The <strong>Time Sessions</strong> card allows you to track work in focused "sessions" as it happens.
                                     </p>
                                      <ol>
                                         <li>Click <strong>"Start New Session"</strong> to begin the timer. The button will change to "Pause Session".</li>
@@ -105,7 +105,7 @@ export default function TimeManagerInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                       After a session has been logged, you can still make changes. Click the <strong>3-dot menu</strong> (<MoreVertical className="inline h-4 w-4"/>) next to any logged session in the list to open the "Edit Time Session" dialog. From there, you can:
+                                       After a session has been logged, you can still make changes. Click the <strong>pencil</strong> (<Pencil className="inline h-4 w-4"/>) icon next to any logged session in the list to open the "Edit Recorded Session" dialog, or the <strong>trash</strong> (<Trash2 className="inline h-4 w-4"/>) icon to delete it. From there, you can:
                                     </p>
                                      <ul>
                                         <li>Adjust the total hours and minutes for that session.</li>
@@ -132,7 +132,7 @@ export default function TimeManagerInstructionsPage() {
                                      <ul>
                                         <li><strong>Non-Billable:</strong> The default, safe option for internal tasks or non-client work.</li>
                                         <li><strong>Billable:</strong> Select this to make the time entry billable. The rate input will appear, allowing you to set your hourly rate for this specific task.</li>
-                                        <li>Click <strong>"Save to Data Base & Close"</strong> to finalize the event and all associated time logs.</li>
+                                        <li>Click <strong>"Save & Close"</strong> to finalize the event and all associated time sessions.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>

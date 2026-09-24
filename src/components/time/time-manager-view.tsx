@@ -30,7 +30,8 @@ import {
     CheckCircle, 
     User, 
     Square,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -531,24 +532,26 @@ export function TimeManagerView() {
                                     <TooltipTrigger asChild><Button variant="outline" size="icon" className="h-9 w-9" onClick={handleOpenGmail}><Mail className="h-4 w-4" /></Button></TooltipTrigger>
                                     <TooltipContent><p>Compose Gmail</p></TooltipContent>
                                 </Tooltip>
-                                {!timerState?.isActive ? (
-                                    <Button onClick={handleStartTimer} className="h-9"><Play className="mr-2 h-4 w-4" /> Start Timer</Button>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary h-9">
-                                        <Clock className="h-3.5 w-3.5 animate-pulse" /><span className="font-mono font-bold text-xs">{formatTime(elapsedSeconds)}</span><Separator orientation="vertical" className="h-3 mx-0.5" />
+                                {timerState?.isActive ? (
+                                    <div
+                                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary h-9"
+                                        title="Session timer running - use the Time Sessions card below to pause or log it."
+                                    >
+                                        <Clock className="h-3.5 w-3.5 animate-pulse" />
+                                        <span className="font-mono font-bold text-xs">{formatTime(elapsedSeconds)}</span>
                                         {timerState.isPaused ? (
-                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={handleResumeTimer}><Play className="h-3 w-3" /></Button>
-                                        ) : (
-                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={handlePauseTimer}><Pause className="h-3 w-3" /></Button>
-                                        )}
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full text-destructive" onClick={handleLogCurrentSession}><Square className="h-2.5 w-2.5 fill-current" /></Button>
+                                            <>
+                                                <Separator orientation="vertical" className="h-3 mx-0.5" />
+                                                <span className="text-[10px] font-bold uppercase">Paused</span>
+                                            </>
+                                        ) : null}
                                     </div>
-                                )}
+                                ) : null}
                             </TooltipProvider>
                         </div>
                         <div className="text-center px-4">
                             <h1 className="text-3xl font-bold font-headline text-primary">Event Manager</h1>
-                            <p className="text-sm text-muted-foreground mt-1">Actions and events are recorded here.</p>
+                            <p className="text-sm text-muted-foreground mt-1">Schedule events and record time sessions.</p>
                         </div>
                         <div className="flex justify-center md:justify-end items-center gap-2">
                             {eventToEdit && <Button variant="outline" size="icon" onClick={() => setIsDeleteDialogOpen(true)}><Trash2 className="h-4 w-4" /></Button>}
@@ -697,11 +700,23 @@ export function TimeManagerView() {
                     </div>
 
                     <Card>
-                        <CardHeader className="p-4 flex flex-row items-center justify-between">
-                            <CardTitle className="text-sm">Time Logs & Sessions</CardTitle>
-                            <div className="text-right">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total Session Time</span>
-                                <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
+                        <CardHeader className="p-4 flex flex-row items-start justify-between gap-4">
+                            <div className="min-w-0">
+                                <CardTitle className="text-sm">Time Sessions</CardTitle>
+                                <CardDescription className="mt-1 text-xs">
+                                    Start a session to record work on this event. Sessions feed the Time Log reports.
+                                </CardDescription>
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                                <div>
+                                    <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total on this event</span>
+                                    <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
+                                </div>
+                                <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-primary">
+                                    <Link href="/reports/time-log">
+                                        View time reports <ArrowRight className="ml-1 h-3 w-3" />
+                                    </Link>
+                                </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-0">
@@ -754,9 +769,10 @@ export function TimeManagerView() {
                                             </div>
                                         </div>
                                     )) : (
-                                        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground opacity-50">
-                                            <Clock className="h-8 w-8 mb-2" />
-                                            <p>No sessions recorded yet.</p>
+                                        <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-muted-foreground">
+                                            <Clock className="h-8 w-8 opacity-60" />
+                                            <p className="text-xs font-medium text-foreground">No sessions on this event yet.</p>
+                                            <p className="text-xs">Press <strong>Start New Session</strong> above and your time will appear here.</p>
                                         </div>
                                     )}
                                 </div>

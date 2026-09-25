@@ -62,7 +62,7 @@ function hasLegacyRefusalPattern(answer: string): boolean {
  * degraded API response payload, or undefined when the message contains no
  * extractable contact.
  */
-function buildDeterministicDraftResponse(question: string, tenantFolders: Array<{ id: string; name: string }>) {
+function buildDeterministicDraftResponse(question: string, tenantFolders: Array<{ id: string; name: string; parentId?: string | null }>) {
     if (tenantFolders.length === 0) return undefined;
     const draftAction = buildDeterministicContactDraft(question, tenantFolders);
     if (!draftAction) return undefined;
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
         }
 
-        let tenantFolders: Array<{ id: string; name: string }> = [];
+        let tenantFolders: Array<{ id: string; name: string; parentId?: string | null }> = [];
         try {
             const sessionContext = await getCurrentSessionContext();
             if (sessionContext) {
@@ -147,10 +147,14 @@ export async function POST(request: NextRequest) {
                 const folderSnapshot = db && sessionContext.orgId
                     ? await db.collection('contactFolders').where('orgId', '==', sessionContext.orgId).get()
                     : null;
-                tenantFolders = folderSnapshot?.docs.map((folderDoc) => ({
-                    id: folderDoc.id,
-                    name: String(folderDoc.data().name || ''),
-                })).filter((folder) => folder.name) ?? [];
+                tenantFolders = folderSnapshot?.docs.map((folderDoc) => {
+                    const folderData = folderDoc.data();
+                    return {
+                        id: folderDoc.id,
+                        name: String(folderData.name || ''),
+                        parentId: typeof folderData.parentId === 'string' ? folderData.parentId : null,
+                    };
+                }).filter((folder) => folder.name) ?? [];
 
                 const capabilityResult = await orchestrateContactCapability({
                     message: question,

@@ -311,15 +311,30 @@ export function ContactsView() {
   }), []);
 
   useEffect(() => subscribeToCopilotWorkflowEvent('copilot:open_contact', ({ contactId, patch }) => {
-    const contact = contacts.find((c) => c.id === contactId);
-    if (!contact) {
-      toast({ variant: 'destructive', title: 'Contact not found', description: "I couldn't find that record in your local database." });
-      return;
-    }
-    setContactToEdit(contact);
-    setPrefillContactData(patch);
-    setIsContactFormOpen(true);
-  }), [contacts, toast]);
+    const openContact = async () => {
+      let contact = contacts.find((c) => c.id === contactId);
+      // The contact may have just been created server-side by Co-Pilot's
+      // createContact tool, so it won't be in this page's already-loaded
+      // state yet. Refetch once before giving up.
+      if (!contact && user) {
+        try {
+          const refreshedContacts = await getContacts(user.uid);
+          setContacts(refreshedContacts);
+          contact = refreshedContacts.find((c) => c.id === contactId);
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+      }
+      if (!contact) {
+        toast({ variant: 'destructive', title: 'Contact not found', description: "I couldn't find that record in your local database." });
+        return;
+      }
+      setContactToEdit(contact);
+      setPrefillContactData(patch);
+      setIsContactFormOpen(true);
+    };
+    void openContact();
+  }), [contacts, toast, user]);
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }

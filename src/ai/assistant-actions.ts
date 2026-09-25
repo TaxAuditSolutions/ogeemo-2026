@@ -62,6 +62,7 @@ export const AssistantClientActionSchema = z.discriminatedUnion('type', [
     z.object({
         type: z.literal('open_contact'),
         contactId: z.string().trim().min(1),
+        patch: AssistantContactDraftPatchSchema.optional(),
     }).strict(),
 ]);
 
@@ -136,6 +137,11 @@ export function parseAssistantClientAction(
             ? parsed.data.draft.folderId
             : parsed.data.patch.folderId;
         if (folderId !== undefined && !allowedFolders.has(folderId)) return undefined;
+    }
+
+    if (parsed.data.type === 'open_contact' && parsed.data.patch?.folderId !== undefined) {
+        const allowedFolders = new Set(validFolderIds);
+        if (!allowedFolders.has(parsed.data.patch.folderId)) return undefined;
     }
 
     return parsed.data;
@@ -275,6 +281,28 @@ export function resolveAssistantCapabilityActionWithRepair(
                 originalFolderId: payload.folderId ?? null,
                 repairedFolderId: folderId,
             });
+            return repaired;
+        }
+    }
+
+    // `open_contact` patches carry an already-valid contactId; an unresolvable
+    // folderId in the optional patch shouldn't sink the whole action, so drop
+    // just that field and let the rest of the patch (and the navigation) stand.
+    if (
+        value &&
+        typeof value === 'object' &&
+        (value as { type?: unknown }).type === 'open_contact' &&
+        (value as { patch?: unknown }).patch &&
+        typeof (value as { patch?: unknown }).patch === 'object'
+    ) {
+        const { patch, ...rest } = value as Record<string, unknown>;
+        const { folderId: _droppedFolderId, ...patchWithoutFolder } = patch as Record<string, unknown>;
+        const repaired = resolveAssistantCapabilityAction(
+            Object.keys(patchWithoutFolder).length > 0 ? { ...rest, patch: patchWithoutFolder } : rest,
+            folders.map((folder) => folder.id),
+        );
+        if (repaired) {
+            console.warn('[assistant-actions] dropped unresolvable open_contact patch folder id');
             return repaired;
         }
     }

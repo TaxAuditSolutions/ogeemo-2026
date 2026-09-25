@@ -89,6 +89,8 @@ interface ContactFormDialogProps {
     initialEmail?: string;
     initialData?: Partial<ContactFormData>;
     forceFolderId?: string;
+    /** 'overlay' (default) renders a full-screen modal dialog; 'panel' renders inline, filling the nearest positioned ancestor. */
+    displayMode?: 'overlay' | 'panel';
 }
 
 const defaultFormValues: ContactFormData = {
@@ -99,7 +101,7 @@ const defaultFormValues: ContactFormData = {
 };
 
 export default function ContactFormDialog({
-    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId,
+    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId, displayMode = 'overlay',
 }: ContactFormDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
@@ -132,9 +134,12 @@ export default function ContactFormDialog({
             form.reset({
                 ...defaultFormValues,
                 ...contactToEdit,
+                ...initialData,
                 folderId: isValidFolder(forceFolderId)
                     ? forceFolderId!
-                    : isValidFolder(contactToEdit.folderId) ? contactToEdit.folderId : defaultId,
+                    : isValidFolder(initialData?.folderId)
+                        ? initialData!.folderId
+                        : isValidFolder(contactToEdit.folderId) ? contactToEdit.folderId : defaultId,
                 hireDate: contactToEdit.hireDate?.toDate ? contactToEdit.hireDate.toDate().toISOString().split('T')[0] : contactToEdit.hireDate,
                 startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
             });
@@ -145,10 +150,10 @@ export default function ContactFormDialog({
                 { keepDirtyValues: true },
             );
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, folders]);
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders]);
 
     useEffect(() => {
-        if (!isOpen || contactToEdit) return;
+        if (!isOpen) return;
 
         const unsubscribeDraft = subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
             for (const [field, value] of Object.entries(patch)) {
@@ -166,7 +171,7 @@ export default function ContactFormDialog({
             unsubscribeDraft();
             unsubscribeSubmit();
         };
-    }, [contactToEdit, form, isOpen]);
+    }, [form, isOpen]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
@@ -203,106 +208,128 @@ export default function ContactFormDialog({
         setIsNewFolderDialogOpen(false);
     };
 
+    if (displayMode === 'panel' && !isOpen) {
+        return null;
+    }
+
+    const headerTitle = contactToEdit ? "Edit Contact" : "Create Contact";
+    const headerDescription = contactToEdit
+        ? "Update this registry entry."
+        : "Review the prepared details, select the folder, add anything else, then save.";
+    const evidenceButton = contactToEdit?.documentFolderId && (
+        <div className="absolute top-6 left-6">
+            <Button variant="outline" size="sm" className="h-8" onClick={() => router.push(`/document-manager?highlight=${contactToEdit.documentFolderId}`)}>
+                <Files className="mr-2 h-4 w-4" /> View Evidence
+            </Button>
+        </div>
+    );
+
+    const formBody = (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+                <ScrollArea className="flex-1">
+                    <div className="max-w-5xl mx-auto w-full p-8 space-y-10">
+                        <section className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
+                                <Users className="h-4 w-4" /> 1. Core Profile
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Legal Name *</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Identity</FormLabel><FormControl><Input placeholder="john@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="folderId" render={({ field }) => (
+                                    <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Assign role..." /></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                        </section>
+
+                        <section className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
+                                <Landmark className="h-4 w-4" /> 2. Business & Tax Configuration
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="businessName" render={({ field }) => (<FormItem><FormLabel>Legal Company Name</FormLabel><FormControl><Input placeholder="Acme Operations Ltd." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="craProgramAccountNumber" render={({ field }) => (<FormItem><FormLabel>Business Number (BN / Tax ID)</FormLabel><FormControl><Input placeholder="123456789RP0001" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                        </section>
+
+                        {showHrSection && (
+                            <section className="space-y-6 p-6 border-2 border-primary/20 bg-primary/5 rounded-2xl animate-in fade-in-50 zoom-in-95 duration-300">
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-primary border-b border-primary/20 pb-2 flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4" /> 3. Payroll & HR Details (Confidential)
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <FormField control={form.control} name="workerType" render={({ field }) => (<FormItem><FormLabel>Employment Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="employee">T4 Employee</SelectItem><SelectItem value="contractor">T4A Contractor</SelectItem></SelectContent></Select></FormItem>)} />
+                                    <FormField control={form.control} name="payType" render={({ field }) => (<FormItem><FormLabel>Pay Model</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="hourly">Hourly Rate</SelectItem><SelectItem value="salary">Annual Salary</SelectItem></SelectContent></Select></FormItem>)} />
+                                    <FormField control={form.control} name="payRate" render={({ field }) => (<FormItem><FormLabel>Rate ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" className="pl-7" {...field} value={field.value ?? 0} /></FormControl></div></FormItem>)} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField control={form.control} name="sin" render={({ field }) => (<FormItem><FormLabel>SIN (HR Secure)</FormLabel><FormControl><Input type="password" placeholder="••• ••• •••" {...field} /></FormControl></FormItem>)} />
+                                    <FormField control={form.control} name="hireDate" render={({ field }) => (<FormItem><FormLabel>Date Hired</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                                </div>
+                                <FormField control={form.control} name="hasContract" render={({ field }) => (<FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-xl bg-white"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-semibold">Employment / Contractor Agreement on File</Label></FormItem>)} />
+                            </section>
+                        )}
+
+                        <section className="space-y-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
+                                <Phone className="h-4 w-4" /> 4. Contact Intelligence
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <FormField control={form.control} name="cellPhone" render={({ field }) => (<FormItem><FormLabel>Cell #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                <FormField control={form.control} name="businessPhone" render={({ field }) => (<FormItem><FormLabel>Work #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                                <FormField control={form.control} name="homePhone" render={({ field }) => (<FormItem><FormLabel>Home #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4 p-4 border rounded-xl bg-muted/10">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground">Primary Address</Label>
+                                    <FormField control={form.control} name="streetAddress" render={({ field }) => (<Input placeholder="Street" {...field} />)} />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <FormField control={form.control} name="city" render={({ field }) => (<Input placeholder="City" {...field} />)} />
+                                        <FormField control={form.control} name="provinceState" render={({ field }) => (<Input placeholder="Prov/State" {...field} />)} />
+                                    </div>
+                                </div>
+                                <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={6} className="resize-none" {...field} /></FormControl></FormItem>)} />
+                            </div>
+                        </section>
+                    </div>
+                </ScrollArea>
+                <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
+                    <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button type="submit" size="lg" className="px-12 font-bold shadow-xl">
+                        <Save className="mr-2 h-5 w-5" /> {contactToEdit ? "Save Changes" : "Create Identity"}
+                    </Button>
+                </DialogFooter>
+            </form>
+        </Form>
+    );
+
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none flex flex-col p-0 text-black">
-                    <DialogHeader className="p-6 pb-4 border-b bg-muted/10 shrink-0 relative">
-                        <DialogTitle className="text-2xl font-bold font-headline text-primary">
-                            {contactToEdit ? "Edit Contact" : "Create Contact"}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {contactToEdit
-                                ? "Update this registry entry."
-                                : "Review the prepared details, select the folder, add anything else, then save."}
-                        </DialogDescription>
-                        {contactToEdit?.documentFolderId && (
-                            <div className="absolute top-6 left-6">
-                                <Button variant="outline" size="sm" className="h-8" onClick={() => router.push(`/document-manager?highlight=${contactToEdit.documentFolderId}`)}>
-                                    <Files className="mr-2 h-4 w-4" /> View Evidence
-                                </Button>
-                            </div>
-                        )}
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                            <ScrollArea className="flex-1">
-                                <div className="max-w-5xl mx-auto w-full p-8 space-y-10">
-                                    <section className="space-y-6">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
-                                            <Users className="h-4 w-4" /> 1. Core Profile
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Legal Name *</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Identity</FormLabel><FormControl><Input placeholder="john@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                            <FormField control={form.control} name="folderId" render={({ field }) => (
-                                                <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Assign role..." /></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
-                                            )} />
-                                            <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        </div>
-                                    </section>
-
-                                    <section className="space-y-6">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
-                                            <Landmark className="h-4 w-4" /> 2. Business & Tax Configuration
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <FormField control={form.control} name="businessName" render={({ field }) => (<FormItem><FormLabel>Legal Company Name</FormLabel><FormControl><Input placeholder="Acme Operations Ltd." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                            <FormField control={form.control} name="craProgramAccountNumber" render={({ field }) => (<FormItem><FormLabel>Business Number (BN / Tax ID)</FormLabel><FormControl><Input placeholder="123456789RP0001" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        </div>
-                                    </section>
-
-                                    {showHrSection && (
-                                        <section className="space-y-6 p-6 border-2 border-primary/20 bg-primary/5 rounded-2xl animate-in fade-in-50 zoom-in-95 duration-300">
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-primary border-b border-primary/20 pb-2 flex items-center gap-2">
-                                                <ShieldCheck className="h-4 w-4" /> 3. Payroll & HR Details (Confidential)
-                                            </h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                <FormField control={form.control} name="workerType" render={({ field }) => (<FormItem><FormLabel>Employment Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="employee">T4 Employee</SelectItem><SelectItem value="contractor">T4A Contractor</SelectItem></SelectContent></Select></FormItem>)} />
-                                                <FormField control={form.control} name="payType" render={({ field }) => (<FormItem><FormLabel>Pay Model</FormLabel><Select onValueChange={field.onChange} value={field.value || ""}> <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="hourly">Hourly Rate</SelectItem><SelectItem value="salary">Annual Salary</SelectItem></SelectContent></Select></FormItem>)} />
-                                                <FormField control={form.control} name="payRate" render={({ field }) => (<FormItem><FormLabel>Rate ($)</FormLabel><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><FormControl><Input type="number" className="pl-7" {...field} value={field.value ?? 0} /></FormControl></div></FormItem>)} />
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <FormField control={form.control} name="sin" render={({ field }) => (<FormItem><FormLabel>SIN (HR Secure)</FormLabel><FormControl><Input type="password" placeholder="••• ••• •••" {...field} /></FormControl></FormItem>)} />
-                                                <FormField control={form.control} name="hireDate" render={({ field }) => (<FormItem><FormLabel>Date Hired</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                                            </div>
-                                            <FormField control={form.control} name="hasContract" render={({ field }) => (<FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-xl bg-white"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-semibold">Employment / Contractor Agreement on File</Label></FormItem>)} />
-                                        </section>
-                                    )}
-
-                                    <section className="space-y-6">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground border-b pb-2 flex items-center gap-2">
-                                            <Phone className="h-4 w-4" /> 4. Contact Intelligence
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <FormField control={form.control} name="cellPhone" render={({ field }) => (<FormItem><FormLabel>Cell #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                            <FormField control={form.control} name="businessPhone" render={({ field }) => (<FormItem><FormLabel>Work #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                            <FormField control={form.control} name="homePhone" render={({ field }) => (<FormItem><FormLabel>Home #</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-4 p-4 border rounded-xl bg-muted/10">
-                                                <Label className="text-xs uppercase font-bold text-muted-foreground">Primary Address</Label>
-                                                <FormField control={form.control} name="streetAddress" render={({ field }) => (<Input placeholder="Street" {...field} />)} />
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <FormField control={form.control} name="city" render={({ field }) => (<Input placeholder="City" {...field} />)} />
-                                                    <FormField control={form.control} name="provinceState" render={({ field }) => (<Input placeholder="Prov/State" {...field} />)} />
-                                                </div>
-                                            </div>
-                                            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={6} className="resize-none" {...field} /></FormControl></FormItem>)} />
-                                        </div>
-                                    </section>
-                                </div>
-                            </ScrollArea>
-                            <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
-                                <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)}>Cancel</Button>
-                                <Button type="submit" size="lg" className="px-12 font-bold shadow-xl">
-                                    <Save className="mr-2 h-5 w-5" /> {contactToEdit ? "Save Changes" : "Create Identity"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
+            {displayMode === 'panel' ? (
+                <div className="absolute inset-0 z-40 flex flex-col bg-background text-black">
+                    <div className="flex flex-col space-y-1.5 p-6 pb-4 border-b bg-muted/10 shrink-0 relative">
+                        <h2 className="text-2xl font-bold font-headline text-primary">{headerTitle}</h2>
+                        <p className="text-sm text-muted-foreground">{headerDescription}</p>
+                        {evidenceButton}
+                        <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    {formBody}
+                </div>
+            ) : (
+                <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                    <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none flex flex-col p-0 text-black">
+                        <DialogHeader className="p-6 pb-4 border-b bg-muted/10 shrink-0 relative">
+                            <DialogTitle className="text-2xl font-bold font-headline text-primary">{headerTitle}</DialogTitle>
+                            <DialogDescription>{headerDescription}</DialogDescription>
+                            {evidenceButton}
+                        </DialogHeader>
+                        {formBody}
+                    </DialogContent>
+                </Dialog>
+            )}
             <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create Identity Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Folder Name</Label><Input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateFolder()} /></div><DialogFooter><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
         </>
     );

@@ -5,7 +5,7 @@
  */
 
 import { allMenuItems } from './menu-items';
-import { isContactCreationRequest } from './copilot-routing';
+import { isContactCreationRequest, isContactEditRequest } from './copilot-routing';
 
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
@@ -196,6 +196,22 @@ export function processCommand(input: string): CommandResult {
     const verb = tokens[0];
     const remaining = tokens.slice(1).join(' ');
 
+    // Editing: "Edit", "Update", "Modify", "Change" a contact routes to the
+    // Co-Pilot conversation, which searches for the matching record and opens
+    // it for editing, the same way contact-creation requests do.
+    if (['edit', 'update', 'modify', 'change'].includes(verb) && remaining) {
+        const param = cleanParam(remaining);
+        const normalizedParam = normalize(param);
+
+        if (normalizedParam.includes('contact')) {
+            return {
+                type: 'unknown',
+                message: 'Contact Assistance',
+                description: 'Routing contact editing to Ogeemo Co-Pilot.',
+            };
+        }
+    }
+
     // Creation and scheduling: "Create", "Make", "New", "Add", "Do", "Schedule", "Book", "Plan"
     // Keep this before generic route alias matching so phrase-based actions like
     // "new contact for Acme" resolve to the correct create flow instead of the
@@ -290,13 +306,21 @@ export function processCommand(input: string): CommandResult {
         const cleaned = cleanParam(remaining);
         const searchTarget = normalize(cleaned);
 
-        // Contact-creation requests route to the Co-Pilot conversation (which
-        // auto-opens the prepared form), never to a plain hub navigation.
+        // Contact-creation and contact-editing requests route to the Co-Pilot
+        // conversation (which auto-opens the prepared form), never to a plain
+        // hub navigation.
         if (isContactCreationRequest(rawInput)) {
             return {
                 type: 'unknown',
                 message: 'Contact Assistance',
                 description: 'Routing contact creation to Ogeemo Co-Pilot.',
+            };
+        }
+        if (isContactEditRequest(rawInput)) {
+            return {
+                type: 'unknown',
+                message: 'Contact Assistance',
+                description: 'Routing contact editing to Ogeemo Co-Pilot.',
             };
         }
 

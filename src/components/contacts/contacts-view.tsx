@@ -284,6 +284,7 @@ export function ContactsView() {
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const actionIntent = searchParams ? searchParams.get('action') : null;
   const prefillName = searchParams ? searchParams.get('name') : null;
+  const editContactId = searchParams ? searchParams.get('contactId') : null;
   const [prefillContactData, setPrefillContactData] = useState<Partial<AssistantContactDraft> | undefined>(undefined);
 
   useEffect(() => {
@@ -294,11 +295,31 @@ export function ContactsView() {
     }
   }, [actionIntent, prefillName]);
 
+  useEffect(() => {
+    if (actionIntent !== 'edit' || !editContactId || isLoading) return;
+    const contact = contacts.find((c) => c.id === editContactId);
+    if (!contact) return;
+    setContactToEdit(contact);
+    setPrefillContactData(undefined);
+    setIsContactFormOpen(true);
+  }, [actionIntent, editContactId, isLoading, contacts]);
+
   useEffect(() => subscribeToCopilotWorkflowEvent('copilot:open_contact_form', ({ draft }) => {
     setContactToEdit(null);
     setPrefillContactData(draft);
     setIsContactFormOpen(true);
   }), []);
+
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:open_contact', ({ contactId, patch }) => {
+    const contact = contacts.find((c) => c.id === contactId);
+    if (!contact) {
+      toast({ variant: 'destructive', title: 'Contact not found', description: "I couldn't find that record in your local database." });
+      return;
+    }
+    setContactToEdit(contact);
+    setPrefillContactData(patch);
+    setIsContactFormOpen(true);
+  }), [contacts, toast]);
 
   const loadData = useCallback(async () => {
     if (!user) { setIsLoading(false); return; }
@@ -340,9 +361,18 @@ export function ContactsView() {
     }
     setPrefillContactData(undefined);
     setIsContactFormOpen(false);
-    if (searchParams?.get('action') === 'new') {
+    if (searchParams?.get('action') === 'new' || searchParams?.get('action') === 'edit') {
       router.replace('/contacts');
     }
+  };
+
+  const handleEditSelectedContact = () => {
+    if (selectedContactIds.length !== 1) return;
+    const contact = contacts.find((c) => c.id === selectedContactIds[0]);
+    if (!contact) return;
+    setContactToEdit(contact);
+    setPrefillContactData(undefined);
+    setIsContactFormOpen(true);
   };
 
   const displayedContacts = useMemo(() => {
@@ -466,7 +496,7 @@ export function ContactsView() {
 
   return (
     <>
-      <div className="flex flex-col h-full text-black">
+      <div className="relative flex flex-col h-full text-black">
         <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
           <h1 className="text-3xl font-bold font-headline text-primary">Contacts Hub</h1>
           <p className="text-muted-foreground">Manage your relationships and folders</p>
@@ -497,6 +527,17 @@ export function ContactsView() {
                   <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p></div>
                   <div className="flex items-center gap-2">
                     {selectedContactIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-3" /> Delete ({selectedContactIds.length})</Button>}
+                    {selectedContactIds.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={selectedContactIds.length > 1}
+                        title={selectedContactIds.length > 1 ? 'Select a single contact to edit' : 'Edit contact'}
+                        onClick={handleEditSelectedContact}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                      </Button>
+                    )}
                     <Button onClick={() => { setContactToEdit(null); setIsContactFormOpen(true); }}><Plus className="mr-2 h-4 w-4" /> New Contact</Button>
                   </div>
                 </div>
@@ -556,33 +597,35 @@ export function ContactsView() {
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>
+
+        {isContactFormOpen && (
+          <ContactFormDialog
+            isOpen={isContactFormOpen}
+            displayMode="panel"
+            onOpenChange={(open) => {
+              setIsContactFormOpen(open);
+              if (!open) {
+                setPrefillContactData(undefined);
+                if (searchParams?.get('action') === 'new' || searchParams?.get('action') === 'edit') {
+                  router.replace('/contacts');
+                }
+              }
+            }}
+            contactToEdit={contactToEdit}
+            selectedFolderId={selectedFolderId}
+            folders={folders}
+            onFoldersChange={setFolders}
+            onSave={handleContactSave}
+            companies={companies}
+            onCompaniesChange={setCompanies}
+            customIndustries={customIndustries}
+            onCustomIndustriesChange={setCustomIndustries}
+            initialData={prefillContactData}
+            initialEmail={prefillContactData?.email ?? ''}
+          />
+        )}
       </div>
 
-      {isContactFormOpen && (
-        <ContactFormDialog
-          isOpen={isContactFormOpen}
-          onOpenChange={(open) => {
-            setIsContactFormOpen(open);
-            if (!open) {
-              setPrefillContactData(undefined);
-              if (searchParams?.get('action') === 'new') {
-                router.replace('/contacts');
-              }
-            }
-          }}
-          contactToEdit={contactToEdit}
-          selectedFolderId={selectedFolderId}
-          folders={folders}
-          onFoldersChange={setFolders}
-          onSave={handleContactSave}
-          companies={companies}
-          onCompaniesChange={setCompanies}
-          customIndustries={customIndustries}
-          onCustomIndustriesChange={setCustomIndustries}
-          initialData={prefillContactData}
-          initialEmail={prefillContactData?.email ?? ''}
-        />
-      )}
       <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create New Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Name</Label><Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder() }} /></div><DialogFooter><Button variant="ghost" onClick={() => setIsNewFolderDialogOpen(false)}>Cancel</Button><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
       <AlertDialog open={!!folderToDelete} onOpenChange={(open) => !open && setFolderToDelete(null)}>
         <AlertDialogContent>

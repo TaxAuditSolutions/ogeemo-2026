@@ -8,6 +8,17 @@ test('routes direct contact creation requests into the OCP conversation', () => 
     assert.equal(processCommand('add a new contact named Ada Lovelace').type, 'unknown');
 });
 
+test('routes direct contact editing requests into the OCP conversation', () => {
+    assert.equal(processCommand('edit a contact').type, 'unknown');
+    assert.equal(processCommand('edit contact for Ada Lovelace').type, 'unknown');
+    assert.equal(processCommand('update contact for Jane Doe').type, 'unknown');
+    assert.equal(processCommand('open edit contact form').type, 'unknown');
+
+    const result = processCommand('modify contact for Jane Doe');
+    assert.equal(result.type, 'unknown');
+    assert.equal(result.message, 'Contact Assistance');
+});
+
 test('retains ordinary Contacts Hub navigation', () => {
     const result = processCommand('open contacts');
 

@@ -161,6 +161,30 @@ test('accepts opening an existing contact without requiring a folder', () => {
     assert.deepEqual(action, { type: 'open_contact', contactId: 'contact-123' });
 });
 
+test('accepts opening an existing contact with an initial patch', () => {
+    const action = parseAssistantClientAction({
+        type: 'open_contact',
+        contactId: 'contact-123',
+        patch: { cellPhone: '555-0199' },
+    }, ['clients']);
+
+    assert.deepEqual(action, {
+        type: 'open_contact',
+        contactId: 'contact-123',
+        patch: { cellPhone: '555-0199' },
+    });
+});
+
+test('rejects an open_contact patch whose folder is not in the active tenant catalog', () => {
+    const action = parseAssistantClientAction({
+        type: 'open_contact',
+        contactId: 'contact-123',
+        patch: { folderId: 'other-tenant-folder' },
+    }, ['clients']);
+
+    assert.equal(action, undefined);
+});
+
 test('accepts incremental contact draft patches and submit actions', () => {
     assert.deepEqual(parseAssistantClientAction({
         type: 'update_contact_draft',
@@ -242,6 +266,20 @@ test('repairs an unmatched contact form folder into Miscellaneous', () => {
     }, folders), {
         type: 'open_contact_form',
         draft: { name: 'Ada Lovelace', folderId: 'misc-id' },
+    });
+});
+
+test('drops an unresolvable folder id from an open_contact patch instead of rejecting the whole action', () => {
+    const folders = [{ id: 'clients-id', name: 'Clients' }];
+
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'open_contact',
+        contactId: 'contact-123',
+        patch: { cellPhone: '555-0199', folderId: 'Unknown' },
+    }, folders), {
+        type: 'open_contact',
+        contactId: 'contact-123',
+        patch: { cellPhone: '555-0199' },
     });
 });
 

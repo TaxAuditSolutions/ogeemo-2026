@@ -43,16 +43,29 @@ export function isContactCreationRequest(message: string): boolean {
 }
 
 /**
+ * Contact-editing requests ("edit John's contact", "update Jane's phone
+ * number") belong in the Co-Pilot conversation, which searches for the
+ * matching record and opens it for editing, the same way creation requests do.
+ */
+const CONTACT_EDIT_PATTERN = /\bcontact\b/i;
+
+export function isContactEditRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!CONTACT_EDIT_PATTERN.test(text)) return false;
+    return /\b(edit|update|modify|change)\b/i.test(text);
+}
+
+/**
  * Outside an open assistant question the command processor still decides; inside
  * one only an explicit command verb may interrupt the conversation.
  */
 export function shouldProcessAsCommand(message: string, history: CopilotRoutingMessage[]): boolean {
     const text = (message || '').trim();
     if (!text) return false;
-    if (isContactCreationRequest(text)) return false;
+    if (isContactCreationRequest(text) || isContactEditRequest(text)) return false;
     if (!isAwaitingAssistantReply(history)) return true;
     const activeContactWorkflow = history.slice(-8).some((entry) =>
-        /\b(contact|full legal name|folder\/category|create it)\b/i.test(entry.content)
+        /\b(contact|full legal name|folder\/category|create it|which contact|confirm|save)\b/i.test(entry.content)
     );
     if (activeContactWorkflow) return false;
     return COMMAND_VERBS.has(firstToken(text));

@@ -118,6 +118,97 @@ const searchContactsTool = ai.defineTool(
   }
 );
 
+const createContactTool = ai.defineTool(
+  {
+    name: 'createContact',
+    description: 'Creates and saves a new contact directly to the tenant Contacts Hub database. Only call this after the user has explicitly confirmed the summarized name and folder should be saved.',
+    inputSchema: z.object({
+      name: z.string().trim().min(2).describe("The contact's full legal name"),
+      folderId: z.string().trim().min(1).describe('The tenant contact folder ID to file the contact under; must be one of the IDs from the available folders catalog'),
+      email: z.string().trim().optional().describe('Email address, if known'),
+      businessName: z.string().trim().optional(),
+      businessPhone: z.string().trim().optional(),
+      cellPhone: z.string().trim().optional(),
+      homePhone: z.string().trim().optional(),
+      notes: z.string().trim().optional(),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      contactId: z.string().optional(),
+      name: z.string().optional(),
+      folderId: z.string().optional(),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => {
+    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
+    const orgId = context && typeof context === 'object' && 'orgId' in context ? (context as any).orgId : undefined;
+    const accessLevel = context && typeof context === 'object' && 'accessLevel' in context ? (context as any).accessLevel : undefined;
+
+    if (!userId || !orgId) return { success: false, message: "User or tenant not authenticated." };
+
+    // Defense in depth: the system prompt already withholds this tool from
+    // viewers, but the tool must not trust the model to have obeyed that.
+    const canCreate = accessLevel === 'editor' || accessLevel === 'org_admin' || accessLevel === 'super_admin';
+    if (!canCreate) return { success: false, message: 'Editor access or higher is required to create contacts.' };
+
+    try {
+      const db = getAdminDb();
+      if (!db) throw new Error("Database not available.");
+
+      const folderSnap = await db.collection('contactFolders').doc(input.folderId).get();
+      if (!folderSnap.exists || folderSnap.data()?.orgId !== orgId) {
+        return { success: false, message: 'The specified folder was not found for this tenant.' };
+      }
+
+      const keywords = new Set<string>();
+      const addKeyword = (value?: string) => {
+        if (!value) return;
+        const lower = value.toLowerCase();
+        keywords.add(lower);
+        lower.split(/[\s@.-]+/).forEach((part) => { if (part) keywords.add(part); });
+      };
+      addKeyword(input.name);
+      addKeyword(input.email);
+      addKeyword(input.businessName);
+
+      const now = new Date();
+      const contactData: Record<string, any> = {
+        name: input.name,
+        folderId: input.folderId,
+        email: input.email || '',
+        businessName: input.businessName,
+        businessPhone: input.businessPhone,
+        cellPhone: input.cellPhone,
+        homePhone: input.homePhone,
+        notes: input.notes,
+        orgId,
+        userId,
+        createdBy: userId,
+        updatedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+        keywords: Array.from(keywords),
+      };
+      Object.keys(contactData).forEach((key) => {
+        if (contactData[key] === undefined) delete contactData[key];
+      });
+
+      const docRef = await db.collection('contacts').add(contactData);
+
+      return {
+        success: true,
+        contactId: docRef.id,
+        name: input.name,
+        folderId: input.folderId,
+        message: `Successfully created contact "${input.name}".`,
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
+);
+
 const searchGlobalTool = ai.defineTool(
   {
     name: 'searchGlobal',
@@ -361,7 +452,7 @@ const ContactCapabilityInputSchema = z.object({
   userId: z.string(),
   orgId: z.string().optional(),
   accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer']).optional(),
-  folders: z.array(z.object({ id: z.string(), name: z.string() })),
+  folders: z.array(z.object({ id: z.string(), name: z.string(), parentId: z.string().nullable().optional() })),
 });
 
 /**
@@ -458,7 +549,14 @@ const contactCapabilityFlow = ai.defineFlow(
   async (input) => {
     const messages = buildScrubbedMessages(input.history, input.message);
     const canCreate = input.accessLevel === 'editor' || input.accessLevel === 'org_admin' || input.accessLevel === 'super_admin';
-    const folderCatalog = input.folders.map(folder => `${folder.name}: ${folder.id}`).join('\n') || 'No contact folders are available.';
+    const foldersById = new Map(input.folders.map((folder) => [folder.id, folder]));
+    const buildFolderPath = (folder: { id: string; name: string; parentId?: string | null }, visited = new Set<string>()): string => {
+      if (visited.has(folder.id)) return folder.name;
+      visited.add(folder.id);
+      const parent = folder.parentId ? foldersById.get(folder.parentId) : undefined;
+      return parent ? `${buildFolderPath(parent, visited)} / ${folder.name}` : folder.name;
+    };
+    const folderCatalog = input.folders.map(folder => `${buildFolderPath(folder)}: ${folder.id}`).join('\n') || 'No contact folders are available.';
 
     const system = `
 You are Ogeemo Co-Pilot's Contacts Hub capability evaluator. Decide semantically whether the conversation concerns Contacts Hub: creating a contact, learning how to create one, opening the hub, finding or opening an existing contact, editing a contact, or working with contact folders and categories.
@@ -476,6 +574,8 @@ You may offer the user exactly one clickable control by returning an action:
 - open_contact opens one specific existing contact by its real ID for editing, optionally with a patch of fields already known from the conversation.
 Never invent a URL or path. The client executes contact-workflow actions automatically.
 
+You also have a createContact tool that directly creates and saves a new contact record. Only call it during Turn 6 of the contact-creation state machine below, after the user has explicitly confirmed the summarized name and folder. Never call it for editing an existing contact; edits still use submit_contact_form.
+
 When the conversation concerns contact creation:
 - Treat this as a strict state machine. Infer the current state from the complete conversation history and never repeat a completed state.
 - Turn 1, intent choice: when the user broadly asks to create a contact and has not chosen a mode, ask whether they want step-by-step instructions or want you to create it for them. Return no action.
@@ -484,14 +584,13 @@ When the conversation concerns contact creation:
 - Self-fill choice: explain that the form is ready and stop prompting. Return no additional action.
 - Turn 3, agent-fill choice: when the user asks you to fill it, ask for the contact's Full Legal Name. Return no action.
 - Turn 4, name: when the user supplies the requested name, return update_contact_draft with patch containing only name, then ask which Folder/Category to use. List the available folder names. Do not choose a folder for the user.
-- Turn 5, folder: resolve the user's folder wording to exactly one ID from the catalog. Return update_contact_draft with patch containing only folderId. Summarize the Full Legal Name and folder name retained from history, then ask for explicit confirmation to create the contact.
-- Turn 6, confirmation: only an unambiguous affirmative response to the summary permits submit_contact_form. Return that action and say you are submitting the contact. For a negative or ambiguous answer, do not submit; ask what should change or ask again for confirmation.
-- If the initial request already includes details, retain them, but still perform intent disambiguation unless the user explicitly asked the agent to create and fill the contact. Never submit without the separate confirmation turn.
-- The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
+- Turn 5, folder: resolve the user's folder wording to exactly one ID from the catalog (the catalog lists nested folders as "Parent / Child"; match on the last path segment when the user names only the subfolder). Return update_contact_draft with patch containing only folderId. Summarize the Full Legal Name and folder name retained from history, then ask for explicit confirmation to create the contact.
+- Turn 6, confirmation: only an unambiguous affirmative response to the summary permits calling the createContact tool with the confirmed name, folderId, and any other details gathered in the conversation. After the tool call returns, if it reports success, tell the user the contact was created in the named folder and return open_contact with the tool's returned contactId. If the tool reports failure, explain the reason from its message and do not claim the contact was created. For a negative or ambiguous answer, do not call the tool; ask what should change or ask again for confirmation.
+- If the initial request already includes details, retain them, but still perform intent disambiguation unless the user explicitly asked the agent to create and fill the contact. Never call createContact without the separate confirmation turn.
+- The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action or call createContact.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Use only folder IDs from the catalog. Never place a folder name in folderId.
-- After submit_contact_form, do not claim persistence succeeded; say submission was requested because the client form remains authoritative for validation and save feedback.
-- Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft.
+- Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft or in the createContact call.
 
 When the conversation concerns editing an existing contact:
 - Treat this as a strict state machine, separate from the creation state machine above. Infer the current state from the complete conversation history and never repeat a completed state.
@@ -520,14 +619,14 @@ ${folderCatalog}
     const baseOptions = {
       model: STABLE_GEMINI_MODEL,
       messages,
-      context: { userId: input.userId, orgId: input.orgId },
+      context: { userId: input.userId, orgId: input.orgId, accessLevel: input.accessLevel },
       system,
       output: { schema: ContactCapabilityResultSchema },
       config: { temperature: 0.1 },
     };
 
     try {
-      const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool] });
+      const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool, createContactTool] });
       if (result.output) {
         return ContactCapabilityResultSchema.parse(result.output);
       }
@@ -544,10 +643,10 @@ ${folderCatalog}
 
     // Retry with tools removed: the response schema becomes the only possible
     // output shape, so the model must return the structured JSON reply. The
-    // duplicate check is unavailable in this turn, so instruct the model to
-    // proceed with the form anyway instead of stalling on it.
+    // duplicate check and contact creation are unavailable in this turn, so
+    // instruct the model to proceed with the form anyway instead of stalling.
     const retrySystem = `${system}
-Important for this retry turn: the searchContacts tool is temporarily unavailable. Continue the exact state machine from history and return only the action allowed for the current turn. Do not skip questions, combine turns, or submit without explicit confirmation.`;
+Important for this retry turn: the searchContacts and createContact tools are temporarily unavailable. Continue the exact state machine from history and return only the action allowed for the current turn. Do not skip questions, combine turns, call createContact, or claim a contact was created. If this is Turn 6, ask the user to reconfirm so the next turn can call createContact.`;
 
     const retryResult = await ai.generate({
       ...baseOptions,

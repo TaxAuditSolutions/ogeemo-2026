@@ -40,6 +40,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { useOgeemoCopilotSidebar } from '@/context/ogeemo-copilot-sidebar-context';
+import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -100,11 +101,20 @@ function CopilotPanelContent({
     const [draftTitle, setDraftTitle] = useState('');
     const [threadToDelete, setThreadToDelete] = useState<{ id: string; title: string } | null>(null);
     const messageScrollRef = useRef<HTMLDivElement>(null);
+    const messageInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const container = messageScrollRef.current;
         if (container) container.scrollTop = container.scrollHeight;
     }, [activeThread?.messages, isThinking]);
+
+    // Return focus to the message field once the assistant finishes
+    // responding so the user can keep typing without reclicking it.
+    const wasThinkingRef = useRef(false);
+    useEffect(() => {
+        if (wasThinkingRef.current && !isThinking) messageInputRef.current?.focus();
+        wasThinkingRef.current = isThinking;
+    }, [isThinking]);
 
     const commitRename = async () => {
         if (!editingThreadId || !draftTitle.trim()) return;
@@ -155,7 +165,7 @@ function CopilotPanelContent({
                         onChange={(event) => setSearchQuery(event.target.value)}
                         placeholder="Search chats"
                         aria-label="Search chat history"
-                        className="h-8 bg-background pl-8 text-xs"
+                        className="h-8 bg-background pl-8 text-xs text-black placeholder:text-muted-foreground"
                     />
                 </div>
 
@@ -334,6 +344,7 @@ function CopilotPanelContent({
                 <div className="shrink-0 border-t bg-background p-2.5">
                     <div className="flex items-center gap-1.5">
                         <Input
+                            ref={messageInputRef}
                             value={input}
                             onChange={(event) => setInput(event.target.value)}
                             onKeyDown={(event) => {
@@ -413,7 +424,7 @@ export function OgeemoCopilotSidebar() {
     // right here, pre-filled with the assistant draft.
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
-    const [contactDraft, setContactDraft] = useState<AssistantContactDraft | undefined>(undefined);
+    const [contactDraft, setContactDraft] = useState<Partial<AssistantContactDraft> | undefined>(undefined);
     const [folders, setFolders] = useState<FolderData[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [industries, setIndustries] = useState<Industry[]>([]);
@@ -463,22 +474,38 @@ export function OgeemoCopilotSidebar() {
             return;
         }
 
+        // Contacts Hub already renders the contact form inline in its own
+        // main panel via the workflow-event bus; reuse that there instead of
+        // this sidebar's full-viewport overlay dialog.
+        const isOnContactsHub = pathname === '/contacts' || pathname.startsWith('/contacts/');
+
         try {
             const support = await ensureSupportData();
 
             if (action.type === 'open_contact_form') {
                 const resolved = resolveAssistantCapabilityActionWithRepair(action, support.folders);
                 if (resolved?.type === 'open_contact_form') {
+                    if (isOnContactsHub) {
+                        dispatchCopilotWorkflowEvent('copilot:open_contact_form', { draft: resolved.draft });
+                        return;
+                    }
                     setContactToEdit(null);
                     setContactDraft(resolved.draft);
                     setIsFormOpen(true);
                     return;
                 }
             } else if (action.type === 'open_contact') {
+                if (isOnContactsHub) {
+                    dispatchCopilotWorkflowEvent('copilot:open_contact', {
+                        contactId: action.contactId,
+                        ...(action.patch ? { patch: action.patch } : {}),
+                    });
+                    return;
+                }
                 const contacts = user?.uid ? await getContacts(user.uid) : [];
                 const contact = contacts.find((entry) => entry.id === action.contactId);
                 if (contact) {
-                    setContactDraft(undefined);
+                    setContactDraft(action.patch);
                     setContactToEdit(contact);
                     setIsFormOpen(true);
                     return;
@@ -504,18 +531,22 @@ export function OgeemoCopilotSidebar() {
                 description: error instanceof Error ? error.message : 'Please try again.',
             });
         }
-    }, [ensureSupportData, router, toast, user?.uid]);
+    }, [ensureSupportData, pathname, router, toast, user?.uid]);
 
     // Auto-open the prepared contact form as soon as the co-pilot returns an
-    // open_contact_form action (mirrors the full Co-Pilot workspace). The
-    // freshness window prevents stale thread messages from re-opening the form
-    // when switching between chats or reloading the page.
+    // open_contact_form or open_contact action (mirrors the full Co-Pilot
+    // workspace). Contacts Hub already opens its own inline panel dialog for
+    // these actions, so this effect skips that page entirely. The freshness
+    // window prevents stale thread messages from re-opening the form when
+    // switching between chats or reloading the page.
     const lastAutoOpenedActionRef = useRef<string | null>(null);
     useEffect(() => {
         if (pathname === '/co-pilot' || pathname.startsWith('/co-pilot/')) return;
+        if (pathname === '/contacts' || pathname.startsWith('/contacts/')) return;
         const messages = activeThread?.messages ?? [];
         const last = messages[messages.length - 1];
-        if (!last || last.role !== 'model' || last.action?.type !== 'open_contact_form') return;
+        if (!last || last.role !== 'model') return;
+        if (last.action?.type !== 'open_contact_form' && last.action?.type !== 'open_contact') return;
         const messageAgeMs = last.timestamp ? Date.now() - new Date(last.timestamp).getTime() : Infinity;
         if (messageAgeMs > 3 * 60 * 1000) return;
         const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
@@ -537,7 +568,7 @@ export function OgeemoCopilotSidebar() {
             contactToEdit={contactToEdit}
             folders={folders}
             onFoldersChange={handleFoldersChange}
-            onSave={() => {}}
+            onSave={() => { }}
             companies={companies}
             onCompaniesChange={setCompanies}
             customIndustries={industries}

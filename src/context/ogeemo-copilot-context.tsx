@@ -249,6 +249,17 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                     dispatchCopilotWorkflowEvent('copilot:navigate', { target: `/contacts?${params}` });
                     router.push(`/contacts?${params}`);
                 }
+            } else if (assistantAction?.type === 'open_contact') {
+                if (pathname === '/contacts') {
+                    dispatchCopilotWorkflowEvent('copilot:open_contact', {
+                        contactId: assistantAction.contactId,
+                        ...(assistantAction.patch ? { patch: assistantAction.patch } : {}),
+                    });
+                } else {
+                    const params = new URLSearchParams({ action: 'edit', contactId: assistantAction.contactId });
+                    dispatchCopilotWorkflowEvent('copilot:navigate', { target: `/contacts?${params}` });
+                    router.push(`/contacts?${params}`);
+                }
             } else if (assistantAction?.type === 'update_contact_draft') {
                 dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: assistantAction.patch });
             } else if (assistantAction?.type === 'submit_contact_form') {

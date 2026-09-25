@@ -50,6 +50,7 @@ import {
     ASSISTANT_DESTINATIONS,
     parseAssistantClientAction,
     type AssistantContactDraft,
+    type AssistantContactDraftPatch,
     type AssistantMessageAction,
 } from '@/ai/assistant-actions';
 import { getUserProfile } from '@/core/user-profile-service';
@@ -167,7 +168,7 @@ export default function AiDispatchPage() {
     const [industries, setIndustries] = useState<Industry[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
-    const [contactDraft, setContactDraft] = useState<AssistantContactDraft | undefined>(undefined);
+    const [contactDraft, setContactDraft] = useState<Partial<AssistantContactDraft> | undefined>(undefined);
 
     const launcherInputRef = useRef<HTMLInputElement>(null);
     const launcherBaseTextRef = useRef('');
@@ -188,23 +189,40 @@ export default function AiDispatchPage() {
         }
     }, [messages, isThinking]);
 
+    // Return focus to the launcher field once the assistant finishes
+    // responding so the user can keep typing without reclicking it.
+    const wasThinkingRef = useRef(false);
+    useEffect(() => {
+        if (wasThinkingRef.current && !isThinking) launcherInputRef.current?.focus();
+        wasThinkingRef.current = isThinking;
+    }, [isThinking]);
+
     // Auto-open the prepared contact form as soon as the co-pilot returns an
-    // open_contact_form action: the form pops up filled with the drafted data
-    // and stays open for the user to pick the folder, add more info, and save.
+    // open_contact_form or open_contact action: the form pops up filled with
+    // the drafted data (or the matched record) and stays open for the user to
+    // pick the folder, add more info, and save.
     // Freshness window prevents stale thread messages from re-opening the form
     // when switching between chats or reloading the page.
     const lastAutoOpenedActionRef = useRef<string | null>(null);
     useEffect(() => {
         const last = messages[messages.length - 1];
         if (!last || last.role !== 'model' || !last.action) return;
+        const action = last.action;
 
         // A drafted contact opens the form pre-filled; the "New Contact"
-        // destination opens a blank form. Anything else is not a form action.
-        let draft: AssistantContactDraft | undefined;
-        if (last.action.type === 'open_contact_form') {
-            draft = last.action.draft;
-        } else if (last.action.type === 'dispatch' && last.action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
+        // destination opens a blank form; an existing contact opens for editing.
+        // Anything else is not a form action.
+        let draft: Partial<AssistantContactDraft> | undefined;
+        let editTarget: Contact | null = null;
+        if (action.type === 'open_contact_form') {
+            draft = action.draft;
+        } else if (action.type === 'dispatch' && action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
             draft = undefined;
+        } else if (action.type === 'open_contact') {
+            const contact = contacts.find((entry) => entry.id === action.contactId);
+            if (!contact) return;
+            editTarget = contact;
+            draft = action.patch;
         } else {
             return;
         }
@@ -215,11 +233,11 @@ export default function AiDispatchPage() {
         if (lastAutoOpenedActionRef.current === actionKey) return;
         lastAutoOpenedActionRef.current = actionKey;
         console.info('[co-pilot] auto-opening contact form', draft ?? '(blank)');
-        toast({ title: draft ? 'Opening your prepared contact form' : 'Opening a blank contact form', description: 'Select the folder, add any details, then save.' });
-        setContactToEdit(null);
+        toast({ title: editTarget ? 'Opening the matching contact' : (draft ? 'Opening your prepared contact form' : 'Opening a blank contact form'), description: 'Select the folder, add any details, then save.' });
+        setContactToEdit(editTarget);
         setContactDraft(draft);
         setIsFormOpen(true);
-    }, [messages, activeThreadId]);
+    }, [messages, activeThreadId, contacts]);
 
     useEffect(() => {
         const loadRuntimeOrgContext = async () => {
@@ -358,8 +376,8 @@ export default function AiDispatchPage() {
         setSelectedThreadIds([]);
     };
 
-    const handleLaunchRegistry = (contactId: string) => {
-        setContactDraft(undefined);
+    const handleLaunchRegistry = (contactId: string, patch?: AssistantContactDraftPatch) => {
+        setContactDraft(patch);
         // 1. Hardcoded Support for Dan/Julie
         if (contactId === 'dan-admin-id') {
             setContactToEdit({ id: 'dan', name: 'Dan (Ogeemo Administrator)', email: 'dan@ogeemo.com', businessName: 'Ogeemo Mastermind', businessPhone: '555-0199', cellPhone: '555-0100', folderId: folders[0]?.id || 'default' } as any);
@@ -433,7 +451,7 @@ export default function AiDispatchPage() {
         } else if (validatedAction.type === 'submit_contact_form') {
             dispatchCopilotWorkflowEvent('copilot:submit_contact_form', undefined);
         } else if (validatedAction.type === 'open_contact') {
-            handleLaunchRegistry(validatedAction.contactId);
+            handleLaunchRegistry(validatedAction.contactId, validatedAction.patch);
         }
     };
 

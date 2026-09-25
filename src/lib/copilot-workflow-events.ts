@@ -5,6 +5,7 @@ import type { AssistantContactDraft, AssistantContactDraftPatch } from '@/ai/ass
 type CopilotWorkflowEventMap = {
     'copilot:navigate': { target: string };
     'copilot:open_contact_form': { draft?: Partial<AssistantContactDraft> };
+    'copilot:open_contact': { contactId: string; patch?: AssistantContactDraftPatch };
     'copilot:update_contact_draft': { patch: AssistantContactDraftPatch };
     'copilot:submit_contact_form': undefined;
 };

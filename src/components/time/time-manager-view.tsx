@@ -707,9 +707,28 @@ export function TimeManagerView() {
                                     Start a session to record work on this event. Sessions feed the Time Log reports.
                                 </CardDescription>
                             </div>
-                            <div className="shrink-0 text-right">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground mr-2">Total on this event</span>
-                                <span className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</span>
+                            <div className="shrink-0 flex flex-wrap items-start justify-end gap-3 sm:gap-4">
+                                {timerState?.isActive ? (
+                                    <>
+                                        <div className="text-right" title={timerState.isPaused ? 'Session paused' : 'Session timer running on this event'}>
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground">Active session</span>
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <span className={cn("h-2 w-2 rounded-full", timerState.isPaused ? "bg-amber-500" : "bg-green-500 animate-pulse")} />
+                                                <span className={cn("font-mono text-lg font-bold", timerState.isPaused ? "text-amber-600" : "text-green-600")}>
+                                                    {formatTime(elapsedSeconds)}
+                                                </span>
+                                            </div>
+                                            {timerState.isPaused ? (
+                                                <span className="text-[10px] font-bold uppercase text-amber-600">Paused</span>
+                                            ) : null}
+                                        </div>
+                                        <Separator orientation="vertical" className="h-10 mx-0.5" />
+                                    </>
+                                ) : null}
+                                <div className="text-right">
+                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Total on this event</span>
+                                    <div className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</div>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-0">

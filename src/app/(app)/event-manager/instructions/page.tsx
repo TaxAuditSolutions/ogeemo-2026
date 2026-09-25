@@ -91,6 +91,7 @@ export default function TimeManagerInstructionsPage() {
                                         <li>While the timer is running, you can add notes directly into the <strong>Session Notes</strong> text box that appears.</li>
                                         <li>Click <strong>"Pause Session"</strong> to pause the timer. The button will become "Resume Session".</li>
                                         <li>When you've completed a block of work, click <strong>"Log Session"</strong> to save that time and the notes you've written. You can log multiple sessions for a single event.</li>
+                                        <li>While a session runs, the card header shows an <strong>Active session</strong> readout beside <strong>Total on this event</strong>. It ticks live with a green dot while running, and turns amber with a <strong>Paused</strong> label when paused. The total always includes the running session's time.</li>
                                     </ol>
                                 </div>
                             </AccordionContent>

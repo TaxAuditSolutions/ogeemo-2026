@@ -42,6 +42,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal } from 'lucide-react';
 import { AddLineItemDialog } from './add-line-item-dialog';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
+import { LibraryPickerPopover } from './library-picker-popover';
 
 interface LocalLineItem {
     id: string;
@@ -825,13 +826,6 @@ export function InvoiceGeneratorView() {
                                         <Clock className="mr-2 h-4 w-4" /> Add from Time Log
                                     </Button>
                                 </div>
-                <datalist id="library-items">
-                  {serviceItems.map(s => (
-                    <option key={s.id} value={s.description}>
-                      {formatCurrency(s.price)}
-                    </option>
-                  ))}
-                </datalist>
                 <div className="border rounded-md overflow-x-auto">
                   <Table className="min-w-[950px]">
                                         <TableHeader>
@@ -850,8 +844,7 @@ export function InvoiceGeneratorView() {
                           <TableCell className="p-2 align-top">
                             <div className="relative flex items-center">
                               <Input 
-                                list="library-items"
-                                className="w-full text-sm h-9 pr-8 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
+                                className="w-full text-sm h-9 pr-16 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
                                 placeholder="Type or select from library..." 
                                 value={item.description}
                                 onChange={(e) => {
@@ -869,7 +862,19 @@ export function InvoiceGeneratorView() {
                                   }
                                 }}
                               />
-                              <div className="absolute right-0 top-0 h-9 flex items-center pr-1">
+                              <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-1">
+                                <LibraryPickerPopover
+                                  serviceItems={serviceItems}
+                                  searchValue={item.description}
+                                  onSelect={(service) => {
+                                    handleUpdateLineItem(item.id, 'description', service.description);
+                                    handleUpdateLineItem(item.id, 'price', service.price);
+                                    handleUpdateLineItem(item.id, 'serviceItemId', service.id);
+                                    if (service.taxType) {
+                                      handleUpdateLineItem(item.id, 'taxType', service.taxType);
+                                    }
+                                  }}
+                                />
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">

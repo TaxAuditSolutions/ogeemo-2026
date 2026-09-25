@@ -10,11 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, Settings } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
@@ -40,6 +41,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { AddLineItemDialog } from './add-line-item-dialog';
+import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
 interface LocalLineItem {
     id: string;
@@ -163,6 +165,7 @@ const InvoiceDocument = ({
 export function InvoiceGeneratorView() {
     const { toast } = useToast();
     const { user } = useAuth();
+    const { preferences } = useUserPreferences();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { handlePrint, contentRef } = useReactToPrint();
@@ -172,6 +175,7 @@ export function InvoiceGeneratorView() {
     const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
     const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
     const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
+    const [incomeCategories, setIncomeCategories] = useState<IncomeCategory[]>([]);
     const [customIndustries, setCustomIndustries] = useState<Industry[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -198,6 +202,7 @@ export function InvoiceGeneratorView() {
     const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
     const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
     const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
+    const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
 
     const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
@@ -257,10 +262,12 @@ export function InvoiceGeneratorView() {
                     fetchedCompanies,
                     fetchedServiceItems,
                     fetchedTaxTypes,
+                    fetchedIncomeCategories,
                 ] = await Promise.all([
                     getCompanies(user.uid),
                     getServiceItems(user.uid),
-                    getTaxTypes(user.uid),
+                    getTaxTypes(user.uid).catch(() => [] as TaxType[]),
+                    getIncomeCategories(user.uid).catch(() => [] as IncomeCategory[]),
                 ]);
 
                 const fetchedContacts = await getContacts().catch(() => []);
@@ -273,6 +280,7 @@ export function InvoiceGeneratorView() {
                 setServiceItems(fetchedServiceItems);
                 setContactFolders(fetchedFolders);
                 setTaxTypes(fetchedTaxTypes);
+                setIncomeCategories(fetchedIncomeCategories);
                 setUserProfile(profile);
                 setCustomIndustries(fetchedIndustries);
 
@@ -370,6 +378,9 @@ export function InvoiceGeneratorView() {
     };
 
     const handleAddEmptyLineItem = () => {
+        const defaultTaxType = preferences?.defaultTaxRate
+            ? taxTypes.find(t => t.rate === preferences.defaultTaxRate)
+            : undefined;
         setLineItems(prev => [
             ...prev,
             {
@@ -377,8 +388,8 @@ export function InvoiceGeneratorView() {
                 description: '',
                 quantity: 1,
                 price: 0,
-                taxType: 'None',
-                taxRate: 0,
+                taxType: defaultTaxType ? defaultTaxType.name : 'None',
+                taxRate: defaultTaxType ? defaultTaxType.rate : 0,
             }
         ]);
     };
@@ -822,12 +833,13 @@ export function InvoiceGeneratorView() {
                   ))}
                 </datalist>
                 <div className="border rounded-md overflow-x-auto">
-                  <Table className="min-w-[800px]">
+                  <Table className="min-w-[950px]">
                                         <TableHeader>
                                             <TableRow>
-                        <TableHead className="w-[54%]">Description</TableHead>
+                        <TableHead className="w-[40%]">Description</TableHead>
+                        <TableHead className="w-[16%]">Category</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
-                        <TableHead className="w-[8%] text-center">Qty</TableHead>
+                        <TableHead className="w-[6%] text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
                       </TableRow>
@@ -897,22 +909,61 @@ export function InvoiceGeneratorView() {
                             </div>
                           </TableCell>
                                                     <TableCell className="p-2 align-top">
-                                                        <Select 
-                                                            value={item.taxType || "None"} 
-                                                            onValueChange={(val) => handleUpdateLineItem(item.id, 'taxType', val)}
+                                                        <Select
+                                                            value={item.categoryNumber || 'uncategorized'}
+                                                            onValueChange={(val) => handleUpdateLineItem(item.id, 'categoryNumber', val === 'uncategorized' ? '' : val)}
                                                         >
                                                             <SelectTrigger className="h-9">
-                                                                <SelectValue placeholder="Tax..." />
+                                                                <SelectValue placeholder="Category..." />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="None">No Tax</SelectItem>
-                                                                {taxTypes.map(t => (
-                                                                    <SelectItem key={t.id} value={t.name}>
-                                                                        {t.name} ({t.rate}%)
+                                                                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                                                                {incomeCategories.map(c => (
+                                                                    <SelectItem key={c.id} value={c.categoryNumber || c.id}>
+                                                                        {c.name}{c.categoryNumber ? ` (#${c.categoryNumber})` : ''}
                                                                     </SelectItem>
                                                                 ))}
+                                                                {incomeCategories.length === 0 && (
+                                                                    <div className="px-2 py-1.5 text-center text-xs italic text-muted-foreground">
+                                                                        No categories yet &mdash; add them in the Tax Center.
+                                                                    </div>
+                                                                )}
                                                             </SelectContent>
                                                         </Select>
+                                                    </TableCell>
+                                                    <TableCell className="p-2 align-top">
+                                                        <div className="flex items-center gap-1">
+                                                            <Select 
+                                                                value={taxTypes.find(t => t.name === item.taxType || t.id === item.taxType)?.name ?? (item.taxType && item.taxType !== 'None' ? item.taxType : 'None')} 
+                                                                onValueChange={(val) => handleUpdateLineItem(item.id, 'taxType', val)}
+                                                            >
+                                                                <SelectTrigger className="h-9 flex-1 min-w-0">
+                                                                    <SelectValue placeholder="Tax..." />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="None">No Tax</SelectItem>
+                                                                    {taxTypes.map(t => (
+                                                                        <SelectItem key={t.id} value={t.name}>
+                                                                            {t.name} ({t.rate}%)
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                    {taxTypes.length === 0 && (
+                                                                        <div className="px-2 py-1.5 text-center text-xs italic text-muted-foreground">
+                                                                            No tax rates defined yet &mdash; click + to add.
+                                                                        </div>
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-9 w-9 shrink-0"
+                                                                onClick={() => setIsManageTaxDialogOpen(true)}
+                                                                title="Add or manage tax rates"
+                                                            >
+                                                                <Settings className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="p-2 align-top">
                                                         <Input 
@@ -1060,6 +1111,13 @@ export function InvoiceGeneratorView() {
                 onSave={handleSaveLineItemFromDialog as any}
                 serviceItems={serviceItems}
                 onSaveRepeatable={handleSaveRepeatableItem}
+                incomeCategories={incomeCategories}
+                taxTypes={taxTypes}
+                onTaxTypesChange={setTaxTypes}
+            />
+            <ManageTaxTypesDialog
+                isOpen={isManageTaxDialogOpen}
+                onOpenChange={setIsManageTaxDialogOpen}
                 taxTypes={taxTypes}
                 onTaxTypesChange={setTaxTypes}
             />

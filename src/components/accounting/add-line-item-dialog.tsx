@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { type ServiceItem, type TaxType } from '@/core/accounting-service';
+import { type ServiceItem, type TaxType, type IncomeCategory } from '@/core/accounting-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
@@ -72,6 +72,7 @@ interface AddLineItemDialogProps {
   onSaveRepeatable: (item: Omit<ServiceItem, 'id' | 'userId'>) => void;
   taxTypes: TaxType[];
   onTaxTypesChange: (taxTypes: TaxType[]) => void;
+  incomeCategories?: IncomeCategory[];
 }
 
 const formatNumberWithCommas = (value: string | number) => {
@@ -91,6 +92,7 @@ export function AddLineItemDialog({
   onSaveRepeatable,
   taxTypes,
   onTaxTypesChange,
+  incomeCategories = [],
 }: AddLineItemDialogProps) {
   const [description, setDescription] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
@@ -365,6 +367,27 @@ export function AddLineItemDialog({
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
+                    <div className="space-y-2">
+                        <Label htmlFor="categoryNumber" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tax Category</Label>
+                        <Select value={categoryNumber || 'uncategorized'} onValueChange={(val) => setCategoryNumber(val === 'uncategorized' ? '' : val)}>
+                            <SelectTrigger id="categoryNumber" className="h-12 text-base bg-white">
+                                <SelectValue placeholder="Select category from Tax Center..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                                {incomeCategories.map(c => (
+                                    <SelectItem key={c.id} value={c.categoryNumber || c.id}>
+                                        {c.name}{c.categoryNumber ? ` (#${c.categoryNumber})` : ''}
+                                    </SelectItem>
+                                ))}
+                                {incomeCategories.length === 0 && (
+                                    <div className="px-2 py-1.5 text-center text-xs italic text-muted-foreground">
+                                        No categories yet &mdash; add them in the Tax Center.
+                                    </div>
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 <div className="space-y-4">

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -20,8 +20,13 @@ import {
   ShieldCheck,
   FileSignature,
   WalletCards,
+  BadgePercent,
 } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { getTaxTypes, type TaxType } from '@/core/accounting-service';
+import { ManageTaxTypesDialog } from '@/components/accounting/manage-tax-types-dialog';
 
 interface FeatureCardProps {
   icon: React.ElementType;
@@ -30,9 +35,10 @@ interface FeatureCardProps {
   href: string;
   cta: string;
   disabled?: boolean;
+  onClick?: () => void;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, href, cta, disabled }) => (
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, href, cta, disabled, onClick }) => (
   <Card className="flex flex-col">
     <CardHeader>
       <div className="flex items-start gap-4">
@@ -47,17 +53,39 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     </CardHeader>
     <CardContent className="flex-1" />
     <CardFooter>
-      <Button asChild className="w-full" disabled={disabled}>
-        <Link href={href}>
-          {cta}
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Link>
+      <Button asChild={!onClick} className="w-full" disabled={disabled} onClick={onClick}>
+        {onClick ? (
+          <>
+            {cta}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        ) : (
+          <Link href={href}>
+            {cta}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        )}
       </Button>
     </CardFooter>
   </Card>
 );
 
 export default function TaxCenterPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [taxTypes, setTaxTypes] = useState<TaxType[]>([]);
+  const [isTaxRatesOpen, setIsTaxRatesOpen] = useState(false);
+
+  const handleOpenTaxRates = async () => {
+    setIsTaxRatesOpen(true);
+    if (!user) return;
+    try {
+      setTaxTypes(await getTaxTypes(user.uid));
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to load tax rates', description: error.message });
+    }
+  };
+
   const features = [
     { 
       icon: FileText, 
@@ -70,10 +98,18 @@ export default function TaxCenterPage() {
     {
       icon: FileSignature,
       title: "Manage Tax Categories",
-      description: "Customize and manage your income and expense categories to align with tax forms.",
+      description: "Customize the income and expense categories used to classify line items and align with tax forms.",
       href: "/accounting/tax/categories",
       cta: "Manage Categories",
       disabled: false,
+    },
+    {
+      icon: BadgePercent,
+      title: "Manage Tax Rates",
+      description: "Create and maintain the tax rates offered on invoice and quote line items.",
+      href: "#",
+      cta: "Manage Tax Rates",
+      onClick: handleOpenTaxRates,
     },
     { 
       icon: WalletCards, 
@@ -121,6 +157,12 @@ export default function TaxCenterPage() {
           <FeatureCard key={feature.title} {...feature} />
         ))}
       </div>
+      <ManageTaxTypesDialog
+        isOpen={isTaxRatesOpen}
+        onOpenChange={setIsTaxRatesOpen}
+        taxTypes={taxTypes}
+        onTaxTypesChange={setTaxTypes}
+      />
     </div>
   );
 }

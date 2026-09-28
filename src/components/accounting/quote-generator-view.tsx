@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, Settings } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -264,6 +264,10 @@ export function QuoteGeneratorView() {
         serviceItemId: item.serviceItemId,
       }));
       setLineItems(mappedLineItems);
+      toast({
+        title: 'Editing Existing Quote',
+        description: `Quote ${quoteData.quoteNumber} loaded. Use "Clear Form" to start a brand new quote.`,
+      });
 
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to load quote', description: error.message });
@@ -325,7 +329,8 @@ export function QuoteGeneratorView() {
         const templateToEditRaw = localStorage.getItem('editQuoteTemplate');
         if (templateToEditRaw) {
           const template = JSON.parse(templateToEditRaw);
-          setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+          const templateItems = Array.isArray(template.items) ? template.items : [];
+          setLineItems(templateItems.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
           if (template.notes) setNotes(template.notes);
           localStorage.removeItem('editQuoteTemplate');
         }
@@ -538,29 +543,63 @@ export function QuoteGeneratorView() {
   };
 
   const handleSaveTemplate = () => {
-    const templateName = prompt("Enter a name for this template:");
+    const templateName = prompt("Enter a name for this template:")?.trim();
     if (!templateName) return;
 
+    const existing = quoteTemplates.find((t: any) => t.name === templateName);
+    if (existing && !window.confirm(`A template named "${templateName}" already exists. Overwrite it?`)) {
+      return;
+    }
+
     const newTemplate = {
+      id: existing?.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       name: templateName,
       items: lineItems,
       notes,
     };
-    
-    const updatedTemplates = [...quoteTemplates, newTemplate];
+
+    const updatedTemplates = existing
+      ? quoteTemplates.map((t: any) => (t.name === templateName ? newTemplate : t))
+      : [...quoteTemplates, newTemplate];
     setQuoteTemplates(updatedTemplates);
     localStorage.setItem('quoteTemplates', JSON.stringify(updatedTemplates));
-    toast({ title: 'Template Saved', description: `Quote template "${templateName}" saved.` });
+    toast({ title: existing ? 'Template Updated' : 'Template Saved', description: `Quote template "${templateName}" ${existing ? 'overwritten' : 'saved'}.` });
   };
 
   const handleLoadTemplate = (template: any) => {
-    if (lineItems.length > 0 && !window.confirm("Loading a template will replace your current line items. Continue?")) return;
-    setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+    const items = Array.isArray(template.items) ? template.items : [];
+    const isDirty = lineItems.length > 0 || !!lineItemDetails || !!quoteToEditId || notes !== 'Thank you for your interest in our services.';
+    if (isDirty && !window.confirm('Start a new quote from this template?\nThe current form (line items, notes, and details) will be cleared.')) {
+      return;
+    }
+    handleClearQuote(true);
+    setLineItems(items.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
     if (template.notes) setNotes(template.notes);
-    toast({ title: 'Template Loaded' });
+    toast({ title: 'Template Applied', description: `"${template.name}" - started a new quote.` });
   };
 
-  const handleClearQuote = () => {
+  const loadTemplateMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" title="Start a new quote from a saved template">Select a Template</Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {quoteTemplates.length > 0 ? quoteTemplates.map((t, idx) => (
+          <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
+            {t.name}
+          </DropdownMenuItem>
+        )) : (
+          <DropdownMenuItem disabled>No templates saved yet</DropdownMenuItem>
+        )}
+        <Separator className="my-1" />
+        <DropdownMenuItem asChild>
+          <Link href="/accounting/quotes/templates">Manage Templates</Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const handleClearQuote = (silent: boolean = false) => {
     localStorage.removeItem(EDIT_QUOTE_ID_KEY);
     setQuoteToEditId(null);
     setQuoteNumber(`QTE-${Date.now().toString().slice(-6)}`);
@@ -574,7 +613,7 @@ export function QuoteGeneratorView() {
     setSelectedSupplierId(null);
     setLineItems([]);
     setAttachReport(false);
-    toast({ title: 'Form Cleared' });
+    if (!silent) toast({ title: 'Form Cleared' });
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -620,26 +659,9 @@ export function QuoteGeneratorView() {
             Build a professional quote that can be converted into an invoice once accepted.
           </p>
           <div className="absolute top-0 right-0 flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">Load Template</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {quoteTemplates.length > 0 ? quoteTemplates.map((t, idx) => (
-                  <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
-                    {t.name}
-                  </DropdownMenuItem>
-                )) : (
-                  <DropdownMenuItem disabled>No templates saved</DropdownMenuItem>
-                )}
-                <Separator className="my-1" />
-                <DropdownMenuItem asChild>
-                  <Link href="/accounting/quotes/templates">Manage Templates</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {loadTemplateMenu}
             <Button asChild variant="outline" size="sm">
-              <Link href="/accounting/quotes">Quote Library</Link>
+              <Link href="/accounting/quotes">Quote Manager</Link>
             </Button>
             <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
               <a className="cursor-pointer">
@@ -681,6 +703,9 @@ export function QuoteGeneratorView() {
               <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
               <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
                 <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
+              </Button>
+              <Button variant="outline" onClick={handleSaveTemplate}>
+                <Save className="mr-2 h-4 w-4" /> Save as a Template
               </Button>
             </div>
           </CardHeader>
@@ -830,7 +855,8 @@ export function QuoteGeneratorView() {
                 </div>
               </div>
               <div>
-                <div className="flex items-center mb-2">
+                <div className="flex items-center gap-2 mb-2">
+                  {loadTemplateMenu}
                   <Button variant="outline" size="sm" onClick={handleAddEmptyLineItem} className="font-semibold">
                     <Plus className="mr-2 h-4 w-4" /> Line Items
                   </Button>
@@ -854,7 +880,7 @@ export function QuoteGeneratorView() {
                             <div className="relative flex items-center">
                               <Input 
                                 className="w-full text-sm h-9 pr-16 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
-                                placeholder="Type or select from library..." 
+                                placeholder="Type or select from Products & Services..." 
                                 value={item.description}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -910,6 +936,11 @@ export function QuoteGeneratorView() {
                                       }, item.id)}
                                     >
                                       Save to Library
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <Link href="/accounting/service-items">
+                                        <ListPlus className="mr-2 h-4 w-4" /> Open Products &amp; Services
+                                      </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
                                       Edit Details
@@ -1053,8 +1084,7 @@ export function QuoteGeneratorView() {
             </div>
           </CardContent>
           <CardFooter className="justify-between border-t p-4">
-            <Button variant="ghost" size="sm" onClick={handleClearQuote}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-            <Button variant="outline" size="sm" onClick={handleSaveTemplate}><Save className="mr-2 h-4 w-4" /> Save as a Template</Button>
+            <Button variant="ghost" size="sm" onClick={() => handleClearQuote()}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
           </CardFooter>
         </Card>
 

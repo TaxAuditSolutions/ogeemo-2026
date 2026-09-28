@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen } from 'lucide-react';
+import { ChevronsUpDown, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -34,9 +34,9 @@ export function LibraryPickerPopover({ serviceItems, onSelect, searchValue = '' 
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-                    title="Browse Products & Services library"
+                    title="Select from Products & Services"
                 >
-                    <BookOpen className="h-4 w-4" />
+                    <ChevronsUpDown className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-[360px] p-0">
@@ -48,17 +48,8 @@ export function LibraryPickerPopover({ serviceItems, onSelect, searchValue = '' 
                     />
                     <CommandList>
                         {serviceItems.length === 0 ? (
-                            <CommandEmpty>
-                                <div className="space-y-1 px-3 py-2 text-center">
-                                    <p className="text-xs font-medium">No library items yet.</p>
-                                    <p className="text-[11px] text-muted-foreground">
-                                        Manage them in{' '}
-                                        <Link href="/accounting/service-items" className="font-medium text-primary underline">
-                                            Products &amp; Services
-                                        </Link>
-                                        .
-                                    </p>
-                                </div>
+                            <CommandEmpty className="px-3 py-2 text-center text-xs italic text-muted-foreground">
+                                No library items yet &mdash; add them in Products &amp; Services.
                             </CommandEmpty>
                         ) : (
                             <>
@@ -90,6 +81,16 @@ export function LibraryPickerPopover({ serviceItems, onSelect, searchValue = '' 
                         )}
                     </CommandList>
                 </Command>
+                <div className="border-t p-1.5">
+                    <Link
+                        href="/accounting/service-items"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
+                        <Settings className="h-3.5 w-3.5" />
+                        Manage Products &amp; Services library
+                    </Link>
+                </div>
             </PopoverContent>
         </Popover>
     );

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, Settings } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -242,6 +242,10 @@ export function InvoiceGeneratorView() {
                 serviceItemId: item.serviceItemId,
             }));
             setLineItems(mappedLineItems);
+            toast({
+                title: 'Editing Existing Invoice',
+                description: `Invoice ${invoiceData.invoiceNumber} loaded. Use "Clear Form" to start a brand new invoice.`,
+            });
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load invoice', description: error.message });
@@ -316,7 +320,8 @@ export function InvoiceGeneratorView() {
                 const templateToEditRaw = localStorage.getItem('editInvoiceTemplate');
                 if (templateToEditRaw) {
                     const template = JSON.parse(templateToEditRaw);
-                    setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+                    const templateItems = Array.isArray(template.items) ? template.items : [];
+                    setLineItems(templateItems.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
                     if (template.notes) setNotes(template.notes);
                     localStorage.removeItem('editInvoiceTemplate');
                 }
@@ -529,29 +534,63 @@ export function InvoiceGeneratorView() {
     };
 
     const handleSaveTemplate = () => {
-        const templateName = prompt("Enter a name for this template:");
+        const templateName = prompt("Enter a name for this template:")?.trim();
         if (!templateName) return;
 
+        const existing = invoiceTemplates.find((t: any) => t.name === templateName);
+        if (existing && !window.confirm(`A template named "${templateName}" already exists. Overwrite it?`)) {
+            return;
+        }
+
         const newTemplate = {
+            id: existing?.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
             name: templateName,
             items: lineItems,
             notes,
         };
-        
-        const updatedTemplates = [...invoiceTemplates, newTemplate];
+
+        const updatedTemplates = existing
+            ? invoiceTemplates.map((t: any) => (t.name === templateName ? newTemplate : t))
+            : [...invoiceTemplates, newTemplate];
         setInvoiceTemplates(updatedTemplates);
         localStorage.setItem('invoiceTemplates', JSON.stringify(updatedTemplates));
-        toast({ title: 'Template Saved', description: `Invoice template "${templateName}" saved.` });
+        toast({ title: existing ? 'Template Updated' : 'Template Saved', description: `Invoice template "${templateName}" ${existing ? 'overwritten' : 'saved'}.` });
     };
 
     const handleLoadTemplate = (template: any) => {
-        if (lineItems.length > 0 && !window.confirm("Loading a template will replace your current line items. Continue?")) return;
-        setLineItems(template.items.map((i: any) => ({ ...i, id: `item_${Math.random()}` })));
+        const items = Array.isArray(template.items) ? template.items : [];
+        const isDirty = lineItems.length > 0 || !!lineItemDetails || !!invoiceToEditId || notes !== 'Thank you for your business!';
+        if (isDirty && !window.confirm('Start a new invoice from this template?\nThe current form (line items, notes, and details) will be cleared.')) {
+            return;
+        }
+        handleClearInvoice(true);
+        setLineItems(items.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
         if (template.notes) setNotes(template.notes);
-        toast({ title: 'Template Loaded' });
+        toast({ title: 'Template Applied', description: `"${template.name}" - started a new invoice.` });
     };
 
-    const handleClearInvoice = () => {
+    const loadTemplateMenu = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" title="Start a new invoice from a saved template">Select a Template</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                {invoiceTemplates.length > 0 ? invoiceTemplates.map((t, idx) => (
+                    <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
+                        {t.name}
+                    </DropdownMenuItem>
+                )) : (
+                    <DropdownMenuItem disabled>No templates saved yet</DropdownMenuItem>
+                )}
+                <Separator className="my-1" />
+                <DropdownMenuItem asChild>
+                    <Link href="/accounting/invoices/templates">Manage Templates</Link>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
+    const handleClearInvoice = (silent: boolean = false) => {
         localStorage.removeItem(EDIT_INVOICE_ID_KEY);
         setInvoiceToEditId(null);
         setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
@@ -565,7 +604,7 @@ export function InvoiceGeneratorView() {
         setSelectedSupplierId(null);
         setLineItems([]);
         setAttachReport(false);
-        toast({ title: "Form Cleared" });
+        if (!silent) toast({ title: "Form Cleared" });
     };
 
     const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -620,26 +659,9 @@ export function InvoiceGeneratorView() {
                         Select contacts from your master list to generate a professional invoice.
                     </p>
                     <div className="absolute top-0 right-0 flex items-center gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">Load Template</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                {invoiceTemplates.length > 0 ? invoiceTemplates.map((t, idx) => (
-                                    <DropdownMenuItem key={idx} onClick={() => handleLoadTemplate(t)}>
-                                        {t.name}
-                                    </DropdownMenuItem>
-                                )) : (
-                                    <DropdownMenuItem disabled>No templates saved</DropdownMenuItem>
-                                )}
-                                <Separator className="my-1" />
-                                <DropdownMenuItem asChild>
-                                    <Link href="/accounting/invoices/templates">Manage Templates</Link>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {loadTemplateMenu}
                         <Button asChild variant="outline" size="sm">
-                            <Link href="/accounting/accounts-receivable">Invoice Library</Link>
+                            <Link href="/accounting/accounts-receivable">Accounts Receivable</Link>
                         </Button>
                         <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
                             <a className="cursor-pointer">
@@ -681,6 +703,9 @@ export function InvoiceGeneratorView() {
                             <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                             <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
                                 <Printer className="mr-2 h-4 w-4" /> Print Invoice & Report
+                            </Button>
+                            <Button variant="outline" onClick={handleSaveTemplate}>
+                                <Save className="mr-2 h-4 w-4" /> Save as a Template
                             </Button>
                         </div>
                     </CardHeader>
@@ -819,6 +844,7 @@ export function InvoiceGeneratorView() {
                             </div>
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
+                                    {loadTemplateMenu}
                                     <Button variant="outline" size="sm" onClick={handleAddEmptyLineItem} className="font-semibold">
                                         <Plus className="mr-2 h-4 w-4" /> Line Items
                                     </Button>
@@ -845,7 +871,7 @@ export function InvoiceGeneratorView() {
                             <div className="relative flex items-center">
                               <Input 
                                 className="w-full text-sm h-9 pr-16 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
-                                placeholder="Type or select from library..." 
+                                placeholder="Type or select from Products & Services..." 
                                 value={item.description}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -901,6 +927,11 @@ export function InvoiceGeneratorView() {
                                       }, item.id)}
                                     >
                                       Save to Library
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <Link href="/accounting/service-items">
+                                        <ListPlus className="mr-2 h-4 w-4" /> Open Products &amp; Services
+                                      </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleOpenEditDialog(item)}>
                                       Edit Details
@@ -1066,8 +1097,7 @@ export function InvoiceGeneratorView() {
                         </div>
                     </CardContent>
                     <CardFooter className="justify-between border-t p-4">
-                        <Button variant="ghost" size="sm" onClick={handleClearInvoice}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                        <Button variant="outline" size="sm" onClick={handleSaveTemplate}><Save className="mr-2 h-4 w-4" /> Save as a Template</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleClearInvoice()}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
                     </CardFooter>
                 </Card>
 

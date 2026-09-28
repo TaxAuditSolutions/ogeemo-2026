@@ -1120,17 +1120,20 @@ export async function getIncomeTransactions(userId: string): Promise<IncomeTrans
 
 export async function addIncomeTransaction(data: Omit<IncomeTransaction, 'id'>): Promise<IncomeTransaction> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, INCOME_COLLECTION));
-  const newTransaction = { id: docRef.id, ...data };
+  const dataToSave = { ...data, orgId };
+  const newTransaction = { id: docRef.id, ...dataToSave };
 
-  setDoc(docRef, data).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
 
   return newTransaction;
@@ -1201,17 +1204,20 @@ export async function getExpenseTransactions(userId: string): Promise<ExpenseTra
 
 export async function addExpenseTransaction(data: Omit<ExpenseTransaction, 'id'>): Promise<ExpenseTransaction> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, EXPENSE_COLLECTION));
-  const newTransaction = { id: docRef.id, ...data };
+  const dataToSave = { ...data, orgId };
+  const newTransaction = { id: docRef.id, ...dataToSave };
 
-  setDoc(docRef, data).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
 
   return newTransaction;
@@ -1284,17 +1290,20 @@ export async function getPayableBills(userId: string): Promise<PayableBill[]> {
 
 export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<PayableBill> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, PAYABLES_COLLECTION));
-  const newBill = { id: docRef.id, ...data };
+  const dataToSave = { ...data, orgId };
+  const newBill = { id: docRef.id, ...dataToSave };
 
-  setDoc(docRef, data).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
 
   return newBill;
@@ -1303,7 +1312,7 @@ export async function addPayableBill(data: Omit<PayableBill, 'id'>): Promise<Pay
 export async function updatePayableBill(id: string, data: Partial<Omit<PayableBill, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, PAYABLES_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1311,19 +1320,21 @@ export async function updatePayableBill(id: string, data: Partial<Omit<PayableBi
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deletePayableBill(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, PAYABLES_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1337,9 +1348,11 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
   const billData = docToPayableBill(billSnap);
   const batch = writeBatch(db);
 
+  const orgId = await getCurrentOrgId();
   const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
   const expenseData = {
     userId,
+    orgId,
     date: paymentDate,
     company: billData.vendor,
     description: `Payment for Bill #${billData.invoiceNumber ?? ''}: ${billData.description || ''}`,
@@ -1356,7 +1369,7 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
   batch.set(expenseRef, expenseData);
   batch.delete(billRef);
 
-  batch.commit().catch(async (error) => {
+  await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: 'batch',
@@ -1364,6 +1377,7 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
         requestResourceData: expenseData,
       }));
     }
+    throw error;
   });
 }
 
@@ -1390,16 +1404,19 @@ export async function getPettyCashTransactions(userId: string): Promise<PettyCas
 
 export async function addPettyCashTransaction(data: Omit<PettyCashTransaction, 'id'>): Promise<PettyCashTransaction> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, PETTY_CASH_COLLECTION));
-  const newTx = { id: docRef.id, ...data };
-  setDoc(docRef, data).catch(async (error) => {
+  const dataToSave = { ...data, orgId };
+  const newTx = { id: docRef.id, ...dataToSave };
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
   return newTx;
 }
@@ -1529,16 +1546,19 @@ export async function getAssets(userId: string): Promise<Asset[]> {
 
 export async function addAsset(data: Omit<Asset, 'id'>): Promise<Asset> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, ASSETS_COLLECTION));
-  const newAsset = { id: docRef.id, ...data };
-  setDoc(docRef, data).catch(async (error) => {
+  const dataToSave = { ...data, orgId };
+  const newAsset = { id: docRef.id, ...dataToSave };
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
   return newAsset;
 }
@@ -1603,16 +1623,19 @@ export async function getEquityTransactions(userId: string): Promise<EquityTrans
 
 export async function addEquityTransaction(data: Omit<EquityTransaction, 'id'>): Promise<EquityTransaction> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, EQUITY_COLLECTION));
-  const newTransaction = { id: docRef.id, ...data };
-  setDoc(docRef, data).catch(async (error) => {
+  const dataToSave = { ...data, orgId };
+  const newTransaction = { id: docRef.id, ...dataToSave };
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       }));
     }
+    throw error;
   });
   return newTransaction;
 }
@@ -2288,18 +2311,21 @@ export async function getInternalAccounts(userId: string): Promise<InternalAccou
 
 export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Promise<InternalAccount> {
   const db = getDb();
+  const orgId = await getCurrentOrgId();
   const docRef = doc(collection(db, INTERNAL_ACCOUNT_COLLECTION));
-  const newAcc = { id: docRef.id, ...data };
+  const dataToSave = { ...data, orgId };
+  const newAcc = { id: docRef.id, ...dataToSave };
 
-  setDoc(docRef, data).catch(async (error) => {
+  await setDoc(docRef, dataToSave).catch(async (error) => {
     if (error.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
         path: docRef.path,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: dataToSave,
       } satisfies SecurityRuleContext);
       errorEmitter.emit('permission-error', permissionError);
     }
+    throw error;
   });
 
   return newAcc;

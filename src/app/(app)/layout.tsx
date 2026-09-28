@@ -41,14 +41,12 @@ function CopilotHeaderButton() {
   return (
     <Button
       type="button"
-      size="icon"
-      className="h-11 w-11 rounded-full bg-card text-primary shadow-sm hover:scale-105 hover:shadow-primary/20 transition-all border border-primary/20 p-0"
+      className="flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50 transition-colors"
       onClick={openAndPin}
       aria-label="Open Ogeemo Co-Pilot"
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/20 bg-primary/10">
-        <CoPilotMark className="h-6 w-6" />
-      </div>
+      <CoPilotMark className="h-4 w-4 shrink-0" />
+      <span>Co-Pilot</span>
     </Button>
   );
 }
@@ -138,7 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <header className="flex h-16 items-center bg-[var(--header-bg)] px-4 md:px-6 print:hidden" style={{ background: 'var(--header-bg, linear-gradient(to right, #3DD5C0, #1E8E86))' }}>
                       {/* Left Column: Branding */}
                       <div className="flex-1 flex items-center gap-4 min-w-0">
-                        <SidebarTrigger className="md:hidden" />
+                        <SidebarTrigger className="h-8 w-8 md:hidden" />
 
                         <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80 shrink-0">
                           <Logo className="text-black" />
@@ -164,10 +162,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button asChild size="icon" className="h-9 w-9 bg-card text-card-foreground hover:bg-card/90">
-                                <Link href="/action-manager">
-                                  <LayoutDashboard className="h-5 w-5" />
-                                  <span className="sr-only">Action Manager</span>
+                              <Button asChild className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50 transition-colors">
+                                <Link href="/action-manager" aria-label="Action Manager">
+                                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                                  <span>Action Manager</span>
                                 </Link>
                               </Button>
                             </TooltipTrigger>
@@ -180,7 +178,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         {tenantOptions.length > 1 ? (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px] hover:bg-white/50">
+                              <Button variant="ghost" className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px] hover:bg-white/50">
                                 <Building2 className="h-3.5 w-3.5 shrink-0" />
                                 <span className="truncate">{activeTenantName || 'Workspace'}</span>
                               </Button>
@@ -200,13 +198,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         ) : activeTenantName ? (
-                          <div className="hidden sm:flex items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px]">
+                          <div className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm max-w-[220px]">
                             <Building2 className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{activeTenantName}</span>
                           </div>
                         ) : null}
 
-                        <div className="hidden sm:flex items-center rounded-full border border-black/10 bg-white/35 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm">
+                        <div className="hidden sm:flex h-8 items-center rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm">
                           {roleLabel}
                         </div>
 

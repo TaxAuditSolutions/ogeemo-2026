@@ -208,7 +208,7 @@ export function AccountsPayablePageView() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Accounts Payable Ledger</CardTitle>
-                    <CardDescription>Unpaid vendor invoices and accrued liabilities.</CardDescription>
+                    <CardDescription>Unpaid vendor invoices and accrued liabilities. Click a row to open and edit the bill.</CardDescription>
                 </div>
                 <Button onClick={() => { setBillToEdit(null); setIsTransactionDialogOpen(true); }}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Log Payable Bill
@@ -232,12 +232,12 @@ export function AccountsPayablePageView() {
                         </TableHeader>
                         <TableBody>
                             {bills.length > 0 ? bills.map(bill => (
-                                <TableRow key={bill.id}>
+                                <TableRow key={bill.id} className="group cursor-pointer" title="Edit bill" onClick={() => handleEdit(bill)}>
                                     <TableCell>{format(new Date(bill.dueDate), 'PP')}</TableCell>
-                                    <TableCell className="font-medium">{bill.vendor}</TableCell>
+                                    <TableCell className="font-medium text-primary group-hover:underline">{bill.vendor}</TableCell>
                                     <TableCell>{bill.invoiceNumber}</TableCell>
                                     <TableCell className="text-right font-mono text-destructive">{formatCurrency(bill.totalAmount)}</TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex justify-end gap-2">
                                             <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => setBillToPay(bill)}>
                                                 <Landmark className="mr-2 h-4 w-4"/> Post Payment
@@ -281,6 +281,7 @@ export function AccountsPayablePageView() {
                 if (!open) setBillToEdit(null);
             }}
             initialType="payable"
+            allowedEntryTypes={['expense', 'payable']}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
             companies={companies}

@@ -164,6 +164,11 @@ export function AccountsReceivablePageView() {
         router.push('/accounting/invoices/create');
     };
 
+    const handleOpenInvoice = (inv: Invoice) => {
+        localStorage.setItem('editInvoiceId', inv.id);
+        router.push('/accounting/invoices/create');
+    };
+
     const totalOutstanding = useMemo(() => {
         return invoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
     }, [invoices]);
@@ -202,7 +207,7 @@ export function AccountsReceivablePageView() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Outstanding Invoices</CardTitle>
-                        <CardDescription>Click "Post Payment" once the money arrives in your bank.</CardDescription>
+                        <CardDescription>Click an invoice row to open and edit it, or "Post Payment" once the money arrives in your bank.</CardDescription>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
@@ -233,14 +238,14 @@ export function AccountsReceivablePageView() {
                                 {invoices.length > 0 ? invoices.map((inv) => {
                                     const balance = inv.originalAmount - inv.amountPaid;
                                     return (
-                                        <TableRow key={inv.id}>
-                                            <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
+                                        <TableRow key={inv.id} className="group cursor-pointer" title="Open invoice" onClick={() => handleOpenInvoice(inv)}>
+                                            <TableCell className="font-medium text-primary group-hover:underline">{inv.invoiceNumber}</TableCell>
                                             <TableCell>{inv.companyName}</TableCell>
                                             <TableCell>{format(inv.invoiceDate, 'PP')}</TableCell>
                                             <TableCell className="text-right font-mono text-destructive">
                                                 {formatCurrency(balance)}
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-end gap-2">
                                                     <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenPaymentDialog(inv)}>
                                                         <Landmark className="mr-2 h-4 w-4" /> Post Payment
@@ -252,10 +257,7 @@ export function AccountsReceivablePageView() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => {
-                                                                localStorage.setItem('editInvoiceId', inv.id);
-                                                                router.push('/accounting/invoices/create');
-                                                            }}>
+                                                            <DropdownMenuItem onClick={() => handleOpenInvoice(inv)}>
                                                                 <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
@@ -281,6 +283,7 @@ export function AccountsReceivablePageView() {
                 isOpen={isTransactionDialogOpen}
                 onOpenChange={setIsTransactionDialogOpen}
                 initialType="receivable"
+            allowedEntryTypes={['income', 'receivable']}
                 incomeCategories={incomeCategories}
                 expenseCategories={expenseCategories}
                 companies={companies}

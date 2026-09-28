@@ -102,7 +102,7 @@ const transactionSchema = z.object({
     taxRate: z.coerce.number().min(0, "Tax rate cannot be negative"),
     category: z.string().min(1, "Category is required."),
     paymentMethod: z.string().optional(),
-    account: z.string().min(1, "Account selection is required."),
+    account: z.string(),
     explanation: z.string().optional(),
     documentNumber: z.string().optional(),
     documentUrl: z.string().optional(),
@@ -115,6 +115,7 @@ interface TransactionDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     initialType?: 'income' | 'expense' | 'payable' | 'receivable';
+    allowedEntryTypes?: ('income' | 'expense' | 'payable' | 'receivable')[];
     incomeCategories: IncomeCategory[];
     expenseCategories: ExpenseCategory[];
     companies: Company[];
@@ -136,6 +137,7 @@ export function TransactionDialog({
     isOpen,
     onOpenChange,
     initialType = 'income',
+    allowedEntryTypes = ['income', 'expense', 'payable', 'receivable'],
     incomeCategories,
     expenseCategories,
     companies,
@@ -355,6 +357,10 @@ export function TransactionDialog({
 
     async function onSubmit(values: TransactionFormData) {
         if (!user) return;
+        if ((transactionType === 'income' || transactionType === 'expense') && !values.account) {
+            form.setError('account', { type: 'required', message: 'Account selection is required.' });
+            return;
+        }
         setIsSaving(true);
         try {
             const baseData = {
@@ -478,9 +484,23 @@ export function TransactionDialog({
                             <Calculator className="h-10 w-10" />
                             <div className="space-y-1 text-center">
                                 <DialogTitle className="text-3xl font-headline uppercase tracking-tight">
-                                    {transactionToEdit ? 'Update Transaction Details' : 'Unified Transaction Entry'}
+                                    {transactionToEdit
+                                        ? `Update ${transactionType === 'payable' ? 'Payable Bill' : transactionType === 'receivable' ? 'Receivable' : transactionType === 'income' ? 'Income' : 'Expense'} Details`
+                                        : transactionType === 'payable'
+                                            ? 'Log Payable Bill'
+                                            : transactionType === 'receivable'
+                                                ? 'Log Receivable'
+                                                : transactionType === 'income'
+                                                    ? 'Post Income to General Ledger'
+                                                    : 'Post Expense to General Ledger'}
                                 </DialogTitle>
-                                <DialogDescription className="text-base">Precision BKS Financial Orchestration Hub</DialogDescription>
+                                <DialogDescription className="text-base">
+                                    {transactionType === 'payable'
+                                        ? 'Record an outstanding bill \u2014 it will appear in Accounts Payable until paid.'
+                                        : transactionType === 'receivable'
+                                            ? 'Record an outstanding invoice \u2014 it will appear in Accounts Receivable until paid.'
+                                            : 'Posts directly to the BKS General Ledger.'}
+                                </DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
@@ -519,10 +539,10 @@ export function TransactionDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="income">Income (Post directly to General Ledger)</SelectItem>
-                                                <SelectItem value="expense">Expense (Post directly to General Ledger)</SelectItem>
-                                                <SelectItem value="receivable">Receivable (Log outstanding Invoice)</SelectItem>
-                                                <SelectItem value="payable">Payable (Log outstanding Bill)</SelectItem>
+                                                {allowedEntryTypes.includes('income') && <SelectItem value="income">Income (Post directly to General Ledger)</SelectItem>}
+                                                {allowedEntryTypes.includes('expense') && <SelectItem value="expense">Expense (Post directly to General Ledger)</SelectItem>}
+                                                {allowedEntryTypes.includes('receivable') && <SelectItem value="receivable">Receivable (Log outstanding Invoice)</SelectItem>}
+                                                {allowedEntryTypes.includes('payable') && <SelectItem value="payable">Payable (Log outstanding Bill)</SelectItem>}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -738,13 +758,14 @@ export function TransactionDialog({
                                         <h3 className="text-sm uppercase font-bold text-primary flex items-center gap-2 border-b pb-2">
                                             <Wallet className="h-4 w-4" /> Financial Routing
                                         </h3>
+                                        {transactionType === 'income' || transactionType === 'expense' ? (
                                         <FormField
                                             control={form.control}
                                             name="account"
                                             render={({ field }) => (
                                                 <FormItem className="space-y-2">
                                                     <FormLabel className="text-sm font-semibold">
-                                                        {transactionType === 'income' || transactionType === 'receivable' ? 'Deposited To' : 'Paid From'} Account *
+                                                        {transactionType === 'income' ? 'Deposited To' : 'Paid From'} Account *
                                                     </FormLabel>
                                                     <div className="flex gap-2">
                                                         <Popover open={isAccountPopoverOpen} onOpenChange={setIsAccountPopoverOpen}>
@@ -806,6 +827,11 @@ export function TransactionDialog({
                                                 </FormItem>
                                             )}
                                         />
+                                        ) : (
+                                            <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+                                                No account needed yet &mdash; the {transactionType === 'payable' ? 'paying' : 'deposit'} account is chosen when you post the payment.
+                                            </div>
+                                        )}
                                         <FormField
                                             control={form.control}
                                             name="paymentMethod"
@@ -883,7 +909,13 @@ export function TransactionDialog({
                             <div className="p-2 bg-primary/10 rounded-full">
                                 <ShieldCheck className="h-5 w-5 text-primary" />
                             </div>
-                            <span>Finalizing this entry will immediately synchronize with the BKS General Ledger and update your financial snapshots.</span>
+                            <span>
+                                {transactionType === 'payable'
+                                    ? 'This bill will be added to Accounts Payable; the General Ledger updates when you post the payment.'
+                                    : transactionType === 'receivable'
+                                    ? 'This invoice will be added to Accounts Receivable; the General Ledger updates when the payment is received.'
+                                    : 'Finalizing this entry will immediately synchronize with the BKS General Ledger and update your financial snapshots.'}
+                            </span>
                         </div>
                         <div className="flex gap-4 w-full sm:w-auto">
                             <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)} disabled={isSaving} className="h-12 px-8">Cancel</Button>

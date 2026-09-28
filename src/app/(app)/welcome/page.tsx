@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
+import { Logo } from '@/components/logo';
 import {
-  ArrowRight, Sparkles, Building2, Check,
+  ArrowRight, Building2, Check,
   BookOpen, LayoutDashboard, Bot,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
@@ -114,7 +115,7 @@ export default function WelcomePage() {
       <div className="w-full max-w-4xl space-y-12 animate-in fade-in zoom-in-95 duration-700">
         <header className="text-center space-y-4">
           <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
-            <Sparkles className="h-8 w-8 text-primary" />
+            <Logo iconOnly markSize={48} />
           </div>
           <h1 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">
             Welcome to Ogeemo

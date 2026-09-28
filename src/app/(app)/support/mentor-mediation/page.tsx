@@ -154,7 +154,7 @@ export default function MentorMediationPage() {
                                         <Command>
                                             <CommandInput placeholder="Search mentors..." />
                                             <CommandList>
-                                                <CommandEmpty>No mentors found in the circle.</CommandEmpty>
+                                                <CommandEmpty>No mentors found in the community.</CommandEmpty>
                                                 <CommandGroup>
                                                     {mentors.map(m => (
                                                         <CommandItem key={m.id} onSelect={() => { setSelectedMentorId(m.id); setIsWorkerPopoverOpen(false); }}>

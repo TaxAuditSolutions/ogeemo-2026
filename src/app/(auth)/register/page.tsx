@@ -97,7 +97,7 @@ export default function RegisterPage() {
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 rotate-3 hover:rotate-0 transition-transform">
                     <UserPlus className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-4xl font-headline font-bold tracking-tighter">Enter the Circle.</CardTitle>
+                <CardTitle className="text-4xl font-headline font-bold tracking-tighter">Enter the Community.</CardTitle>
                 <CardDescription className="text-lg mt-2">
                     Professional Orchestration for the Modern Visionary.
                 </CardDescription>

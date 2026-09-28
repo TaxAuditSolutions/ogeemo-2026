@@ -6,41 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import {
-  ArrowRight, Sparkles, HeartHandshake, ShieldCheck, User, X, Building2, Check,
+  ArrowRight, Sparkles, Building2, Check,
   BookOpen, LayoutDashboard, Bot,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
 import { useToast } from '@/hooks/use-toast';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
- * Features the "Welcome Home" modal node for new Ogeemo Circle members.
  */
 export default function WelcomePage() {
   const { user, accessLevel, isMasterTenant } = useAuth();
   const { toast } = useToast();
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
   const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
 
   const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
-
-  useEffect(() => {
-    // Show modal only if it hasn't been dismissed in this session
-    const hasSeenWelcome = sessionStorage.getItem('ogeemo-welcome-seen');
-    if (!hasSeenWelcome) {
-        setShowWelcomeModal(true);
-    }
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -60,11 +43,6 @@ export default function WelcomePage() {
       isMounted = false;
     };
   }, [user]);
-
-  const handleDismissWelcome = () => {
-    sessionStorage.setItem('ogeemo-welcome-seen', 'true');
-    setShowWelcomeModal(false);
-  };
 
   const handleSwitchTenant = async (orgId: string) => {
     if (!user) return;
@@ -193,59 +171,6 @@ export default function WelcomePage() {
         </div>
       </div>
 
-      <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
-        <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-none shadow-2xl text-black">
-            <div className="bg-primary p-8 text-primary-foreground relative">
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-4 right-4 text-primary-foreground/50 hover:text-primary-foreground hover:bg-white/10"
-                    onClick={handleDismissWelcome}
-                >
-                    <X className="h-5 w-5" />
-                </Button>
-                <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="bg-white/20 p-4 rounded-full">
-                        <HeartHandshake className="h-12 w-12" />
-                    </div>
-                    <DialogTitle className="text-3xl font-headline uppercase tracking-tighter">Welcome to Ogeemo</DialogTitle>
-                    <DialogDescription className="text-lg opacity-90 leading-relaxed text-primary-foreground">
-                        You are no longer app-juggling in isolation. You are a member of the Ogeemo Circle.
-                    </DialogDescription>
-                </div>
-            </div>
-            <div className="p-8 space-y-8 bg-white">
-                <div className="grid gap-6">
-                    <div className="flex gap-4 items-start">
-                        <div className="bg-primary/10 p-2 rounded-lg shrink-0">
-                            <ShieldCheck className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">Direct Mentor Access</h4>
-                            <p className="text-sm text-muted-foreground">As an Apprentice, you have direct line access to <strong>Dan White</strong> and our team of Certified Mentors for operational guidance and mediation.</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-4 items-start">
-                        <div className="bg-primary/10 p-2 rounded-lg shrink-0">
-                            <User className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-sm uppercase tracking-widest text-slate-900">The Mentor's Seal</h4>
-                            <p className="text-sm text-muted-foreground">Your progression path is active. Master the BKS Ledger and our core protocols to earn your Seal and join the guidance team.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="bg-muted/30 p-4 rounded-xl border border-dashed text-center">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status: Apprentice Node Active</p>
-                </div>
-
-                <Button onClick={handleDismissWelcome} size="lg" className="w-full h-14 text-lg font-bold shadow-lg">
-                    Begin Orchestration
-                </Button>
-            </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

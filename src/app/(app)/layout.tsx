@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Search, Settings, BrainCircuit, Building2, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, BrainCircuit, Building2 } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
@@ -154,22 +154,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="font-headline font-bold uppercase text-[10px] tracking-widest">
                               Ogeemo Co-Pilot
-                            </TooltipContent>
-                          </Tooltip>
-
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button asChild size="icon" className="h-10 w-10 rounded-full bg-card text-muted-foreground shadow-sm hover:text-primary hover:shadow-primary/10 hover:scale-105 transition-all border border-muted/20 p-0">
-                                <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="flex h-full w-full items-center justify-center">
-                                  <div className="flex h-7 w-7 items-center justify-center rounded-md border border-muted/20 bg-muted/10">
-                                    <Sparkles className="h-4 w-4" />
-                                  </div>
-                                  <span className="sr-only">Google Gemini</span>
-                                </a>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="font-headline font-bold uppercase text-[10px] tracking-widest">
-                              Google AI
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

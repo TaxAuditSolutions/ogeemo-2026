@@ -31,7 +31,7 @@ export default function PricingPage() {
         <section className="py-20 md:py-32 bg-slate-950 text-white border-b border-white/10 relative overflow-hidden">
           <div className="container px-4 mx-auto text-center max-w-4xl space-y-8 relative z-10">
             <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
-              The Ogeemo Circle
+              The Ogeemo Community
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tighter leading-tight text-white">
               One price. <br />
@@ -49,7 +49,7 @@ export default function PricingPage() {
 
             <div className="pt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <Button asChild size="lg" className="h-14 px-10 text-xl font-bold shadow-xl">
-                    <Link href="/register">Join the Circle</Link>
+                    <Link href="/register">Join the Community</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-14 px-10 text-xl font-bold bg-transparent border-white text-white hover:bg-white/10">
                     <Link href="/about#ethics">Compare Our Ethics</Link>
@@ -66,7 +66,7 @@ export default function PricingPage() {
           <div className="container px-4 mx-auto">
             <Card className="max-w-2xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform bg-card text-card-foreground">
                 <CardHeader className="bg-primary text-primary-foreground text-center py-12">
-                    <h2 className="text-3xl font-headline uppercase tracking-tight">Circle Membership</h2>
+                    <h2 className="text-3xl font-headline uppercase tracking-tight">Community Membership</h2>
                     <div className="mt-4 flex flex-col items-center">
                         <div className="flex items-baseline gap-1">
                             <span className="text-6xl font-bold font-mono">${MEMBERSHIP_FEE}.00</span>
@@ -237,10 +237,10 @@ export default function PricingPage() {
         {/* CTA Section */}
         <section className="py-24 bg-primary text-primary-foreground text-center">
           <div className="container px-4 mx-auto space-y-8">
-            <h2 className="text-3xl md:text-6xl font-bold font-headline tracking-tighter">Ready to join the circle?</h2>
+            <h2 className="text-3xl md:text-6xl font-bold font-headline tracking-tighter">Ready to join the community?</h2>
             <p className="text-xl opacity-90 max-w-2xl mx-auto">One price. Absolute power. Zero surprises.</p>
             <Button asChild size="lg" variant="secondary" className="h-16 px-12 text-xl font-bold">
-                <Link href="/register">Join the Ogeemo Circle</Link>
+                <Link href="/register">Join the Ogeemo Community</Link>
             </Button>
           </div>
         </section>

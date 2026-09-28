@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
                             </div>
                             <div className="space-y-4">
                                 <div className="bg-muted/30 p-6 rounded-2xl border border-primary/10">
-                                    <h3 className="font-bold text-lg mb-3 text-primary">Circle Membership</h3>
+                                    <h3 className="font-bold text-lg mb-3 text-primary">Community Membership</h3>
                                     <ul className="space-y-2 text-muted-foreground">
                                         <li><strong>Price:</strong> $30.00 CAD per month (total)</li>
                                         <li><strong>Includes:</strong> 5 user seats</li>

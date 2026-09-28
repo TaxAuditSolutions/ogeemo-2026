@@ -97,7 +97,7 @@ export default function TASManifestoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-12 items-start">
                     <div className="md:col-span-2 space-y-4">
                         <div className="text-primary font-mono text-sm tracking-widest font-bold">04</div>
-                        <h2 className="text-3xl font-bold font-headline text-white uppercase tracking-tight">Zero Gating, One Circle</h2>
+                        <h2 className="text-3xl font-bold font-headline text-white uppercase tracking-tight">Zero Gating, One Community</h2>
                     </div>
                     <div className="md:col-span-3 space-y-6">
                         <p className="text-lg text-slate-400 leading-relaxed">

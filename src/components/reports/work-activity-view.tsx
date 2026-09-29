@@ -176,7 +176,7 @@ export function WorkActivityView() {
             
             <header className="text-center space-y-2 print:hidden">
                 <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Work Activity Summary</h1>
-                <p className="text-muted-foreground text-lg">Consolidated evidence of work built on high-fidelity time logs.</p>
+                <p className="text-muted-foreground text-lg">A consolidated record of work based on your time logs.</p>
             </header>
 
             <div className="max-w-6xl mx-auto space-y-6">
@@ -263,7 +263,7 @@ export function WorkActivityView() {
                                             </TooltipTrigger>
                                             <TooltipContent className="max-w-xs p-3">
                                                 <p className="text-xs font-bold mb-1">Rituals (Automated)</p>
-                                                <p className="text-[10px] leading-tight">These are system-generated sessions from your **Planning Rituals** (e.g., Daily Wind-down). They ensure your business remains focused and orchestrated.</p>
+                                                <p className="text-[10px] leading-tight">These are system-generated sessions from your **Planning Rituals** (e.g., Daily Wind-down). They keep your business focused and on schedule.</p>
                                             </TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>

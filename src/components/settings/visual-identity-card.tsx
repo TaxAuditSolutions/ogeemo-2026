@@ -114,7 +114,7 @@ export function VisualIdentityCard() {
                         <Palette className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                        <CardTitle>Visual Identity Orchestration</CardTitle>
+                        <CardTitle>Visual Identity</CardTitle>
                         <CardDescription>Personalize your workspace aesthetics.</CardDescription>
                     </div>
                 </div>

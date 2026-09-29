@@ -220,7 +220,7 @@ export function LogTimeDialog({
                         {entryToEdit ? 'Edit' : 'Log'} Time Card Entry
                     </DialogTitle>
                     <DialogDescription className="text-xs">
-                        High-fidelity retrospective recording of an operational work session.
+                        Record the details of a completed work session.
                     </DialogDescription>
                 </DialogHeader>
 

@@ -544,7 +544,7 @@ export function LedgersView() {
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-primary" />
-                        <CardTitle className="text-sm font-medium">Orchestration</CardTitle>
+                        <CardTitle className="text-sm font-medium">Batch Actions</CardTitle>
                     </div>
                     {selectedIds.length > 0 && (
                         <div className="flex items-center gap-2 animate-in slide-in-from-left-2">

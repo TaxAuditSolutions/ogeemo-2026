@@ -49,7 +49,7 @@ export default function CalendarInstructionsPage() {
                         The Ogeemo Execution Engine
                     </h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Your guide to orchestrating your day with the Calendar.
+                        Your guide to planning your day with the Calendar.
                     </p>
                 </div>
                 <div className="flex-1 flex justify-end">
@@ -151,7 +151,7 @@ export default function CalendarInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                        <p>When you initiate a task or project from the Calendar, you can toggle it as <strong>Billable</strong>. This orchestration automatically:</p>
+                                        <p>When you initiate a task or project from the Calendar, you can toggle it as <strong>Billable</strong>. This setting automatically:</p>
                                         <ul>
                                             <li>Updates your billable actions log in real-time.</li>
                                             <li>Syncs with the BKS General Ledger.</li>
@@ -177,7 +177,7 @@ export default function CalendarInstructionsPage() {
                                 <AccordionTrigger>
                                     <div className="flex items-center gap-3">
                                         <Users className="h-5 w-5 text-primary"/>
-                                        <span className="font-semibold">Sales & Leads Orchestration</span>
+                                        <span className="font-semibold">Sales & Leads Tracking</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>

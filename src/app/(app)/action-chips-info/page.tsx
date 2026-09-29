@@ -50,7 +50,7 @@ export default function ActionChipsInfoPage() {
             <Card className="border-2 border-primary/10">
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="text-2xl">Why Action Chips Matter</CardTitle>
-                    <CardDescription>Moving from "App-Juggling" to Business Orchestration.</CardDescription>
+                    <CardDescription>Moving from "App-Juggling" to one place for everything.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -113,7 +113,7 @@ export default function ActionChipsInfoPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>The order of chips in your <strong>Selected Actions</strong> panel determines their order on your main dashboard and in your sidebar "Favorites" menu.</p>
-                                    <p>Drag chips up and down to prioritize the tools you use most frequently. High-fidelity orchestration starts with your most critical nodes at the top.</p>
+                                    <p>Drag chips up and down to prioritize the tools you use most frequently. Start each day with your most important tools at the top.</p>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -158,7 +158,7 @@ export default function ActionChipsInfoPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-sm opacity-90">Ready to sculpt your Ogeemo workspace? Jump directly into the manager and start orchestrating your custom command set.</p>
+                    <p className="text-sm opacity-90">Ready to organize your Ogeemo workspace? Jump directly into the manager and arrange your custom shortcuts.</p>
                     <div className="relative aspect-[4/3] rounded-lg overflow-hidden border-2 border-white/20 shadow-inner">
                         <ImagePlaceholder id="action-chips-spider-web" className="object-cover" />
                     </div>
@@ -204,7 +204,7 @@ export default function ActionChipsInfoPage() {
             <Card className="bg-primary/5 border-dashed border-primary/30">
                 <CardHeader className="text-center">
                     <CardTitle className="text-sm font-bold">
-                        Orchestrate the Web
+                        Web Shortcuts
                     </CardTitle>
                 </CardHeader>
                 <CardContent>

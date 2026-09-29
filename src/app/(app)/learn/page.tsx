@@ -214,7 +214,7 @@ export default function LearnOgeemoPage() {
 
         <div className="pb-10 text-center">
           <p className="text-xs text-muted-foreground">
-            Finished the path? You are ready for daily orchestration —{' '}
+            Finished the path? You are ready for everyday work —{' '}
             <Link href="/welcome" className="underline">
               back to Welcome
             </Link>{' '}

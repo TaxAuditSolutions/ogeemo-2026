@@ -338,7 +338,7 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
                 <>
                 <Separator />
                 <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Depreciation Orchestration</h3>
+                    <h3 className="font-semibold text-lg">Depreciation Settings</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Current Depreciated Value (UCC)</Label>

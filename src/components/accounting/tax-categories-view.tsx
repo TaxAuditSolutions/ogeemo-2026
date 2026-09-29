@@ -356,7 +356,7 @@ export function TaxCategoriesView() {
                       <FileSignature className="h-5 w-5" />
                       <DialogTitle className="text-xl font-headline">{dialogState.mode === 'add' ? 'New' : 'Edit'} {dialogState.type} Category</DialogTitle>
                   </div>
-                  <DialogDescription>Create a custom node for your BKS financial orchestration.</DialogDescription>
+                  <DialogDescription>Create a custom category for your accounting records.</DialogDescription>
               </DialogHeader>
               <div className="py-6 space-y-6">
                 <div className="space-y-2">
@@ -369,7 +369,7 @@ export function TaxCategoriesView() {
                     <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-dashed border-primary/20 mt-2">
                         <Info className="h-4 w-4 text-primary shrink-0" />
                         <p className="text-[10px] text-muted-foreground leading-tight">
-                            If left blank, Ogeemo will automatically assign a unique high-fidelity reference number starting with <strong>"C-"</strong>.
+                            If left blank, Ogeemo will automatically assign a unique reference number starting with <strong>"C-"</strong>.
                         </p>
                     </div>
                 </div>

@@ -518,7 +518,7 @@ export function CashAccountingView() {
                     )}
                 </CardContent>
                 <CardFooter className="bg-muted/30 border-t py-2 justify-center">
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Secure Cash Orchestration Node</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Secure Cash Management</p>
                 </CardFooter>
             </Card>
 
@@ -714,7 +714,7 @@ export function CashAccountingView() {
                             <DialogTitle>Add {categoryManageType === 'in' ? 'Income' : 'Expense'} Category</DialogTitle>
                         </div>
                         <DialogDescription>
-                            Create a custom node for your BKS financial orchestration.
+                            Create a custom account for your BKS financial records.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
@@ -771,7 +771,7 @@ export function CashAccountingView() {
                             </p>
                         </section>
                         <section className="space-y-2">
-                            <h4 className="font-bold text-foreground">The Orchestration Workflow</h4>
+                            <h4 className="font-bold text-foreground">How It Works</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                                 <li><strong>Cash In:</strong> Use this to record adding money to the box (e.g., drawing $100 from the bank to start the "float").</li>
                                 <li><strong>Cash Out:</strong> Record every small purchase. Link these to a Contact and a Category Line Item.</li>

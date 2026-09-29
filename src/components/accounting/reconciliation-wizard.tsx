@@ -599,7 +599,7 @@ export function ReconciliationWizard({
                                             <TableHead>Counterparty / Memo</TableHead>
                                             <TableHead className="text-right w-32">Amount</TableHead>
                                             <TableHead className="text-center w-48">Status node</TableHead>
-                                            <TableHead>Orchestration Action</TableHead>
+                                            <TableHead>Suggested Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

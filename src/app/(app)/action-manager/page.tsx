@@ -98,7 +98,7 @@ export default function ActionManagerDashboardPage() {
                         <AlertDescription className="mt-2 space-y-4 text-foreground/80">
                             <p>This is your personalized dashboard. Add, remove, and reorder 'Action Chips' to create one-click shortcuts to the Ogeemo managers and tools you use most often.</p>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-primary/10">
-                                <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Master the Spider Web orchestration:</p>
+                                <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Master the Spider Web dashboard:</p>
                                 <Button asChild variant="outline" size="sm" className="h-8 px-4 text-xs bg-background border-primary/30 hover:bg-primary/5 hover:text-primary transition-all">
                                     <Link href="/action-chips-info">
                                         Action Chip Magic <ArrowRight className="ml-2 h-3.5 w-3.5" />
@@ -187,7 +187,7 @@ export default function ActionManagerDashboardPage() {
                 ) : (
                     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg bg-muted/20">
                         <p className="font-semibold mb-2">Your spider web is empty.</p>
-                        <p className="text-xs mb-6">Orchestrate your dashboard by adding some shortcuts.</p>
+                        <p className="text-xs mb-6">Set up your dashboard by adding shortcuts.</p>
                         <Button asChild>
                            <Link href="/action-manager/manage">
                              <Plus className="mr-2 h-4 w-4" />

@@ -141,7 +141,7 @@ export default function DocumentManagerInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-9">
-                                        <p>You now have a high-fidelity workspace:</p>
+                                        <p>You now have an organized workspace:</p>
                                         <ul>
                                             <li><strong>Quick Access:</strong> Click any folder in Ogeemo to see its contents or jump to the GDrive location.</li>
                                             <li><strong>File Linking:</strong> Link individual high-traffic files (like a specific spreadsheet) in the same way for even faster access.</li>
@@ -158,7 +158,7 @@ export default function DocumentManagerInstructionsPage() {
                     <CardHeader>
                         <CardTitle className="text-sm uppercase tracking-widest font-bold flex items-center gap-2">
                             <FileDigit className="h-4 w-4 text-primary" />
-                            High-Fidelity Naming Protocol
+                            Naming Convention
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">

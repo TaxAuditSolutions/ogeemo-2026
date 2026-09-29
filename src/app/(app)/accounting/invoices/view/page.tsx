@@ -112,7 +112,7 @@ export default function InvoiceIntelligencePage() {
                     <BrainCircuit className="h-10 w-10 text-primary" />
                     <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Invoice Intelligence</h1>
                 </div>
-                <p className="text-muted-foreground mt-2">Neural extraction node for high-fidelity financial ingestion.</p>
+                <p className="text-muted-foreground mt-2">Reads your document automatically to fill in the details.</p>
                 <div className="absolute top-0 right-0">
                     <Button asChild variant="ghost" size="icon"><Link href="/accounting/invoices/create"><X className="h-5 w-5"/></Link></Button>
                 </div>

@@ -618,7 +618,7 @@ export function BankStatementsView() {
                         <Card className="bg-primary/5 border-dashed">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                    <Zap className="h-4 w-4" /> High-Fidelity Mirror
+                                    <Zap className="h-4 w-4" /> Automatic Sync
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>

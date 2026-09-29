@@ -87,7 +87,7 @@ export default function RecordKeepingPhilosophyPage() {
                         <div className="space-y-2">
                             <h3 className="text-2xl font-bold text-primary">3. The Dual-Mirror Integrity</h3>
                             <p className="text-muted-foreground leading-relaxed">
-                                <strong>Structure belongs in Ogeemo; Mass Storage belongs in Google Drive.</strong> We maintain a high-fidelity mirror between the two. If a folder exists in GDrive, its node must exist in Ogeemo. This prevents "File Chaos" and ensures that every contract, invoice, and email is exactly where your business mind expects it to be.
+                                <strong>Structure belongs in Ogeemo; Mass Storage belongs in Google Drive.</strong> We keep the two in sync. If a folder exists in GDrive, its node must exist in Ogeemo. This prevents "File Chaos" and ensures that every contract, invoice, and email is exactly where your business mind expects it to be.
                             </p>
                         </div>
                     </div>

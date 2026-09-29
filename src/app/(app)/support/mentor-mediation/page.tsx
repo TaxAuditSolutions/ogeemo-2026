@@ -176,7 +176,7 @@ export default function MentorMediationPage() {
                                 <Label htmlFor="dispute" className="text-xs font-bold uppercase tracking-widest text-primary">2. Describe the Situation</Label>
                                 <Textarea 
                                     id="dispute" 
-                                    placeholder="Please provide high-fidelity details regarding the dispute or guidance in question..." 
+                                    placeholder="Please provide detailed information about the dispute or question..." 
                                     rows={8}
                                     value={dispute}
                                     onChange={e => setDispute(e.target.value)}

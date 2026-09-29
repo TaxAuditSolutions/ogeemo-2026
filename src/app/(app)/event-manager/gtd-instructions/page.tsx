@@ -38,7 +38,7 @@ export default function GtdInstructionsPage() {
                         The Ogeemo Method (TOM)
                     </h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        High-fidelity orchestration for your business operations.
+                        Run your daily business operations with ease.
                     </p>
                 </div>
                 <div className="flex justify-end">
@@ -115,7 +115,7 @@ export default function GtdInstructionsPage() {
                                         <li><strong>If it's a goal:</strong> Create a new project in the <Link href="/projects/all" className="text-primary hover:underline">Project Manager</Link>.</li>
                                         <li><strong>If it's a step:</strong> Drag it to the appropriate project's task board.</li>
                                         <li><strong>If it's timed:</strong> Assign a date/time so it appears in the <Link href="/calendar" className="text-primary hover:underline">Calendar</Link>.</li>
-                                        <li><strong>If it's reference:</strong> Archive it to the <strong><Link href="/document-manager" className="text-primary hover:underline">Document Manager</Link></strong> using the high-fidelity naming protocol.</li>
+                                        <li><strong>If it's reference:</strong> Archive it to the <strong><Link href="/document-manager" className="text-primary hover:underline">Document Manager</Link></strong> using the naming convention.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>
@@ -179,7 +179,7 @@ export default function GtdInstructionsPage() {
 
                     <h4>3. Decide and Act</h4>
                     <p>
-                        Everything in Ogeemo is a decision followed by an action. Most items are intuitive, and you can always click an info icon (<Info className="inline h-4 w-4" />) or 3-dot menu (<MoreVertical className="inline h-4 w-4" />) for deeper orchestration.
+                        Everything in Ogeemo is a decision followed by an action. Most items are intuitive, and you can always click an info icon (<Info className="inline h-4 w-4" />) or 3-dot menu (<MoreVertical className="inline h-4 w-4" />) for more options.
                     </p>
                 </CardContent>
             </Card>

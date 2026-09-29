@@ -170,7 +170,7 @@ export function BackupManagerView() {
                             {isRunning ? (
                                 <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
                             ) : <Download className="mr-2 h-5 w-5" />}
-                            {isRunning ? 'Orchestrating Export...' : 'Execute Export Mandate'}
+                            {isRunning ? 'Preparing your export...' : 'Export Backup'}
                         </Button>
                         <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
                             Destination Node: <code className="bg-muted px-1 rounded">gs://[project]-backups/</code>

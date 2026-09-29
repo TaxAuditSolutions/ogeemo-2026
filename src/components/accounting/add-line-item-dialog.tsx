@@ -477,7 +477,7 @@ export function AddLineItemDialog({
 
                 <div className="space-y-6">
                     <Label className="text-sm uppercase font-bold text-primary tracking-widest flex items-center gap-2">
-                        <Percent className="h-4 w-4" /> {itemToEdit ? '4.' : '5.'} Tax Orchestration
+                        <Percent className="h-4 w-4" /> {itemToEdit ? '4.' : '5.'} Tax Details
                     </Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 p-8 border rounded-3xl bg-muted/10">
                         <div className="space-y-3">

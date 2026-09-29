@@ -505,7 +505,7 @@ export function TimeManagerView() {
                         <p className="text-muted-foreground mt-1">Plan and organize your meeting.</p>
                     </div>
                     <Button variant="outline" onClick={() => setIsAgendaFormOpen(false)}>
-                        Back to Event Manager
+                        Back to Activity Manager
                     </Button>
                 </div>
                 <AgendaForm onSuccess={() => setIsAgendaFormOpen(false)} />
@@ -550,7 +550,7 @@ export function TimeManagerView() {
                             </TooltipProvider>
                         </div>
                         <div className="text-center px-4">
-                            <h1 className="text-3xl font-bold font-headline text-primary">Event Manager</h1>
+                            <h1 className="text-3xl font-bold font-headline text-primary">Activity Manager</h1>
                             <p className="text-sm text-muted-foreground mt-1">Schedule events and record time sessions.</p>
                         </div>
                         <div className="flex justify-center md:justify-end items-center gap-2">

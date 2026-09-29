@@ -41,17 +41,17 @@ export function TaskCreationInfoDialog({ isOpen, onOpenChange }: TaskCreationInf
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
-            <InfoItem icon={Clock} title="Task & Event Manager">
+            <InfoItem icon={Clock} title="Task & Activity Manager">
                 This is the primary tool for creating detailed tasks and calendar events. You can access it from the main menu or by clicking a time slot on the calendar. It allows you to assign clients, projects, billable rates, and more.
             </InfoItem>
             <InfoItem icon={Briefcase} title="Project Task Boards">
                 When viewing a specific project's task board, clicking "Add Task" creates a new task that is automatically linked to that project.
             </InfoItem>
              <InfoItem icon={ListTodo} title="To-Do List">
-                Items from your simple <Link href="/to-do" className="text-primary hover:underline">To-Do List</Link> can be converted into full-fledged tasks by selecting "Schedule to calendar" from their menu. This sends them to the Task & Event Manager.
+                Items from your simple <Link href="/to-do" className="text-primary hover:underline">To-Do List</Link> can be converted into full-fledged tasks by selecting "Schedule to calendar" from their menu. This sends them to the Task & Activity Manager.
             </InfoItem>
             <InfoItem icon={Lightbulb} title="Idea Board">
-                Similarly, ideas from your <Link href="/idea-board" className="text-primary hover:underline">Idea Board</Link> can be scheduled to your calendar, which also uses the Task & Event Manager to create a formal task.
+                Similarly, ideas from your <Link href="/idea-board" className="text-primary hover:underline">Idea Board</Link> can be scheduled to your calendar, which also uses the Task & Activity Manager to create a formal task.
             </InfoItem>
         </div>
         <DialogFooter>

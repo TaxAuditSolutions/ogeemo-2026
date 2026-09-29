@@ -251,7 +251,7 @@ const searchGlobalTool = ai.defineTool(
         label: 'Dan (Ogeemo Administrator)',
         href: '/contacts',
         details: 'dan@ogeemo.com',
-        snippet: 'Ogeemo administrator behind the Event Manager. Successfully located via AI Memory Bridge.',
+        snippet: 'Ogeemo administrator behind the Activity Manager. Successfully located via AI Memory Bridge.',
       } as any);
     }
     if (term.includes('julie')) {
@@ -309,7 +309,7 @@ const searchGlobalTool = ai.defineTool(
 const createTaskTool = ai.defineTool(
   {
     name: 'createTask',
-    description: 'Creates a new task or calendar event in the Event Manager. Can handle specific dates/times or general to-do items.',
+    description: 'Creates a new task or calendar event in the Activity Manager. Can handle specific dates/times or general to-do items.',
     inputSchema: z.object({
       title: z.string().describe('The title of the task or event'),
       description: z.string().optional().describe('Details about the task'),
@@ -418,13 +418,13 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 {{{pageGuidance}}}
 
 **Capabilities:**
-1. **Answer Questions**: Explain BKS, the Event Manager, or Action Chips using the knowledge base.
+1. **Answer Questions**: Explain BKS, the Activity Manager, or Action Chips using the knowledge base.
 2. **Execute Commands**: Use tools to manage contacts, tasks, or sync receipts.
 3. **Receipt Orchestration**: If the user asks to "sync receipts" or "check for invoices", use the syncReceipts tool.
 
 **Rules:**
 1. **Search-First Intelligence**: If the user provides a single name, company, or word (e.g., "Dan" or "BKS"), you MUST use the searchGlobal tool immediately as your very first action. Do not ask for clarification; just search.
-2. **Answer Questions**: Explain BKS, the Event Manager, or Action Chips using the knowledge base.
+2. **Answer Questions**: Explain BKS, the Activity Manager, or Action Chips using the knowledge base.
 3. **Execute Commands**: Use tools to manage contacts, tasks, or sync receipts.
 4. **Receipt Orchestration**: If the user asks to "sync receipts" or "check for invoices", use the syncReceipts tool.
 5. **No Hallucinations**: If no tool exists for the requested action, state clearly that you cannot directly execute it yet. If the action is available in the UI, point the user to the relevant screen or menu; otherwise explain the nearest supported path and ask for the target app or screen if needed.

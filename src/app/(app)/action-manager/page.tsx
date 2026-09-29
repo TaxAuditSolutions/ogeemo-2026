@@ -124,12 +124,12 @@ export default function ActionManagerDashboardPage() {
                           <Button asChild className="h-9 bg-slate-900 text-white hover:bg-slate-800">
                               <Link href="/event-manager">
                                   <PlayCircle className="mr-2 h-4 w-4 text-primary" />
-                                  Event Manager
+                                  Activity Manager
                               </Link>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Go to your primary execution hub (Event Manager)</p>
+                          <p>Go to your primary execution hub (Activity Manager)</p>
                         </TooltipContent>
                       </Tooltip>
                        <Tooltip>

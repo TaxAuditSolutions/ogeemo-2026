@@ -59,7 +59,7 @@ const BUSINESS_INTENTS = [
     {
         icon: Clock,
         title: 'Manage my time & team',
-        description: 'The Activity Manager: calendar, dispatch, and time control.',
+        description: 'The Calendar: schedule, dispatch, and time control.',
         href: '/features',
     },
     {

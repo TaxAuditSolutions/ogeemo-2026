@@ -70,7 +70,7 @@ const INSIGHT_POSTS = [
         cat: "Strategy",
         content: `
             <p>Efficiency isn't about working faster; it's about eliminating the work that doesn't need to be done. Ogeemo's architecture forces a strategic approach to business management.</p>
-            <p>With features like the Idea Board and Event Manager workflows, Ogeemo allows you to capture inspiration instantly, park it safely, and retrieve it when the time is right. Nothing falls through the cracks.</p>
+            <p>With features like the Idea Board and Activity Manager workflows, Ogeemo allows you to capture inspiration instantly, park it safely, and retrieve it when the time is right. Nothing falls through the cracks.</p>
             <p>By aligning your long-term strategy with daily Action Chips, you ensure that every micro-task your team completes rolls up into your macro-objectives.</p>
         `
     },

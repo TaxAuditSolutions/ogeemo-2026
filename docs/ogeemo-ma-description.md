@@ -77,7 +77,7 @@ The financial engine is the heart of Ogeemo. It is a **cash-basis accounting sys
 
 ### 3.6 Specialized Modules
 - **Hytexercise** — A wellness and exercise management module
-- **Event Manager** — A high-fidelity temporal execution engine for scheduling and live work sessions
+- **Activity Manager** — A high-fidelity temporal execution engine for scheduling and live work sessions
 - **Idea Board** — Brainstorming and idea capture
 - **Marketing Manager** — Marketing campaign and content tools
 - **Reports Hub** — Work activity summaries, client statements, time log reports, and advanced search

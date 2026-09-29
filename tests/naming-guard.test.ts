@@ -7,7 +7,7 @@ import test from 'node:test';
  * Guard test for the Events Manager naming cleanup.
  *
  * The page used to be called "Master Mind" / "Command Centre" and lived at
- * /master-mind. It is now the "Event Manager" at /event-manager, with a redirect
+ * /master-mind. It is now the "Activity Manager" at /event-manager, with a redirect
  * from the old path (see next.config.js).
  *
  * Everything user-facing has been renamed - app copy, marketing pages, the
@@ -71,6 +71,10 @@ test('the retired term "Command Centre" is gone from app copy and guides', () =>
 
 test('the retired term "Master Mind" is gone from app copy and guides', () => {
     assert.deepEqual(findViolations(/master mind/i), []);
+});
+
+test('the retired term "Event Manager" is gone after the Activity Manager rename', () => {
+    assert.deepEqual(findViolations(/event manager/i), []);
 });
 
 test('the guard test actually scans the source and guide trees', () => {

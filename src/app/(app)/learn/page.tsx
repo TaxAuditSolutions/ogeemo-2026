@@ -63,7 +63,7 @@ const LEARN_STEPS: LearnStep[] = [
     icon: Calendar,
     title: 'Time, tasks & meetings',
     description:
-      'The Calendar, To-Do list, and Event Manager keep your day moving — schedule, track, and never lose a follow-up.',
+      'The Calendar, To-Do list, and Activity Manager keep your day moving — schedule, track, and never lose a follow-up.',
     links: [
       { label: 'Open the Calendar', href: '/calendar' },
       { label: 'Open To-Do', href: '/to-do' },

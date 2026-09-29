@@ -58,7 +58,7 @@ export default function GtdInstructionsPage() {
                         <p>
                            The Ogeemo Method (TOM) is built on the <strong>Spider Web Architecture</strong>. We believe that your business isn't a collection of silos, but a network of interconnected nodes. Every task, client communication, and ledger entry is a signal that travels across your web.
                         </p>
-                        <h3>Projects, Tasks, and the Event Manager</h3>
+                        <h3>Projects, Tasks, and the Activity Manager</h3>
                         <p>
                            Ogeemo's productivity tools are deeply integrated. Understanding how they connect is the key to mastering your workflow.
                         </p>
@@ -70,11 +70,11 @@ export default function GtdInstructionsPage() {
                                 <strong>Tasks (The Actions):</strong> The individual steps that move a project forward. Manage these on visual Kanban boards within each project.
                             </li>
                              <li>
-                                <strong>Event Manager (The Execution):</strong> Your visual time-based view. Any task with a specific date and time automatically appears here. Use the 5-minute temporal granularity to capture work that usually falls through the cracks.
+                                <strong>Activity Manager (The Execution):</strong> Your visual time-based view. Any task with a specific date and time automatically appears here. Use the 5-minute temporal granularity to capture work that usually falls through the cracks.
                             </li>
                         </ul>
                         <p>
-                            <strong>Native Integration:</strong> When you create an entry in the <Link href="/event-manager" className="text-primary hover:underline">Event Manager</Link> and link it to a project, it instantly appears on that project's board and updates your time logs for billing.
+                            <strong>Native Integration:</strong> When you create an entry in the <Link href="/event-manager" className="text-primary hover:underline">Activity Manager</Link> and link it to a project, it instantly appears on that project's board and updates your time logs for billing.
                         </p>
                     </div>
 
@@ -94,7 +94,7 @@ export default function GtdInstructionsPage() {
                                     <ul>
                                         <li><strong>For Actions:</strong> Use the <strong><Link href="/projects/inbox/tasks" className="text-primary hover:underline">"Action Items"</Link></strong> project as your primary inbox for to-dos.</li>
                                         <li><strong>For Possibilities:</strong> Use the <strong><Link href="/idea-board" className="text-primary hover:underline">Idea Board</Link></strong> for vague thoughts or future "maybe" items.</li>
-                                        <li><strong>For Appointments:</strong> Schedule fixed commitments directly in the <strong><Link href="/event-manager" className="text-primary hover:underline">Event Manager</Link></strong>.</li>
+                                        <li><strong>For Appointments:</strong> Schedule fixed commitments directly in the <strong><Link href="/event-manager" className="text-primary hover:underline">Activity Manager</Link></strong>.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>

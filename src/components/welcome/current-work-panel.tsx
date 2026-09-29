@@ -40,7 +40,7 @@ const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
  * Sessions started longer ago than this are treated as abandoned for display
  * purposes: they are not "current work", and multi-day stuck timers (e.g.
  * 96:33:16) only confuse the home screen. The session stays visible and
- * endable in the Event Manager.
+ * endable in the Activity Manager.
  */
 const STALE_SESSION_MS = 24 * 60 * 60 * 1000;
 
@@ -244,7 +244,7 @@ export function CurrentWorkPanel() {
           <Info className="h-4 w-4 shrink-0" />
           <span className="shrink-0 font-semibold">Older session</span>
           <span className="min-w-0 truncate">
-            started {format(timer.startTime, 'MMM d, HH:mm')} — open the Event Manager to end it
+            started {format(timer.startTime, 'MMM d, HH:mm')} — open the Activity Manager to end it
           </span>
           <ArrowRight className="ml-auto h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </Link>

@@ -9,6 +9,7 @@ import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
   BookOpen, LayoutDashboard, Bot,
+  CalendarDays, Receipt, Users,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -127,14 +128,8 @@ export default function WelcomePage() {
 
         <CurrentWorkPanel />
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            {
-              href: '/learn',
-              icon: BookOpen,
-              title: 'Learn Ogeemo',
-              description: 'New here? Start with a guided tour of the basics and best practices.',
-            },
             {
               href: '/action-manager',
               icon: LayoutDashboard,
@@ -142,10 +137,22 @@ export default function WelcomePage() {
               description: "Open your Action Manager to see today's tasks and priorities.",
             },
             {
-              href: '/co-pilot',
-              icon: Bot,
-              title: 'Ask the Co-Pilot',
-              description: 'Your AI assistant for Ogeemo and your work.',
+              href: '/calendar',
+              icon: CalendarDays,
+              title: 'Calendar',
+              description: 'See your schedule and what you have planned today.',
+            },
+            {
+              href: '/accounting/invoices/view',
+              icon: Receipt,
+              title: 'Invoices',
+              description: 'Create invoices and keep track of what customers owe you.',
+            },
+            {
+              href: '/contacts',
+              icon: Users,
+              title: 'Contacts',
+              description: 'Your customers and everyone you do business with.',
             },
           ].map((door) => {
             const DoorIcon = door.icon;
@@ -166,6 +173,23 @@ export default function WelcomePage() {
               </Link>
             );
           })}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+          <Link
+            href="/learn"
+            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+          >
+            <BookOpen className="h-4 w-4" />
+            Learn Ogeemo
+          </Link>
+          <Link
+            href="/co-pilot"
+            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+          >
+            <Bot className="h-4 w-4" />
+            Ask the Co-Pilot
+          </Link>
         </div>
       </div>
 

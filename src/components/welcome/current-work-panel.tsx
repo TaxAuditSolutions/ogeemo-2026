@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CircleDollarSign,
   ClipboardList,
+  Info,
   PauseCircle,
   PlayCircle,
   Receipt,
@@ -34,6 +35,14 @@ import type { StoredTimerState } from '@/types/calendar-types';
  */
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
+
+/**
+ * Sessions started longer ago than this are treated as abandoned for display
+ * purposes: they are not "current work", and multi-day stuck timers (e.g.
+ * 96:33:16) only confuse the home screen. The session stays visible and
+ * endable in the Event Manager.
+ */
+const STALE_SESSION_MS = 24 * 60 * 60 * 1000;
 
 type TimerWindow = Window & {
   __ogeemoTimerState?: StoredTimerState | null;
@@ -191,11 +200,14 @@ export function CurrentWorkPanel() {
     };
   }, [timer?.isActive, timer?.eventId]);
 
-  const timerActive = Boolean(timer?.isActive);
+  const timerActive = Boolean(
+    timer?.isActive && Date.now() - timer.startTime <= STALE_SESSION_MS,
+  );
+  const staleSession = Boolean(timer?.isActive) && !timerActive;
   const showTodayCard = todayEvents.length > 0 || openTaskCount > 0;
   const showAttentionCard = invoiceCount > 0 || billCount > 0;
 
-  if (!loading && !timerActive && !showTodayCard && !showAttentionCard) {
+  if (!loading && !timerActive && !staleSession && !showTodayCard && !showAttentionCard) {
     return null;
   }
 
@@ -203,7 +215,7 @@ export function CurrentWorkPanel() {
     <div className="space-y-4">
       {timerActive && (
         <Link
-          href="/accounting/time"
+          href={timer?.eventId ? `/event-manager?eventId=${timer.eventId}` : '/event-manager'}
           className="group flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm shadow-sm transition-colors hover:bg-primary/10"
         >
           {timer?.isPaused ? (
@@ -221,6 +233,20 @@ export function CurrentWorkPanel() {
             {formatElapsedSeconds(elapsedSeconds)}
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+        </Link>
+      )}
+
+      {staleSession && timer && (
+        <Link
+          href={timer.eventId ? `/event-manager?eventId=${timer.eventId}` : '/event-manager'}
+          className="group flex items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-muted/70"
+        >
+          <Info className="h-4 w-4 shrink-0" />
+          <span className="shrink-0 font-semibold">Older session</span>
+          <span className="min-w-0 truncate">
+            started {format(timer.startTime, 'MMM d, HH:mm')} — open the Event Manager to end it
+          </span>
+          <ArrowRight className="ml-auto h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
         </Link>
       )}
 

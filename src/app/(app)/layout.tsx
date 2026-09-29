@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
-import { ActiveTimerIndicator } from '@/components/layout/active-timer-indicator';
 import { Sidebar, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';

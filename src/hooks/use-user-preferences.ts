@@ -17,7 +17,7 @@ const defaultPreferences: UserProfile['preferences'] = {
     showDashboardFrame: true,
     showMenuViewInstructions: true,
     showActionManagerAboutPanel: true,
-    defaultSidebarView: 'fullMenu',
+    defaultSidebarView: 'grouped',
     themeColors: {
         primary: '#1E8E86',
         background: '#ffffff',
@@ -74,6 +74,18 @@ export function useUserPreferences() {
                     }
                 };
 
+                // One-time migration: the old implicit default sidebar view was
+                // 'fullMenu'; the new default is 'grouped' (the list of groups).
+                // The flag records that migration ran, so a later explicit
+                // "Set as Default View" of Full Menu is preserved.
+                if (!globalPrefs.sidebarViewDefaultMigrated) {
+                    if (globalPrefs.defaultSidebarView === 'fullMenu') {
+                        globalPrefs = { ...globalPrefs, defaultSidebarView: 'grouped' };
+                    }
+                    globalPrefs = { ...globalPrefs, sidebarViewDefaultMigrated: true };
+                    needsUpdate = true;
+                }
+
                 if (needsUpdate) {
                     await updateUserProfile(userId, profile.email || '', { preferences: globalPrefs });
                 }
@@ -113,7 +125,7 @@ export function useUserPreferences() {
         if (!user) return;
 
         // 1. Optimistic Global Update
-        globalPrefs = { ...globalPrefs, ...newPrefs };
+        globalPrefs = { ...globalPrefs, ...newPrefs, sidebarViewDefaultMigrated: true };
         notify();
 
         // 2. Persist to Firestore

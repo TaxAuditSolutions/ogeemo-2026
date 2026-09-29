@@ -14,13 +14,13 @@ interface SidebarViewContextType {
 const SidebarViewContext = createContext<SidebarViewContextType | undefined>(undefined);
 
 export function SidebarViewProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<SidebarViewType>('fullMenu');
+  const [view, setView] = useState<SidebarViewType>('grouped');
   const { preferences, isLoading } = useUserPreferences();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (!isLoading && preferences && !isInitialized) {
-      setView(preferences.defaultSidebarView || 'fullMenu');
+      setView(preferences.defaultSidebarView || 'grouped');
       setIsInitialized(true);
     }
   }, [preferences, isLoading, isInitialized]);

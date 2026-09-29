@@ -122,7 +122,7 @@ export function MembershipSignupForm({ onSubmit, isLoading }: MembershipSignupFo
                 <FormControl>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Acme Orchestration Inc." className="h-12 pl-11 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" {...field} disabled={isLoading} />
+                    <Input placeholder="Acme Corporation" className="h-12 pl-11 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" {...field} disabled={isLoading} />
                   </div>
                 </FormControl>
                 <FormMessage />

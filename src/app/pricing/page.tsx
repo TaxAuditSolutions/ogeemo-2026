@@ -97,7 +97,7 @@ export default function PricingPage() {
                                 "Advanced AI Search & Dispatch",
                                 "Hytexercise Wellness Manager",
                                 "Data Portability & Secure Backups",
-                                "High-Fidelity Invoicing & Reports",
+                                "Professional Invoicing & Reports",
                                 "Direct Access to the Mentor Team",
                                 "Voting Power on the Roadmap"
                             ].map((item) => (

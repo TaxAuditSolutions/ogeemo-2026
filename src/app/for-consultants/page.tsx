@@ -37,7 +37,7 @@ export default function ForConsultantsPage() {
                                     OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
-                                    Consulting Operations, Orchestrated.
+                                    Consulting Operations, Simplified.
                                 </p>
                                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
                                     Stop letting administrative leakage drain your profitability. Ogeemo unifies your client engagements, your timing, and your financial growth into a single digital nervous system.
@@ -130,7 +130,7 @@ export default function ForConsultantsPage() {
                             <Badge variant="outline" className="text-primary border-primary px-4 py-1">THE ENGINE</Badge>
                             <h2 className="text-4xl md:text-6xl font-bold font-headline text-primary tracking-tight">Master Your Engagements</h2>
                             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
-                                Ogeemo replaces your fragmented tech stack with high-fidelity modules designed for professional output and total empowerment.
+                                Ogeemo replaces your fragmented tech stack with focused modules designed for professional output and total empowerment.
                             </p>
                         </div>
 
@@ -144,7 +144,7 @@ export default function ForConsultantsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Orchestrate complex client deliverables. Use the "Action-to-Protocol Bridge" to turn simple ideas into scheduled, billable tasks.
+                                        Manage complex client deliverables. Use the "Action-to-Protocol Bridge" to turn simple ideas into scheduled, billable tasks.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -185,7 +185,7 @@ export default function ForConsultantsPage() {
                     <div className="container px-4 space-y-10 relative z-10">
                         <h2 className="text-4xl md:text-7xl font-bold font-headline leading-none tracking-tighter">Run your practice like a powerhouse.</h2>
                         <p className="text-2xl opacity-90 max-w-2xl mx-auto font-medium">
-                            Experience the difference of a truly orchestrated workspace. Start your 30-day trial today.
+                            Experience the difference of a well-organized workspace. Start your 30-day trial today.
                         </p>
                         <div className="flex flex-wrap justify-center gap-6 pt-6">
                             <Button asChild size="lg" variant="secondary" className="h-16 px-12 text-xl font-bold shadow-2xl">

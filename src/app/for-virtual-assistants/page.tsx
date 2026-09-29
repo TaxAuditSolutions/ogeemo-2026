@@ -44,7 +44,7 @@ export default function ForVirtualAssistantsPage() {
                                 <ImagePlaceholder id="va-hero" className="object-cover" />
                             </div>
                             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-medium">
-                                Ogeemo is designed for the modern VA who does more than just data entry. It’s for the partner who orchestrates the entire client operation through total empowerment.
+                                Ogeemo is designed for the modern VA who does more than just data entry. It’s for the partner who runs the entire client operation with confidence.
                             </p>
                             <div className="pt-4 flex flex-wrap justify-center gap-6">
                                 <Button asChild size="lg" className="h-16 px-10 text-xl font-bold shadow-xl hover:shadow-2xl transition-all">
@@ -75,7 +75,7 @@ export default function ForVirtualAssistantsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        When your client shares their Event Manager with you, you can take over the heavy lifting of project planning. You aren't just checking off items; you are orchestrating the timing of their business vision.
+                                        When your client shares their Event Manager with you, you can take over the heavy lifting of project planning. You aren't just checking off items; you are managing the timing of their business plan.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -166,7 +166,7 @@ export default function ForVirtualAssistantsPage() {
                                     <div className="p-4 bg-primary/10 rounded-2xl w-fit mb-4">
                                         <Briefcase className="h-8 w-8 text-primary" />
                                     </div>
-                                    <CardTitle className="text-2xl font-bold font-headline tracking-tight">Project Orchestration</CardTitle>
+                                    <CardTitle className="text-2xl font-bold font-headline tracking-tight">Project Management</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">

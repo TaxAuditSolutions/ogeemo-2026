@@ -38,7 +38,7 @@ export default function ForLawyersPage() {
                                     OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
-                                    Legal Case Management, Orchestrated.
+                                    Legal Case Management, Simplified.
                                 </p>
                                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
                                     Stop losing billable hours to administrative gaps. Ogeemo unifies your files, your finances, and your firm’s output into a single digital nervous system.

@@ -178,7 +178,7 @@ export default function ForSmallBusinessesPage() {
                     <div className="container px-4 space-y-10 relative z-10">
                         <h2 className="text-5xl md:text-8xl font-bold font-headline leading-none tracking-tighter">Work on your business.</h2>
                         <p className="text-2xl opacity-90 max-w-2xl mx-auto font-medium">
-                            Join the visionaries who have stopped the grind and started the orchestration.
+                            Join the owners who have stopped the grind and started running their business with a plan.
                         </p>
                         <div className="flex flex-wrap justify-center gap-6 pt-6">
                             <Button asChild size="lg" variant="secondary" className="h-16 px-12 text-xl font-bold shadow-2xl">

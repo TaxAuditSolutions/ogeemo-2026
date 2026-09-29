@@ -104,7 +104,7 @@ export default function ForParalegalsPage() {
                                     <FolderOpen className="h-8 w-8 text-primary" />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-xl">Document Orchestration</h4>
+                                    <h4 className="font-bold text-xl">Document Management</h4>
                                     <p className="text-sm text-slate-400">Drafting and review cycles are tracked as nodes on the firm's web.</p>
                                 </div>
                             </div>
@@ -184,7 +184,7 @@ export default function ForParalegalsPage() {
                     <div className="container px-4 space-y-10 relative z-10">
                         <h2 className="text-4xl md:text-7xl font-bold font-headline leading-none tracking-tighter">Ready to reclaim your day?</h2>
                         <p className="text-2xl opacity-90 max-w-2xl mx-auto font-medium">
-                            Join the Ogeemo community and experience the difference of a truly orchestrated legal workspace.
+                            Join the Ogeemo community and experience the difference of a truly organized legal workspace.
                         </p>
                         <div className="flex flex-wrap justify-center gap-6 pt-6">
                             <Button asChild size="lg" variant="secondary" className="h-16 px-12 text-xl font-bold shadow-2xl">

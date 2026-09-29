@@ -72,7 +72,7 @@ export default function ContactPage() {
                                     OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
-                                    Let's Orchestrate Your Future.
+                                    Let's start the conversation.
                                 </p>
                                 <p className="text-xl text-muted-foreground leading-relaxed font-medium max-w-md">
                                     Ready to unify your digital nervous system? Our team is here to help you bridge the administrative gap.
@@ -148,7 +148,7 @@ export default function ContactPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="subject" className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Subject</Label>
-                                                <Input id="subject" name="subject" placeholder="Professional Orchestration" className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" required />
+                                                <Input id="subject" name="subject" placeholder="How can we help?" className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20" required />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="message" className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Message</Label>
@@ -156,7 +156,7 @@ export default function ContactPage() {
                                             </div>
                                             <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all" disabled={isSubmitting}>
                                                 {isSubmitting ? <LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> : <MessageSquare className="mr-2 h-5 w-5" />}
-                                                {isSubmitting ? "Orchestrating..." : "Send Connection Signal"}
+                                                {isSubmitting ? "Sending..." : "Send Message"}
                                             </Button>
                                         </form>
                                     </CardContent>

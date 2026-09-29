@@ -138,7 +138,7 @@ export default function FeaturesPage() {
         },
         commandCentre: {
             title: "Activity Manager",
-            description: "High-fidelity temporal execution engine.",
+            description: "Plan your schedule and track time as work happens.",
             icon: BrainCircuit,
             overview: "Built on a Temporal Matrix, the Activity Manager allows you to divide every hour into 5-minute increments. This provides the granularity needed to track 'invisible work'—the quick client calls and rapid administrative tasks that usually go unrecorded.",
             usageSteps: [
@@ -160,7 +160,7 @@ export default function FeaturesPage() {
         },
         projectForge: {
             title: "Project Forge",
-            description: "Multi-step goal orchestration.",
+            description: "Break big goals into steps and track progress.",
             icon: Briefcase,
             overview: "The Project Forge is where your high-level goals are broken down into actionable reality. It combines visual Kanban boards with reusable templates to ensure that your business protocols are followed perfectly every time.",
             usageSteps: [
@@ -241,7 +241,7 @@ export default function FeaturesPage() {
                                     <BrainCircuit className="h-6 w-6" />
                                 </div>
                                 <CardTitle>Activity Manager</CardTitle>
-                                <CardDescription>High-fidelity temporal execution engine.</CardDescription>
+                                <CardDescription>Plan your schedule and track time as work happens.</CardDescription>
                             </CardHeader>
                             <CardContent className="text-sm text-muted-foreground space-y-2">
                                 <p>A 5-minute granularity calendar that turns intentions into tracked, billable reality.</p>
@@ -293,7 +293,7 @@ export default function FeaturesPage() {
                                     <Briefcase className="h-6 w-6" />
                                 </div>
                                 <CardTitle>Project Forge</CardTitle>
-                                <CardDescription>Multi-step goal orchestration.</CardDescription>
+                                <CardDescription>Break big goals into steps and track progress.</CardDescription>
                             </CardHeader>
                             <CardContent className="text-sm text-muted-foreground space-y-2">
                                 <p>Visual Kanban boards that sync natively with your schedule and billing.</p>

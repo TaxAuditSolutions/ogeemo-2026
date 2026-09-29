@@ -113,7 +113,7 @@ export default function ForBookkeepersPage() {
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-xl">BKS Stewardship</h4>
-                                    <p className="text-sm text-slate-400">Manage multiple client ledgers from one high-fidelity practice hub.</p>
+                                    <p className="text-sm text-slate-400">Manage multiple client ledgers from one reliable practice hub.</p>
                                 </div>
                             </div>
                             <Calculator className="absolute -bottom-10 -right-10 h-48 w-48 text-white/5 rotate-12" />

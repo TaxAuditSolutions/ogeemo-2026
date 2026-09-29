@@ -99,7 +99,7 @@ export default function RegisterPage() {
                 </div>
                 <CardTitle className="text-4xl font-headline font-bold tracking-tighter">Enter the Community.</CardTitle>
                 <CardDescription className="text-lg mt-2">
-                    Professional Orchestration for the Modern Visionary.
+                    Professional tools to run and grow your business.
                 </CardDescription>
 
                 <div className="mt-6 flex items-center justify-center gap-2">

@@ -36,7 +36,7 @@ export default function ForAccountantsPage() {
                                     OGEEMO
                                 </h1>
                                 <p className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight">
-                                    High-Fidelity Compliance. Zero Friction.
+                                    Solid Compliance. Zero Friction.
                                 </p>
                                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
                                     Stop chasing clients for receipts. Ogeemo provides a clean, audit-ready data stream from your clients' operations directly to your professional software.

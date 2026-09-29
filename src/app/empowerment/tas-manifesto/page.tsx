@@ -62,7 +62,7 @@ export default function TASManifestoPage() {
                             We don't build "bells and whistles" for marketing's sake. Every node in Ogeemo is built to handle the highest standard of audit-ready compliance. If a data point doesn't have a source, it doesn't belong in the ledger. 
                         </p>
                         <p className="text-slate-500 italic">
-                            High-fidelity data is the only shield against administrative assumptions.
+                            Accurate data is the only shield against administrative assumptions.
                         </p>
                     </div>
                 </div>

@@ -190,7 +190,7 @@ export function AboutContent() {
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                                             <div className="space-y-4">
                                                 <p className="text-lg leading-relaxed text-muted-foreground">
-                                                    From a technical perspective, Ogeemo was built as a unified platform architecture rather than a set of isolated SaaS features. The system combines operational data, workflow logic, document handling, task orchestration, and reporting into a common model so the same business context can flow across multiple experiences without duplication or reconciliation drift.
+                                                    From a technical perspective, Ogeemo was built as a unified platform architecture rather than a set of isolated SaaS features. The system combines operational data, workflow logic, document handling, task management, and reporting into a common model so the same business context can flow across multiple experiences without duplication or reconciliation drift.
                                                 </p>
                                                 <p className="text-lg leading-relaxed text-muted-foreground">
                                                     That means the product had to be designed around shared entities: clients, projects, documents, time, financial activity, compliance events, and project accountability. When those systems are fragmented, businesses lose trust in the information. When they are connected, the system starts behaving like a true operating layer instead of a collection of software widgets.

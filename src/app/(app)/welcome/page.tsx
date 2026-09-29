@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/logo';
+import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
   BookOpen, LayoutDashboard, Bot,
@@ -123,6 +124,8 @@ export default function WelcomePage() {
             Your business workspace is ready. <br className="hidden md:block" /> Pick a task below to get started.
           </p>
         </header>
+
+        <CurrentWorkPanel />
 
         <div className="grid gap-4 sm:grid-cols-3">
           {[

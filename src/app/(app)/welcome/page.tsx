@@ -121,7 +121,7 @@ export default function WelcomePage() {
             Welcome to Ogeemo
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Your high-fidelity operational engine is ready. <br className="hidden md:block" /> Let's begin the orchestration.
+            Your business workspace is ready. <br className="hidden md:block" /> Pick a task below to get started.
           </p>
         </header>
 
@@ -136,13 +136,13 @@ export default function WelcomePage() {
               href: '/learn',
               icon: BookOpen,
               title: 'Learn Ogeemo',
-              description: 'New here, or sharpening up? A guided path through the whole engine.',
+              description: 'New here? Start with a guided tour of the basics and best practices.',
             },
             {
               href: '/action-manager',
               icon: LayoutDashboard,
               title: 'Get to Work',
-              description: 'Straight to your Action Manager — tasks, actions, and your day.',
+              description: "Open your Action Manager to see today's tasks and priorities.",
             },
             {
               href: '/co-pilot',

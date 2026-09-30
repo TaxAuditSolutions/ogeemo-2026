@@ -13,9 +13,10 @@ import { allMenuItems } from '@/lib/menu-items';
  * and have every page show where the user just came from). The trail lives in
  * sessionStorage so it survives the full-page reloads used by workspace
  * switches, auth redirects and post-save jumps. Hidden when there is no
- * previous page in this tab (first landing / brand-new tab), and hidden when
- * the page itself already offers a "Back to" link to the same destination so
- * the same target never appears as two buttons.
+ * previous page in this tab (first landing / brand-new tab), and hidden while
+ * the page itself offers a "Back to" link to the same destination — checked
+ * with a MutationObserver because page-level headers often render after async
+ * data loads, so a one-shot check would miss them.
  */
 
 const NAV_TRAIL_KEY = 'ogeemo-nav-trail';
@@ -67,24 +68,35 @@ export function LastPageBack() {
     writeTrail([...trail, pathname]);
   }, [pathname]);
 
-  // Defer to the page: if the current page already renders its own
-  // "Back to <same destination>" link, do not repeat it here.
+  // Defer to the page: while the current page offers its own "Back to <same
+  // destination>" link, do not repeat it here. Re-checked on DOM mutations
+  // because page headers frequently render only after async data arrives.
   useEffect(() => {
     if (!previousPath) {
       setIsDuplicated(false);
       return;
     }
-    const container = document.getElementById('last-page-back');
-    const anchors = document.querySelectorAll('main a[href]');
-    for (const anchor of Array.from(anchors)) {
-      if (container?.contains(anchor)) continue;
-      const href = anchor.getAttribute('href');
-      if (href === previousPath && /^\s*Back to /i.test(anchor.textContent || '')) {
-        setIsDuplicated(true);
-        return;
-      }
+    const check = () => {
+      const container = document.getElementById('last-page-back');
+      const ownLabel = `Back to ${labelForPath(previousPath)}`.toLowerCase();
+      const candidates = Array.from(document.querySelectorAll('main a[href], main button'));
+      const found = candidates.some((element) => {
+        if (container?.contains(element)) return false;
+        const text = (element.textContent || '').trim().toLowerCase();
+        if (!text.startsWith('back to ')) return false;
+        const href = element.getAttribute('href');
+        if (href && href === previousPath) return true;
+        return text === ownLabel;
+      });
+      setIsDuplicated(found);
+    };
+    check();
+    const observer = new MutationObserver(check);
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      observer.observe(mainElement, { childList: true, subtree: true, characterData: true });
     }
-    setIsDuplicated(false);
+    return () => observer.disconnect();
   }, [previousPath, pathname]);
 
   if (!previousPath || previousPath === pathname || isDuplicated) return null;

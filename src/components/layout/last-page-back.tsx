@@ -13,7 +13,9 @@ import { allMenuItems } from '@/lib/menu-items';
  * and have every page show where the user just came from). The trail lives in
  * sessionStorage so it survives the full-page reloads used by workspace
  * switches, auth redirects and post-save jumps. Hidden when there is no
- * previous page in this tab (first landing / brand-new tab).
+ * previous page in this tab (first landing / brand-new tab), and hidden when
+ * the page itself already offers a "Back to" link to the same destination so
+ * the same target never appears as two buttons.
  */
 
 const NAV_TRAIL_KEY = 'ogeemo-nav-trail';
@@ -50,6 +52,7 @@ function labelForPath(pathname: string): string {
 export function LastPageBack() {
   const pathname = usePathname();
   const [previousPath, setPreviousPath] = useState<string | null>(null);
+  const [isDuplicated, setIsDuplicated] = useState(false);
 
   useEffect(() => {
     const trail = readTrail();
@@ -64,10 +67,30 @@ export function LastPageBack() {
     writeTrail([...trail, pathname]);
   }, [pathname]);
 
-  if (!previousPath || previousPath === pathname) return null;
+  // Defer to the page: if the current page already renders its own
+  // "Back to <same destination>" link, do not repeat it here.
+  useEffect(() => {
+    if (!previousPath) {
+      setIsDuplicated(false);
+      return;
+    }
+    const container = document.getElementById('last-page-back');
+    const anchors = document.querySelectorAll('main a[href]');
+    for (const anchor of Array.from(anchors)) {
+      if (container?.contains(anchor)) continue;
+      const href = anchor.getAttribute('href');
+      if (href === previousPath && /^\s*Back to /i.test(anchor.textContent || '')) {
+        setIsDuplicated(true);
+        return;
+      }
+    }
+    setIsDuplicated(false);
+  }, [previousPath, pathname]);
+
+  if (!previousPath || previousPath === pathname || isDuplicated) return null;
 
   return (
-    <div className="print:hidden">
+    <div id="last-page-back" className="print:hidden">
       <Button asChild variant="outline" size="sm">
         <Link href={previousPath} aria-label={`Back to ${labelForPath(previousPath)}`}>
           <ArrowLeft className="mr-2 h-4 w-4" />

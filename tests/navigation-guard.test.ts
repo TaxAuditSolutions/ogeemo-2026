@@ -169,6 +169,7 @@ test('every page shows the last page visited via the shared back link', () => {
   assert.ok(backLink.includes('sessionStorage'), 'expected the previous-page trail to survive full reloads');
   assert.ok(backLink.includes('usePathname'), 'expected pathname tracking in the last-page back link');
   assert.ok(/Back to /.test(backLink), 'expected a Back to label');
+  assert.ok(backLink.includes('querySelectorAll'), 'expected the universal link to defer to a page-level back link to the same place');
 });
 
 test('shared back-link headers use the outline button style', () => {

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
+import { GlobalSearch } from '@/components/layout/global-search';
 import { Sidebar, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
@@ -20,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LayoutDashboard, Search, Settings, BrainCircuit, Building2 } from 'lucide-react';
+import { Settings, Building2 } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
@@ -61,6 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, accessLevel, isMasterTenant } = useAuth();
   const [activeTenantName, setActiveTenantName] = useState<string>('');
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
   const roleExplanation = isMasterTenant
@@ -158,6 +160,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/welcome" className="flex items-center transition-opacity hover:opacity-80 shrink-0">
                           <Logo className="text-black" />
                         </Link>
+
+                        <GlobalSearch isOpen={searchOpen} onOpenChange={setSearchOpen} />
                       </div>
 
                       {/* Center Column: Intelligence Nodes */}
@@ -170,20 +174,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       {/* Right Column: Orchestration & Identity */}
                       <div className="flex-1 flex items-center justify-end gap-4 min-w-0">
                         <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button asChild className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50 transition-colors">
-                                <Link href="/action-manager" aria-label="Action Manager">
-                                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
-                                  <span>Action Manager</span>
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                              <p>Action Manager: One Action to Rule them All</p>
-                            </TooltipContent>
-                          </Tooltip>
-
                         {tenantOptions.length > 1 ? (
                           <DropdownMenu>
                             <Tooltip>

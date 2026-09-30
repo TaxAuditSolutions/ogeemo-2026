@@ -1,125 +1,191 @@
-
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Search,
-  Mic,
-  Square,
-  LoaderCircle,
-  X,
-  Bot,
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogClose,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { useSpeechToText } from '@/hooks/use-speech-to-text';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/context/auth-context';
+import { allMenuItems } from '@/lib/menu-items';
+import { processCommand } from '@/lib/command-processor';
 import { cn } from '@/lib/utils';
-
-interface ClientMessage {
-    role: 'user' | 'model';
-    content: { text: string }[];
-}
 
 interface GlobalSearchProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const router = useRouter();
-  const { toast } = useToast();
-  const baseTextRef = useRef('');
+interface SearchResult {
+  label: string;
+  target: string;
+  hint: string;
+}
 
-  const { isListening, startListening, stopListening, isSupported } = useSpeechToText({
-    onTranscript: (transcript) => {
-      const newText = baseTextRef.current ? `${baseTextRef.current} ${transcript}` : transcript;
-      setInput(newText);
-    },
-  });
-  
-  const handleMicClick = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      onOpenChange(true);
-      baseTextRef.current = input.trim();
-      startListening();
-    }
-  };
+/**
+ * "Jump to a section" palette (Cmd/Ctrl+K) — the single global search entry
+ * in the header (navigation tier 2). Matches sidebar sections by label and
+ * falls back to the command processor's navigation aliases, so every
+ * destination has one predictable home in the sidebar and one fast path here.
+ */
+export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
+  const router = useRouter();
+  const { accessLevel, isMasterTenant } = useAuth();
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         onOpenChange(!isOpen);
       }
     };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
   }, [isOpen, onOpenChange]);
-  
+
   useEffect(() => {
     if (!isOpen) {
-        setInput('');
-        if (isListening) stopListening();
+      setQuery('');
+      setActiveIndex(0);
     }
-  }, [isOpen, isListening, stopListening]);
+  }, [isOpen]);
 
+  const isAdminUser = accessLevel === 'super_admin' || accessLevel === 'org_admin';
+
+  const results = useMemo<SearchResult[]>(() => {
+    const q = query.trim().toLowerCase();
+
+    const sections = allMenuItems
+      .filter((item) => {
+        if (item.adminOnly && !isAdminUser) return false;
+        if (item.masterTenantOnly && !(isMasterTenant || accessLevel === 'super_admin')) return false;
+        if (!q) return true;
+        return item.label.toLowerCase().includes(q);
+      })
+      .slice(0, q ? 8 : 6)
+      .map((item) => ({ label: item.label, target: item.href, hint: item.href }));
+
+    if (!q) return sections;
+
+    let commandResult: SearchResult[] = [];
+    try {
+      const command = processCommand(query.trim());
+      if (command.type !== 'unknown' && command.target) {
+        commandResult = [
+          {
+            label: command.label || command.description || command.message,
+            target: command.target,
+            hint: command.target,
+          },
+        ];
+      }
+    } catch {
+      commandResult = [];
+    }
+
+    return [...sections, ...commandResult.filter((c) => !sections.some((s) => s.target === c.target))].slice(0, 9);
+  }, [query, isAdminUser, isMasterTenant, accessLevel]);
+
+  const navigate = (target: string) => {
+    onOpenChange(false);
+    if (target.startsWith('http')) {
+      window.open(target, '_blank', 'noopener,noreferrer');
+    } else {
+      router.push(target);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex((index) => (results.length ? (index + 1) % results.length : 0));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex((index) => (results.length ? (index - 1 + results.length) % results.length : 0));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const choice = results[activeIndex] || results[0];
+      if (choice) navigate(choice.target);
+    }
+  };
 
   return (
     <>
-      <div className="flex w-full items-center gap-2">
-        <Button
-          variant="outline"
-          className="relative h-10 w-full justify-start text-sm text-muted-foreground"
-          onClick={() => onOpenChange(true)}
-        >
-          <Search className="h-4 w-4 mr-2" />
-          <span className="truncate">Give a command or ask a question...</span>
-          <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-2 font-mono text-xs font-medium opacity-100 sm:flex">
-            <span className="text-lg">⌘</span>K
-          </kbd>
-        </Button>
-      </div>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="w-full h-full max-w-none top-0 left-0 translate-x-0 translate-y-0 rounded-none sm:rounded-none flex flex-col p-0 sm:max-w-md sm:h-auto sm:top-[50%] sm:left-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
-            <DialogHeader className="p-4 border-b text-center relative bg-gradient-to-r from-[#3DD5C0] to-[#1E8E86] text-primary-foreground">
-              <DialogTitle className="text-2xl font-bold font-headline">
-                Ogeemo Co-Pilot
-              </DialogTitle>
-              <DialogDescription className="text-primary-foreground/90">
-                This feature is currently under development.
-              </DialogDescription>
-            </DialogHeader>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => onOpenChange(true)}
+        aria-label="Search sections"
+        className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50 transition-colors"
+      >
+        <Search className="h-3.5 w-3.5 shrink-0" />
+        <span className="hidden md:inline">Search</span>
+        <kbd className="hidden md:inline-flex h-5 items-center rounded border border-black/10 bg-white/60 px-1.5 font-mono text-[9px] font-bold">
+          ⌘K
+        </kbd>
+      </Button>
 
-            <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                    <Bot className="h-10 w-10 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold">Coming Soon!</h3>
-                <p className="text-muted-foreground">
-                    The AI-powered Co-Pilot is being fine-tuned and will be available shortly. Thank you for your patience!
-                </p>
-            </div>
-            
-            <DialogFooter className="p-4 border-t shrink-0">
-                <DialogClose asChild>
-                    <Button className="w-full">Close</Button>
-                </DialogClose>
-            </DialogFooter>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg gap-0 overflow-hidden p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Jump to a section</DialogTitle>
+            <DialogDescription>Search sections and quick actions across Ogeemo.</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 border-b px-4">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setActiveIndex(0);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Search sections…"
+              aria-label="Search sections"
+              className="h-12 border-0 px-0 shadow-none focus-visible:ring-0 text-sm"
+            />
+          </div>
+          <div className="max-h-[50vh] overflow-y-auto p-2">
+            {results.length === 0 ? (
+              <p className="p-6 text-center text-sm text-muted-foreground">
+                No matches. Try a different word.
+              </p>
+            ) : (
+              results.map((result, index) => (
+                <button
+                  key={`${result.target}-${index}`}
+                  type="button"
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => navigate(result.target)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm',
+                    index === activeIndex
+                      ? 'bg-primary/10 font-medium text-primary'
+                      : 'text-foreground hover:bg-muted',
+                  )}
+                >
+                  <span className="truncate">{result.label}</span>
+                  <span className="ml-auto shrink-0 truncate text-xs text-muted-foreground max-w-[45%]">
+                    {result.hint}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+          <div className="flex gap-4 border-t px-4 py-2 text-[11px] text-muted-foreground">
+            <span>↑ ↓ Choose</span>
+            <span>Enter Open</span>
+            <span>Esc Close</span>
+          </div>
         </DialogContent>
       </Dialog>
     </>

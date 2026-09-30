@@ -161,3 +161,10 @@ test('every home-screen pathway resolves to a page', () => {
   }
   assert.deepEqual(missing, []);
 });
+
+test('the app header links back to the previous page', () => {
+  const layout = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'layout.tsx'), 'utf8');
+  assert.ok(layout.includes('usePathname'), 'expected pathname tracking in the app layout');
+  assert.ok(layout.includes('previousPath'), 'expected previous-page state in the app layout');
+  assert.ok(/Back to /.test(layout), 'expected a Back to link in the app header');
+});

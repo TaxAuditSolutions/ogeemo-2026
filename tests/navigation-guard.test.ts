@@ -126,3 +126,38 @@ test('instruction headers do not hand-roll back buttons', () => {
     .map((file) => path.relative(REPO_ROOT, file));
   assert.deepEqual(offenders, []);
 });
+
+function homeScreenHrefs(): string[] {
+  const files = [
+    path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'),
+    path.join(REPO_ROOT, 'src', 'components', 'welcome', 'current-work-panel.tsx'),
+  ];
+  const hrefs = new Set<string>();
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const match of source.matchAll(/href(?:=|:\s*)["']([^"'$]+)["']/g)) {
+      hrefs.add(match[1]);
+    }
+  }
+  return [...hrefs];
+}
+
+test('every home-screen pathway resolves to a page', () => {
+  const hrefs = homeScreenHrefs();
+  assert.ok(
+    hrefs.length >= 6,
+    `expected many home pathways, saw ${hrefs.length}: ${hrefs.join(', ')}`,
+  );
+  const missing: string[] = [];
+  for (const href of hrefs) {
+    if (href.startsWith('http')) continue;
+    const clean = href.split('?')[0];
+    if (!clean || clean === '/') continue;
+    const direct = path.join(REPO_ROOT, 'src', 'app', `${clean}/page.tsx`);
+    const inAppRouteGroup = path.join(REPO_ROOT, 'src', 'app', '(app)', `${clean}/page.tsx`);
+    if (!existsSync(direct) && !existsSync(inAppRouteGroup)) {
+      missing.push(href);
+    }
+  }
+  assert.deepEqual(missing, []);
+});

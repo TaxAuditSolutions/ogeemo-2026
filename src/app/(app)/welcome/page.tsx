@@ -9,7 +9,7 @@ import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
   BookOpen, LayoutDashboard, Bot,
-  CalendarDays, Receipt, Users,
+  CalendarDays, Receipt, Users, Paintbrush,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -179,6 +179,23 @@ export default function WelcomePage() {
             );
           })}
         </div>
+
+        <Link href="/make-it-your-own" className="group block">
+          <Card className="border-primary/20 bg-primary/5 transition-all hover:-translate-y-1 hover:shadow-xl">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Paintbrush className="h-6 w-6 text-primary" strokeWidth={2.25} />
+              </div>
+              <div className="min-w-0 flex-1 text-left">
+                <p className="text-lg font-bold">Make It Your Own</p>
+                <p className="text-sm text-muted-foreground">
+                  Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+            </CardContent>
+          </Card>
+        </Link>
 
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <Link

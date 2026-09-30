@@ -10,7 +10,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Save, LayoutDashboard, Menu, Layers, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { Save, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -28,7 +28,7 @@ import { filterMenuItems, sortMenuItemsByLabel, type MenuSortDirection } from '@
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
     Workspace: { icon: Briefcase, items: ['/event-manager', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
-    Relationships: { icon: Users, items: ['/contacts', '/crm/plan', '/co-pilot'] },
+    Relationships: { icon: Users, items: ['/contacts', '/crm/plan'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
@@ -130,7 +130,7 @@ export function MainMenu() {
     const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
     const { user, accessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
-    const { view, setView } = useSidebarView();
+    const { view } = useSidebarView();
     const [isLoadingChips, setIsLoadingChips] = useState(true);
     const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
     const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
@@ -244,14 +244,6 @@ export function MainMenu() {
         }
     };
 
-    const handleSetDefaultView = () => {
-        updatePreferences({ defaultSidebarView: view });
-        toast({
-            title: 'Default View Saved',
-            description: `Your sidebar will now open to the "${view === 'dashboard' ? 'Favorite Actions' : view === 'fullMenu' ? 'Full Menu' : 'Groups'}" view.`,
-        });
-    };
-
     const displayedMenuItems = menuItems.filter(item => {
         if (item.adminOnly && !isAdmin) return false;
         if (item.masterTenantOnly && !isMasterTenant) return false;
@@ -279,58 +271,6 @@ export function MainMenu() {
         <div className="flex flex-col h-full p-2">
             <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2 text-black group-data-[collapsible=icon]:hidden">
                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant={view === 'fullMenu' ? 'secondary' : 'ghost'}
-                                size="icon"
-                                className="flex-1 h-8 w-full text-black"
-                                onClick={() => setView('fullMenu')}
-                            >
-                                <Menu className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>Full Menu</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant={view === 'grouped' ? 'secondary' : 'ghost'}
-                                size="icon"
-                                className="flex-1 h-8 w-full text-black"
-                                onClick={() => setView('grouped')}
-                            >
-                                <Layers className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>Groups</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant={view === 'dashboard' ? 'secondary' : 'ghost'}
-                                size="icon"
-                                className="flex-1 h-8 w-full text-black"
-                                onClick={() => setView('dashboard')}
-                            >
-                                <LayoutDashboard className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>Favorite Actions</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="flex-1 h-8 w-full text-black"
-                                onClick={handleSetDefaultView}
-                            >
-                                <Save className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom"><p>Set as Default View</p></TooltipContent>
-                    </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -434,6 +374,15 @@ export function MainMenu() {
                     <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} accessLevel={accessLevel} />
                 )}
             </div>
+
+            {view !== 'dashboard' && (
+                <div className="mt-2 border-t border-white/10 pt-2">
+                    <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+                        Shortcuts
+                    </p>
+                    <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
+                </div>
+            )}
 
             {view === 'fullMenu' && (
                 <div className="p-2 mt-2">

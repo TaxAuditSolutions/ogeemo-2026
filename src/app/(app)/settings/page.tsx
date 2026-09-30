@@ -5,7 +5,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Save, LoaderCircle, X, Users2, ArrowRight } from "lucide-react";
+import { Save, LoaderCircle, X, Users2, ArrowRight, Layers } from "lucide-react";
+import { useSidebarView, type SidebarViewType } from "@/context/sidebar-view-context";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
 import { ProfileCard } from "@/components/settings/profile-card";
 import { PreferencesCard } from "@/components/settings/preferences-card";
@@ -18,7 +20,7 @@ import { canAccessUserManager } from '@/core/rbac';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from "@/components/ui/card";
 
 const profileSchema = z.object({
   displayName: z.string().min(2, { message: "Name must be at least 2 characters." }).optional(),
@@ -39,6 +41,13 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { view: sidebarView, setView } = useSidebarView();
+  const { updatePreferences } = useUserPreferences();
+
+  const applySidebarView = (value: SidebarViewType) => {
+    setView(value);
+    updatePreferences({ defaultSidebarView: value });
+  };
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -178,6 +187,35 @@ export default function SettingsPage() {
                   </Link>
                 </Button>
               </CardFooter>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/5 shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Layers className="h-6 w-6 text-primary" />
+                  <CardTitle>Sidebar Layout</CardTitle>
+                </div>
+                <CardDescription>
+                  Choose what the left sidebar shows. Your choice is saved immediately.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                {([
+                  ['grouped', 'Groups'],
+                  ['fullMenu', 'Full Menu'],
+                  ['dashboard', 'Favorite Actions'],
+                ] as [SidebarViewType, string][]).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={sidebarView === value ? 'default' : 'outline'}
+                    onClick={() => applySidebarView(value)}
+                    className="flex-1 min-w-[120px]"
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </CardContent>
             </Card>
 
             <PreferencesCard />

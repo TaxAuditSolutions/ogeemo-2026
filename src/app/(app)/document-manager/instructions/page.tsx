@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderSync, MoreVertical, Link as LinkIcon, Plus, Info, ShieldCheck, CheckCircle2, FileDigit, X } from "lucide-react";
+import { FolderSync, MoreVertical, Link as LinkIcon, Plus, ShieldCheck, CheckCircle2, FileDigit } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -15,31 +16,11 @@ import { Separator } from "@/components/ui/separator";
 export default function DocumentManagerInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="flex items-center justify-between">
-                <div className="w-1/4">
-                    <Button asChild variant="outline">
-                        <Link href="/document-manager">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Manager
-                        </Link>
-                    </Button>
-                </div>
-                <div className="text-center flex-1">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        How to Use the Document Manager
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A guide to organizing your business foundation with the Ogeemo Dual-Mirror System.
-                    </p>
-                </div>
-                <div className="w-1/4 flex justify-end">
-                    <Button asChild variant="ghost" size="icon">
-                        <Link href="/document-manager" aria-label="Close">
-                            <X className="h-5 w-5" />
-                        </Link>
-                    </Button>
-                </div>
-            </header>
+            <SectionHeader
+                parent={{ label: 'Document Manager', href: '/document-manager' }}
+                title="How to Use the Document Manager"
+                description="A guide to organizing your business foundation with the Ogeemo Dual-Mirror System."
+            />
 
             <div className="max-w-4xl mx-auto space-y-6">
                 <Card className="border-primary/20 bg-primary/5">

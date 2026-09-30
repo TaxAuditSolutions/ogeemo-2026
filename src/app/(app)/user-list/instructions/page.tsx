@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, UserPlus, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { User, UserPlus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -14,23 +15,11 @@ import {
 export default function UserListInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="flex items-center justify-between">
-                <div />
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        About the User List
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A guide to managing user records in your application.
-                    </p>
-                </div>
-                <Button asChild variant="outline">
-                    <Link href="/user-list">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to User List
-                    </Link>
-                </Button>
-            </header>
+            <SectionHeader
+                parent={{ label: 'User List', href: '/user-list' }}
+                title="About the User List"
+                description="A guide to managing user records in your application."
+            />
 
             <Card className="max-w-4xl mx-auto">
                  <CardHeader>

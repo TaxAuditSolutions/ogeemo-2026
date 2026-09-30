@@ -1,27 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Building2, ShieldCheck, Users, UserPlus, Database, KeyRound, BadgeCheck } from 'lucide-react';
+import { SectionHeader } from '@/components/layout/section-header';
+import { Building2, ShieldCheck, Users, UserPlus, Database, KeyRound, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TenantManagerInstructionsPage() {
     return (
         <div className="p-6 space-y-6">
-            <div className="flex items-center gap-3">
-                <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Back to tenant manager">
-                    <Link href="/tenant-manager">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Link>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Building2 className="h-6 w-6 text-primary" />
-                        Tenant Manager Guide
-                    </h1>
-                    <p className="text-muted-foreground">How to create, manage, and understand tenants in Ogeemo.</p>
-                </div>
-            </div>
+            <SectionHeader
+                parent={{ label: 'Tenant Manager', href: '/tenant-manager' }}
+                title="Tenant Manager Guide"
+                description="How to create, manage, and understand tenants in Ogeemo."
+            />
 
             <Card>
                 <CardHeader>

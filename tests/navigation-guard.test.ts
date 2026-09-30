@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { allMenuItems, type MenuItem } from '../src/lib/menu-items';
@@ -86,4 +86,43 @@ test('every menu destination resolves to a page', () => {
     }
   }
   assert.deepEqual(missing, []);
+});
+
+function listInstructionPages(directory: string): string[] {
+  const entries = readdirSync(directory, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const full = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listInstructionPages(full));
+    } else if (entry.name === 'page.tsx' && full.includes('instructions')) {
+      files.push(full);
+    }
+  }
+  return files;
+}
+
+test('instruction pages use a shared back-link header', () => {
+  const instructionPages = listInstructionPages(path.join(REPO_ROOT, 'src', 'app'));
+  assert.ok(
+    instructionPages.length >= 15,
+    `expected many instruction pages, saw ${instructionPages.length}`,
+  );
+  const offenders = instructionPages
+    .filter((file) => !/SectionHeader|PageHeader/.test(readFileSync(file, 'utf8')))
+    .map((file) => path.relative(REPO_ROOT, file));
+  assert.deepEqual(offenders, []);
+});
+
+test('instruction headers do not hand-roll back buttons', () => {
+  const instructionPages = listInstructionPages(path.join(REPO_ROOT, 'src', 'app'));
+  const offenders = instructionPages
+    .filter((file) =>
+      readFileSync(file, 'utf8')
+        .split(/\r?\n/)
+        .slice(0, 40)
+        .some((line) => line.includes('Back to ')),
+    )
+    .map((file) => path.relative(REPO_ROOT, file));
+  assert.deepEqual(offenders, []);
 });

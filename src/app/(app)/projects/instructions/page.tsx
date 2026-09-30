@@ -3,8 +3,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Briefcase, ListChecks, Inbox, Route } from "lucide-react";
+import { Briefcase, ListChecks, Inbox, Route } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -15,27 +16,11 @@ import {
 export default function ProjectInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="grid grid-cols-3 items-center">
-                <div className="flex justify-start">
-                    {/* Spacer */}
-                </div>
-                <div className="text-center col-span-1">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        How to Use Project Management
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A guide to organizing and tracking your work in Ogeemo.
-                    </p>
-                </div>
-                <div className="flex justify-end">
-                    <Button asChild variant="outline">
-                        <Link href="/projects/all">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Project Manager
-                        </Link>
-                    </Button>
-                </div>
-            </header>
+            <SectionHeader
+                parent={{ label: 'Project Manager', href: '/projects/all' }}
+                title="How to Use Project Management"
+                description="A guide to organizing and tracking your work in Ogeemo."
+            />
 
             <Card className="max-w-4xl mx-auto">
                 <CardContent className="p-6">

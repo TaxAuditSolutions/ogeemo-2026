@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Card,
   CardContent,
@@ -17,7 +18,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { 
-    ArrowLeft, 
     Calendar, 
     MousePointerClick, 
     GripVertical, 
@@ -42,25 +42,11 @@ import {
 export default function CalendarInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="flex items-center justify-between">
-                <div className="flex-1" />
-                <div className="text-center flex-1">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        The Ogeemo Execution Engine
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Your guide to planning your day with the Calendar.
-                    </p>
-                </div>
-                <div className="flex-1 flex justify-end">
-                    <Button asChild variant="outline">
-                        <Link href="/calendar">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Calendar
-                        </Link>
-                    </Button>
-                </div>
-            </header>
+            <SectionHeader
+                parent={{ label: 'Calendar', href: '/calendar' }}
+                title="The Ogeemo Execution Engine"
+                description="Your guide to planning your day with the Calendar."
+            />
 
             <div className="max-w-4xl mx-auto space-y-8 pb-12">
                 <Card className="border-2 border-primary/10">

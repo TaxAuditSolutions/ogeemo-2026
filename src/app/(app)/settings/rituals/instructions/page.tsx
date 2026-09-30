@@ -3,8 +3,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BrainCircuit, Calendar, CheckCircle } from "lucide-react";
+import { BrainCircuit, Calendar, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -15,23 +16,11 @@ import {
 export default function RitualsInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="flex items-center justify-between">
-                <div />
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        About Planning Rituals
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A guide to establishing powerful routines for focus and clarity.
-                    </p>
-                </div>
-                <Button asChild variant="outline">
-                    <Link href="/settings/rituals">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Rituals
-                    </Link>
-                </Button>
-            </header>
+            <SectionHeader
+                parent={{ label: 'Planning Rituals', href: '/settings/rituals' }}
+                title="About Planning Rituals"
+                description="A guide to establishing powerful routines for focus and clarity."
+            />
 
             <Card className="max-w-3xl mx-auto">
                 <CardHeader>

@@ -2,25 +2,17 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Info, FileText, TrendingUp, ClipboardList, Receipt, MoreVertical } from 'lucide-react';
+import { SectionHeader } from '@/components/layout/section-header';
+import { FileText, TrendingUp, ClipboardList, Receipt, MoreVertical } from 'lucide-react';
 
 export default function QuoteManagerInstructionsPage() {
     return (
         <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-4xl">
-            <div className="mb-6">
-                <Button variant="ghost" asChild className="mb-4 -ml-4 text-muted-foreground hover:text-foreground">
-                    <Link href="/accounting/quotes">
-                        <ChevronLeft className="mr-2 h-4 w-4" /> Back to Quote Manager
-                    </Link>
-                </Button>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                    <Info className="h-8 w-8 text-primary" />
-                    How to Use the Quote Manager
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    A guide to managing quotes, tracking proposals, and converting them into invoices and work orders.
-                </p>
-            </div>
+            <SectionHeader
+                parent={{ label: 'Quote Manager', href: '/accounting/quotes' }}
+                title="How to Use the Quote Manager"
+                description="A guide to managing quotes, tracking proposals, and converting them into invoices and work orders."
+            />
 
             <div className="grid gap-6">
                 <Card>

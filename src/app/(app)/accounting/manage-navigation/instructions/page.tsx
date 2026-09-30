@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Move, Trash2, Save, WandSparkles } from "lucide-react";
+import { Plus, Move, Trash2, Save, WandSparkles } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -14,27 +15,11 @@ import {
 export default function ManageQuickNavInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="flex items-center justify-between">
-                <div className="w-1/4">
-                    {/* Spacer */}
-                </div>
-                <div className="text-center flex-1">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        How to Manage Your Quick Navigation
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        A guide to customizing your accounting quick navigation menu.
-                    </p>
-                </div>
-                <div className="w-1/4 flex justify-end">
-                    <Button asChild variant="outline">
-                        <Link href="/accounting/manage-navigation">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Manager
-                        </Link>
-                    </Button>
-                </div>
-            </header>
+            <SectionHeader
+                parent={{ label: 'Manage Navigation', href: '/accounting/manage-navigation' }}
+                title="How to Manage Your Quick Navigation"
+                description="A guide to customizing your accounting quick navigation menu."
+            />
 
             <Card className="max-w-4xl mx-auto">
                 <CardContent className="p-6">

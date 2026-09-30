@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle, Rocket, Info, MoreVertical, Zap } from "lucide-react";
+import { Inbox, BrainCircuit, BookOpen, Folder, Calendar, CheckCircle, Rocket, Info, MoreVertical, Zap } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from '@/components/layout/section-header';
 import {
   Accordion,
   AccordionContent,
@@ -18,33 +19,18 @@ import {
 export default function GtdInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <header className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                <div className="flex justify-start gap-2">
-                    <Button asChild variant="outline">
-                        <Link href="/action-manager">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Action Manager
-                        </Link>
-                    </Button>
+            <SectionHeader
+                parent={{ label: 'Action Manager', href: '/action-manager' }}
+                title="The Ogeemo Method (TOM)"
+                description="Run your daily business operations with ease."
+                actions={
                     <Button asChild variant="outline">
                         <Link href="/calendar">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Calendar
+                            Calendar
                         </Link>
                     </Button>
-                </div>
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold font-headline text-primary">
-                        The Ogeemo Method (TOM)
-                    </h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Run your daily business operations with ease.
-                    </p>
-                </div>
-                <div className="flex justify-end">
-                    {/* Spacer */}
-                </div>
-            </header>
+                }
+            />
 
             <Card className="max-w-4xl mx-auto">
                 <CardHeader>

@@ -2,25 +2,17 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Info, Calendar, Users, FileText } from 'lucide-react';
+import { SectionHeader } from '@/components/layout/section-header';
+import { Calendar, Users, FileText } from 'lucide-react';
 
 export default function MeetingsInstructionsPage() {
     return (
         <div className="container mx-auto p-4 md:p-8 space-y-6 max-w-4xl">
-            <div className="mb-6">
-                <Button variant="ghost" asChild className="mb-4 -ml-4 text-muted-foreground hover:text-foreground">
-                    <Link href="/meetings">
-                        <ChevronLeft className="mr-2 h-4 w-4" /> Back to Meetings
-                    </Link>
-                </Button>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                    <Info className="h-8 w-8 text-primary" />
-                    How to Use Agendas
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                    A guide to managing meeting agendas and integrating them with your calendar.
-                </p>
-            </div>
+            <SectionHeader
+                parent={{ label: 'Meetings', href: '/meetings' }}
+                title="How to Use Agendas"
+                description="A guide to managing meeting agendas and integrating them with your calendar."
+            />
 
             <div className="grid gap-6">
                 <Card>

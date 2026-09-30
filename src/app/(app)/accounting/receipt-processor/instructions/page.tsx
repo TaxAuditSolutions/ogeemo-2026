@@ -77,7 +77,7 @@ export default function ReceiptProcessorInstructionsPage() {
               <Button asChild variant="outline">
                 <Link href="/accounting/receipt-processor">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to intake
+                  Back to Receipt Intake
                 </Link>
               </Button>
               <Button asChild>

@@ -268,7 +268,7 @@ export function ManageDashboardView() {
                 <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
                     <Link href="/action-manager/trash"><Trash2 className="mr-2 h-4 w-4"/> Trash</Link>
                 </Button>
-                <Button asChild className="bg-slate-900 text-white hover:bg-slate-900/90 h-6 px-2 py-1 text-xs">
+                <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
                     <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Action Manager</Link></Button>
             </div>
         </header>

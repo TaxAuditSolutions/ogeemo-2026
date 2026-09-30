@@ -146,7 +146,7 @@ export default function LearnOgeemoPage() {
   return (
     <div className="p-4 sm:p-6 h-full overflow-y-auto bg-muted/10">
       <div className="mx-auto max-w-3xl">
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href="/welcome">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Welcome
           </Link>

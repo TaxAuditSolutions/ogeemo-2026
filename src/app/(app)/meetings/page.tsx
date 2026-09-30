@@ -6,7 +6,7 @@ import { getMeetings } from '@/services/meetings-service';
 import { type Meeting } from '@/types/meetings';
 import { format } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Users, Calendar, Plus, CalendarDays, Edit2 } from 'lucide-react';
+import { Users, Calendar, Plus, CalendarDays, Edit2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useSearchParams } from 'next/navigation';
@@ -94,7 +94,7 @@ function MeetingsPageContent() {
                         setIsFormOpen(false);
                         setEditingMeeting(undefined);
                     }}>
-                        Back to Meetings
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Meetings
                     </Button>
                 </div>
                 <AgendaForm onSuccess={handleSuccess} initialData={editingMeeting} />

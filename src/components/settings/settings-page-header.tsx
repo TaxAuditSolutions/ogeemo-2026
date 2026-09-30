@@ -40,7 +40,7 @@ export function SettingsPageHeader({ pageTitle }: SettingsPageHeaderProps) {
             Back to About Ogeemo
           </Link>
         </Button>
-        <Button asChild>
+        <Button asChild variant="outline">
           <Link href="/settings">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Settings

@@ -121,7 +121,7 @@ function PreviewContent() {
         <div className="p-4 sm:p-6 space-y-4 bg-muted/30 min-h-screen">
             <div className="flex justify-between items-center max-w-4xl mx-auto print:hidden">
                  <Button variant="outline" onClick={() => router.push('/accounting/invoices/create')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Invoice Generator
                 </Button>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handlePrint}>

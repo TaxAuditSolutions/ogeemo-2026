@@ -386,7 +386,7 @@ export function OrganizeIdeasView() {
                         </Button>
                          <Button asChild variant="outline" size="sm">
                             <Link href="/idea-board">
-                                <ArrowLeft className="mr-2 h-4 w-4"/> Back to List
+                                <ArrowLeft className="mr-2 h-4 w-4"/> Back to Idea Board
                             </Link>
                         </Button>
                     </div>

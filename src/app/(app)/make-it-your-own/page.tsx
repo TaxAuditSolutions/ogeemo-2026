@@ -58,7 +58,7 @@ const personalizeSections: {
 export default function MakeItYourOwnPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <Button asChild variant="ghost" size="sm">
+      <Button asChild variant="outline" size="sm">
         <Link href="/welcome">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Welcome
         </Link>

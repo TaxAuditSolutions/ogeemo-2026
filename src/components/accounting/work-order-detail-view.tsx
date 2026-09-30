@@ -219,7 +219,7 @@ export function WorkOrderDetailView() {
         <div className="p-4 sm:p-6 space-y-6">
             <AccountingPageHeader pageTitle={`Work Order ${workOrder.workOrderNumber}`} />
             <div className="flex items-center justify-between">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/accounting/work-orders')}>
+                <Button variant="outline" size="sm" onClick={() => router.push('/accounting/work-orders')}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
                 </Button>
                 <Badge variant="outline" className={cn(config.color, 'text-sm px-3 py-1')}>

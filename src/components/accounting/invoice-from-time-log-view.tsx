@@ -179,7 +179,7 @@ export function InvoiceFromTimeLogView() {
                         <h1 className="text-3xl font-bold font-headline text-primary">Invoice from Time Log</h1>
                         <p className="text-muted-foreground">Generate an invoice from logged billable hours for a client.</p>
                     </div>
-                    <Button asChild>
+                    <Button asChild variant="outline">
                         <Link href="/accounting/invoices">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Invoices

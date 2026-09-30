@@ -15,7 +15,7 @@ import { getExpenseCategories, getCompanies } from '@/core/accounting-service';
 import { useAuth } from '@/context/auth-context';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { getFolders as getDocumentFolders, findOrCreateFileFolder, updateFolder, type FolderItem } from '@/core/file-manager-folders';
-import { FileText, Sparkles, BadgeCheck, PlusCircle, UploadCloud, ArrowRight, LoaderCircle, Info } from 'lucide-react';
+import { FileText, Sparkles, BadgeCheck, PlusCircle, UploadCloud, ArrowRight, ArrowLeft, LoaderCircle, Info } from 'lucide-react';
 import {
   addReceiptQueueItem,
   getReceiptQueueItems,
@@ -251,8 +251,11 @@ export function ReceiptProcessorView() {
             </p>
             <div className="mt-4 flex gap-2">
               <Button onClick={() => loadData()} variant="outline">Retry</Button>
-              <Button asChild>
-                <Link href="/accounting">Back to accounting</Link>
+              <Button asChild variant="outline">
+                <Link href="/accounting">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Accounting Hub
+                </Link>
               </Button>
             </div>
           </CardContent>

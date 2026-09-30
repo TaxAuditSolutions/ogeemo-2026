@@ -4,7 +4,7 @@
 import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { LoaderCircle, Route, ArrowLeft } from 'lucide-react';
+import { LoaderCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -38,7 +38,7 @@ export default function ProjectTaskBoardPage() {
                 <div className="w-48 flex justify-end">
                     <Button asChild variant="outline">
                         <Link href={`/project-plan?projectId=${projectId}`}>
-                            Back to Planner <Route className="ml-2 h-4 w-4" />
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Planner
                         </Link>
                     </Button>
                 </div>

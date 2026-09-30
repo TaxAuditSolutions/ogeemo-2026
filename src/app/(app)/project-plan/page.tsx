@@ -2,7 +2,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { LoaderCircle, Route, ArrowLeft, X } from 'lucide-react';
+import { LoaderCircle, ArrowLeft, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,7 @@ function ProjectPlanPageContent() {
           {projectId && (
             <Button asChild variant="outline">
                 <Link href={`/projects/${projectId}/tasks`}>
-                     Back to Task Board <Route className="ml-2 h-4 w-4" />
+                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Task Board
                 </Link>
             </Button>
           )}

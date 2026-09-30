@@ -82,7 +82,7 @@ import { CustomCalendar } from '../ui/custom-calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { AgendaForm } from '@/components/meetings/agenda-form';
-import { Users as UsersIcon } from 'lucide-react';
+import { Users as UsersIcon, ArrowLeft } from 'lucide-react';
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
 
@@ -505,7 +505,7 @@ export function TimeManagerView() {
                         <p className="text-muted-foreground mt-1">Plan and organize your meeting.</p>
                     </div>
                     <Button variant="outline" onClick={() => setIsAgendaFormOpen(false)}>
-                        Back to Activity Manager
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Activity Manager
                     </Button>
                 </div>
                 <AgendaForm onSuccess={() => setIsAgendaFormOpen(false)} />

@@ -17,6 +17,9 @@ const defaultPreferences: UserProfile['preferences'] = {
     showDashboardFrame: true,
     showMenuViewInstructions: true,
     showActionManagerAboutPanel: true,
+    showWorkspaceButton: true,
+    showRoleBadge: true,
+    showHomeBanner: true,
     defaultSidebarView: 'grouped',
     shortcutsExpanded: false,
     themeColors: {

@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -23,6 +24,8 @@ export default function WelcomePage() {
   const { toast } = useToast();
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
   const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
+  const { preferences } = useUserPreferences();
+  const showHomeBanner = preferences?.showHomeBanner ?? true;
 
   const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
@@ -72,6 +75,7 @@ export default function WelcomePage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4 bg-muted/10">
+      {showHomeBanner && (
       <div className="w-full max-w-3xl mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-white p-4 shadow-lg">
         <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
           <Building2 className="h-4 w-4 text-primary" />
@@ -82,6 +86,7 @@ export default function WelcomePage() {
           {roleLabel}
         </div>
       </div>
+      )}
 
       {tenantOptions.length > 1 && (
         <div className="w-full max-w-3xl mb-8 rounded-2xl border border-primary/20 bg-white p-6 shadow-lg">

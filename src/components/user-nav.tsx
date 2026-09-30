@@ -105,6 +105,17 @@ export function UserNav() {
   };
 
   const nameToDisplay = displayName || user.displayName;
+  const appRoleLabel = isMasterTenant
+    ? 'Master Tenant'
+    : accessLevel === 'super_admin'
+      ? 'Super Admin'
+      : accessLevel === 'org_admin'
+        ? 'Org Admin'
+        : accessLevel === 'editor'
+          ? 'Editor'
+          : accessLevel === 'viewer'
+            ? 'Viewer'
+            : 'Member';
 
   return (
     <div className="flex items-center gap-3">
@@ -135,6 +146,9 @@ export function UserNav() {
                 </div>
                 <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
+                </p>
+                <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground pt-1.5">
+                    {appRoleLabel}
                 </p>
                 {role && (
                     <div className="flex items-center gap-1.5 pt-1.5">

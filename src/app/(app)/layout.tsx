@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
 import { GlobalSearch } from '@/components/layout/global-search';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { Sidebar, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
@@ -65,6 +66,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [activeTenantName, setActiveTenantName] = useState<string>('');
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { preferences } = useUserPreferences();
+  const showWorkspaceButton = preferences?.showWorkspaceButton ?? true;
+  const showRoleBadge = preferences?.showRoleBadge ?? true;
 
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
   const roleExplanation = isMasterTenant
@@ -184,7 +188,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       {/* Right Column: Orchestration & Identity */}
                       <div className="flex-1 flex items-center justify-end gap-4 min-w-0">
                         <TooltipProvider>
-                        {tenantOptions.length > 1 ? (
+                        {showWorkspaceButton && (tenantOptions.length > 1 ? (
                           <DropdownMenu>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -196,7 +200,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </DropdownMenuTrigger>
                               </TooltipTrigger>
                               <TooltipContent side="bottom">
-                                <p>Active workspace — click to switch between workspaces.</p>
+                                <p>Active workspace — click to switch between workspaces. This button can be turned off and on in Settings.</p>
                               </TooltipContent>
                             </Tooltip>
                             <DropdownMenuContent align="end" className="w-64">
@@ -222,11 +226,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
-                              <p>Active workspace.</p>
+                              <p>Active workspace. This button can be turned off and on in Settings.</p>
                             </TooltipContent>
                           </Tooltip>
-                        ) : null}
+                        ) : null)}
 
+                        {showRoleBadge && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="hidden sm:flex h-8 items-center rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[10px] font-black uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm">
@@ -234,9 +239,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
-                            <p>{roleExplanation}</p>
+                            <p>{roleExplanation} This badge can be turned off and on in Settings.</p>
                           </TooltipContent>
                         </Tooltip>
+                        )}
 
                         <UserNav />
                         </TooltipProvider>

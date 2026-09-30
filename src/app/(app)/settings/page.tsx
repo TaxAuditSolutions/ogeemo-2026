@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Save, LoaderCircle, X, Users2, ArrowRight, Layers } from "lucide-react";
+import { Save, LoaderCircle, X, Users2, ArrowRight, Layers, Building2 } from "lucide-react";
 import { useSidebarView, type SidebarViewType } from "@/context/sidebar-view-context";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { view: sidebarView, setView } = useSidebarView();
-  const { updatePreferences } = useUserPreferences();
+  const { preferences, updatePreferences } = useUserPreferences();
 
   const applySidebarView = (value: SidebarViewType) => {
     setView(value);
@@ -215,6 +215,41 @@ export default function SettingsPage() {
                     {label}
                   </Button>
                 ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/5 shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-6 w-6 text-primary" />
+                  <CardTitle>Header &amp; Identity</CardTitle>
+                </div>
+                <CardDescription>
+                  Choose which identity buttons appear in the header and on the home screen. Each button&apos;s tooltip says it can be turned off and on here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {([
+                  ['showWorkspaceButton', 'Workspace button'],
+                  ['showRoleBadge', 'Role badge'],
+                  ['showHomeBanner', 'Home workspace banner'],
+                ] as const).map(([flag, label]) => {
+                  const isOn = preferences?.[flag] ?? true;
+                  return (
+                    <div key={flag} className="flex items-center justify-between rounded-md border px-3 py-2">
+                      <span className="text-sm">{label}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isOn ? 'default' : 'outline'}
+                        onClick={() => updatePreferences({ [flag]: !isOn })}
+                        className="w-16"
+                      >
+                        {isOn ? 'On' : 'Off'}
+                      </Button>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
 

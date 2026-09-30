@@ -36,6 +36,12 @@ export function HrPageHeader({ pageTitle, hubPath = '/hr-manager', hubLabel = "H
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex items-center gap-2">
+         <Button asChild variant="outline">
+            <Link href={hubPath} aria-label={`Back to ${hubLabel}`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to {hubLabel}
+            </Link>
+         </Button>
          <Button asChild>
             <Link href={hubPath}>
                 <Landmark className="mr-2 h-4 w-4" />

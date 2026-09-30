@@ -36,16 +36,18 @@ import {
 } from '@/context/ogeemo-copilot-sidebar-context';
 
 function CopilotHeaderButton() {
-  const { openAndPin } = useOgeemoCopilotSidebar();
+  const { openAndPin, close, state, isMobile, isMobileOpen } = useOgeemoCopilotSidebar();
+  const isOpen = isMobile ? isMobileOpen : state === 'expanded';
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           type="button"
-          className="flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50 transition-colors"
-          onClick={openAndPin}
-          aria-label="Open Ogeemo Co-Pilot"
+          className={`flex h-8 items-center gap-2 rounded-full border border-black/10 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/50 ${isOpen ? 'bg-white/60' : 'bg-white/35'}`}
+          onClick={() => (isOpen ? close() : openAndPin())}
+          aria-label={isOpen ? 'Close Ogeemo Co-Pilot' : 'Open Ogeemo Co-Pilot'}
+          aria-expanded={isOpen}
         >
           <CoPilotMark className="h-4 w-4 shrink-0" />
           <span>Co-Pilot</span>

@@ -26,6 +26,7 @@ interface OgeemoCopilotSidebarContextValue {
     setPinned: (pinned: boolean) => void;
     togglePinned: () => void;
     openAndPin: () => void;
+    close: () => void;
     setMobileOpen: (open: boolean) => void;
     setPointerInside: (inside: boolean) => void;
     setFocusInside: (inside: boolean) => void;
@@ -78,6 +79,18 @@ export function OgeemoCopilotSidebarProvider({ children }: { children: React.Rea
         setPinned(true);
     }, [isMobile, setPinned]);
 
+    /** Collapse the panel for real: clears transient hover/focus triggers and unpins (mobile: closes the drawer). */
+    const close = useCallback(() => {
+        if (isMobile) {
+            setMobileOpen(false);
+            return;
+        }
+        setPointerInside(false);
+        setFocusInside(false);
+        setIsResizing(false);
+        setPinned(false);
+    }, [isMobile, setPinned]);
+
     const setPreferredWidth = useCallback((width: number) => {
         const nextWidth = clampCopilotSidebarWidth(width);
         setPreferredWidthState(nextWidth);
@@ -104,6 +117,7 @@ export function OgeemoCopilotSidebarProvider({ children }: { children: React.Rea
         setPinned,
         togglePinned,
         openAndPin,
+        close,
         setMobileOpen,
         setPointerInside,
         setFocusInside,
@@ -121,6 +135,7 @@ export function OgeemoCopilotSidebarProvider({ children }: { children: React.Rea
         setPinned,
         togglePinned,
         openAndPin,
+        close,
         setPreferredWidth,
     ]);
 

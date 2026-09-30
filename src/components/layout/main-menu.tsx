@@ -10,7 +10,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Save, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA } from 'lucide-react';
+import { Save, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -244,6 +244,14 @@ export function MainMenu() {
         }
     };
 
+    // Shortcuts (Action Chips) collapse so the map stays primary; the choice
+    // persists per user, and icon-collapsed sidebars always show the chips.
+    const shortcutsExpanded = preferences?.shortcutsExpanded ?? false;
+
+    const toggleShortcuts = () => {
+        updatePreferences({ shortcutsExpanded: !shortcutsExpanded });
+    };
+
     const displayedMenuItems = menuItems.filter(item => {
         if (item.adminOnly && !isAdmin) return false;
         if (item.masterTenantOnly && !isMasterTenant) return false;
@@ -377,10 +385,32 @@ export function MainMenu() {
 
             {view !== 'dashboard' && (
                 <div className="mt-2 border-t border-white/10 pt-2">
-                    <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
-                        Shortcuts
-                    </p>
-                    <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
+                    <button
+                        type="button"
+                        onClick={toggleShortcuts}
+                        aria-expanded={shortcutsExpanded}
+                        aria-controls="sidebar-shortcuts"
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:hidden"
+                    >
+                        <span>Shortcuts</span>
+                        {!isLoadingChips && actionChips.length > 0 && (
+                            <span className="rounded-full bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-bold text-sidebar-foreground">
+                                {actionChips.length}
+                            </span>
+                        )}
+                        <ChevronDown
+                            className={cn(
+                                'ml-auto h-3.5 w-3.5 transition-transform',
+                                shortcutsExpanded && 'rotate-180',
+                            )}
+                        />
+                    </button>
+                    <div
+                        id="sidebar-shortcuts"
+                        className={cn(shortcutsExpanded ? 'block' : 'hidden group-data-[collapsible=icon]:block')}
+                    >
+                        <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
+                    </div>
                 </div>
             )}
 

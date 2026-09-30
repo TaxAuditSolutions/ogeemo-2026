@@ -18,6 +18,7 @@ const defaultPreferences: UserProfile['preferences'] = {
     showMenuViewInstructions: true,
     showActionManagerAboutPanel: true,
     defaultSidebarView: 'grouped',
+    shortcutsExpanded: false,
     themeColors: {
         primary: '#1E8E86',
         background: '#ffffff',

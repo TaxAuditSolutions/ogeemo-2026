@@ -162,10 +162,17 @@ test('every home-screen pathway resolves to a page', () => {
   assert.deepEqual(missing, []);
 });
 
-test('the app header links back to the previous page', () => {
+test('every page shows the last page visited via the shared back link', () => {
   const layout = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'layout.tsx'), 'utf8');
-  assert.ok(layout.includes('usePathname'), 'expected pathname tracking in the app layout');
-  assert.ok(layout.includes('previousPath'), 'expected previous-page state in the app layout');
-  assert.ok(/Back to /.test(layout), 'expected a Back to link in the app header');
-  assert.ok(layout.includes('sessionStorage'), 'expected the previous-page trail to survive full reloads');
+  assert.ok(layout.includes('<LastPageBack'), 'expected the app layout to render the shared last-page back link');
+  const backLink = readFileSync(path.join(REPO_ROOT, 'src', 'components', 'layout', 'last-page-back.tsx'), 'utf8');
+  assert.ok(backLink.includes('sessionStorage'), 'expected the previous-page trail to survive full reloads');
+  assert.ok(backLink.includes('usePathname'), 'expected pathname tracking in the last-page back link');
+  assert.ok(/Back to /.test(backLink), 'expected a Back to label');
+});
+
+test('shared back-link headers use the outline button style', () => {
+  const sectionHeader = readFileSync(path.join(REPO_ROOT, 'src', 'components', 'layout', 'section-header.tsx'), 'utf8');
+  assert.ok(sectionHeader.includes('<Button'), 'SectionHeader should render its back link as a button');
+  assert.ok(/Back to /.test(sectionHeader), 'SectionHeader should label its back link');
 });

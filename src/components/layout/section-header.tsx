@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,20 +23,19 @@ interface SectionHeaderProps {
 
 /**
  * The shared back-link header for drill-down pages (navigation tier: in-page).
- * A labelled "← Parent" beats a generic Back button: the destination is
+ * A labelled "Back to X" button beats a generic Back button: the destination is
  * deterministic even for deep links, and it teaches the hierarchy. Lives at
  * the top-left of page content — the global header stays utilities-only.
  */
 export function SectionHeader({ parent, title, description, actions, className }: SectionHeaderProps) {
   return (
     <header className={cn('space-y-3', className)}>
-      <Link
-        href={parent.href}
-        className="group inline-flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-      >
-        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-        {parent.label}
-      </Link>
+      <Button asChild variant="outline" size="sm" className="w-fit">
+        <Link href={parent.href} aria-label={`Back to ${parent.label}`}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to {parent.label}
+        </Link>
+      </Button>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold font-headline text-primary">{title}</h1>

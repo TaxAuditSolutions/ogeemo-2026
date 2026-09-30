@@ -75,7 +75,7 @@ export function AccountingPageHeader({ pageTitle, hubPath = '/accounting', hubLa
                     Quick Navigation
                 </Link>
             </Button>
-            <Button asChild>
+            <Button asChild variant="outline">
                 <Link href={hubPath}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to {hubLabel}

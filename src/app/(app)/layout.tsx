@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DndProviderWrapper } from '@/components/layout/dnd-provider-wrapper';
 import { MainMenu } from '@/components/layout/main-menu';
 import { GlobalSearch } from '@/components/layout/global-search';
+import { LastPageBack } from '@/components/layout/last-page-back';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { allMenuItems } from '@/lib/menu-items';
 import { Sidebar, SidebarProvider, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
 import { UserNav } from '@/components/user-nav';
@@ -24,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowLeft, Settings, Building2, HelpCircle } from 'lucide-react';
+import { Settings, Building2, HelpCircle } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
@@ -38,36 +37,6 @@ import {
   useOgeemoCopilotSidebar,
 } from '@/context/ogeemo-copilot-sidebar-context';
 
-const NAV_TRAIL_KEY = 'ogeemo-nav-trail';
-
-function readTrail(): string[] {
-  try {
-    const raw = window.sessionStorage.getItem(NAV_TRAIL_KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeTrail(trail: string[]): void {
-  try {
-    window.sessionStorage.setItem(NAV_TRAIL_KEY, JSON.stringify(trail.slice(-25)));
-  } catch {
-    // Storage unavailable — the pill simply hides until the next soft navigation.
-  }
-}
-
-function labelForPath(pathname: string): string {
-  const known = allMenuItems.find((item) => item.href === pathname);
-  if (known) return known.label;
-  const segment = pathname.split('/').filter(Boolean).pop();
-  if (!segment) return 'home';
-  return segment
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 function CopilotHeaderButton() {
   const { openAndPin, close, state, isMobile, isMobileOpen } = useOgeemoCopilotSidebar();
@@ -102,28 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { preferences } = useUserPreferences();
   const showWorkspaceButton = preferences?.showWorkspaceButton ?? true;
   const showRoleBadge = preferences?.showRoleBadge ?? true;
-
-  // History-aware back link: remember where the user actually came from so the
-  // header can offer "Back to <last page>" on every screen (fixed parent links
-  // alone do not show the previous page). The trail lives in sessionStorage so
-  // the pill survives the deliberate full-page reloads used by workspace
-  // switches, auth redirects and post-save jumps — in-memory state alone was
-  // wiped by each of those, which made the link appear intermittently.
-  const pathname = usePathname();
-  const [previousPath, setPreviousPath] = useState<string | null>(null);
-
-  useEffect(() => {
-    const trail = readTrail();
-    const last = trail[trail.length - 1] ?? null;
-    if (last === pathname) {
-      // Same page after a reload or re-render — the entry before it is the previous page.
-      setPreviousPath(trail.length >= 2 ? trail[trail.length - 2] : null);
-      return;
-    }
-    // New page via soft or hard navigation — remember where we came from.
-    if (last) setPreviousPath(last);
-    writeTrail([...trail, pathname]);
-  }, [pathname]);
 
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
   const roleExplanation = isMasterTenant
@@ -230,14 +177,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           <Logo className="text-black" />
                         </Link>
 
-                        {previousPath && (
-                          <Button asChild variant="ghost" size="sm" className="hidden sm:flex h-8 max-w-[260px] items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm hover:bg-white/50">
-                            <Link href={previousPath} aria-label={`Back to ${labelForPath(previousPath)}`}>
-                              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">Back to {labelForPath(previousPath)}</span>
-                            </Link>
-                          </Button>
-                        )}
 
                         <GlobalSearch isOpen={searchOpen} onOpenChange={setSearchOpen} />
                       </div>
@@ -313,6 +252,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       </div>
                     </header>
                     <main className="flex-1 overflow-y-auto bg-background">
+                      <div className="px-4 md:px-6 pt-3">
+                        <LastPageBack />
+                      </div>
                       {children}
                     </main>
                   </div>

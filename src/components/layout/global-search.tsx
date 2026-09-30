@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
+import { canAccessUserManager } from '@/core/rbac';
+import { getUserProfile, type AccessLevel, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { allMenuItems } from '@/lib/menu-items';
 import { processCommand } from '@/lib/command-processor';
 import { cn } from '@/lib/utils';
@@ -33,12 +35,16 @@ interface SearchResult {
  * in the header (navigation tier 2). Matches sidebar sections by label and
  * falls back to the command processor's navigation aliases, so every
  * destination has one predictable home in the sidebar and one fast path here.
+ * Results apply the same access gating as the sidebar: role flags, owner-only
+ * items and the per-user allow/block lists.
  */
 export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
   const router = useRouter();
-  const { accessLevel, isMasterTenant } = useAuth();
+  const { user, accessLevel, isMasterTenant } = useAuth();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
+  const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -58,15 +64,52 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
     }
   }, [isOpen]);
 
-  const isAdminUser = accessLevel === 'super_admin' || accessLevel === 'org_admin';
+  // Mirror the sidebar's access gating exactly: session claims first, the
+  // Firestore profile covers users whose claims were never set, and the
+  // per-user sidebar allow/block lists apply on top (see main-menu.tsx).
+  useEffect(() => {
+    if (!user) {
+      setProfileAccessLevel(null);
+      setSidebarAccess(undefined);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (!cancelled) {
+          setProfileAccessLevel(profile?.accessLevel ?? null);
+          setSidebarAccess(profile?.sidebarAccess ?? undefined);
+        }
+      } catch (error) {
+        console.error('Search: failed to load access profile', error);
+        if (!cancelled) {
+          setProfileAccessLevel(null);
+          setSidebarAccess(undefined);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const isAdmin = canAccessUserManager(accessLevel) || canAccessUserManager(profileAccessLevel);
 
   const results = useMemo<SearchResult[]>(() => {
     const q = query.trim().toLowerCase();
 
     const sections = allMenuItems
       .filter((item) => {
-        if (item.adminOnly && !isAdminUser) return false;
+        if (item.adminOnly && !isAdmin) return false;
         if (item.masterTenantOnly && !(isMasterTenant || accessLevel === 'super_admin')) return false;
+        if (sidebarAccess && sidebarAccess.mode !== 'inherit') {
+          if (sidebarAccess.mode === 'allowlist') {
+            if (!(sidebarAccess.allowedMenuItems ?? []).includes(item.href)) return false;
+          } else if (sidebarAccess.mode === 'blocklist') {
+            if ((sidebarAccess.hiddenMenuItems ?? []).includes(item.href)) return false;
+          }
+        }
         if (!q) return true;
         return item.label.toLowerCase().includes(q);
       })
@@ -92,7 +135,7 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
     }
 
     return [...sections, ...commandResult.filter((c) => !sections.some((s) => s.target === c.target))].slice(0, 9);
-  }, [query, isAdminUser, isMasterTenant, accessLevel]);
+  }, [query, isAdmin, isMasterTenant, accessLevel, sidebarAccess]);
 
   const navigate = (target: string) => {
     onOpenChange(false);

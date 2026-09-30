@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, Building2, Palette, PanelLeft, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Building2, Palette, PanelLeft, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 /**
  * "Make It Your Own" — the personalization pathway from the home screen
@@ -57,6 +58,12 @@ const personalizeSections: {
 export default function MakeItYourOwnPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
+      <Button asChild variant="ghost" size="sm">
+        <Link href="/welcome">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Welcome
+        </Link>
+      </Button>
+
       <header className="text-center">
         <h1 className="text-3xl font-bold font-headline text-primary">Make It Your Own</h1>
         <p className="mx-auto max-w-2xl text-muted-foreground">

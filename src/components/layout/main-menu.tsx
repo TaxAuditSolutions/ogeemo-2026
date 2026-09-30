@@ -27,9 +27,9 @@ import { filterMenuItems, sortMenuItemsByLabel, type MenuSortDirection } from '@
 
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
-    Workspace: { icon: Briefcase, items: ['/event-manager', '/action-manager', '/action-chips-info', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
+    Workspace: { icon: Briefcase, items: ['/event-manager', '/action-manager', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan'] },
-    Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting', '/audit-ready'] },
+    Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
     Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },

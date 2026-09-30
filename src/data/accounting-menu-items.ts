@@ -51,7 +51,6 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/payroll/history", icon: History, label: "Payroll History" },
     { href: "/accounting/tax", icon: ShieldCheck, label: "Tax Center" },
     { href: "/accounting/tax/categories", icon: FileSignature, label: "Tax Categories" },
-    { href: "/accounting/bks-instructions", icon: BookOpen, label: "BKS Instructions" },
     { href: "/accounting/financial-snapshot", icon: Activity, label: "Financial Snapshot" },
     { href: "/accounting/reports/income-statement", icon: FileText, label: "Income Statement" },
     { href: "/accounting/reports/accrual-adjustments", icon: BookOpen, label: "Accrual Adjustments" },

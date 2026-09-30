@@ -4,7 +4,6 @@ import {
   Briefcase,
   Info,
   FileText,
-  ShieldCheck,
   Calendar,
   Contact,
   Clock,
@@ -21,8 +20,6 @@ import {
   Image,
   Database,
   PlayCircle,
-  Zap,
-  Scale,
   UserCog,
   ClipboardList,
   Crown,
@@ -44,11 +41,7 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
-  { href: "/action-chips-info", label: "Action Chip Magic", icon: Zap },
   { href: "/event-manager", label: "Activity Manager", icon: PlayCircle },
-  { href: "/philosophy/record-keeping", label: "Record Keeping Credo", icon: Scale },
-  { href: "/accounting/audit-readiness", label: "Audit Ready", icon: ShieldCheck },
-  { href: "/support/mentor-mediation", label: "Mentor Mediation", icon: Scale },
   { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
   { href: "/hr-manager", label: "HR Hub", icon: Users2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },

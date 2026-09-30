@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Settings, Building2 } from 'lucide-react';
+import { Settings, Building2, HelpCircle } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
@@ -141,12 +141,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       <MainMenu />
                     </div>
                     <SidebarFooter className="border-t border-white/10 p-4 shrink-0 group-data-[collapsible=icon]:p-2">
-                      <Button asChild variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2">
-                        <Link href="/settings" aria-label="Settings">
-                          <Settings className="h-4 w-4 shrink-0" />
-                          <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-                        </Link>
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button asChild variant="ghost" className="flex-1 justify-start gap-3 text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2">
+                          <Link href="/settings" aria-label="Settings">
+                            <Settings className="h-4 w-4 shrink-0" />
+                            <span className="group-data-[collapsible=icon]:hidden">Settings</span>
+                          </Link>
+                        </Button>
+                        <Button asChild variant="ghost" className="flex-1 justify-start gap-3 text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-2">
+                          <Link href="/help" aria-label="Help">
+                            <HelpCircle className="h-4 w-4 shrink-0" />
+                            <span className="group-data-[collapsible=icon]:hidden">Help</span>
+                          </Link>
+                        </Button>
+                      </div>
                     </SidebarFooter>
                   </Sidebar>
 

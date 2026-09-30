@@ -167,4 +167,5 @@ test('the app header links back to the previous page', () => {
   assert.ok(layout.includes('usePathname'), 'expected pathname tracking in the app layout');
   assert.ok(layout.includes('previousPath'), 'expected previous-page state in the app layout');
   assert.ok(/Back to /.test(layout), 'expected a Back to link in the app header');
+  assert.ok(layout.includes('sessionStorage'), 'expected the previous-page trail to survive full reloads');
 });

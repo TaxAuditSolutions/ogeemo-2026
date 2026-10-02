@@ -213,6 +213,14 @@ export function processCommand(input: string): CommandResult {
         }
     }
 
+    if (isContactEditRequest(rawInput)) {
+        return {
+            type: 'unknown',
+            message: 'Contact Assistance',
+            description: 'Routing contact editing to Ogeemo Co-Pilot.',
+        };
+    }
+
     // Creation and scheduling: "Create", "Make", "New", "Add", "Do", "Schedule", "Book", "Plan"
     // Keep this before generic route alias matching so phrase-based actions like
     // "new contact for Acme" resolve to the correct create flow instead of the

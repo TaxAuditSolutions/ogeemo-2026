@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { resolveDefaultContactFolderId } from '@/lib/contact-folders';
+import { resolveDefaultContactFolderId, findMatchingContactFolder } from '@/lib/contact-folders';
 
 const optionalText = z.string().trim().optional();
 const optionalDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD.').optional();
@@ -58,6 +58,7 @@ export const AssistantClientActionSchema = z.discriminatedUnion('type', [
     }).strict(),
     z.object({
         type: z.literal('submit_contact_form'),
+        patch: AssistantContactDraftPatchSchema.optional(),
     }).strict(),
     z.object({
         type: z.literal('open_contact'),
@@ -139,7 +140,7 @@ export function parseAssistantClientAction(
         if (folderId !== undefined && !allowedFolders.has(folderId)) return undefined;
     }
 
-    if (parsed.data.type === 'open_contact' && parsed.data.patch?.folderId !== undefined) {
+    if ((parsed.data.type === 'open_contact' || parsed.data.type === 'submit_contact_form') && parsed.data.patch?.folderId !== undefined) {
         const allowedFolders = new Set(validFolderIds);
         if (!allowedFolders.has(parsed.data.patch.folderId)) return undefined;
     }
@@ -242,11 +243,25 @@ function extractDeterministicPhones(value: string): Array<{ field: Deterministic
 }
 
 /**
+ * Helper to match a folder reference against tenant folders:
+ * 1. Exact or case-insensitive match on folder.id
+ * 2. Exact or case-insensitive match on folder.name
+ * 3. Match on the last segment of hierarchical paths (e.g. "Workers / Employees" -> "Employees")
+ */
+function findMatchingTenantFolder(
+    wanted: string,
+    folders: ReadonlyArray<{ id: string; name: string }>,
+): { id: string; name: string } | undefined {
+    return findMatchingContactFolder(wanted, folders);
+}
+
+/**
  * Resolves a capability action like `resolveAssistantCapabilityAction`, but
  * repairs the most common model slip first: echoing the folder NAME (or an
- * unknown id) instead of a real tenant folder id. Falls back to the system
- * "Miscellaneous" folder so the form action survives; the user can still
- * change the folder inside the form before saving.
+ * unknown id) instead of a real tenant folder id, or flattening patch fields
+ * to the top level. Falls back to the system "Miscellaneous" folder for
+ * open_contact_form so the form action survives; the user can still change the
+ * folder inside the form before saving.
  */
 export function resolveAssistantCapabilityActionWithRepair(
     value: unknown,
@@ -258,30 +273,58 @@ export function resolveAssistantCapabilityActionWithRepair(
     if (
         value &&
         typeof value === 'object' &&
-        ((value as { type?: unknown }).type === 'open_contact_form' ||
-            (value as { type?: unknown }).type === 'update_contact_draft') &&
         folders.length > 0
     ) {
-        const actionType = (value as { type: 'open_contact_form' | 'update_contact_draft' }).type;
-        const payloadKey = actionType === 'open_contact_form' ? 'draft' : 'patch';
-        const payload = (value as Record<string, unknown>)[payloadKey] as Record<string, unknown> | undefined ?? {};
-        const wantedFolder = typeof payload.folderId === 'string' ? payload.folderId.trim().toLowerCase() : '';
-        if (!wantedFolder) return undefined;
-        const matchedByName = wantedFolder
-            ? folders.find((folder) => folder.name.trim().toLowerCase() === wantedFolder)
-            : undefined;
-        const folderId = matchedByName?.id ?? (actionType === 'open_contact_form' ? resolveDefaultContactFolderId(folders) : undefined);
-        if (!folderId) return undefined;
-        const repaired = resolveAssistantCapabilityAction(
-            { type: actionType, [payloadKey]: { ...payload, folderId } },
-            folders.map((folder) => folder.id),
-        );
-        if (repaired) {
-            console.warn('[assistant-actions] repaired capability draft folder id', {
-                originalFolderId: payload.folderId ?? null,
-                repairedFolderId: folderId,
-            });
-            return repaired;
+        const raw = value as Record<string, unknown>;
+        const rawType = typeof raw.type === 'string' ? raw.type : '';
+
+        if (rawType === 'open_contact_form' || rawType === 'update_contact_draft') {
+            const actionType = rawType as 'open_contact_form' | 'update_contact_draft';
+            const payloadKey = actionType === 'open_contact_form' ? 'draft' : 'patch';
+            const rawPayload = (raw[payloadKey] && typeof raw[payloadKey] === 'object')
+                ? (raw[payloadKey] as Record<string, unknown>)
+                : {};
+
+            // Flattened recovery: extract folderId or other draft/patch fields if top-level
+            const payload: Record<string, unknown> = { ...rawPayload };
+            if (raw.folderId && typeof raw.folderId === 'string' && !payload.folderId) {
+                payload.folderId = raw.folderId;
+            }
+            if (raw.name && typeof raw.name === 'string' && !payload.name) {
+                payload.name = raw.name;
+            }
+
+            const wantedFolder = typeof payload.folderId === 'string' ? payload.folderId.trim() : '';
+            if (wantedFolder) {
+                const matchedFolder = findMatchingTenantFolder(wantedFolder, folders);
+                const folderId = matchedFolder?.id ?? (actionType === 'open_contact_form' ? resolveDefaultContactFolderId(folders) : undefined);
+                if (folderId) {
+                    payload.folderId = folderId;
+                } else if (actionType === 'update_contact_draft') {
+                    // Unresolvable folder in patch: drop folderId so other patched fields survive
+                    delete payload.folderId;
+                }
+            } else if (actionType === 'open_contact_form' && !payload.folderId) {
+                payload.folderId = resolveDefaultContactFolderId(folders);
+            }
+
+            if (actionType === 'open_contact_form' && !payload.name && typeof raw.name === 'string') {
+                payload.name = raw.name;
+            }
+
+            if (Object.keys(payload).length > 0) {
+                const repaired = resolveAssistantCapabilityAction(
+                    { type: actionType, [payloadKey]: payload },
+                    folders.map((folder) => folder.id),
+                );
+                if (repaired) {
+                    console.warn('[assistant-actions] repaired capability draft folder id', {
+                        originalFolderId: wantedFolder || null,
+                        repairedFolderId: payload.folderId ?? null,
+                    });
+                    return repaired;
+                }
+            }
         }
     }
 
@@ -296,18 +339,150 @@ export function resolveAssistantCapabilityActionWithRepair(
         typeof (value as { patch?: unknown }).patch === 'object'
     ) {
         const { patch, ...rest } = value as Record<string, unknown>;
-        const { folderId: _droppedFolderId, ...patchWithoutFolder } = patch as Record<string, unknown>;
+        const patchObj = patch as Record<string, unknown>;
+        let patchWithoutFolder = { ...patchObj };
+        if (typeof patchObj.folderId === 'string') {
+            const matched = findMatchingTenantFolder(patchObj.folderId, folders);
+            if (matched) {
+                patchWithoutFolder.folderId = matched.id;
+            } else {
+                delete patchWithoutFolder.folderId;
+            }
+        }
         const repaired = resolveAssistantCapabilityAction(
             Object.keys(patchWithoutFolder).length > 0 ? { ...rest, patch: patchWithoutFolder } : rest,
             folders.map((folder) => folder.id),
         );
         if (repaired) {
-            console.warn('[assistant-actions] dropped unresolvable open_contact patch folder id');
+            console.warn('[assistant-actions] repaired or dropped unresolvable open_contact patch folder id');
             return repaired;
         }
     }
 
     return undefined;
+}
+
+const DRAFT_FIELD_KEYS = Object.keys(AssistantContactDraftSchema.shape) as Array<keyof AssistantContactDraft>;
+
+/** Keeps only non-empty, individually valid snapshot fields and resolves the folder to a tenant folder id. */
+function sanitizeDraftSnapshot(
+    snapshot: unknown,
+    folders: ReadonlyArray<{ id: string; name: string }>,
+): AssistantContactDraftPatch | undefined {
+    if (!snapshot || typeof snapshot !== 'object') return undefined;
+    const raw = snapshot as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
+
+    for (const key of DRAFT_FIELD_KEYS) {
+        const value = raw[key];
+        if (value === undefined || value === null || (typeof value === 'string' && !value.trim())) continue;
+
+        if (key === 'folderId') {
+            const folder = typeof value === 'string' ? findMatchingTenantFolder(value, folders) : undefined;
+            if (folder) patch.folderId = folder.id;
+            continue;
+        }
+
+        const parsed = (AssistantContactDraftSchema.shape[key] as z.ZodTypeAny).safeParse(value);
+        if (parsed.success && parsed.data !== undefined) patch[key] = parsed.data;
+    }
+
+    return Object.keys(patch).length > 0 ? (patch as AssistantContactDraftPatch) : undefined;
+}
+
+type HistoryEntry = { action?: unknown;[key: string]: unknown };
+type FormSession = { mode: 'create' | 'edit'; contactId?: string };
+type CatalogContact = { id: string; name: string; email?: string; businessName?: string; folderId?: string };
+
+/** The contact form the thread last opened, or null once it was submitted or never opened. */
+export function getContactFormSession(history: ReadonlyArray<HistoryEntry>): FormSession | null {
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+        const action = parseAssistantMessageAction(history[index]?.action);
+        if (!action) continue;
+        if (action.type === 'submit_contact_form') return null;
+        if (action.type === 'open_contact') return { mode: 'edit', contactId: action.contactId };
+        if (action.type === 'open_contact_form') return { mode: 'create' };
+        if (action.type === 'dispatch' && action.target === ASSISTANT_DESTINATIONS.new_contact.target) return { mode: 'create' };
+    }
+    return null;
+}
+
+export function isContactFormOpenInHistory(history: ReadonlyArray<HistoryEntry>): boolean {
+    return getContactFormSession(history) !== null;
+}
+
+const sameText = (a: unknown, b: unknown) =>
+    String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+/**
+ * In an edit only fields that differ from the stored record may change, and a
+ * rename or folder move needs the user's latest message to ask for it.
+ */
+function guardEditPatch(
+    patch: AssistantContactDraftPatch | undefined,
+    current: CatalogContact | undefined,
+    userMessage: string | undefined,
+    folders: ReadonlyArray<{ id: string; name: string }>,
+): AssistantContactDraftPatch | undefined {
+    if (!patch) return undefined;
+    const message = (userMessage ?? '').toLowerCase();
+    const guarded: Record<string, unknown> = { ...patch };
+
+    for (const key of Object.keys(guarded)) {
+        const value = guarded[key];
+        if (current && key in current && sameText((current as Record<string, unknown>)[key], value)) {
+            delete guarded[key];
+            continue;
+        }
+        if (key === 'name' && !message.includes(String(value).trim().toLowerCase())) delete guarded[key];
+        if (key === 'folderId') {
+            const folderName = folders.find((folder) => folder.id === value)?.name.trim().toLowerCase();
+            if (!folderName || !message.includes(folderName)) delete guarded[key];
+        }
+    }
+
+    return Object.keys(guarded).length > 0 ? (guarded as AssistantContactDraftPatch) : undefined;
+}
+
+/**
+ * Turns the model's cumulative draft snapshot into the form action, so the form
+ * receives every field the reply claims even when the model forgot the action.
+ */
+export function reconcileContactDraftAction(input: {
+    action: unknown;
+    snapshot: unknown;
+    history: ReadonlyArray<HistoryEntry>;
+    folders: ReadonlyArray<{ id: string; name: string }>;
+    contacts?: ReadonlyArray<CatalogContact>;
+    userMessage?: string;
+}): unknown {
+    const { action, snapshot, history, folders, contacts, userMessage } = input;
+    const session = getContactFormSession(history);
+    if (!session) return action;
+
+    const current = session.contactId ? contacts?.find((contact) => contact.id === session.contactId) : undefined;
+    const guard = (patch: AssistantContactDraftPatch | undefined) =>
+        session.mode === 'edit' ? guardEditPatch(patch, current, userMessage, folders) : patch;
+
+    const type = action && typeof action === 'object' ? (action as { type?: unknown }).type : undefined;
+    const known = guard(sanitizeDraftSnapshot(snapshot, folders));
+    const modelPatch = type === 'update_contact_draft'
+        ? guard(sanitizeDraftSnapshot((action as { patch?: unknown }).patch, folders))
+        : undefined;
+    const merged = { ...known, ...modelPatch } as AssistantContactDraftPatch;
+    const hasChanges = Object.keys(merged).length > 0;
+
+    if (type === 'submit_contact_form') {
+        if (hasChanges) return { type: 'submit_contact_form', patch: merged };
+        return session.mode === 'edit' ? { type: 'submit_contact_form' } : action;
+    }
+
+    if (type === undefined || type === 'update_contact_draft') {
+        if (hasChanges) return { type: 'update_contact_draft', patch: merged };
+        return session.mode === 'edit' ? undefined : action;
+    }
+
+    return action;
 }
 
 const DETERMINISTIC_FOLDER_PHRASE_PATTERN = /\bcontact\s+in\s+(?:the\s+)?([^.!?]+?)\s+folder\b[.,!]?\s*(.*)$/i;

@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button';
 import type { AssistantContactDraft } from '@/ai/assistant-actions';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, deleteContacts, updateContact, addContact } from '@/services/contact-service';
+import { getContacts, getContactById, deleteContacts, updateContact, addContact } from '@/services/contact-service';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -286,6 +286,7 @@ export function ContactsView() {
   const prefillName = searchParams ? searchParams.get('name') : null;
   const editContactId = searchParams ? searchParams.get('contactId') : null;
   const [prefillContactData, setPrefillContactData] = useState<Partial<AssistantContactDraft> | undefined>(undefined);
+  const handledEditIntentRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (actionIntent === 'new') {
@@ -296,9 +297,14 @@ export function ContactsView() {
   }, [actionIntent, prefillName]);
 
   useEffect(() => {
-    if (actionIntent !== 'edit' || !editContactId || isLoading) return;
+    if (actionIntent !== 'edit' || !editContactId) {
+      handledEditIntentRef.current = null;
+      return;
+    }
+    if (isLoading || handledEditIntentRef.current === editContactId) return;
     const contact = contacts.find((c) => c.id === editContactId);
     if (!contact) return;
+    handledEditIntentRef.current = editContactId;
     setContactToEdit(contact);
     setPrefillContactData(undefined);
     setIsContactFormOpen(true);
@@ -310,26 +316,24 @@ export function ContactsView() {
     setIsContactFormOpen(true);
   }), []);
 
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
+    setPrefillContactData((prev) => ({ ...(prev || {}), ...patch }));
+  }), []);
+
   useEffect(() => subscribeToCopilotWorkflowEvent('copilot:open_contact', ({ contactId, patch }) => {
     const openContact = async () => {
-      let contact = contacts.find((c) => c.id === contactId);
-      // The contact may have just been created server-side by Co-Pilot's
-      // createContact tool, so it won't be in this page's already-loaded
-      // state yet. Refetch once before giving up.
-      if (!contact && user) {
-        try {
-          const refreshedContacts = await getContacts(user.uid);
-          setContacts(refreshedContacts);
-          contact = refreshedContacts.find((c) => c.id === contactId);
-        } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: error.message });
-        }
-      }
+      // Edit from the stored record so the form never starts from a stale list copy.
+      let contact: Contact | null | undefined = user ? await getContactById(contactId).catch(() => null) : null;
+      contact = contact ?? contacts.find((c) => c.id === contactId);
       if (!contact) {
         toast({ variant: 'destructive', title: 'Contact not found', description: "I couldn't find that record in your local database." });
         return;
       }
-      setContactToEdit(contact);
+      const freshContact = contact;
+      setContacts((prev) => prev.some((c) => c.id === freshContact.id)
+        ? prev.map((c) => c.id === freshContact.id ? freshContact : c)
+        : [freshContact, ...prev]);
+      setContactToEdit(freshContact);
       setPrefillContactData(patch);
       setIsContactFormOpen(true);
     };
@@ -347,8 +351,7 @@ export function ContactsView() {
         const allFolders = await ensureSystemFolders(user.uid);
         setFolders(allFolders);
       } catch (error: any) {
-        console.warn('Contacts bootstrap: folder load failed, defaulting to empty folders.', error);
-        setFolders([]);
+        console.warn('Contacts bootstrap: folder load failed, keeping the folders already loaded.', error);
       }
 
       const fetchedCompanies = await getCompanies(user.uid);
@@ -371,6 +374,7 @@ export function ContactsView() {
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
     if (isEditing) {
       setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
+      setContactToEdit(savedContact);
     } else {
       setContacts(prev => [savedContact, ...prev]);
     }

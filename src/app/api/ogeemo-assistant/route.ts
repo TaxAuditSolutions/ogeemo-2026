@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCapability } from '@/ai/flows/ogeemo-chat';
-import { buildDeterministicContactDraft, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
+import { buildDeterministicContactDraft, reconcileContactDraftAction, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
 import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminDb } from '@/core/firebase-admin';
 
@@ -45,6 +45,10 @@ const FUNCTIONS_REFUSAL_PATTERNS = [
     'no relevant guide context',
     'i do not have enough context',
     'insufficient context',
+    "don't have specific instructions in my current guides",
+    "don't have specific instructions",
+    'missing details on modifying an existing contact',
+    'missing details on modifying',
 ];
 
 function normalizeAnswerText(value: unknown): string {
@@ -140,13 +144,17 @@ export async function POST(request: NextRequest) {
         }
 
         let tenantFolders: Array<{ id: string; name: string; parentId?: string | null }> = [];
+        let tenantContacts: Array<{ id: string; name: string; email?: string; businessName?: string; folderId?: string }> = [];
         try {
             const sessionContext = await getCurrentSessionContext();
             if (sessionContext) {
                 const db = getAdminDb();
-                const folderSnapshot = db && sessionContext.orgId
-                    ? await db.collection('contactFolders').where('orgId', '==', sessionContext.orgId).get()
-                    : null;
+                const [folderSnapshot, contactSnapshot] = db && sessionContext.orgId
+                    ? await Promise.all([
+                        db.collection('contactFolders').where('orgId', '==', sessionContext.orgId).get(),
+                        db.collection('contacts').where('orgId', '==', sessionContext.orgId).get(),
+                    ])
+                    : [null, null];
                 tenantFolders = folderSnapshot?.docs.map((folderDoc) => {
                     const folderData = folderDoc.data();
                     return {
@@ -156,6 +164,17 @@ export async function POST(request: NextRequest) {
                     };
                 }).filter((folder) => folder.name) ?? [];
 
+                tenantContacts = contactSnapshot?.docs.map((contactDoc) => {
+                    const data = contactDoc.data();
+                    return {
+                        id: contactDoc.id,
+                        name: String(data.name || ''),
+                        email: typeof data.email === 'string' ? data.email : undefined,
+                        businessName: typeof data.businessName === 'string' ? data.businessName : undefined,
+                        folderId: typeof data.folderId === 'string' ? data.folderId : undefined,
+                    };
+                }).filter((c) => c.name) ?? [];
+
                 const capabilityResult = await orchestrateContactCapability({
                     message: question,
                     history,
@@ -163,15 +182,24 @@ export async function POST(request: NextRequest) {
                     orgId: sessionContext.orgId,
                     accessLevel: sessionContext.accessLevel,
                     folders: tenantFolders,
+                    contacts: tenantContacts,
                 });
 
                 if (capabilityResult.handled) {
                     let action: AssistantMessageAction | undefined;
-                    if (capabilityResult.action) {
-                        action = resolveAssistantCapabilityActionWithRepair(capabilityResult.action, tenantFolders);
+                    const rawAction = reconcileContactDraftAction({
+                        action: capabilityResult.action,
+                        snapshot: capabilityResult.draftSnapshot,
+                        history,
+                        folders: tenantFolders,
+                        contacts: tenantContacts,
+                        userMessage: question,
+                    });
+                    if (rawAction) {
+                        action = resolveAssistantCapabilityActionWithRepair(rawAction, tenantFolders);
                         if (!action) {
                             console.warn('/api/ogeemo-assistant capability action dropped by strict validation', {
-                                rawAction: capabilityResult.action,
+                                rawAction,
                                 tenantFolderIds: tenantFolders.map((folder) => folder.id),
                             });
                         }

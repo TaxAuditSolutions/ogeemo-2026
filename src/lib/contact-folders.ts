@@ -35,3 +35,48 @@ export function resolveDefaultContactFolderId(
 
     return (systemMatch ?? folders.find(isNamedDefault) ?? folders[0]).id;
 }
+
+/**
+ * Resolves any folder reference (folder ID, folder name, or hierarchical path)
+ * to the exact tenant folder option.
+ */
+export function findMatchingContactFolder(
+    wanted: unknown,
+    folders: ReadonlyArray<ContactFolderOption>,
+): ContactFolderOption | undefined {
+    if (!wanted || typeof wanted !== 'string') return undefined;
+    const normalized = wanted.trim().toLowerCase();
+    if (!normalized) return undefined;
+
+    // 1. Exact or case-insensitive match on folder id
+    const byId = folders.find((f) => f.id.toLowerCase() === normalized);
+    if (byId) return byId;
+
+    // 2. Exact or case-insensitive match on full folder name
+    const byName = folders.find((f) => f.name.trim().toLowerCase() === normalized);
+    if (byName) return byName;
+
+    // 3. Match on the last segment of hierarchical paths (e.g. "Workers / Employees" -> "Employees")
+    const lastSegment = normalized.split('/').pop()?.trim();
+    if (lastSegment) {
+        const bySegment = folders.find((f) => f.name.trim().toLowerCase() === lastSegment);
+        if (bySegment) return bySegment;
+    }
+
+    return undefined;
+}
+
+/**
+ * Resolves a folder reference (ID, name, path) to a folder ID from the list,
+ * or keeps the original trimmed string if non-empty, or returns undefined.
+ */
+export function resolveContactFolderId(
+    wanted: unknown,
+    folders: ReadonlyArray<ContactFolderOption>,
+): string | undefined {
+    if (!wanted || typeof wanted !== 'string') return undefined;
+    const trimmed = wanted.trim();
+    if (!trimmed) return undefined;
+    const matched = findMatchingContactFolder(trimmed, folders);
+    return matched ? matched.id : trimmed;
+}

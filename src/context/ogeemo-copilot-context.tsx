@@ -263,7 +263,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             } else if (assistantAction?.type === 'update_contact_draft') {
                 dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: assistantAction.patch });
             } else if (assistantAction?.type === 'submit_contact_form') {
-                dispatchCopilotWorkflowEvent('copilot:submit_contact_form', undefined);
+                dispatchCopilotWorkflowEvent('copilot:submit_contact_form', assistantAction.patch ? { patch: assistantAction.patch } : undefined);
             }
 
             if (DEFAULT_THREAD_TITLE_PATTERN.test(thread.title.trim()) && user?.uid) {

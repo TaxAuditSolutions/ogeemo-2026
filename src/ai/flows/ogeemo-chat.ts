@@ -11,6 +11,7 @@ import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { getContacts } from '@/services/contact-service';
 import { getProjects } from '@/services/project-service';
 import { allMenuItems } from '@/lib/menu-items';
+import { buildScrubbedMessages } from '@/ai/capability-history';
 import fs from 'fs';
 import path from 'path';
 
@@ -114,97 +115,6 @@ const searchContactsTool = ai.defineTool(
       };
     } catch (error: any) {
       return { success: false, contacts: [], message: error.message };
-    }
-  }
-);
-
-const createContactTool = ai.defineTool(
-  {
-    name: 'createContact',
-    description: 'Creates and saves a new contact directly to the tenant Contacts Hub database. Only call this after the user has explicitly confirmed the summarized name and folder should be saved.',
-    inputSchema: z.object({
-      name: z.string().trim().min(2).describe("The contact's full legal name"),
-      folderId: z.string().trim().min(1).describe('The tenant contact folder ID to file the contact under; must be one of the IDs from the available folders catalog'),
-      email: z.string().trim().optional().describe('Email address, if known'),
-      businessName: z.string().trim().optional(),
-      businessPhone: z.string().trim().optional(),
-      cellPhone: z.string().trim().optional(),
-      homePhone: z.string().trim().optional(),
-      notes: z.string().trim().optional(),
-    }),
-    outputSchema: z.object({
-      success: z.boolean(),
-      contactId: z.string().optional(),
-      name: z.string().optional(),
-      folderId: z.string().optional(),
-      message: z.string(),
-    }),
-  },
-  async (input, { context }) => {
-    const userId = context && typeof context === 'object' && 'userId' in context ? (context as any).userId : undefined;
-    const orgId = context && typeof context === 'object' && 'orgId' in context ? (context as any).orgId : undefined;
-    const accessLevel = context && typeof context === 'object' && 'accessLevel' in context ? (context as any).accessLevel : undefined;
-
-    if (!userId || !orgId) return { success: false, message: "User or tenant not authenticated." };
-
-    // Defense in depth: the system prompt already withholds this tool from
-    // viewers, but the tool must not trust the model to have obeyed that.
-    const canCreate = accessLevel === 'editor' || accessLevel === 'org_admin' || accessLevel === 'super_admin';
-    if (!canCreate) return { success: false, message: 'Editor access or higher is required to create contacts.' };
-
-    try {
-      const db = getAdminDb();
-      if (!db) throw new Error("Database not available.");
-
-      const folderSnap = await db.collection('contactFolders').doc(input.folderId).get();
-      if (!folderSnap.exists || folderSnap.data()?.orgId !== orgId) {
-        return { success: false, message: 'The specified folder was not found for this tenant.' };
-      }
-
-      const keywords = new Set<string>();
-      const addKeyword = (value?: string) => {
-        if (!value) return;
-        const lower = value.toLowerCase();
-        keywords.add(lower);
-        lower.split(/[\s@.-]+/).forEach((part) => { if (part) keywords.add(part); });
-      };
-      addKeyword(input.name);
-      addKeyword(input.email);
-      addKeyword(input.businessName);
-
-      const now = new Date();
-      const contactData: Record<string, any> = {
-        name: input.name,
-        folderId: input.folderId,
-        email: input.email || '',
-        businessName: input.businessName,
-        businessPhone: input.businessPhone,
-        cellPhone: input.cellPhone,
-        homePhone: input.homePhone,
-        notes: input.notes,
-        orgId,
-        userId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-        keywords: Array.from(keywords),
-      };
-      Object.keys(contactData).forEach((key) => {
-        if (contactData[key] === undefined) delete contactData[key];
-      });
-
-      const docRef = await db.collection('contacts').add(contactData);
-
-      return {
-        success: true,
-        contactId: docRef.id,
-        name: input.name,
-        folderId: input.folderId,
-        message: `Successfully created contact "${input.name}".`,
-      };
-    } catch (error: any) {
-      return { success: false, message: error.message };
     }
   }
 );
@@ -432,7 +342,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 7. **Intelligence Launcher**: If the user searches for a name (e.g., via searchGlobal or localContext), you MUST append the following tag to the very end of your response for each match: [[LAUNCH_REGISTRY:contact-id]]. Keep your text response very brief (e.g., "I found 2 matches for Dan:"). Let the Launcher Chips handle all the details. For "Dan" use [[LAUNCH_REGISTRY:dan-admin-id]], for "Julie" use [[LAUNCH_REGISTRY:julie-support-id]], and for others use their real ID.
 8. **Operating Awareness**: Stay within the user's active tenant and role. Do not claim access you do not have. If the user asks for a cross-tenant or restricted action, explain the limitation and suggest the correct tenant or route.
 9. **Screen-Scoped Advice**: Use the Page Guidance above to tailor your answer to the current screen. Do not suggest a tenant-management or super-admin action from a regular user page unless the user explicitly has the proper access and asks for it.
-10. **Questions vs. Requests**: Distinguish information questions from action requests. If the user asks "how do I...", "how do you...", "what is...", "where is...", or any other informational question, ANSWER it with clear step-by-step instructions from the Knowledge Base. Do NOT call tools or launch navigation for questions. Only execute actions when the message is a direct imperative request (e.g., "create a contact", "open the ledger", "schedule a meeting for Tuesday").
+10. **Questions vs. Requests**: Distinguish information questions from action requests. If the user asks "how do I...", "how do you...", "what is...", "where is...", or any other informational question, ANSWER it with clear step-by-step instructions from the Knowledge Base. Do NOT call tools or launch navigation for questions. When the message is an action request or operational command (e.g., "create a contact", "update Jane's phone", "schedule a meeting"), execute the action directly without asking for confirmation each time, and send clear feedback that the action or change has been performed after it has been completed.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -453,6 +363,13 @@ const ContactCapabilityInputSchema = z.object({
   orgId: z.string().optional(),
   accessLevel: z.enum(['super_admin', 'org_admin', 'editor', 'viewer']).optional(),
   folders: z.array(z.object({ id: z.string(), name: z.string(), parentId: z.string().nullable().optional() })),
+  contacts: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string().optional(),
+    businessName: z.string().optional(),
+    folderId: z.string().optional(),
+  })).optional(),
 });
 
 /**
@@ -466,6 +383,8 @@ const ContactCapabilityActionSchema = z.object({
   type: z.string(),
   destination: z.string().optional(),
   contactId: z.string().optional(),
+  name: z.string().optional(),
+  folderId: z.string().optional(),
   draft: z.object({
     name: z.string(),
     folderId: z.string(),
@@ -532,10 +451,36 @@ const ContactCapabilityActionSchema = z.object({
   }).optional(),
 });
 
+// A fresh instance per call: Genkit renders a reused zod instance as a $ref, which Gemini rejects.
+function contactDraftSnapshotSchema() {
+  return z.object({
+    name: z.string().optional(),
+    folderId: z.string().optional(),
+    email: z.string().optional(),
+    birthDate: z.string().optional(),
+    website: z.string().optional(),
+    businessName: z.string().optional(),
+    employeeNumber: z.string().optional(),
+    industryCode: z.string().optional(),
+    craProgramAccountNumber: z.string().optional(),
+    streetAddress: z.string().optional(),
+    city: z.string().optional(),
+    provinceState: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+    businessPhone: z.string().optional(),
+    cellPhone: z.string().optional(),
+    homePhone: z.string().optional(),
+    faxNumber: z.string().optional(),
+    notes: z.string().optional(),
+  });
+}
+
 const ContactCapabilityResultSchema = z.object({
   handled: z.boolean(),
   reply: z.string(),
   action: ContactCapabilityActionSchema.optional(),
+  draftSnapshot: contactDraftSnapshotSchema().optional(),
 });
 
 export type ContactCapabilityResult = z.infer<typeof ContactCapabilityResultSchema>;
@@ -547,7 +492,7 @@ const contactCapabilityFlow = ai.defineFlow(
     outputSchema: ContactCapabilityResultSchema,
   },
   async (input) => {
-    const messages = buildScrubbedMessages(input.history, input.message);
+    const messages = buildScrubbedMessages(input.history, input.message, { annotateActions: true });
     const canCreate = input.accessLevel === 'editor' || input.accessLevel === 'org_admin' || input.accessLevel === 'super_admin';
     const foldersById = new Map(input.folders.map((folder) => [folder.id, folder]));
     const buildFolderPath = (folder: { id: string; name: string; parentId?: string | null }, visited = new Set<string>()): string => {
@@ -557,6 +502,10 @@ const contactCapabilityFlow = ai.defineFlow(
       return parent ? `${buildFolderPath(parent, visited)} / ${folder.name}` : folder.name;
     };
     const folderCatalog = input.folders.map(folder => `${buildFolderPath(folder)}: ${folder.id}`).join('\n') || 'No contact folders are available.';
+    const contactCatalog = (input.contacts || []).map(c => {
+      const details = [c.email ? `Email: ${c.email}` : '', c.businessName ? `Company: ${c.businessName}` : ''].filter(Boolean).join(', ');
+      return `- "${c.name}" (ID: ${c.id}${details ? `, ${details}` : ''})`;
+    }).join('\n') || 'No contacts currently found in directory.';
 
     const system = `
 You are Ogeemo Co-Pilot's Contacts Hub capability evaluator. Decide semantically whether the conversation concerns Contacts Hub: creating a contact, learning how to create one, opening the hub, finding or opening an existing contact, editing a contact, or working with contact folders and categories.
@@ -565,16 +514,18 @@ Return handled=false for unrelated conversations. When handled=false, reply may 
 
 Always read the conversation history first. If an earlier turn established a Contacts Hub intent, continue that exchange. A short reply such as "prepare the form", "the instructions", or "yes" answers your previous question and must never be reinterpreted as a new or unrelated request.
 
-You may offer the user exactly one clickable control by returning an action:
+Action Output Rules:
+The form on screen only changes through draftSnapshot and actions. Never say a field was set, filled, updated or saved unless that value is in draftSnapshot on this same turn.
+- draftSnapshot: on every turn of a create or edit workflow after the form is open, return the complete set of field values the conversation has established so far, including values the user stated in any earlier message (for example a name given in the first message) and values you already set. In an edit workflow include only the fields the user asked to change, never the contact's existing values, and never name or folderId unless the user asked to rename the contact or move it to another folder. Omit fields that are unknown, never use empty strings or placeholders, and put a real folder ID from the catalog in folderId. Never include SIN, pay, employment dates or emergency-contact details.
+- Bracketed notes such as [form updated: ...] in earlier assistant turns record what the client actually executed. Use them to see what is in the form, and never repeat them in your reply.
+Every turn that performs a form mutation or navigation MUST return the corresponding action object alongside your reply:
 - open_destination with destination "new_contact" navigates to Contacts Hub and opens the New Contact form.
 - open_destination with destination "contacts_hub" opens Contacts Hub. Use it for browsing, searching, folders, or general hub navigation.
 - open_contact_form opens a form you have prepared from details gathered in the conversation.
-- update_contact_draft with a non-empty patch updates fields in the already-open Create or Edit Contact form.
-- submit_contact_form submits the already-open Create or Edit Contact form after explicit confirmation.
+- update_contact_draft with a non-empty patch updates fields in the already-open Create or Edit Contact form. When updating fields like name or folderId without submitting, return this action with patch containing the updated field(s) so the form on screen updates immediately.
+- submit_contact_form submits and saves the already-open Create or Edit Contact form. On the Create Contact form (/contacts?action=new), this triggers the "Create Identity" button to create and save the contact record. On an edit form, this triggers "Save Changes". Do not ask for user confirmation before submitting; submit as soon as the required/requested fields are established and send feedback that the change or record creation has been completed.
 - open_contact opens one specific existing contact by its real ID for editing, optionally with a patch of fields already known from the conversation.
 Never invent a URL or path. The client executes contact-workflow actions automatically.
-
-You also have a createContact tool that directly creates and saves a new contact record. Only call it during Turn 6 of the contact-creation state machine below, after the user has explicitly confirmed the summarized name and folder. Never call it for editing an existing contact; edits still use submit_contact_form.
 
 When the conversation concerns contact creation:
 - Treat this as a strict state machine. Infer the current state from the complete conversation history and never repeat a completed state.
@@ -582,26 +533,35 @@ When the conversation concerns contact creation:
 - Instructions mode: explain how to use Contacts Hub and return open_destination with destination "new_contact". Do not continue the agent-filling workflow unless the user later asks you to take over.
 - Turn 2, launch: when the user chooses agent creation, return open_destination with destination "new_contact" and ask whether they want to fill the open form themselves or want you to fill it. Do not ask for the name yet.
 - Self-fill choice: explain that the form is ready and stop prompting. Return no additional action.
-- Turn 3, agent-fill choice: when the user asks you to fill it, ask for the contact's Full Legal Name. Return no action.
-- Turn 4, name: when the user supplies the requested name, return update_contact_draft with patch containing only name, then ask which Folder/Category to use. List the available folder names. Do not choose a folder for the user.
-- Turn 5, folder: resolve the user's folder wording to exactly one ID from the catalog (the catalog lists nested folders as "Parent / Child"; match on the last path segment when the user names only the subfolder). Return update_contact_draft with patch containing only folderId. Summarize the Full Legal Name and folder name retained from history, then ask for explicit confirmation to create the contact.
-- Turn 6, confirmation: only an unambiguous affirmative response to the summary permits calling the createContact tool with the confirmed name, folderId, and any other details gathered in the conversation. After the tool call returns, if it reports success, tell the user the contact was created in the named folder and return open_contact with the tool's returned contactId. If the tool reports failure, explain the reason from its message and do not claim the contact was created. For a negative or ambiguous answer, do not call the tool; ask what should change or ask again for confirmation.
-- If the initial request already includes details, retain them, but still perform intent disambiguation unless the user explicitly asked the agent to create and fill the contact. Never call createContact without the separate confirmation turn.
-- The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action or call createContact.
+- Turn 3, agent-fill choice: when the user asks you to fill it, first check the whole conversation for details already given (such as the contact's name in the first message). If the Full Legal Name is already known, put it in draftSnapshot, return update_contact_draft, say you filled it in, and go straight to asking which Folder/Category to use (List the available folder names). If the name is not known, ask for the contact's Full Legal Name and return no action.
+- Turn 4, name: when the user supplies the requested name, put it in draftSnapshot and return update_contact_draft, then ask which Folder/Category to use. List the available folder names. Do not choose a folder for the user.
+- Turn 5, folder & direct creation: resolve the user's folder wording to the matching folder from the catalog (the catalog lists nested folders as "Parent / Child"; match on the last path segment or exact name). Put every known value, including the name, in draftSnapshot with the folder's exact ID, and immediately return submit_contact_form. Do NOT ask for confirmation. State clearly in your reply that you have created the contact in the named folder (e.g. "I've created the contact 'Porky Pig' in the Friends folder.").
+- Correction turns: when the user says a field is missing or wrong, return draftSnapshot with all known values again and return submit_contact_form; do not just apologize.
+- If the initial request already includes both name and folder, open the form and create the contact immediately without asking for confirmation.
+- The user can create contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Use only folder IDs from the catalog. Never place a folder name in folderId.
-- Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft or in the createContact call.
+- Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a draft or patch.
 
 When the conversation concerns editing an existing contact:
 - Treat this as a strict state machine, separate from the creation state machine above. Infer the current state from the complete conversation history and never repeat a completed state.
-- Turn 1, intent choice: when the user broadly asks to edit a contact without naming who or what to change, ask whether they want step-by-step instructions or want you to find and edit it for them. Return no action. Skip this turn and go straight to search when the request already names the target contact and the intended change (e.g., "update Jane Doe's phone to 555-1234").
-- Instructions mode: explain how to open and edit a record in Contacts Hub and return open_destination with destination "contacts_hub". Do not continue the agent-editing workflow unless the user later asks you to take over.
-- Turn 2, identify the target: when the user chooses agent editing (or already named a target), call searchContacts with the name, company, or email supplied. Never invent a contactId; it must come from a searchContacts result.
-  - No matches: say so plainly and offer open_destination with destination "contacts_hub". Return no other action.
+- Turn 1, intent choice:
+  - If the user asks how to edit or update an existing contact (or how to add an email/phone to a contact), or broadly asks for instructions, provide the clear step-by-step instructions:
+    1. Open Contacts Hub from the navigation menu (/contacts).
+    2. Search or select the target contact from the directory table.
+    3. Click Edit Contact to open the record.
+    4. In the Core Profile section, update the field (such as Email Identity).
+    5. Click "Save Changes" at the bottom of the form.
+    Return open_destination with destination "contacts_hub".
+  - If the user asks broadly to edit a contact without naming who or what to change, ask whether they want step-by-step instructions or want you to find and edit it for them. Return no action.
+  - If the request already names the target contact (e.g., "i want to add an email address to the contact 'Cookie Monster'" or "update Jane Doe's phone to 555-1234"), skip the intent choice turn and go straight to Turn 2 (identifying the target).
+- Turn 2, identify the target: Look up the contact in the Available Tenant Contacts catalog below by name or details. Never invent a contactId; it must come from the catalog.
+  - No matches: state clearly that the contact was not found in the directory and offer open_destination with destination "contacts_hub". Return no other action.
   - Multiple matches: list each candidate's name plus a distinguishing detail (email or business name) and ask the user which one they mean. Return no action.
-  - Exactly one match: return open_contact with its real contactId. If the user's message already specified field changes, include them in the same action's patch (using only fields from the schema, and only a folderId already present in the catalog), and summarize the pending changes while asking for explicit confirmation to save. If no changes were specified yet, state that the record is open and ask what should be updated.
-- Turn 3, field changes: once the target contact is open and the user specifies what to change, return update_contact_draft with a patch containing only the changed fields, summarize the pending changes, and ask for explicit confirmation to save.
-- Turn 4, confirmation: only an unambiguous affirmative response to the summary permits submit_contact_form. Return that action and say you are saving the changes. For a negative or ambiguous answer, do not submit; ask what should change instead or ask again for confirmation.
+  - Exactly one match:
+    - If the change value was ALREADY provided (e.g., "update Jane Doe's phone to 555-1234"): put the change in draftSnapshot, return submit_contact_form (or open_contact with the patch to be submitted), and confirm that the update has been performed and saved (e.g. "I've updated Jane Doe's phone to 555-1234 and saved the changes."). Do NOT ask for confirmation.
+    - If the change value is NOT YET provided (e.g., "i want to add an email address to the contact 'Cookie Monster'"): return open_contact with its real contactId (and no patch yet). State that you found and opened the contact record for editing, and ask the user what email address (or value) they want to add/set.
+- Turn 3, field changes & direct save: once the target contact is open and the user provides the new value (e.g., provides the email address "cookie@sesame.org"), put the changed field in draftSnapshot (e.g. { email: 'cookie@sesame.org' }) and immediately return submit_contact_form. Do NOT ask for confirmation. State clearly in your reply that the field has been updated and the changes have been saved (e.g. "I've updated Cookie Monster's email address to cookie@sesame.org and saved the changes.").
 - The user can edit contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Use only folder IDs from the catalog. Never place a folder name in folderId.
@@ -609,11 +569,14 @@ When the conversation concerns editing an existing contact:
 - Never place userId, orgId, IDs, audit metadata, timestamps, keywords, or document folder IDs in a patch.
 
 For other Contacts Hub requests:
-- To find someone without an editing intent, call searchContacts. If you find a likely match, return open_contact with its real ID. If nothing matches, say so and offer the "contacts_hub" destination.
+- To find someone without an editing intent: check Available Tenant Contacts. If you find a likely match, return open_contact with its real ID. If nothing matches, say so and offer the "contacts_hub" destination.
 - For browsing, folders, or categories, explain the steps in Contacts Hub and offer the "contacts_hub" destination.
 
 Available tenant folders:
 ${folderCatalog}
+
+Available Tenant Contacts:
+${contactCatalog}
 `;
 
     const baseOptions = {
@@ -626,27 +589,23 @@ ${folderCatalog}
     };
 
     try {
-      const result = await ai.generate({ ...baseOptions, tools: [searchContactsTool, createContactTool] });
+      const result = await ai.generate({ ...baseOptions });
       if (result.output) {
         return ContactCapabilityResultSchema.parse(result.output);
       }
       console.warn('[contact-capability] first generate returned no structured output');
     } catch (firstError) {
-      // Genkit throws INVALID_ARGUMENT ("Provided data: null") when the model
-      // ends its turn on a tool call (e.g. the mandatory duplicate check)
-      // instead of the structured JSON. Fall through to a retry without tools.
-      console.warn('[contact-capability] first generate failed, retrying without tools', {
+      console.warn('[contact-capability] first generate failed, retrying', {
         roles: messages.map((m) => m.role).join(','),
         error: firstError,
       });
     }
 
-    // Retry with tools removed: the response schema becomes the only possible
-    // output shape, so the model must return the structured JSON reply. The
-    // duplicate check and contact creation are unavailable in this turn, so
-    // instruct the model to proceed with the form anyway instead of stalling.
     const retrySystem = `${system}
-Important for this retry turn: the searchContacts and createContact tools are temporarily unavailable. Continue the exact state machine from history and return only the action allowed for the current turn. Do not skip questions, combine turns, call createContact, or claim a contact was created. If this is Turn 6, ask the user to reconfirm so the next turn can call createContact.`;
+Important for this retry turn: Continue the exact state machine from history. Do not ask the user for confirmation; execute the requested change and return submit_contact_form as soon as the details are ready.
+- Always return draftSnapshot with every known field value (name, folderId, and so on) once the form is open.
+- When the folder is chosen (or was already given) for a new contact, return submit_contact_form and state that the contact has been created.
+- When a field value is provided for an existing contact, return submit_contact_form and state that the change has been saved.`;
 
     const retryResult = await ai.generate({
       ...baseOptions,
@@ -674,39 +633,6 @@ export async function orchestrateContactCapability(
   input: z.infer<typeof ContactCapabilityInputSchema>,
 ): Promise<ContactCapabilityResult> {
   return contactCapabilityFlow(input);
-}
-
-function buildScrubbedMessages(history: any[] | undefined, message: string): any[] {
-  const scrubbedMessages: any[] = (history || []).map(msg => {
-    const rawRole = (msg.role || 'user').toLowerCase();
-    const role = rawRole === 'model' || rawRole === 'assistant' || rawRole === 'bot' ? 'model' : 'user';
-
-    let scrubbedContent = [];
-    if (typeof msg.content === 'string') {
-      scrubbedContent = [{ text: msg.content }];
-    } else if (Array.isArray(msg.content)) {
-      scrubbedContent = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
-    } else {
-      scrubbedContent = [{ text: msg.message || JSON.stringify(msg) }];
-    }
-
-    return { role, content: scrubbedContent };
-  });
-
-  // Gemini rejects request contents that do not start with a user turn
-  // ("First content should be with role 'user', got model"). Truncation or
-  // odd thread states can put a model turn first, so strip leading non-user
-  // messages until the conversation starts with the user.
-  while (scrubbedMessages.length > 0 && scrubbedMessages[0].role !== 'user') {
-    scrubbedMessages.shift();
-  }
-
-  const lastMessage = scrubbedMessages[scrubbedMessages.length - 1];
-  const lastText = lastMessage?.content?.map((part: any) => part.text || '').join('').trim();
-  if (lastMessage?.role !== 'user' || lastText !== message.trim()) {
-    scrubbedMessages.push({ role: 'user', content: [{ text: message }] });
-  }
-  return scrubbedMessages;
 }
 
 function getPageContextGuidance(currentPath?: string): string {

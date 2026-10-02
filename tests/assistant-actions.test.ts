@@ -3,8 +3,11 @@ import test from 'node:test';
 
 import {
     buildDeterministicContactDraft,
+    getContactFormSession,
+    isContactFormOpenInHistory,
     parseAssistantClientAction,
     parseAssistantMessageAction,
+    reconcileContactDraftAction,
     resolveAssistantCapabilityAction,
     resolveAssistantCapabilityActionWithRepair,
 } from '../src/ai/assistant-actions';
@@ -205,6 +208,10 @@ test('accepts incremental contact draft patches and submit actions', () => {
     assert.deepEqual(parseAssistantClientAction({ type: 'submit_contact_form' }, []), {
         type: 'submit_contact_form',
     });
+
+    assert.deepEqual(resolveAssistantCapabilityAction({ type: 'submit_contact_form' }, []), {
+        type: 'submit_contact_form',
+    });
 });
 
 test('rejects unsafe or empty incremental contact draft patches', () => {
@@ -248,6 +255,29 @@ test('repairs a contact patch folder name to its tenant folder ID', () => {
         patch: { folderId: 'clients-id' },
     });
 
+    // Supports hierarchical folder names like "Workers / Employees"
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'update_contact_draft',
+        patch: { folderId: 'Workers / Employees' },
+    }, [
+        { id: 'workers-id', name: 'Workers' },
+        { id: 'emp-id', name: 'Employees' },
+    ]), {
+        type: 'update_contact_draft',
+        patch: { folderId: 'emp-id' },
+    });
+
+    // Supports flattened payloads where folderId is at the top level
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'update_contact_draft',
+        folderId: 'Prospects',
+    }, [
+        { id: 'prospects-id', name: 'Prospects' },
+    ]), {
+        type: 'update_contact_draft',
+        patch: { folderId: 'prospects-id' },
+    });
+
     assert.equal(resolveAssistantCapabilityActionWithRepair({
         type: 'update_contact_draft',
         patch: { folderId: 'Unknown' },
@@ -281,6 +311,158 @@ test('drops an unresolvable folder id from an open_contact patch instead of reje
         contactId: 'contact-123',
         patch: { cellPhone: '555-0199' },
     });
+});
+
+const reconcileFolders = [
+    { id: 'friends-id', name: 'Friends' },
+    { id: 'clients-id', name: 'Clients' },
+];
+const formOpenedHistory = [
+    { role: 'user', content: 'create it for me' },
+    { role: 'model', content: 'Opened.', action: { type: 'dispatch', target: '/contacts?action=new', isExternal: false, label: 'New Contact' } },
+];
+
+test('detects whether the contact form is open from the thread actions', () => {
+    assert.equal(isContactFormOpenInHistory([]), false);
+    assert.equal(isContactFormOpenInHistory(formOpenedHistory), true);
+    assert.equal(isContactFormOpenInHistory([
+        ...formOpenedHistory,
+        { role: 'model', content: 'Done.', action: { type: 'update_contact_draft', patch: { name: 'Porky Pig' } } },
+    ]), true);
+    assert.equal(isContactFormOpenInHistory([
+        ...formOpenedHistory,
+        { role: 'model', content: 'Submitting.', action: { type: 'submit_contact_form' } },
+    ]), false);
+});
+
+test('sends the name the reply claims even when the model returned no action', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { name: 'Porky Pig', folderId: '', email: '' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), { type: 'update_contact_draft', patch: { name: 'Porky Pig' } });
+});
+
+test('re-sends every known field when the model only patches the folder', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'update_contact_draft', patch: { folderId: 'Friends' } },
+        snapshot: { name: 'Porky Pig', folderId: 'Friends' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), { type: 'update_contact_draft', patch: { name: 'Porky Pig', folderId: 'friends-id' } });
+});
+
+test('attaches the snapshot to a submit so the form is complete before saving', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'submit_contact_form' },
+        snapshot: { name: 'Porky Pig', folderId: 'friends-id' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), { type: 'submit_contact_form', patch: { name: 'Porky Pig', folderId: 'friends-id' } });
+});
+
+test('directly submits new contact with full snapshot when folder is chosen', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'submit_contact_form' },
+        snapshot: { name: 'Porky Pig', folderId: 'Friends' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), { type: 'submit_contact_form', patch: { name: 'Porky Pig', folderId: 'friends-id' } });
+});
+
+test('leaves other actions and closed-form turns untouched', () => {
+    const open = { type: 'open_destination', destination: 'new_contact' };
+    assert.equal(reconcileContactDraftAction({
+        action: open,
+        snapshot: { name: 'Porky Pig' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), open);
+
+    assert.equal(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { name: 'Porky Pig' },
+        history: [{ role: 'user', content: 'create a contact called Porky Pig' }],
+        folders: reconcileFolders,
+    }), undefined);
+
+    assert.equal(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { name: '', folderId: 'Nowhere', email: 'not-an-email' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+    }), undefined);
+});
+
+test('accepts and persists a submit action that carries a final patch', () => {
+    const action = { type: 'submit_contact_form', patch: { name: 'Porky Pig', folderId: 'clients' } };
+    assert.deepEqual(parseAssistantClientAction(action, ['clients']), action);
+    assert.equal(parseAssistantClientAction(action, ['other']), undefined);
+    assert.deepEqual(parseAssistantMessageAction(JSON.parse(JSON.stringify(action))), action);
+});
+
+const editHistory = [
+    { role: 'user', content: 'add an email to Porky Pig' },
+    { role: 'model', content: 'Opened.', action: { type: 'open_contact', contactId: 'porky-id' } },
+];
+const catalog = [{ id: 'porky-id', name: 'Porky Pig', email: '', folderId: 'friends-id' }];
+
+test('identifies an edit session and the record it opened', () => {
+    assert.deepEqual(getContactFormSession(editHistory), { mode: 'edit', contactId: 'porky-id' });
+    assert.deepEqual(getContactFormSession(formOpenedHistory), { mode: 'create' });
+    assert.equal(getContactFormSession([]), null);
+});
+
+test('an edit sends only the requested change, not the unchanged name and folder', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { name: 'Porky Pig', folderId: 'Friends', email: 'porky@example.com' },
+        history: editHistory,
+        folders: reconcileFolders,
+        contacts: catalog,
+        userMessage: 'porky@example.com',
+    }), { type: 'update_contact_draft', patch: { email: 'porky@example.com' } });
+});
+
+test('an edit cannot move or rename a contact unless the user asked for it', () => {
+    assert.equal(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { folderId: 'Clients', name: 'Porky Pug' },
+        history: editHistory,
+        folders: reconcileFolders,
+        contacts: catalog,
+        userMessage: 'yes',
+    }), undefined);
+
+    assert.deepEqual(reconcileContactDraftAction({
+        action: undefined,
+        snapshot: { folderId: 'Clients' },
+        history: editHistory,
+        folders: reconcileFolders,
+        contacts: catalog,
+        userMessage: 'move Porky Pig to the Clients folder',
+    }), { type: 'update_contact_draft', patch: { folderId: 'clients-id' } });
+});
+
+test('an edit submit carries only real changes and a no-change submit stays plain', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'submit_contact_form' },
+        snapshot: { email: 'porky@example.com', folderId: 'Friends' },
+        history: editHistory,
+        folders: reconcileFolders,
+        contacts: catalog,
+        userMessage: 'yes',
+    }), { type: 'submit_contact_form', patch: { email: 'porky@example.com' } });
+
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'submit_contact_form' },
+        snapshot: { name: 'Porky Pig', folderId: 'friends-id' },
+        history: editHistory,
+        folders: reconcileFolders,
+        contacts: catalog,
+        userMessage: 'yes',
+    }), { type: 'submit_contact_form' });
 });
 
 test('builds a deterministic contact draft from a full contact request sentence', () => {

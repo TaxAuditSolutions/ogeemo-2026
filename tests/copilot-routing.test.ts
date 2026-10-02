@@ -37,6 +37,8 @@ test('recognizes contact-editing requests', () => {
     assert.equal(isContactEditRequest('update Jane\'s contact phone number'), true);
     assert.equal(isContactEditRequest('modify the contact for Acme'), true);
     assert.equal(isContactEditRequest('change John\'s contact email'), true);
+    assert.equal(isContactEditRequest('i want to add an email address to the contact "Cookie Monster"'), true);
+    assert.equal(isContactEditRequest('add a phone number to contact Jane'), true);
     assert.equal(isContactEditRequest('edit John Doe'), false);
     assert.equal(isContactEditRequest('open contacts'), false);
 });
@@ -44,6 +46,7 @@ test('recognizes contact-editing requests', () => {
 test('routes contact-editing requests to the conversation, not the command path', () => {
     assert.equal(shouldProcessAsCommand('edit John Doe\'s contact', []), false);
     assert.equal(shouldProcessAsCommand('update Jane\'s contact phone number to 555-0199', []), false);
+    assert.equal(shouldProcessAsCommand('i want to add an email address to the contact "Cookie Monster"', []), false);
 });
 
 test('keeps every contact workflow answer in the assistant conversation', () => {

@@ -14,9 +14,23 @@ Contact folders act as categories. Selecting a folder filters the list, and ever
 
 To create a contact manually, open Contacts Hub, select the appropriate contact folder, choose **New Contact**, complete the form, and submit it. Creating contacts requires Editor, Organization Administrator, or Super Administrator access.
 
-## Assisted Creation
+## Updating Existing Contacts
 
-When the user requests assistance, Co-Pilot gathers the minimum required information: the contact's full name and the contact category represented by an available folder. Co-Pilot should retain useful optional details that the user volunteers and ask contextual follow-up questions instead of forcing the user through every form field.
+To update or add an email address (or other profile details) to an existing contact manually:
+1. Open **Contacts Hub** from the navigation menu (`/contacts`).
+2. Search or browse the contact directory table and locate the target contact record.
+3. Click the contact row or click the action menu to select **Edit Contact** to open the contact form.
+4. In the **Core Profile** section, locate the **Email Identity** field and enter or update the email address.
+5. Review any other details and click **Save Changes** at the bottom of the form to commit the update.
+
+Editing existing contacts requires Editor, Organization Administrator, or Super Administrator access.
+
+## Assisted Creation & Editing
+
+When the user requests assistance with creating or editing a contact:
+- For creation, Co-Pilot gathers the minimum required information (full name and category folder), opens the form with pre-filled details, and creates the contact directly once the details are ready, sending feedback that the contact has been created. It does not pause to ask for confirmation.
+- For editing (such as adding or updating an email address, phone number, or company name), Co-Pilot identifies the existing contact in the directory, opens the record for editing, prompts for any missing field values if not already provided, updates the form, and saves the changes directly, confirming that the update has been performed. It does not pause to ask for confirmation.
+- The user can choose either step-by-step instructions or direct AI assistance. When direct assistance is selected, Co-Pilot performs the workflow seamlessly.
 
 Before preparing a new contact, Co-Pilot checks for likely existing contacts by name or email. If it finds a likely match, it offers to open that record or continue with a new contact. It does not prepare a duplicate until the user explicitly chooses to continue.
 

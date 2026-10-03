@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { type Contact } from '@/services/contact-service';
+import { buildContactUpdatePayload, isBlankValue } from '@/lib/contact-update';
 import { type FolderData } from '@/services/contact-folder-service';
 import { type Company } from '@/core/accounting-service';
 import { type Industry } from '@/services/industry-service';
@@ -32,7 +33,7 @@ import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
-import { resolveDefaultContactFolderId } from '@/lib/contact-folders';
+import { resolveDefaultContactFolderId, findMatchingContactFolder, resolveContactFolderId } from '@/lib/contact-folders';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -100,6 +101,28 @@ const defaultFormValues: ContactFormData = {
     emergencyContactName: "", emergencyContactPhone: "", hasContract: false, specialNeeds: "",
 };
 
+function buildEditSeed(
+    contact: Contact,
+    folders: ReadonlyArray<{ id: string; name: string }>,
+    fallbackFolderId: string,
+    forceFolderId?: string,
+): ContactFormData {
+    const storedFolderId = contact.folderId?.trim();
+    const folderId = forceFolderId
+        ? (resolveContactFolderId(forceFolderId, folders) || forceFolderId)
+        : storedFolderId
+            ? (resolveContactFolderId(storedFolderId, folders) || storedFolderId)
+            : fallbackFolderId;
+
+    return {
+        ...defaultFormValues,
+        ...contact,
+        folderId,
+        hireDate: contact.hireDate?.toDate ? contact.hireDate.toDate().toISOString().split('T')[0] : contact.hireDate,
+        startDate: contact.startDate?.toDate ? contact.startDate.toDate().toISOString().split('T')[0] : contact.startDate,
+    } as ContactFormData;
+}
+
 export default function ContactFormDialog({
     isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId, displayMode = 'overlay',
 }: ContactFormDialogProps) {
@@ -110,8 +133,49 @@ export default function ContactFormDialog({
     const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
 
-    const form = useForm<ContactFormData>({ resolver: zodResolver(contactSchema), defaultValues: defaultFormValues });
+    // Edits start from the stored values on the first render, so the role never depends on a value change after mount.
+    const form = useForm<ContactFormData>({
+        resolver: zodResolver(contactSchema),
+        defaultValues: contactToEdit ? buildEditSeed(contactToEdit, folders, '', forceFolderId) : defaultFormValues,
+    });
     const watchFolderId = form.watch('folderId');
+
+    const editedKeysRef = useRef<Set<string>>(new Set());
+    const seededEditIdRef = useRef<string | null>(null);
+    const seededValuesRef = useRef<Record<string, unknown>>({});
+    const appliedInitialDataRef = useRef<Record<string, unknown>>({});
+    const onSubmitRef = useRef<(values: ContactFormData) => Promise<void>>(async () => undefined);
+
+    useEffect(() => {
+        const subscription = form.watch((_values, { name, type }) => {
+            if (name && type === 'change') editedKeysRef.current.add(name);
+        });
+        return () => subscription.unsubscribe();
+    }, [form]);
+
+    const applyDraftPatch = useCallback((patch: Partial<Record<string, unknown>>) => {
+        for (const [field, rawValue] of Object.entries(patch)) {
+            // The assistant can fill fields but never blank one that already holds data.
+            if (isBlankValue(rawValue)) continue;
+            let valueToSet = rawValue;
+            if (field === 'folderId') {
+                const matched = findMatchingContactFolder(rawValue, folders);
+                if (matched) {
+                    valueToSet = matched.id;
+                } else if (typeof rawValue === 'string' && rawValue.trim()) {
+                    valueToSet = rawValue.trim();
+                } else {
+                    continue;
+                }
+            }
+
+            editedKeysRef.current.add(field);
+            form.setValue(field as keyof ContactFormData, valueToSet as never, {
+                shouldDirty: true,
+                shouldValidate: true,
+            });
+        }
+    }, [form, folders]);
 
     const showHrSection = useMemo(() => {
         const selectedFolder = folders.find(f => f.id === watchFolderId);
@@ -121,75 +185,121 @@ export default function ContactFormDialog({
     }, [watchFolderId, folders]);
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            seededEditIdRef.current = null;
+            appliedInitialDataRef.current = {};
+            return;
+        }
 
-        const isValidFolder = (folderId?: string) => Boolean(folderId && folders.some(folder => folder.id === folderId));
-        const defaultId = isValidFolder(forceFolderId)
-            ? forceFolderId!
-            : selectedFolderId !== 'all' && isValidFolder(selectedFolderId)
-                ? selectedFolderId!
+        const defaultId = forceFolderId && findMatchingContactFolder(forceFolderId, folders)
+            ? resolveContactFolderId(forceFolderId, folders)!
+            : selectedFolderId !== 'all' && selectedFolderId && findMatchingContactFolder(selectedFolderId, folders)
+                ? resolveContactFolderId(selectedFolderId, folders)!
                 : resolveDefaultContactFolderId(folders) ?? '';
 
         if (contactToEdit) {
-            form.reset({
-                ...defaultFormValues,
-                ...contactToEdit,
-                ...initialData,
-                folderId: isValidFolder(forceFolderId)
-                    ? forceFolderId!
-                    : isValidFolder(initialData?.folderId)
-                        ? initialData!.folderId
-                        : isValidFolder(contactToEdit.folderId) ? contactToEdit.folderId : defaultId,
-                hireDate: contactToEdit.hireDate?.toDate ? contactToEdit.hireDate.toDate().toISOString().split('T')[0] : contactToEdit.hireDate,
-                startDate: contactToEdit.startDate?.toDate ? contactToEdit.startDate.toDate().toISOString().split('T')[0] : contactToEdit.startDate,
-            });
-        } else {
-            const initialFolderId = isValidFolder(initialData?.folderId) ? initialData!.folderId : defaultId;
-            form.reset(
-                { ...defaultFormValues, email: initialEmail, ...initialData, folderId: initialFolderId },
-                { keepDirtyValues: true },
-            );
+            // Seed once per edited contact: re-seeding on folders/initialData changes wiped the role.
+            if (seededEditIdRef.current !== contactToEdit.id) {
+                const seeded = buildEditSeed(contactToEdit, folders, defaultId, forceFolderId);
+                seededEditIdRef.current = contactToEdit.id;
+                appliedInitialDataRef.current = {};
+                editedKeysRef.current = new Set();
+                seededValuesRef.current = seeded;
+                form.reset(seeded);
+            }
+
+            if (initialData) {
+                const newlyChanged = Object.fromEntries(
+                    Object.entries(initialData).filter(([key, value]) => appliedInitialDataRef.current[key] !== value),
+                );
+                appliedInitialDataRef.current = { ...initialData };
+                if (Object.keys(newlyChanged).length > 0) applyDraftPatch(newlyChanged);
+            }
+
+            // Sync/repair folderId if folders loaded after initial seeding or if value needs name->id resolution
+            const currentFolderVal = form.getValues('folderId');
+            if (folders.length > 0) {
+                const candidate = currentFolderVal || contactToEdit.folderId;
+                if (candidate) {
+                    const matched = findMatchingContactFolder(candidate, folders);
+                    if (matched && matched.id !== currentFolderVal) {
+                        form.setValue('folderId', matched.id, { shouldValidate: true });
+                        seededValuesRef.current.folderId = matched.id;
+                    }
+                } else if (!currentFolderVal && defaultId) {
+                    form.setValue('folderId', defaultId, { shouldValidate: true });
+                    seededValuesRef.current.folderId = defaultId;
+                }
+            }
+            return;
         }
-    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders]);
+
+        seededEditIdRef.current = null;
+        const initialFolderId = resolveContactFolderId(initialData?.folderId, folders) ?? defaultId;
+        form.reset(
+            { ...defaultFormValues, email: initialEmail, ...initialData, folderId: initialFolderId },
+            { keepDirtyValues: true },
+        );
+    }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders, applyDraftPatch]);
+
+    useEffect(() => {
+        if (isOpen && contactToEdit && !watchFolderId) {
+            console.warn('[contact-form] folderId is empty while editing', { contactId: contactToEdit.id, folderCount: folders.length });
+        }
+    }, [isOpen, contactToEdit, watchFolderId, folders.length]);
+
+    onSubmitRef.current = onSubmit;
 
     useEffect(() => {
         if (!isOpen) return;
 
         const unsubscribeDraft = subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
-            for (const [field, value] of Object.entries(patch)) {
-                form.setValue(field as keyof ContactFormData, value as never, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                });
-            }
+            applyDraftPatch(patch);
         });
-        const unsubscribeSubmit = subscribeToCopilotWorkflowEvent('copilot:submit_contact_form', () => {
-            void form.handleSubmit(onSubmit)();
+        const unsubscribeSubmit = subscribeToCopilotWorkflowEvent('copilot:submit_contact_form', (detail) => {
+            if (detail?.patch) applyDraftPatch(detail.patch);
+            void form.handleSubmit((values) => onSubmitRef.current(values))();
         });
 
         return () => {
             unsubscribeDraft();
             unsubscribeSubmit();
         };
-    }, [form, isOpen]);
+    }, [form, isOpen, applyDraftPatch]);
 
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
         try {
-            // HIGH-FIDELITY PAYLOAD SCRUBBING
-            // If the contact is not a worker, strip all HR/Payroll metadata to prevent list pollution.
-            const scrubbedValues: any = { ...values };
-            if (!showHrSection) {
-                const hrFields = ['sin', 'workerType', 'payType', 'payRate', 'hireDate', 'startDate', 'emergencyContactName', 'emergencyContactPhone', 'hasContract', 'specialNeeds'];
-                hrFields.forEach(f => delete scrubbedValues[f]);
-                scrubbedValues.workerType = null;
-            }
-
             if (contactToEdit) {
-                await updateContact(contactToEdit.id, scrubbedValues);
-                onSave({ ...contactToEdit, ...scrubbedValues }, true);
+                const { changes, blocked } = buildContactUpdatePayload({
+                    baseline: seededValuesRef.current,
+                    values,
+                    editedKeys: editedKeysRef.current,
+                });
+                if (blocked.length > 0) {
+                    const labels = blocked.map((key) => key === 'folderId' ? 'Role Assignment (Folder)' : 'Full Legal Name');
+                    toast({ variant: 'destructive', title: 'Save blocked', description: `${labels.join(' and ')} cannot be blank.` });
+                    return;
+                }
+                if (Object.keys(changes).length === 0) {
+                    toast({ title: 'No changes to save' });
+                    onOpenChange(false);
+                    return;
+                }
+                await updateContact(contactToEdit.id, changes);
+                onSave({ ...contactToEdit, ...changes }, true);
                 toast({ title: "Contact Updated" });
             } else {
+                // HIGH-FIDELITY PAYLOAD SCRUBBING
+                // If the contact is not a worker, strip all HR/Payroll metadata to prevent list pollution.
+                const scrubbedValues: any = { ...values };
+                const selectedFolderName = folders.find(f => f.id === values.folderId)?.name.toLowerCase();
+                if (!selectedFolderName || !['workers', 'employees', 'contractors'].includes(selectedFolderName)) {
+                    const hrFields = ['sin', 'workerType', 'payType', 'payRate', 'hireDate', 'startDate', 'emergencyContactName', 'emergencyContactPhone', 'hasContract', 'specialNeeds'];
+                    hrFields.forEach(f => delete scrubbedValues[f]);
+                    scrubbedValues.workerType = null;
+                }
+
                 const created = await addContact({ ...scrubbedValues, userId: user.uid } as any);
                 onSave(created, false);
                 toast({ title: "Contact Created" });
@@ -204,6 +314,7 @@ export default function ContactFormDialog({
         if (!user || !newFolderName.trim()) return;
         const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: null });
         onFoldersChange([...folders, newFolder]);
+        editedKeysRef.current.add('folderId');
         form.setValue('folderId', newFolder.id);
         setIsNewFolderDialogOpen(false);
     };
@@ -236,9 +347,14 @@ export default function ContactFormDialog({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Full Legal Name *</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Identity</FormLabel><FormControl><Input placeholder="john@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="folderId" render={({ field }) => (
-                                    <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Assign role..." /></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
-                                )} />
+                                <FormField control={form.control} name="folderId" render={({ field }) => {
+                                    // Fall back to the record's own role so a blank form value can't hide it.
+                                    const roleId = field.value || (contactToEdit ? findMatchingContactFolder(contactToEdit.folderId, folders)?.id ?? '' : '');
+                                    const roleName = folders.find(f => f.id === roleId)?.name;
+                                    return (
+                                        <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select key={`${contactToEdit?.id ?? 'new'}:${folders.length}`} onValueChange={field.onChange} value={roleId}><SelectTrigger><SelectValue placeholder="Assign role...">{roleName}</SelectValue></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
+                                    );
+                                }} />
                                 <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             </div>
                         </section>

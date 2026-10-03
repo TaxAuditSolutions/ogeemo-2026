@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import {
     DEFAULT_CONTACT_FOLDER_NAME,
+    findMatchingContactFolder,
+    resolveContactFolderId,
     resolveDefaultContactFolderId,
 } from '../src/lib/contact-folders';
 
@@ -47,4 +49,32 @@ test('falls back to the first folder when no Miscellaneous folder exists', () =>
 
 test('returns undefined when the tenant has no folders', () => {
     assert.equal(resolveDefaultContactFolderId([]), undefined);
+});
+
+test('findMatchingContactFolder matches by id, case-insensitive name, and path segments', () => {
+    const folders = [
+        { id: 'fld_1', name: 'Friends' },
+        { id: 'fld_2', name: 'Employees' },
+        { id: 'fld_3', name: 'Clients' },
+    ];
+
+    assert.equal(findMatchingContactFolder('fld_1', folders)?.id, 'fld_1');
+    assert.equal(findMatchingContactFolder('friends', folders)?.id, 'fld_1');
+    assert.equal(findMatchingContactFolder('  FRIENDS  ', folders)?.id, 'fld_1');
+    assert.equal(findMatchingContactFolder('Workers / Employees', folders)?.id, 'fld_2');
+    assert.equal(findMatchingContactFolder('unknown', folders), undefined);
+    assert.equal(findMatchingContactFolder('', folders), undefined);
+    assert.equal(findMatchingContactFolder(undefined, folders), undefined);
+});
+
+test('resolveContactFolderId resolves names to IDs or preserves the reference', () => {
+    const folders = [
+        { id: 'fld_friends', name: 'Friends' },
+    ];
+
+    assert.equal(resolveContactFolderId('Friends', folders), 'fld_friends');
+    assert.equal(resolveContactFolderId('fld_friends', folders), 'fld_friends');
+    assert.equal(resolveContactFolderId('custom_id', folders), 'custom_id');
+    assert.equal(resolveContactFolderId('Friends', []), 'Friends');
+    assert.equal(resolveContactFolderId('', folders), undefined);
 });

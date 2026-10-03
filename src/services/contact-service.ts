@@ -19,6 +19,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import type { Contact } from '@/data/contacts';
 import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
+import { isBlankRequiredContactField } from '@/lib/contact-update';
 
 export type { Contact };
 
@@ -266,7 +267,7 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     const cleanedData: Record<string, any> = {};
     Object.keys(contactData).forEach(key => {
         const val = (contactData as any)[key];
-        if (val !== undefined && key !== 'id' && key !== 'userId' && key !== 'createdAt' && key !== 'createdBy') {
+        if (val !== undefined && key !== 'id' && key !== 'userId' && key !== 'createdAt' && key !== 'createdBy' && !isBlankRequiredContactField(key, val)) {
             cleanedData[key] = val;
         }
     });

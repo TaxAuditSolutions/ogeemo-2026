@@ -7,7 +7,7 @@ type CopilotWorkflowEventMap = {
     'copilot:open_contact_form': { draft?: Partial<AssistantContactDraft> };
     'copilot:open_contact': { contactId: string; patch?: AssistantContactDraftPatch };
     'copilot:update_contact_draft': { patch: AssistantContactDraftPatch };
-    'copilot:submit_contact_form': undefined;
+    'copilot:submit_contact_form': { patch?: AssistantContactDraftPatch } | undefined;
 };
 
 export type CopilotWorkflowEventName = keyof CopilotWorkflowEventMap;

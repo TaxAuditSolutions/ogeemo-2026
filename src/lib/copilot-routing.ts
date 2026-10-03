@@ -29,6 +29,23 @@ export function isAwaitingAssistantReply(history: CopilotRoutingMessage[]): bool
 }
 
 /**
+ * Contact-editing requests ("edit John's contact", "update Jane's phone
+ * number", "add an email address to the contact 'Cookie Monster'") belong in
+ * the Co-Pilot conversation, which searches for the matching record and opens
+ * it for editing, the same way creation requests do.
+ */
+const CONTACT_EDIT_PATTERN = /\bcontact\b/i;
+
+export function isContactEditRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!CONTACT_EDIT_PATTERN.test(text)) return false;
+    if (/\b(edit|update|modify|change)\b/i.test(text)) return true;
+    // Phrases like "add [an email / a phone] to the contact ..." are editing requests
+    if (/\badd\b[\s\S]+\bto\s+(?:the\s+)?contact\b/i.test(text)) return true;
+    return false;
+}
+
+/**
  * Contact-creation requests ("create a new contact for John", "open new
  * contact form") belong in the Co-Pilot conversation, which auto-opens the
  * prepared form. Only plain hub navigation ("open contacts", "contacts hub")
@@ -39,20 +56,9 @@ const CONTACT_CREATION_PATTERN = /\bcontact\b/i;
 export function isContactCreationRequest(message: string): boolean {
     const text = (message || '').trim();
     if (!CONTACT_CREATION_PATTERN.test(text)) return false;
+    // An edit request such as "add an email address to the contact" must not be treated as creation
+    if (isContactEditRequest(text)) return false;
     return /\b(create|new|add|form)\b/i.test(text);
-}
-
-/**
- * Contact-editing requests ("edit John's contact", "update Jane's phone
- * number") belong in the Co-Pilot conversation, which searches for the
- * matching record and opens it for editing, the same way creation requests do.
- */
-const CONTACT_EDIT_PATTERN = /\bcontact\b/i;
-
-export function isContactEditRequest(message: string): boolean {
-    const text = (message || '').trim();
-    if (!CONTACT_EDIT_PATTERN.test(text)) return false;
-    return /\b(edit|update|modify|change)\b/i.test(text);
 }
 
 /**

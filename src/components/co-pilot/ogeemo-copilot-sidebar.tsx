@@ -40,7 +40,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { useOgeemoCopilotSidebar } from '@/context/ogeemo-copilot-sidebar-context';
-import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
+import { dispatchCopilotWorkflowEvent, subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -430,6 +430,13 @@ export function OgeemoCopilotSidebar() {
     const [industries, setIndustries] = useState<Industry[]>([]);
     const supportDataRef = useRef<{ folders: FolderData[]; companies: Company[]; industries: Industry[] } | null>(null);
 
+    // Keep contactDraft updated when update_contact_draft events fire
+    useEffect(() => {
+        return subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
+            setContactDraft((prev) => ({ ...(prev || {}), ...patch }));
+        });
+    }, []);
+
     const ensureSupportData = useCallback(async () => {
         if (supportDataRef.current) return supportDataRef.current;
         if (!user?.uid) throw new Error('You must be signed in to open the contact form.');
@@ -482,7 +489,13 @@ export function OgeemoCopilotSidebar() {
         try {
             const support = await ensureSupportData();
 
-            if (action.type === 'open_contact_form') {
+            if (action.type === 'update_contact_draft') {
+                dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: action.patch });
+                return;
+            } else if (action.type === 'submit_contact_form') {
+                dispatchCopilotWorkflowEvent('copilot:submit_contact_form', action.patch ? { patch: action.patch } : undefined);
+                return;
+            } else if (action.type === 'open_contact_form') {
                 const resolved = resolveAssistantCapabilityActionWithRepair(action, support.folders);
                 if (resolved?.type === 'open_contact_form') {
                     if (isOnContactsHub) {

@@ -42,7 +42,7 @@ import { type AssistantChatMessage } from '@/services/chat-history-service';
 import { useOgeemoCopilot } from '@/context/ogeemo-copilot-context';
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
 import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
-import { getContacts, type Contact } from '@/services/contact-service';
+import { getContacts, getContactById, type Contact } from '@/services/contact-service';
 import { getFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -74,7 +74,7 @@ import {
     ListX
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
+import { dispatchCopilotWorkflowEvent, subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 
 interface Message extends AssistantChatMessage { }
 
@@ -219,10 +219,28 @@ export default function AiDispatchPage() {
         } else if (action.type === 'dispatch' && action.target === ASSISTANT_DESTINATIONS.new_contact.target) {
             draft = undefined;
         } else if (action.type === 'open_contact') {
-            const contact = contacts.find((entry) => entry.id === action.contactId);
-            if (!contact) return;
-            editTarget = contact;
-            draft = action.patch;
+            const openAsync = async () => {
+                let contact = contacts.find((entry) => entry.id === action.contactId);
+                if (!contact && user?.uid) {
+                    contact = await getContactById(action.contactId).catch(() => null) ?? undefined;
+                    if (contact) {
+                        setContacts((prev) => prev.some((c) => c.id === contact!.id) ? prev : [...prev, contact!]);
+                    }
+                }
+                if (!contact) return;
+                const messageAgeMs = last.timestamp ? Date.now() - new Date(last.timestamp).getTime() : Infinity;
+                if (messageAgeMs > 3 * 60 * 1000) return;
+                const actionKey = `${activeThreadId ?? ''}:${last.timestamp ?? ''}`;
+                if (lastAutoOpenedActionRef.current === actionKey) return;
+                lastAutoOpenedActionRef.current = actionKey;
+                console.info('[co-pilot] auto-opening contact form', action.patch ?? '(blank)');
+                toast({ title: 'Opening the matching contact', description: 'Select the folder, add any details, then save.' });
+                setContactToEdit(contact);
+                setContactDraft(action.patch);
+                setIsFormOpen(true);
+            };
+            void openAsync();
+            return;
         } else {
             return;
         }
@@ -238,6 +256,14 @@ export default function AiDispatchPage() {
         setContactDraft(draft);
         setIsFormOpen(true);
     }, [messages, activeThreadId, contacts]);
+
+    // Keep contactDraft updated when update_contact_draft events fire so that
+    // subsequent re-renders or folder changes don't reset back to blank/default
+    useEffect(() => {
+        return subscribeToCopilotWorkflowEvent('copilot:update_contact_draft', ({ patch }) => {
+            setContactDraft((prev) => ({ ...(prev || {}), ...patch }));
+        });
+    }, []);
 
     useEffect(() => {
         const loadRuntimeOrgContext = async () => {
@@ -376,7 +402,7 @@ export default function AiDispatchPage() {
         setSelectedThreadIds([]);
     };
 
-    const handleLaunchRegistry = (contactId: string, patch?: AssistantContactDraftPatch) => {
+    const handleLaunchRegistry = async (contactId: string, patch?: AssistantContactDraftPatch) => {
         setContactDraft(patch);
         // 1. Hardcoded Support for Dan/Julie
         if (contactId === 'dan-admin-id') {
@@ -390,8 +416,9 @@ export default function AiDispatchPage() {
             return;
         }
 
-        // 2. Real Contact Launch
-        const contact = contacts.find(c => c.id === contactId);
+        // 2. Real Contact Launch, from the stored record rather than a possibly stale list copy
+        const storedContact = user?.uid ? await getContactById(contactId).catch(() => null) : null;
+        const contact = storedContact ?? contacts.find(c => c.id === contactId);
         if (contact) {
             setContactToEdit(contact);
             setIsFormOpen(true);
@@ -449,7 +476,7 @@ export default function AiDispatchPage() {
         } else if (validatedAction.type === 'update_contact_draft') {
             dispatchCopilotWorkflowEvent('copilot:update_contact_draft', { patch: validatedAction.patch });
         } else if (validatedAction.type === 'submit_contact_form') {
-            dispatchCopilotWorkflowEvent('copilot:submit_contact_form', undefined);
+            dispatchCopilotWorkflowEvent('copilot:submit_contact_form', validatedAction.patch ? { patch: validatedAction.patch } : undefined);
         } else if (validatedAction.type === 'open_contact') {
             handleLaunchRegistry(validatedAction.contactId, validatedAction.patch);
         }

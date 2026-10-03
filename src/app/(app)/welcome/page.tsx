@@ -8,7 +8,7 @@ import { Logo } from '@/components/logo';
 import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
-  BookOpen, LayoutDashboard, Bot,
+  BookOpen, Bot,
   CalendarDays, Receipt, Users, Paintbrush,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
@@ -136,16 +136,16 @@ export default function WelcomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              href: '/action-manager',
-              icon: LayoutDashboard,
-              title: 'Get to Work',
-              description: "Open your Action Manager to see today's tasks and priorities.",
+              href: '/make-it-your-own',
+              icon: Paintbrush,
+              title: 'Make It Your Own',
+              description: 'Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.',
             },
             {
               href: '/calendar',
               icon: CalendarDays,
               title: 'Calendar',
-              description: 'See your schedule and what you have planned today.',
+              description: 'Manage your schedule, tasks and events.',
             },
             {
               href: '/accounting/invoices/view',
@@ -180,36 +180,19 @@ export default function WelcomePage() {
           })}
         </div>
 
-        <Link href="/make-it-your-own" className="group block">
-          <Card className="border-primary/20 bg-primary/5 transition-all hover:-translate-y-1 hover:shadow-xl">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <Paintbrush className="h-6 w-6 text-primary" strokeWidth={2.25} />
-              </div>
-              <div className="min-w-0 flex-1 text-left">
-                <p className="text-lg font-bold">Make It Your Own</p>
-                <p className="text-sm text-muted-foreground">
-                  Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.
-                </p>
-              </div>
-              <ArrowRight className="h-5 w-5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
-            </CardContent>
-          </Card>
-        </Link>
-
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/learn"
-            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+            className="flex items-center gap-2 rounded-xl border-2 border-black px-6 py-3 text-base font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-black hover:text-white"
           >
-            <BookOpen className="h-4 w-4" />
+            <BookOpen className="h-5 w-5" />
             Learn Ogeemo
           </Link>
           <Link
             href="/co-pilot"
-            className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+            className="flex items-center gap-2 rounded-xl border-2 border-black px-6 py-3 text-base font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-black hover:text-white"
           >
-            <Bot className="h-4 w-4" />
+            <Bot className="h-5 w-5" />
             Ask the Co-Pilot
           </Link>
         </div>

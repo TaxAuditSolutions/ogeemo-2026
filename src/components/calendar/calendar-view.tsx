@@ -413,7 +413,7 @@ export function CalendarView() {
             Calendar
           </h1>
           <p className="text-muted-foreground">
-            Your Calendar for your actions and connection to the nodes of the Spider Web
+            Your Calendar for your actions and connection to the apps in Ogeemo
           </p>
           <div className="absolute top-0 right-0">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>

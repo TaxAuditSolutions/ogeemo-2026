@@ -42,6 +42,7 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
     { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
     { label: 'Projects', icon: Briefcase, href: '/projects/all' },
     { label: 'Activity Manager', icon: BrainCircuit, href: '/event-manager' },
+    { label: 'Workers', icon: Users, href: '/workers' },
 ];
 
 const iconMap: { [key: string]: LucideIcon } = {

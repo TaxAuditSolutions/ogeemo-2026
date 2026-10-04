@@ -70,6 +70,8 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'expense': { target: '/accounting/ledgers?tab=expenses', label: 'Expense Ledger', category: 'Finances' },
     'expenseledger': { target: '/accounting/ledgers?tab=expenses', label: 'Expense Ledger', category: 'Finances' },
     'payroll': { target: '/accounting/payroll/run', label: 'Payroll', category: 'HR' },
+    'worker': { target: '/workers', label: 'Workers', category: 'HR' },
+    'employees': { target: '/workers', label: 'Workers', category: 'HR' },
     'invoice': { target: '/accounting/invoices/create', label: 'Invoicing', category: 'Finances' },
     'newinvoice': { target: '/accounting/invoices/create', label: 'Invoicing', category: 'Finances' },
     'createinvoice': { target: '/accounting/invoices/create', label: 'Invoicing', category: 'Finances' },
@@ -89,7 +91,7 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'clientlist': { target: '/contacts', label: 'Clients', category: 'Relationships' },
     'directory': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
     'people': { target: '/contacts', label: 'Contacts Hub', category: 'Relationships' },
-    'workers': { target: '/contacts', label: 'Workers', category: 'HR' },
+    'workers': { target: '/workers', label: 'Workers', category: 'HR' },
     'crm': { target: '/crm/plan', label: 'CRM Hub', category: 'Relationships' },
     'leads': { target: '/crm/plan', label: 'Leads', category: 'Relationships' },
 

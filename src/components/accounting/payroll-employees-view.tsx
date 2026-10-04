@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge, Clock, PlayCircle, Contact } from "lucide-react";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
@@ -183,6 +183,23 @@ export function PayrollEmployeesView() {
                     </Button>
                 </div>
                 <p className="text-muted-foreground">Add, edit, and manage your employee and contractor records.</p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/reports/time-log">
+                            <Clock className="mr-2 h-4 w-4" /> Time Log Report
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/accounting/payroll/run">
+                            <PlayCircle className="mr-2 h-4 w-4" /> Run Payroll
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/contacts">
+                            <Contact className="mr-2 h-4 w-4" /> Contacts Hub
+                        </Link>
+                    </Button>
+                </div>
             </header>
 
             <Card>

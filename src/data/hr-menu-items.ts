@@ -9,6 +9,7 @@ import {
 import type { MenuItem } from '@/lib/menu-items';
 
 export const hrMenuItems: MenuItem[] = [
+    { href: "/workers", icon: Users, label: "Workers" },
     { href: "/hr-manager/time-off", icon: CalendarOff, label: "Time Off / Leave" },
     { href: "/field-app", icon: Smartphone, label: "Field App" },
 ];

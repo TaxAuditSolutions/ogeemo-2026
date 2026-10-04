@@ -59,7 +59,7 @@ export default function HrHubPage() {
       icon: Users,
       title: "Employee Directory & Records",
       description: "Manage employee profiles, contact info, and employment details.",
-      href: "/accounting/payroll/manage-workers",
+      href: "/workers",
       cta: "Manage Workers",
     },
     {

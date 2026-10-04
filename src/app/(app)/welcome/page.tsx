@@ -204,7 +204,7 @@ export default function WelcomePage() {
             className="flex items-center gap-2 rounded-xl border-2 border-black px-6 py-3 text-base font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-black hover:text-white"
           >
             <Bot className="h-5 w-5" />
-            Ask the Co-Pilot
+            Your Co-Pilot
           </Link>
         </div>
       </div>

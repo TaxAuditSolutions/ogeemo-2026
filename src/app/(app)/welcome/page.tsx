@@ -9,7 +9,7 @@ import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
   Bot,
-  CalendarDays, Paintbrush, Compass, Landmark, LayoutDashboard,
+  Paintbrush, Compass, LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -150,8 +150,9 @@ export default function WelcomePage() {
 
         <CurrentWorkPanel />
 
-        {/* Doors, priority order: learn + work first, then journeys/categories. */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Three doors: the journey in order - learn, shape your workspace,
+            then work. Calendar/money context comes from CurrentWorkPanel. */}
+        <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
               href: '/learn',
@@ -165,28 +166,16 @@ export default function WelcomePage() {
                     : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
             },
             {
-              href: '/action-manager',
-              icon: LayoutDashboard,
-              title: 'Start Your Day',
-              description: 'Your shortcuts — where the workday begins.',
-            },
-            {
               href: '/make-it-your-own',
               icon: Paintbrush,
               title: 'Make It Your Own',
               description: 'Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.',
             },
             {
-              href: '/calendar',
-              icon: CalendarDays,
-              title: 'Calendar',
-              description: 'Manage your schedule, tasks and events.',
-            },
-            {
-              href: '/accounting',
-              icon: Landmark,
-              title: 'Money',
-              description: 'Invoices, quotes, receipts and the ledgers that keep your books.',
+              href: '/action-manager',
+              icon: LayoutDashboard,
+              title: 'Start Your Day',
+              description: 'Your shortcuts — where the workday begins.',
             },
           ].map((door) => {
             const DoorIcon = door.icon;

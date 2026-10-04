@@ -54,6 +54,7 @@ import {
     FilterX, 
     Calendar as CalendarIcon, 
     PlusCircle, 
+    UserPlus,
     Clock, 
     Pencil, 
     ArrowUpDown, 
@@ -66,7 +67,7 @@ import {
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getWorkers, deleteWorker, type Worker } from '@/services/payroll-service';
+import { getWorkers, deleteWorker, addWorker, type Worker } from '@/services/payroll-service';
 import { getTimeLogs, deleteTimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
@@ -74,6 +75,7 @@ import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
+import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { WorkerSelector } from '@/components/reports/WorkerSelector';
 import type { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
@@ -95,6 +97,7 @@ function WorkerTimeLogReportContent() {
     const router = useRouter();
     
     const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
+    const [isWorkerFormOpen, setIsWorkerFormOpen] = useState(false);
     const [entryToEdit, setEntryToEdit] = useState<any | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<any | null>(null);
     const [preselectedWorkerId, setPreselectedWorkerId] = useState<string | null>(null);
@@ -106,6 +109,20 @@ function WorkerTimeLogReportContent() {
     const [isEndFilterOpen, setIsEndFilterOpen] = useState(false);
 
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'startTime', direction: 'desc' });
+
+    // Add Worker also lives on this report: it is where users hit the
+    // "no workers to log time for" wall (beta feedback: no discoverable way
+    // to add a worker). Mirrors run-payroll-view's handler.
+    const handleWorkerSave = async (workerData: Omit<Worker, 'id' | 'userId'>) => {
+        if (!user) return;
+        try {
+            await addWorker({ ...workerData, userId: user.uid });
+            toast({ title: 'Worker added', description: `${workerData.name} is now available in the worker selector.` });
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+        }
+    };
 
     const loadData = useCallback(async () => {
         if (!user) {
@@ -321,6 +338,9 @@ function WorkerTimeLogReportContent() {
                         <Button variant="outline" size="sm" onClick={() => setIsLogTimeDialogOpen(true)} className="h-10">
                             <PlusCircle className="mr-2 h-4 w-4" /> + Log Time Event
                         </Button>
+                        <Button variant="outline" size="sm" onClick={() => setIsWorkerFormOpen(true)} className="h-10">
+                            <UserPlus className="mr-2 h-4 w-4" /> Add Worker
+                        </Button>
                     </div>
                 </header>
 
@@ -462,6 +482,13 @@ function WorkerTimeLogReportContent() {
                 </Card>
             </div>
             
+            <WorkerFormDialog
+                isOpen={isWorkerFormOpen}
+                onOpenChange={setIsWorkerFormOpen}
+                workerToEdit={null}
+                onWorkerSave={handleWorkerSave}
+                onWorkerUpdate={async () => {}}
+            />
             <LogTimeDialog 
                 isOpen={isLogTimeDialogOpen} 
                 onOpenChange={(isOpen) => {

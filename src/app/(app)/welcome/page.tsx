@@ -9,7 +9,7 @@ import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
   Bot,
-  CalendarDays, Paintbrush, Compass, Landmark,
+  CalendarDays, Paintbrush, Compass, Landmark, LayoutDashboard,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -150,7 +150,8 @@ export default function WelcomePage() {
 
         <CurrentWorkPanel />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Doors, priority order: learn + work first, then journeys/categories. */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               href: '/learn',
@@ -162,6 +163,12 @@ export default function WelcomePage() {
                   : learnDone >= LEARN_TOTAL
                     ? `You have finished all ${LEARN_TOTAL} steps. Come back any time to revisit a lesson or guide.`
                     : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
+            },
+            {
+              href: '/action-manager',
+              icon: LayoutDashboard,
+              title: 'Start Your Day',
+              description: 'Your shortcuts — where the workday begins.',
             },
             {
               href: '/make-it-your-own',

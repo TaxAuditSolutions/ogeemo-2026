@@ -158,6 +158,16 @@ test('the welcome Get Started door matches the Learn guided path length', () => 
   assert.equal(Number(match[1]), stepIds.length, 'LEARN_TOTAL must match the guided path length');
 });
 
+test('the welcome screen keeps a work-start door to My Shortcuts', () => {
+  // Beta feedback: returning users need a clear "start the workday" action;
+  // the old Action Chips dashboard filled this role.
+  const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
+  assert.ok(
+    /href: '\/action-manager'/.test(welcome),
+    'expected a Start Your Day door pointing at /action-manager',
+  );
+});
+
 test('every home-screen pathway resolves to a page', () => {
   const hrefs = homeScreenHrefs();
   assert.ok(

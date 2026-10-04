@@ -275,7 +275,7 @@ export function ReceiptProcessorView() {
             <h1 className="text-2xl font-bold">Receipt review queue</h1>
           </div>
           <Button asChild variant="ghost" size="icon" aria-label="How the receipt intake process works">
-            <Link href="/accounting/receipt-processor/instructions">
+            <Link href="/learn/guides/receipt-intake">
               <Info className="h-4 w-4" />
             </Link>
           </Button>

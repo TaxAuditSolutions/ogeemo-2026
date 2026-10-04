@@ -237,7 +237,7 @@ export default function TenantManagerPage() {
                     <p className="text-muted-foreground">Provision new companies with their founding super admin. Master-tenant access never extends to a company's own data.</p>
                 </div>
                 <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open tenant manager instructions">
-                    <Link href="/tenant-manager/instructions">
+                    <Link href="/learn/guides/tenant-manager">
                         <Info className="h-4 w-4" />
                     </Link>
                 </Button>

@@ -170,7 +170,7 @@ export default function UserManagerPage() {
 
                         <div className="flex justify-end pt-2">
                             <Button asChild variant="outline" size="sm">
-                                <Link href="/user-manager/instructions">
+                                <Link href="/learn/guides/user-manager">
                                     Open full instructions page
                                 </Link>
                             </Button>

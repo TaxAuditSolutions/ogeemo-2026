@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { HelpTip } from '@/components/ui/help-tip';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -654,7 +655,16 @@ export function InvoiceGeneratorView() {
       <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
         <InvoicePageHeader pageTitle="Create Invoice" />
         <header className="relative text-center print:hidden">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
+                    <div className="flex items-center justify-center gap-1">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
+                        <HelpTip
+                            title="Invoices"
+                            learnHref="/learn/guides/invoices"
+                            learnLabel="Learn about invoices"
+                        >
+                            Turn completed work into a billable invoice, send it to a contact, and track it in Accounts Receivable.
+                        </HelpTip>
+                    </div>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Select contacts from your master list to generate a professional invoice.
                     </p>

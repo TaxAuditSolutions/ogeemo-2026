@@ -88,25 +88,31 @@ test('every menu destination resolves to a page', () => {
   assert.deepEqual(missing, []);
 });
 
-function listInstructionPages(directory: string): string[] {
+// Guide chapters live under Learn Ogeemo since the help-standard migration
+// (docs/help-standard.md): all teaching is one library. The old version of
+// this guard scanned for '/instructions' routes; the guarantees are unchanged
+// - every guide uses the shared header and never hand-rolls back buttons.
+function listGuidePages(directory: string): string[] {
   const entries = readdirSync(directory, { withFileTypes: true });
   const files: string[] = [];
   for (const entry of entries) {
     const full = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      files.push(...listInstructionPages(full));
-    } else if (entry.name === 'page.tsx' && full.includes('instructions')) {
+      files.push(...listGuidePages(full));
+    } else if (entry.name === 'page.tsx') {
       files.push(full);
     }
   }
   return files;
 }
 
-test('instruction pages use a shared back-link header', () => {
-  const instructionPages = listInstructionPages(path.join(REPO_ROOT, 'src', 'app'));
+const GUIDE_PAGES_DIR = path.join(REPO_ROOT, 'src', 'app', '(app)', 'learn', 'guides');
+
+test('guide pages use a shared back-link header', () => {
+  const instructionPages = listGuidePages(GUIDE_PAGES_DIR);
   assert.ok(
     instructionPages.length >= 15,
-    `expected many instruction pages, saw ${instructionPages.length}`,
+    `expected many guide pages, saw ${instructionPages.length}`,
   );
   const offenders = instructionPages
     .filter((file) => !/SectionHeader|PageHeader/.test(readFileSync(file, 'utf8')))
@@ -114,8 +120,8 @@ test('instruction pages use a shared back-link header', () => {
   assert.deepEqual(offenders, []);
 });
 
-test('instruction headers do not hand-roll back buttons', () => {
-  const instructionPages = listInstructionPages(path.join(REPO_ROOT, 'src', 'app'));
+test('guide headers do not hand-roll back buttons', () => {
+  const instructionPages = listGuidePages(GUIDE_PAGES_DIR);
   const offenders = instructionPages
     .filter((file) =>
       readFileSync(file, 'utf8')

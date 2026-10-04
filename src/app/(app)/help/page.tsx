@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Compass, Scale, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 /**
  * The single Help entry point (navigation tier: utilities). Every how-to
@@ -18,40 +19,41 @@ const guideSections: { title: string; description: string; links: { label: strin
     links: [
       { label: 'Learn Ogeemo — guided tour', href: '/learn' },
       { label: 'Customize Shortcuts', href: '/action-chips-info' },
-      { label: 'Daily and weekly rituals', href: '/settings/rituals/instructions' },
+      { label: 'Daily and weekly rituals', href: '/learn/guides/rituals' },
     ],
   },
   {
     title: 'Workspace guides',
     description: 'How your day-to-day tools work.',
     links: [
-      { label: 'Activity Manager guide', href: '/event-manager/instructions' },
-      { label: 'Tasks, projects and GTD', href: '/event-manager/gtd-instructions' },
-      { label: 'Calendar guide', href: '/calendar/instructions' },
-      { label: 'Customize My Shortcuts', href: '/action-manager/manage/instructions' },
-      { label: 'Document Manager guide', href: '/document-manager/instructions' },
-      { label: 'Meetings guide', href: '/meetings/instructions' },
-      { label: 'Projects guide', href: '/projects/instructions' },
+      { label: 'Activity Manager guide', href: '/learn/guides/activity-manager' },
+      { label: 'Tasks, projects and GTD', href: '/learn/guides/gtd' },
+      { label: 'Calendar guide', href: '/learn/guides/calendar' },
+      { label: 'Customize My Shortcuts', href: '/learn/guides/customize-shortcuts' },
+      { label: 'Document Manager guide', href: '/learn/guides/document-manager' },
+      { label: 'Meetings guide', href: '/learn/guides/meetings' },
+      { label: 'Projects guide', href: '/learn/guides/projects' },
     ],
   },
   {
     title: 'Accounting guides',
     description: 'Bookkeeping, invoices and tax workflows.',
     links: [
-      { label: 'BKS bookkeeping guide', href: '/accounting/bks-instructions' },
-      { label: 'Invoices guide', href: '/accounting/invoices/instructions' },
-      { label: 'Quotes guide', href: '/accounting/quotes/instructions' },
-      { label: 'Receipt Intake guide', href: '/accounting/receipt-processor/instructions' },
-      { label: 'Accounting navigation guide', href: '/accounting/manage-navigation/instructions' },
+      { label: 'BKS bookkeeping guide', href: '/learn/guides/bookkeeping' },
+      { label: 'Invoices guide', href: '/learn/guides/invoices' },
+      { label: 'Quotes guide', href: '/learn/guides/quotes' },
+      { label: 'Receipt Intake guide', href: '/learn/guides/receipt-intake' },
+      { label: 'Inventory guide', href: '/learn/guides/inventory' },
+      { label: 'Accounting navigation guide', href: '/learn/guides/accounting-navigation' },
     ],
   },
   {
     title: 'Administration guides',
     description: 'Managing people and workspaces.',
     links: [
-      { label: 'User Manager guide', href: '/user-manager/instructions' },
-      { label: 'User list guide', href: '/user-list/instructions' },
-      { label: 'Tenant Manager guide', href: '/tenant-manager/instructions' },
+      { label: 'User Manager guide', href: '/learn/guides/user-manager' },
+      { label: 'User list guide', href: '/learn/guides/user-list' },
+      { label: 'Tenant Manager guide', href: '/learn/guides/tenant-manager' },
     ],
   },
 ];
@@ -71,6 +73,24 @@ export default function HelpPage() {
           Everything that teaches Ogeemo lives here, so the sidebar stays focused on your work.
         </p>
       </header>
+
+      {/* Help-standard doorway: Learn Ogeemo is the single home for teaching
+          (docs/help-standard.md). */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <div>
+            <p className="font-semibold">New to Ogeemo? Start with Learn Ogeemo</p>
+            <p className="text-sm text-muted-foreground">
+              The guided path through everything, plus every guide in one library.
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/learn">
+              Open Learn Ogeemo <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       {guideSections.map((section) => (
         <Card key={section.title}>

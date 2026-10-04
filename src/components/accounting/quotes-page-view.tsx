@@ -269,7 +269,7 @@ export function QuotesPageView() {
         <div className="w-full">
           <h1 className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
             Quote Manager
-            <Link href="/accounting/quotes/instructions" className="inline-flex">
+            <Link href="/learn/guides/quotes" className="inline-flex">
               <Info className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
             </Link>
           </h1>

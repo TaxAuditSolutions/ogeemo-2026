@@ -15,8 +15,6 @@ import { getUserProfile, updateUserProfile, UserProfile } from '@/core/user-prof
 const defaultPreferences: UserProfile['preferences'] = {
     showDictationButton: true,
     showDashboardFrame: true,
-    showMenuViewInstructions: true,
-    showActionManagerAboutPanel: true,
     showWorkspaceButton: true,
     showRoleBadge: true,
     showHomeBanner: true,

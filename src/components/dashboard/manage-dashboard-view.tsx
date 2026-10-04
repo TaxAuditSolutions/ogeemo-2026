@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { HelpTip } from '@/components/ui/help-tip';
 import { LoaderCircle, Plus, ArrowLeft, Trash2, ArrowDownAZ, ArrowUpZA, Save, BookOpen, Zap, Search, X, Wand2, LayoutGrid, List } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -380,7 +381,16 @@ export function ManageDashboardView() {
       <div className="p-4 sm:p-6 space-y-6">
         <header className="flex items-center justify-between">
             <div className="text-center flex-1">
-                <h1 className="text-2xl font-bold font-headline text-primary">Customize My Shortcuts</h1>
+                <div className="flex items-center justify-center gap-1">
+                    <h1 className="text-2xl font-bold font-headline text-primary">Customize My Shortcuts</h1>
+                    <HelpTip
+                        title="Customize My Shortcuts"
+                        learnHref="/learn/guides/customize-shortcuts"
+                        learnLabel="Learn how to customize shortcuts"
+                    >
+                        Choose the Ogeemo tools you want available from My Shortcuts. Drag to reorder them.
+                    </HelpTip>
+                </div>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                     Drag and drop shortcuts to customize your dashboard.
                 </p>
@@ -392,7 +402,7 @@ export function ManageDashboardView() {
                     </Link>
                 </Button>
                 <Button asChild className="h-6 px-2 py-1 text-xs">
-                    <Link href="/action-manager/manage/instructions"><BookOpen className="mr-2 h-4 w-4"/> Instructions</Link>
+                    <Link href="/learn/guides/customize-shortcuts"><BookOpen className="mr-2 h-4 w-4"/> Instructions</Link>
                 </Button>
                 <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
                     <Link href="/action-manager/trash"><Trash2 className="mr-2 h-4 w-4"/> Trash</Link>

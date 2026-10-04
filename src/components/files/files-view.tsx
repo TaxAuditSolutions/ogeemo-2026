@@ -561,7 +561,7 @@ export function FilesView() {
             <div className="flex items-center justify-center gap-2">
                 <h1 className="text-3xl font-bold font-headline text-primary">Document Manager</h1>
                  <Button asChild variant="ghost" size="icon">
-                    <Link href="/document-manager/instructions">
+                    <Link href="/learn/guides/document-manager">
                         <Info className="h-5 w-5 text-muted-foreground" />
                     </Link>
                  </Button>

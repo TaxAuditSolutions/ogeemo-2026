@@ -33,7 +33,7 @@ export function ProjectManagementHeader({ projectId }: ProjectManagementHeaderPr
                 </Button>
             ))}
              <Button asChild variant="ghost" size="icon">
-                <Link href="/projects/instructions">
+                <Link href="/learn/guides/projects">
                     <Info className="h-5 w-5" />
                     <span className="sr-only">Project Management Instructions</span>
                 </Link>

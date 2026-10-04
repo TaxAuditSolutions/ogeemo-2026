@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  ArrowLeft, BookOpen, Sparkles, LayoutDashboard, Wand2, Users, Calendar,
+  ArrowLeft, ArrowRight, BookOpen, Sparkles, LayoutDashboard, Wand2, Users, Calendar,
   Landmark, Bot, HeartHandshake, type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
@@ -31,7 +32,7 @@ const LEARN_STEPS: LearnStep[] = [
   {
     id: 'action-manager',
     icon: LayoutDashboard,
-    title: 'Master My Shortcuts',
+    title: 'Start with My Shortcuts',
     description:
       'Your dashboard and the heartbeat of Ogeemo — tasks, actions, and your day at a glance. Spend real time here; everything else orbits it.',
     links: [{ label: 'Open My Shortcuts', href: '/action-manager' }],
@@ -41,7 +42,7 @@ const LEARN_STEPS: LearnStep[] = [
     icon: Wand2,
     title: 'Make it your own',
     description:
-      'Shortcuts are one-click launchers that shape Ogeemo around the way you work. Learn them once, then sculpt your workspace.',
+      'Shortcuts are one-click launchers that shape Ogeemo around the way you work. Learn them once, then shape the workspace around how you work.',
     links: [
       { label: 'Customize Shortcuts', href: '/action-chips-info' },
       { label: 'Customize My Shortcuts', href: '/action-manager/manage' },
@@ -98,12 +99,73 @@ const LEARN_STEPS: LearnStep[] = [
   },
 ];
 
+/** Every tool guide, as chapters of the Learn Ogeemo library (docs/help-standard.md). */
+const LEARN_GUIDES: { group: string; guides: { slug: string; title: string; description: string }[] }[] = [
+  {
+    group: 'Workspace guides',
+    guides: [
+      { slug: 'activity-manager', title: 'Activity Manager', description: 'Plan and run your day: events, tasks, and follow-ups in one place.' },
+      { slug: 'gtd', title: 'Tasks, projects and GTD', description: 'How work flows through Ogeemo, from idea to done.' },
+      { slug: 'calendar', title: 'Calendar', description: 'Scheduling, reminders, and planning rituals on one calendar.' },
+      { slug: 'meetings', title: 'Meetings & agendas', description: 'Build meeting agendas and send them to the calendar.' },
+      { slug: 'projects', title: 'Projects', description: 'Group related work together and track it to completion.' },
+      { slug: 'document-manager', title: 'Document Manager', description: 'Keep paperwork beside the records it belongs to.' },
+      { slug: 'customize-shortcuts', title: 'Customize My Shortcuts', description: 'Choose the Ogeemo tools you want available from My Shortcuts.' },
+      { slug: 'rituals', title: 'Daily & weekly rituals', description: 'Set up the routines that keep your business on schedule.' },
+    ],
+  },
+  {
+    group: 'Accounting guides',
+    guides: [
+      { slug: 'bookkeeping', title: 'BKS bookkeeping', description: 'How Ogeemo records money in and money out.' },
+      { slug: 'invoices', title: 'Invoices', description: 'Create, send, and track invoices for your work.' },
+      { slug: 'quotes', title: 'Quotes', description: 'Prepare quotes and turn them into invoices.' },
+      { slug: 'receipt-intake', title: 'Receipt intake', description: 'Get receipts and statements into your books.' },
+      { slug: 'accounting-navigation', title: 'Accounting navigation', description: 'Find your way around the accounting hub.' },
+      { slug: 'inventory', title: 'Inventory', description: 'Add items, update stock, and read the transaction history.' },
+    ],
+  },
+  {
+    group: 'Administration guides',
+    guides: [
+      { slug: 'user-manager', title: 'User Manager', description: 'Add people and set what they can access.' },
+      { slug: 'user-list', title: 'User list', description: 'See everyone who can sign in to your workspace.' },
+      { slug: 'tenant-manager', title: 'Tenant Manager', description: 'Manage workspaces and how they connect.' },
+    ],
+  },
+];
+
 const PROGRESS_KEY = 'ogeemo-learn-progress';
 
 export default function LearnOgeemoPage() {
+  // useSearchParams (topic deep-links) requires a Suspense boundary.
+  return (
+    <Suspense fallback={null}>
+      <LearnOgeemoContent />
+    </Suspense>
+  );
+}
+
+function LearnOgeemoContent() {
   const { user } = useAuth();
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const topic = searchParams.get('topic');
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+
+  // Deep-link support: /learn?topic=<step-or-guide-id> scrolls to the entry
+  // and rings it briefly, so contextual "Learn more" links land on the exact
+  // topic instead of dropping users at the top of the page.
+  useEffect(() => {
+    if (!topic) return;
+    const el = document.querySelector(`[data-topic="${CSS.escape(topic)}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlighted(topic);
+    const timer = window.setTimeout(() => setHighlighted(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [topic]);
 
   const storageKeyFor = useCallback(
     () => `${PROGRESS_KEY}-${user?.uid || 'anon'}`,
@@ -179,7 +241,11 @@ export default function LearnOgeemoPage() {
             const StepIcon = step.icon;
             const isDone = completed.has(step.id);
             return (
-              <Card key={step.id} className={isDone ? 'border-primary/30 bg-primary/5' : ''}>
+              <Card
+                key={step.id}
+                data-topic={step.id}
+                className={`${isDone ? 'border-primary/30 bg-primary/5' : ''} ${highlighted === step.id ? 'ring-2 ring-primary' : ''}`}
+              >
                 <CardContent className="flex gap-4 p-5">
                   <Checkbox
                     checked={isDone}
@@ -210,6 +276,39 @@ export default function LearnOgeemoPage() {
               </Card>
             );
           })}
+        </div>
+
+        {/* Level 3 library: every tool guide is a chapter here (help-standard). */}
+        <div className="space-y-6 pb-6">
+          <div className="text-center">
+            <h2 className="text-xl font-bold font-headline text-primary">Guides</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Deep dives into individual tools. Every ? in the app lands here.
+            </p>
+          </div>
+          {LEARN_GUIDES.map((section) => (
+            <div key={section.group} className="space-y-2">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                {section.group}
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {section.guides.map((guide) => (
+                  <Link
+                    key={guide.slug}
+                    href={`/learn/guides/${guide.slug}`}
+                    data-topic={`guide-${guide.slug}`}
+                    className={`group rounded-lg border p-3 transition-colors hover:border-primary/40 hover:bg-muted/50 ${highlighted === `guide-${guide.slug}` ? 'ring-2 ring-primary' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold">{guide.title}</span>
+                      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{guide.description}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="pb-10 text-center">

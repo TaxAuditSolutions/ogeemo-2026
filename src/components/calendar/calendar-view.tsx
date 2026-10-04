@@ -36,6 +36,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { HelpTip } from '@/components/ui/help-tip';
 import {
   Select,
   SelectContent,
@@ -409,9 +410,18 @@ export function CalendarView() {
     <>
       <div className="p-4 sm:p-6 flex flex-col h-full bg-background">
         <header className="relative text-center mb-6 print:hidden">
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            Calendar
-          </h1>
+          <div className="flex items-center justify-center gap-1">
+            <h1 className="text-3xl font-bold font-headline text-primary">
+              Calendar
+            </h1>
+            <HelpTip
+              title="Calendar"
+              learnHref="/learn/guides/calendar"
+              learnLabel="Learn about the calendar"
+            >
+              Your appointments, reminders, and planning routines in one place.
+            </HelpTip>
+          </div>
           <p className="text-muted-foreground">
             Your Calendar for your actions and connection to the apps in Ogeemo
           </p>
@@ -460,7 +470,7 @@ export function CalendarView() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="outline" asChild size="sm">
-                            <Link href="/calendar/instructions">
+                            <Link href="/learn/guides/calendar">
                                 <BookOpen className="mr-2 h-4 w-4" /> Instructions
                             </Link>
                         </Button>
@@ -560,7 +570,7 @@ export function CalendarView() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button asChild variant="ghost" size="icon">
-                      <Link href="/event-manager/gtd-instructions">
+                      <Link href="/learn/guides/gtd">
                         <BookOpen className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -572,7 +582,7 @@ export function CalendarView() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button asChild variant="ghost" size="icon">
-                      <Link href="/calendar/instructions">
+                      <Link href="/learn/guides/calendar">
                         <Info className="h-4 w-4" />
                       </Link>
                     </Button>

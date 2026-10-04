@@ -176,7 +176,7 @@ export function AgendaForm({ onSuccess, initialData }: { onSuccess?: () => void,
                         <Printer className="h-4 w-4" />
                     </Button>
                     <Button type="button" variant="outline" size="icon" asChild title="Agenda Instructions">
-                        <Link href="/meetings/instructions">
+                        <Link href="/learn/guides/meetings">
                             <Info className="h-4 w-4" />
                         </Link>
                     </Button>

@@ -117,7 +117,7 @@ export function UserListView() {
             <p className="text-muted-foreground">Manage the accounts and permissions for your team.</p>
           </div>
           <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Open user manager instructions">
-            <Link href="/user-manager/instructions">
+            <Link href="/learn/guides/user-manager">
               <Info className="h-4 w-4" />
             </Link>
           </Button>
@@ -127,7 +127,7 @@ export function UserListView() {
             <div className="space-y-1">
               <CardTitle className="flex items-center">
                 Authenticated Users
-                <Link href="/user-manager/instructions">
+                <Link href="/learn/guides/user-manager">
                   <Info className="h-4 w-4 ml-2 text-muted-foreground hover:text-primary transition-colors" />
                 </Link>
               </CardTitle>

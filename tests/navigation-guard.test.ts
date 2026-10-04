@@ -148,6 +148,16 @@ function homeScreenHrefs(): string[] {
   return [...hrefs];
 }
 
+test('the welcome Get Started door matches the Learn guided path length', () => {
+  const learn = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'learn', 'page.tsx'), 'utf8');
+  const stepIds = [...learn.matchAll(/^    id: '([^']+)',$/gm)].map((m) => m[1]);
+  const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
+  const match = welcome.match(/LEARN_TOTAL = (\d+)/);
+  assert.ok(match, 'welcome page must declare LEARN_TOTAL');
+  assert.ok(stepIds.length > 0, 'expected Learn steps with ids');
+  assert.equal(Number(match[1]), stepIds.length, 'LEARN_TOTAL must match the guided path length');
+});
+
 test('every home-screen pathway resolves to a page', () => {
   const hrefs = homeScreenHrefs();
   assert.ok(

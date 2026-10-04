@@ -8,8 +8,8 @@ import { Logo } from '@/components/logo';
 import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
   ArrowRight, Building2, Check,
-  BookOpen, Bot,
-  CalendarDays, Receipt, Users, Paintbrush,
+  Bot,
+  CalendarDays, Paintbrush, Compass, Landmark,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
@@ -19,6 +19,9 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
  */
+
+/** Step count of the Learn Ogeemo guided path (kept in sync by a guard test). */
+const LEARN_TOTAL = 8;
 export default function WelcomePage() {
   const { user, accessLevel, isMasterTenant } = useAuth();
   const { toast } = useToast();
@@ -26,6 +29,20 @@ export default function WelcomePage() {
   const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
   const { preferences } = useUserPreferences();
   const showHomeBanner = preferences?.showHomeBanner ?? true;
+
+  // Get Started door: reflect progress on the Learn Ogeemo guided path
+  // (reads the same localStorage map the Learn page writes).
+  const [learnDone, setLearnDone] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = window.localStorage.getItem('ogeemo-learn-progress');
+      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      setLearnDone(new Set(all[user.uid] ?? []).size);
+    } catch {
+      setLearnDone(0);
+    }
+  }, [user]);
 
   const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
@@ -136,6 +153,17 @@ export default function WelcomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
+              href: '/learn',
+              icon: Compass,
+              title: 'Get Started',
+              description:
+                learnDone === 0
+                  ? 'New here? Follow the guided path — it walks you through Ogeemo step by step.'
+                  : learnDone >= LEARN_TOTAL
+                    ? `You have finished all ${LEARN_TOTAL} steps. Come back any time to revisit a lesson or guide.`
+                    : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
+            },
+            {
               href: '/make-it-your-own',
               icon: Paintbrush,
               title: 'Make It Your Own',
@@ -148,16 +176,10 @@ export default function WelcomePage() {
               description: 'Manage your schedule, tasks and events.',
             },
             {
-              href: '/accounting/invoices/view',
-              icon: Receipt,
-              title: 'Invoices',
-              description: 'Create invoices and keep track of what customers owe you.',
-            },
-            {
-              href: '/contacts',
-              icon: Users,
-              title: 'Contacts',
-              description: 'Your customers and everyone you do business with.',
+              href: '/accounting',
+              icon: Landmark,
+              title: 'Money',
+              description: 'Invoices, quotes, receipts and the ledgers that keep your books.',
             },
           ].map((door) => {
             const DoorIcon = door.icon;
@@ -181,13 +203,6 @@ export default function WelcomePage() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/learn"
-            className="flex items-center gap-2 rounded-xl border-2 border-black px-6 py-3 text-base font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-black hover:text-white"
-          >
-            <BookOpen className="h-5 w-5" />
-            Learn Ogeemo
-          </Link>
           <Link
             href="/co-pilot"
             className="flex items-center gap-2 rounded-xl border-2 border-black px-6 py-3 text-base font-bold text-black transition-all hover:-translate-y-0.5 hover:bg-black hover:text-white"

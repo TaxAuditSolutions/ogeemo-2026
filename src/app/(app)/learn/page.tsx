@@ -174,8 +174,12 @@ function LearnOgeemoContent() {
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(storageKeyFor());
-      setCompleted(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+      // toggleStep writes ONE map keyed by user id under PROGRESS_KEY; read
+      // the same shape here so progress survives reloads (the old lookup used
+      // a per-user key that was never written).
+      const raw = window.localStorage.getItem(PROGRESS_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      setCompleted(new Set(all[user?.uid || 'anon'] ?? []));
     } catch {
       setCompleted(new Set());
     }

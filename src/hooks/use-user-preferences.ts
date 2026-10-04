@@ -20,6 +20,8 @@ const defaultPreferences: UserProfile['preferences'] = {
     showWorkspaceButton: true,
     showRoleBadge: true,
     showHomeBanner: true,
+    // Global kill-switch for hover tooltips (Settings > Preferences > Button Tips).
+    showButtonTips: true,
     defaultSidebarView: 'grouped',
     // Customize My Shortcuts > Available Shortcuts chip view:
     // 'grouped' (default, group headings) or 'all' (one flat list).

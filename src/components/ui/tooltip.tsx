@@ -4,10 +4,31 @@ import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/lib/utils"
+import { useUserPreferences } from "@/hooks/use-user-preferences"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const Tooltip = TooltipPrimitive.Root
+/**
+ * Tooltip root with a global kill-switch (Settings > Preferences > Button Tips).
+ *
+ * Beta feedback: hover explanations across the app felt intrusive for some
+ * users, so one preference turns them all off from a single place. When off,
+ * the tooltip is force-closed through a controlled `open` prop - triggers stay
+ * fully clickable and keyboard-focusable, the bubble just never renders, so no
+ * call site needs to change. The `=== false` check is deliberate: profiles
+ * saved before this preference existed resolve to the default (on), and an
+ * absent key must not disable tips.
+ */
+function Tooltip(props: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>) {
+  const { preferences } = useUserPreferences()
+
+  if (preferences?.showButtonTips === false) {
+    return <TooltipPrimitive.Root {...props} open={false} onOpenChange={() => {}} />
+  }
+
+  return <TooltipPrimitive.Root {...props} />
+}
+Tooltip.displayName = "Tooltip"
 
 const TooltipTrigger = TooltipPrimitive.Trigger
 

@@ -118,7 +118,9 @@ export default function ActionManagerDashboardPage() {
         <Card className="w-full max-w-4xl shadow-md border-black/5">
             <CardHeader className="flex-row items-center justify-center p-4 border-b bg-muted/30">
                 <div className="flex items-center gap-2">
-                    <TooltipProvider delayDuration={0}>
+                    {/* Default 700ms delay: delayDuration={0} made these pop
+                        instantly on every pass, which felt intrusive in beta. */}
+                    <TooltipProvider>
                        <Tooltip>
                         <TooltipTrigger asChild>
                            <Button asChild variant="outline" className="h-9">
@@ -143,19 +145,14 @@ export default function ActionManagerDashboardPage() {
                           <p>Show/Hide info panel</p>
                         </TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button asChild variant="outline" className="h-9">
-                                <Link href="/action-manager/manage">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    Manage Shortcuts
-                                </Link>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Customize your dashboard shortcuts.</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {/* Label already says it: a tip that restates
+                          "Manage Shortcuts" was pure noise in beta. */}
+                      <Button asChild variant="outline" className="h-9">
+                          <Link href="/action-manager/manage">
+                              <Settings className="mr-2 h-4 w-4" />
+                              Manage Shortcuts
+                          </Link>
+                      </Button>
                 </TooltipProvider>
                 </div>
             </CardHeader>

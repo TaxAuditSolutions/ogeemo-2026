@@ -64,6 +64,22 @@ export function PreferencesCard() {
 
         <Separator />
 
+        <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+            <div className="space-y-0.5">
+                <Label htmlFor="button-tips-switch" className="text-base">Button Tips</Label>
+                <p className="text-sm text-muted-foreground">
+                    Show hover explanations over buttons and icons throughout Ogeemo.
+                </p>
+            </div>
+            <Switch
+                id="button-tips-switch"
+                checked={preferences?.showButtonTips}
+                onCheckedChange={(checked) => handleTogglePreference('showButtonTips', checked)}
+            />
+        </div>
+
+        <Separator />
+
         <div className="space-y-4">
             <div className="flex items-center gap-2 text-primary">
                 <Percent className="h-5 w-5" />

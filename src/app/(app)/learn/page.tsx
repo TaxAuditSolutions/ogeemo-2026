@@ -31,20 +31,20 @@ const LEARN_STEPS: LearnStep[] = [
   {
     id: 'action-manager',
     icon: LayoutDashboard,
-    title: 'Master the Action Manager',
+    title: 'Master My Shortcuts',
     description:
       'Your dashboard and the heartbeat of Ogeemo — tasks, actions, and your day at a glance. Spend real time here; everything else orbits it.',
-    links: [{ label: 'Open the Action Manager', href: '/action-manager' }],
+    links: [{ label: 'Open My Shortcuts', href: '/action-manager' }],
   },
   {
     id: 'make-it-yours',
     icon: Wand2,
     title: 'Make it your own',
     description:
-      'Action Chips are programmable shortcuts that shape Ogeemo around the way you work. Learn them once, then sculpt your workspace.',
+      'Shortcuts are one-click launchers that shape Ogeemo around the way you work. Learn them once, then sculpt your workspace.',
     links: [
-      { label: 'Action Chip Magic', href: '/action-chips-info' },
-      { label: 'Action Manager Settings', href: '/action-manager/manage' },
+      { label: 'Customize Shortcuts', href: '/action-chips-info' },
+      { label: 'Customize My Shortcuts', href: '/action-manager/manage' },
     ],
   },
   {
@@ -220,7 +220,7 @@ export default function LearnOgeemoPage() {
             </Link>{' '}
             or straight to the{' '}
             <Link href="/action-manager" className="underline">
-              Action Manager
+              My Shortcuts
             </Link>
             .
           </p>

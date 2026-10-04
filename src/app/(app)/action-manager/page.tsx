@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Settings, Plus, PlayCircle, BookOpen, Info, X, ArrowRight } from 'lucide-react';
+import { LoaderCircle, Settings, Plus, BookOpen, Info, X, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips, type ActionChipData } from '@/services/project-service';
@@ -54,7 +54,7 @@ export default function ActionManagerDashboardPage() {
         console.error("Failed to load chips:", error);
         toast({
           variant: 'destructive',
-          title: 'Failed to load actions',
+          title: 'Failed to load shortcuts',
           description: error instanceof Error ? error.message : 'An unknown error occurred.',
         });
       } finally {
@@ -77,10 +77,10 @@ export default function ActionManagerDashboardPage() {
     <div className="p-4 sm:p-6 flex flex-col items-center h-full">
         <header className="text-center mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">
-            Action Manager
+            My Shortcuts
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Your quick-access hub. Click an action to get started.
+            Your quick-access hub. Click a shortcut to get started.
           </p>
         </header>
 
@@ -94,14 +94,14 @@ export default function ActionManagerDashboardPage() {
                 <Info className="h-4 w-4 text-primary" />
                 <div className="flex justify-between items-start w-full">
                     <div className="flex-1 pr-4">
-                        <AlertTitle className="font-bold text-primary">About the Action Manager</AlertTitle>
+                        <AlertTitle className="font-bold text-primary">About My Shortcuts</AlertTitle>
                         <AlertDescription className="mt-2 space-y-4 text-foreground/80">
-                            <p>This is your personalized dashboard. Add, remove, and reorder 'Action Chips' to create one-click shortcuts to the Ogeemo managers and tools you use most often.</p>
+                            <p>This is your personalized dashboard. Add, remove, and reorder your shortcuts to create one-click links to the Ogeemo managers and tools you use most often.</p>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-primary/10">
                                 <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Master the Spider Web dashboard:</p>
                                 <Button asChild variant="outline" size="sm" className="h-8 px-4 text-xs bg-background border-primary/30 hover:bg-primary/5 hover:text-primary transition-all">
                                     <Link href="/action-chips-info">
-                                        Action Chip Magic <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                                        Customize Shortcuts <ArrowRight className="ml-2 h-3.5 w-3.5" />
                                     </Link>
                                 </Button>
                             </div>
@@ -119,19 +119,6 @@ export default function ActionManagerDashboardPage() {
             <CardHeader className="flex-row items-center justify-center p-4 border-b bg-muted/30">
                 <div className="flex items-center gap-2">
                     <TooltipProvider delayDuration={0}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button asChild className="h-9 bg-slate-900 text-white hover:bg-slate-800">
-                              <Link href="/event-manager">
-                                  <PlayCircle className="mr-2 h-4 w-4 text-primary" />
-                                  Activity Manager
-                              </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Go to your primary execution hub (Activity Manager)</p>
-                        </TooltipContent>
-                      </Tooltip>
                        <Tooltip>
                         <TooltipTrigger asChild>
                            <Button asChild variant="outline" className="h-9">
@@ -161,12 +148,12 @@ export default function ActionManagerDashboardPage() {
                             <Button asChild variant="outline" className="h-9">
                                 <Link href="/action-manager/manage">
                                     <Settings className="mr-2 h-4 w-4" />
-                                    Manage Actions
+                                    Manage Shortcuts
                                 </Link>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Customize your dashboard chips.</p>
+                          <p>Customize your dashboard shortcuts.</p>
                         </TooltipContent>
                       </Tooltip>
                 </TooltipProvider>
@@ -191,7 +178,7 @@ export default function ActionManagerDashboardPage() {
                         <Button asChild>
                            <Link href="/action-manager/manage">
                              <Plus className="mr-2 h-4 w-4" />
-                             Manage My Action Chips
+                             Manage My Shortcuts
                            </Link>
                         </Button>
                     </div>

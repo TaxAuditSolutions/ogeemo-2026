@@ -203,7 +203,7 @@ export function MainMenu() {
                 const chips = await getActionChips(user.uid);
                 setActionChips(chips);
             } catch (error) {
-                console.error("Failed to load action chips for sidebar:", error);
+                console.error("Failed to load shortcuts for sidebar:", error);
             } finally {
                 setIsLoadingChips(false);
             }
@@ -244,8 +244,8 @@ export function MainMenu() {
         }
     };
 
-    // Shortcuts (Action Chips) collapse so the map stays primary; the choice
-    // persists per user, and icon-collapsed sidebars always show the chips.
+    // Shortcuts collapse so the map stays primary; the choice
+    // persists per user, and icon-collapsed sidebars always show them.
     const shortcutsExpanded = preferences?.shortcutsExpanded ?? false;
 
     const toggleShortcuts = () => {
@@ -417,7 +417,7 @@ export function MainMenu() {
             {view === 'fullMenu' && (
                 <div className="p-2 mt-2">
                     <Button onClick={handleSaveChanges} className="w-full">
-                        <Save className="mr-2 h-4 w-4" /> Save Order
+                        <Save className="mr-2 h-4 w-4" /> Save Changes
                     </Button>
                 </div>
             )}

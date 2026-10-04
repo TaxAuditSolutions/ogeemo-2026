@@ -30,9 +30,9 @@ export default function ActionChipsInfoPage() {
         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
             <Zap className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary tracking-tight">The Magic of Action Chips</h1>
+        <h1 className="text-4xl md:text-5xl font-bold font-headline text-primary tracking-tight">Customize Shortcuts</h1>
         <p className="text-xl text-muted-foreground leading-relaxed">
-            The Ogeemo Action Chip is more than a button—it is the control node for your <strong>Spider Web</strong> of operations.
+            The Ogeemo shortcut is more than a button—it is the control node for your <strong>Spider Web</strong> of operations.
         </p>
         <div className="absolute top-0 right-0">
             <Button asChild variant="ghost" size="icon">
@@ -49,13 +49,13 @@ export default function ActionChipsInfoPage() {
         <div className="lg:col-span-2 space-y-6">
             <Card className="border-2 border-primary/10">
                 <CardHeader className="bg-primary/5 border-b">
-                    <CardTitle className="text-2xl">Why Action Chips Matter</CardTitle>
+                    <CardTitle className="text-2xl">Why Shortcuts Matter</CardTitle>
                     <CardDescription>Moving from "App-Juggling" to one place for everything.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                         <p className="text-lg leading-relaxed">
-                            Traditional software treats features as isolated silos. In Ogeemo, every tool is a node on your digital nervous system. Action Chips allow you to <strong>sculpt</strong> this system to match your exact business mind.
+                            Traditional software treats features as isolated silos. In Ogeemo, every tool is a node on your digital nervous system. Shortcuts allow you to <strong>sculpt</strong> this system to match your exact business mind.
                         </p>
                     </div>
 
@@ -65,14 +65,14 @@ export default function ActionChipsInfoPage() {
                                 <Layers className="h-5 w-5" />
                                 Eliminate Digital Noise
                             </div>
-                            <p className="text-sm text-muted-foreground">Most businesses use only 20% of their software's features. Action Chips let you turn off the other 80%, creating a zero-clutter workspace focused on execution.</p>
+                            <p className="text-sm text-muted-foreground">Most businesses use only 20% of their software's features. Shortcuts let you turn off the other 80%, creating a zero-clutter workspace focused on execution.</p>
                         </div>
                         <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
                             <div className="flex items-center gap-2 text-primary font-bold">
                                 <BrainCircuit className="h-5 w-5" />
                                 Reduce Cognitive Load
                             </div>
-                            <p className="text-sm text-muted-foreground">Stop hunting through deep menus. Your curated Action Chips follow you in the sidebar 'Command Strip', allowing for instant context pivots.</p>
+                            <p className="text-sm text-muted-foreground">Stop hunting through deep menus. Your curated shortcuts follow you in the sidebar 'Command Strip', allowing for instant context pivots.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -80,7 +80,7 @@ export default function ActionChipsInfoPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>How to Manage Your Chips</CardTitle>
+                    <CardTitle>How to Manage Your Shortcuts</CardTitle>
                     <CardDescription>A simple drag-and-drop workflow to customize your hub.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -89,17 +89,17 @@ export default function ActionChipsInfoPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Plus className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 1: Adding Actions</span>
+                                    <span className="font-semibold">Step 1: Adding Shortcuts</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                    <p>Go to the <strong>Action Manager Settings</strong>. You will see two panels:</p>
+                                    <p>Go to the <strong>Customize My Shortcuts</strong>. You will see two panels:</p>
                                     <ul>
-                                        <li><strong>Available Actions:</strong> A library of every Ogeemo module and your custom links.</li>
-                                        <li><strong>Selected Actions:</strong> The items currently active on your dashboard and sidebar.</li>
+                                        <li><strong>Available Shortcuts:</strong> A library of every Ogeemo module and your custom links.</li>
+                                        <li><strong>My Shortcuts:</strong> The items currently active on your dashboard and sidebar.</li>
                                     </ul>
-                                    <p>Simply drag an item from "Available" to "Selected" to add it to your command set.</p>
+                                    <p>Simply drag an item from "Available Shortcuts" to "My Shortcuts" to add it to your command set.</p>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -112,8 +112,8 @@ export default function ActionChipsInfoPage() {
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                    <p>The order of chips in your <strong>Selected Actions</strong> panel determines their order on your main dashboard and in your sidebar "Favorites" menu.</p>
-                                    <p>Drag chips up and down to prioritize the tools you use most frequently. Start each day with your most important tools at the top.</p>
+                                    <p>The order of shortcuts in your <strong>My Shortcuts</strong> panel determines their order on your main dashboard and in your sidebar "Favorites" menu.</p>
+                                    <p>Drag shortcuts up and down to prioritize the tools you use most frequently. Start each day with your most important tools at the top.</p>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -126,7 +126,7 @@ export default function ActionChipsInfoPage() {
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                    <p>If a tool is no longer relevant to your current project or phase of business, drag it from "Selected" back to "Available" to hide it.</p>
+                                    <p>If a tool is no longer relevant to your current project or phase of business, drag it from "My Shortcuts" back to "Available Shortcuts" to hide it.</p>
                                     <p>To permanently delete a custom link you've created, drag it down to the <strong>Trash Zone</strong> at the bottom of the page.</p>
                                 </div>
                             </AccordionContent>
@@ -135,12 +135,12 @@ export default function ActionChipsInfoPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Save className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 4: Persistence (Save Order)</span>
+                                    <span className="font-semibold">Step 4: Persistence (Save Changes)</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
-                                    <p>Your workspace is unique. To ensure your custom layout is remembered the next time you log in, always click the <strong>"Save Order"</strong> button after making changes.</p>
+                                    <p>Your workspace is unique. To ensure your custom layout is remembered the next time you log in, always click the <strong>"Save Changes"</strong> button after making changes.</p>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -166,7 +166,7 @@ export default function ActionChipsInfoPage() {
                 <CardFooter>
                     <Button asChild variant="secondary" className="w-full font-bold">
                         <Link href="/action-manager/manage">
-                            Manage My Chips Now <ArrowRight className="ml-2 h-4 w-4" />
+                            Manage My Shortcuts Now <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
                 </CardFooter>
@@ -180,7 +180,7 @@ export default function ActionChipsInfoPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                        Use the <strong>"Full Menu"</strong> view in the sidebar to see everything Ogeemo has to offer, then use the <strong>"Action Manager"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
+                        Use the <strong>"Full Menu"</strong> view in the sidebar to see everything Ogeemo has to offer, then use <strong>"My Shortcuts"</strong> to build your perfect, high-speed <strong>"Favorites"</strong> list. This is the secret to true "Spider Web" efficiency.
                     </p>
                 </CardContent>
             </Card>
@@ -188,15 +188,15 @@ export default function ActionChipsInfoPage() {
             <Card className="bg-background border-primary/20 border-2 shadow-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="text-sm font-bold">
-                        How to Create a Chip
+                        How to Create a Shortcut
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-xs text-muted-foreground space-y-2">
-                        <p>1. Open the <strong>Action Manager</strong>.</p>
-                        <p>2. Click the <strong>"+ Add New Action"</strong> button.</p>
+                        <p>1. Open <strong>My Shortcuts</strong>.</p>
+                        <p>2. Click the <strong>"+ Create Shortcut"</strong> button.</p>
                         <p>3. Select <strong>Internal Page</strong> to bookmark an Ogeemo tool, or <strong>Custom URL</strong> for external sites.</p>
-                        <p>4. Name your chip and click <strong>Save</strong>. It will appear in your "Available Actions" library.</p>
+                        <p>4. Name your shortcut and click <strong>Save</strong>. It will appear in your "Available Shortcuts" library.</p>
                     </div>
                 </CardContent>
             </Card>
@@ -209,7 +209,7 @@ export default function ActionChipsInfoPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                        Your spider web doesn't have to stop at Ogeemo's borders. Use the <strong>'+ Add New Action'</strong> button in the manager and select <strong>'Custom URL'</strong>. 
+                        Your spider web doesn't have to stop at Ogeemo's borders. Use the <strong>'+ Create Shortcut'</strong> button in the manager and select <strong>'Custom URL'</strong>. 
                         <br/><br/>
                         By entering a full web address (e.g., https://www.google.com), you can create instant shortcuts to any site outside of Ogeemo, such as your bank's login, real-time stock trackers, or industry news feeds. This turns Ogeemo into your absolute global hub.
                     </p>

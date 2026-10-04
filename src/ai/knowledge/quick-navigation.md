@@ -1,7 +1,7 @@
 # Quick Navigation
 
 ## What is Quick Navigation?
-Quick Navigation (also known as the customizable action chip menu) is a personalized menu system found in areas like the Accounting Hub and HR Hub. It allows users to create their own custom dashboard of shortcuts. Users can curate their most-used links and actions, avoiding the need to search through standard menus.
+Quick Navigation (also known as the customizable shortcut menu) is a personalized menu system found in areas like the Accounting Hub and HR Hub. It allows users to create their own custom dashboard of shortcuts. Users can curate their most-used links and actions, avoiding the need to search through standard menus.
 
 ## How to Manage Quick Navigation
 Users can manage their Quick Navigation by clicking the "Manage Navigation" button (e.g., at `/accounting/manage-navigation` or `/hr-manager/manage-navigation`).

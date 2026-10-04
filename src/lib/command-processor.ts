@@ -38,8 +38,8 @@ function cleanParam(param: string): string {
 
 const commandMap: Record<string, { target: string; label: string; category: string }> = {
     // Workspace & Core Hubs
-    'actionmanager': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
-    'dashboard': { target: '/action-manager', label: 'Action Manager', category: 'Workspace' },
+    'actionmanager': { target: '/action-manager', label: 'My Shortcuts', category: 'Workspace' },
+    'dashboard': { target: '/action-manager', label: 'My Shortcuts', category: 'Workspace' },
     'copilot': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },
     'aidispatch': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },
     'dispatch': { target: '/co-pilot', label: 'AI Co-Pilot', category: 'Intelligence' },

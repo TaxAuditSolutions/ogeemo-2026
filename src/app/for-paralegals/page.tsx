@@ -157,7 +157,7 @@ export default function ForParalegalsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Use Action Chips to pivot between litigation files, corporate filings, and client billing in one click. Zero unbilled time.
+                                        Use shortcuts to pivot between litigation files, corporate filings, and client billing in one click. Zero unbilled time.
                                     </p>
                                 </CardContent>
                             </Card>

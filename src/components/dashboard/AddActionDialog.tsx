@@ -147,7 +147,7 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
         };
         await updateActionChip(user.uid, updatedActionData, menuType === 'accounting' ? 'accounting' : 'dashboard');
         onActionEdited(updatedActionData);
-        toast({ title: "Action Updated" });
+        toast({ title: "Shortcut Updated" });
       } else {
          const newActionData: Omit<ActionChipData, 'id'> = {
             label: values.label,
@@ -157,12 +157,12 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
          };
          const newAction = await addActionChip(newActionData, menuType === 'accounting' ? 'accounting' : 'dashboard');
          onActionAdded(newAction);
-         toast({ title: "Action Added" });
+         toast({ title: "Shortcut Added" });
       }
 
       onOpenChange(false);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Failed to save action", description: error.message });
+      toast({ variant: "destructive", title: "Failed to save shortcut", description: error.message });
     }
   }
 
@@ -170,9 +170,9 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{chipToEdit ? 'Edit Action' : 'Add New Action'}</DialogTitle>
+          <DialogTitle>{chipToEdit ? 'Edit Shortcut' : 'Create Shortcut'}</DialogTitle>
           <DialogDescription>
-            {chipToEdit ? 'Modify the details for this action.' : 'Create a shortcut for your Action Dashboard.'}
+            {chipToEdit ? 'Modify the details for this shortcut.' : 'Create a shortcut for your dashboard.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -184,7 +184,7 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
                 <FormItem>
                   <FormLabel>Custom Label</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter a custom label for the chip" {...field} />
+                    <Input placeholder="Enter a custom label for the shortcut" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -276,7 +276,7 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
             
             <DialogFooter className="pt-4">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit">{chipToEdit ? 'Save Changes' : 'Add Action'}</Button>
+                <Button type="submit">{chipToEdit ? 'Save Changes' : 'Create Shortcut'}</Button>
             </DialogFooter>
           </form>
         </Form>

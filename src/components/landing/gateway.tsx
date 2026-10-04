@@ -197,7 +197,7 @@ export function Gateway() {
                                 </CardHeader>
                                 <CardContent className="space-y-4 flex-1 flex flex-col">
                                     <ul className="space-y-2 text-sm text-muted-foreground leading-relaxed flex-1">
-                                        <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> The Master Action Chip and Action-to-Protocol Bridge connect ideas to billable work.</li>
+                                        <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> The Master Shortcut and Action-to-Protocol Bridge connect ideas to billable work.</li>
                                         <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Audit-ready data schemas on resilient infrastructure.</li>
                                         <li className="flex items-start gap-2"><Handshake className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Collaboration, white-label, and ecosystem programs.</li>
                                     </ul>

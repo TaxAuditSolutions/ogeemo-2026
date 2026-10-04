@@ -173,7 +173,7 @@ export default function ForLawyersPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Sculpt your firm's workspace. Use Action Chips to create custom shortcuts for each area of law or specific engagement.
+                                        Sculpt your firm's workspace. Use shortcuts to create a custom launch pad for each area of law or specific engagement.
                                     </p>
                                 </CardContent>
                             </Card>

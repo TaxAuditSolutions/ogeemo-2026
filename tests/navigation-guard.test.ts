@@ -15,7 +15,7 @@ import { allMenuItems, type MenuItem } from '../src/lib/menu-items';
  *     module pulls in React/Firebase, which must not load under node:test.)
  *  3. Retired entries stay retired: Logout lives in the account menu, the
  *     logo replaces Ogeemo Web, AI Co-Pilot's one global entry is the header
- *     pill, and Trash / A-Z Sort belong to Action Manager Settings.
+ *     pill, and Trash / A-Z Sort belong to Customize My Shortcuts.
  *  4. Guidance is Help-only: no instruction pages in the sidebar menu.
  *  5. Every menu destination resolves to a real page file.
  *

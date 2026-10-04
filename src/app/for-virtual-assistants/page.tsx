@@ -88,7 +88,7 @@ export default function ForVirtualAssistantsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        As their Virtual Business Partner (VBP), you can manage their Action Chips to create a streamlined, zero-clutter interface. You design the environment that helps them stay focused.
+                                        As their Virtual Business Partner (VBP), you can manage their shortcuts to create a streamlined, zero-clutter interface. You design the environment that helps them stay focused.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -198,7 +198,7 @@ export default function ForVirtualAssistantsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Use Ogeemo's Action Chips to sculpt a unique workspace for your client, organizing the platform to suit their exact wishes.
+                                        Use Ogeemo's shortcuts to sculpt a unique workspace for your client, organizing the platform to suit their exact wishes.
                                     </p>
                                 </CardContent>
                             </Card>

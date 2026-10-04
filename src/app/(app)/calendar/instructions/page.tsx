@@ -106,7 +106,7 @@ export default function CalendarInstructionsPage() {
                             <BrainCircuit className="h-5 w-5 text-primary" />
                             The Core Philosophy: The Ogeemo Spider Web
                         </CardTitle>
-                        <CardDescription>Everything is connected by your Master Action Chip.</CardDescription>
+                        <CardDescription>Everything is connected by your shortcuts.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6">
                         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">

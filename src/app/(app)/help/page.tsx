@@ -17,7 +17,7 @@ const guideSections: { title: string; description: string; links: { label: strin
     description: 'Start here if Ogeemo is new to you.',
     links: [
       { label: 'Learn Ogeemo — guided tour', href: '/learn' },
-      { label: 'Action Chip Magic', href: '/action-chips-info' },
+      { label: 'Customize Shortcuts', href: '/action-chips-info' },
       { label: 'Daily and weekly rituals', href: '/settings/rituals/instructions' },
     ],
   },
@@ -28,7 +28,7 @@ const guideSections: { title: string; description: string; links: { label: strin
       { label: 'Activity Manager guide', href: '/event-manager/instructions' },
       { label: 'Tasks, projects and GTD', href: '/event-manager/gtd-instructions' },
       { label: 'Calendar guide', href: '/calendar/instructions' },
-      { label: 'Action Manager Settings', href: '/action-manager/manage/instructions' },
+      { label: 'Customize My Shortcuts', href: '/action-manager/manage/instructions' },
       { label: 'Document Manager guide', href: '/document-manager/instructions' },
       { label: 'Meetings guide', href: '/meetings/instructions' },
       { label: 'Projects guide', href: '/projects/instructions' },

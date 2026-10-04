@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useDrop } from 'react-dnd';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Plus, ArrowLeft, Trash2, ArrowDownAZ, ArrowUpZA, Save, BookOpen, Zap, Search, X, Wand2, LayoutGrid } from 'lucide-react';
+import { LoaderCircle, Plus, ArrowLeft, Trash2, ArrowDownAZ, ArrowUpZA, Save, BookOpen, Zap, Search, X, Wand2, LayoutGrid, List } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/auth-context';
@@ -24,6 +24,7 @@ import { ActionChip, DraggableItemTypes } from './ActionChip';
 import { ChipDropZone } from './ChipDropZone';
 import AddActionDialog from './AddActionDialog';
 import { groupedMenuItems } from '@/components/layout/main-menu';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 
 const TrashDropZone = () => {
@@ -37,13 +38,13 @@ const TrashDropZone = () => {
       try {
         await trashActionChips(user.uid, [item]);
         toast({
-          title: 'Action Trashed',
+          title: 'Shortcut Trashed',
           description: `"${item.label}" has been moved to the trash.`,
           action: <Button variant="link" asChild><Link href="/action-manager/trash">View Trash</Link></Button>,
         });
         window.dispatchEvent(new Event('chipsUpdated'));
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to trash action', description: error.message });
+        toast({ variant: 'destructive', title: 'Failed to trash shortcut', description: error.message });
       }
     },
     collect: (monitor) => ({
@@ -72,7 +73,7 @@ const TrashDropZone = () => {
 
 
 /**
- * Grouping for the "Available Actions" panel (beta feedback: the panel is an
+ * Grouping for the "Available Shortcuts" panel (beta feedback: the panel is an
  * undifferentiated wall of small buttons).
  *
  * Group headers are ALWAYS-VISIBLE plain dividers — nothing collapses, so the
@@ -83,11 +84,18 @@ const TrashDropZone = () => {
  * plus prefix rules for menu hrefs the sidebar groups don't enumerate (the 20+
  * uncovered /accounting/* pages would otherwise land in a huge "Other" pile).
  * No Firestore schema change is involved.
+ *
+ * The user can switch between this grouped view and a flat "All Shortcuts" list
+ * via a segmented toggle in the card header. Grouped remains the default; the
+ * choice persists in the `actionChipView` user preference.
  */
 type ChipGroup = { name: string; icon: LucideIcon; chips: ActionChipData[] };
 
-const CUSTOM_CHIPS_GROUP = 'Your Custom Actions';
-const OTHER_CHIPS_GROUP = 'Other Actions';
+/** Available Shortcuts view modes: grouped headings or one flat list. */
+type AvailableView = 'grouped' | 'all';
+
+const CUSTOM_CHIPS_GROUP = 'Your Custom Shortcuts';
+const OTHER_CHIPS_GROUP = 'Other Shortcuts';
 
 const sidebarGroups: Array<{ name: string; icon: LucideIcon; items: string[] }> =
   Object.entries(groupedMenuItems).map(([name, def]) => ({
@@ -178,6 +186,7 @@ export function ManageDashboardView() {
 
   const { user } = useAuth();
   const { toast } = useToast();
+  const { preferences, updatePreferences } = useUserPreferences();
 
   const loadChips = React.useCallback(async () => {
     if (user) {
@@ -192,7 +201,7 @@ export function ManageDashboardView() {
         console.error("Failed to load chips:", error);
         toast({
           variant: 'destructive',
-          title: 'Failed to load actions',
+          title: 'Failed to load shortcuts',
           description: error instanceof Error ? error.message : 'An unknown error occurred.',
         });
       } finally {
@@ -226,6 +235,14 @@ export function ManageDashboardView() {
     () => groupAvailableChips(filteredAvailableChips),
     [filteredAvailableChips],
   );
+
+  // Persisted view mode (defaults to 'grouped' when the preference is absent).
+  const availableView: AvailableView = preferences?.actionChipView === 'all' ? 'all' : 'grouped';
+
+  const handleAvailableViewChange = (view: AvailableView) => {
+    if (view === availableView) return;
+    updatePreferences({ actionChipView: view });
+  };
 
   const handleStateUpdate = React.useCallback(async (
     newUserChips: ActionChipData[],
@@ -293,13 +310,13 @@ export function ManageDashboardView() {
     try {
       await trashActionChips(user.uid, [chipToTrash]);
       toast({
-        title: 'Action Trashed',
+        title: 'Shortcut Trashed',
         description: `"${chipToTrash.label}" has been moved to the trash.`,
         action: <Button variant="link" asChild><Link href="/action-manager/trash">View Trash</Link></Button>,
       });
       loadChips();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to trash action', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to trash shortcut', description: error.message });
     }
   };
   
@@ -363,15 +380,15 @@ export function ManageDashboardView() {
       <div className="p-4 sm:p-6 space-y-6">
         <header className="flex items-center justify-between">
             <div className="text-center flex-1">
-                <h1 className="text-2xl font-bold font-headline text-primary">Action Manager Settings</h1>
+                <h1 className="text-2xl font-bold font-headline text-primary">Customize My Shortcuts</h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                    Drag and drop actions to customize your dashboard.
+                    Drag and drop shortcuts to customize your dashboard.
                 </p>
             </div>
             <div className="flex items-center gap-2">
                 <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
                     <Link href="/action-chips-info">
-                        <Zap className="mr-2 h-4 w-4 text-primary" /> Action Chip Magic
+                        <Zap className="mr-2 h-4 w-4 text-primary" /> Customize Shortcuts
                     </Link>
                 </Button>
                 <Button asChild className="h-6 px-2 py-1 text-xs">
@@ -381,21 +398,21 @@ export function ManageDashboardView() {
                     <Link href="/action-manager/trash"><Trash2 className="mr-2 h-4 w-4"/> Trash</Link>
                 </Button>
                 <Button asChild variant="outline" className="h-6 px-2 py-1 text-xs">
-                    <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Action Manager</Link></Button>
+                    <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4"/> Back to My Shortcuts</Link></Button>
             </div>
         </header>
 
         <div className="space-y-6">
             <Card>
                 <CardHeader className="text-center">
-                    <CardTitle className="text-lg">Selected Actions</CardTitle>
-                    <CardDescription>Actions currently on your dashboard. Drag to reorder or add from "Available".</CardDescription>
+                    <CardTitle className="text-lg">My Shortcuts</CardTitle>
+                    <CardDescription>Shortcuts currently on your dashboard. Drag to reorder or add from "Available Shortcuts".</CardDescription>
                     <div className="flex justify-center gap-2 pt-2">
                         <Button variant="outline" onClick={() => handleSortUserChips('asc')} className="h-6 px-2 py-1 text-xs"><ArrowDownAZ className="mr-2 h-4 w-4" /> Sort A-Z</Button>
                         <Button variant="outline" onClick={() => handleSortUserChips('desc')} className="h-6 px-2 py-1 text-xs"><ArrowUpZA className="mr-2 h-4 w-4" /> Sort Z-A</Button>
-                        <Button onClick={handleSaveUserChipOrder} className="h-6 px-2 py-1 text-xs"><Save className="mr-2 h-4 w-4" /> Save Order</Button>
+                        <Button onClick={handleSaveUserChipOrder} className="h-6 px-2 py-1 text-xs"><Save className="mr-2 h-4 w-4" /> Save Changes</Button>
                         <Button onClick={handleAddNewChip} className="h-6 px-2 py-1 text-xs">
-                            <Plus className="mr-2 h-4 w-4" /> Add New Action
+                            <Plus className="mr-2 h-4 w-4" /> Create Shortcut
                         </Button>
                     </div>
                 </CardHeader>
@@ -408,16 +425,16 @@ export function ManageDashboardView() {
             
             <Card>
                 <CardHeader className="text-center">
-                    <CardTitle className="text-lg">Available Actions</CardTitle>
-                    <CardDescription>Drag actions to "Selected Actions" to add them to your dashboard.</CardDescription>
+                    <CardTitle className="text-lg">Available Shortcuts</CardTitle>
+                    <CardDescription>Drag shortcuts to "My Shortcuts" to add them to your dashboard.</CardDescription>
                     <div className="flex flex-col items-center gap-2 pt-2">
                         <div className="relative w-full max-w-xs">
                             <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={availableSearch}
                                 onChange={(e) => setAvailableSearch(e.target.value)}
-                                placeholder="Search actions..."
-                                aria-label="Search available actions"
+                                placeholder="Search shortcuts..."
+                                aria-label="Search available shortcuts"
                                 className="h-8 pl-8 pr-8 text-sm"
                             />
                             {availableSearch && (
@@ -432,13 +449,33 @@ export function ManageDashboardView() {
                                 </Button>
                             )}
                         </div>
+                        <div className="flex justify-center gap-2" role="group" aria-label="Available shortcuts view">
+                            <Button
+                                type="button"
+                                variant={availableView === 'grouped' ? 'default' : 'outline'}
+                                onClick={() => handleAvailableViewChange('grouped')}
+                                aria-pressed={availableView === 'grouped'}
+                                className="h-6 px-2 py-1 text-xs"
+                            >
+                                <LayoutGrid className="mr-1.5 h-3.5 w-3.5" /> Groups
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={availableView === 'all' ? 'default' : 'outline'}
+                                onClick={() => handleAvailableViewChange('all')}
+                                aria-pressed={availableView === 'all'}
+                                className="h-6 px-2 py-1 text-xs"
+                            >
+                                <List className="mr-1.5 h-3.5 w-3.5" /> All Shortcuts
+                            </Button>
+                        </div>
                         <div className="flex justify-center gap-2">
                             <Button variant="outline" onClick={() => handleSortAvailableChips('asc')} className="h-6 px-2 py-1 text-xs"><ArrowDownAZ className="mr-2 h-4 w-4" /> Sort A-Z</Button>
                             <Button variant="outline" onClick={() => handleSortAvailableChips('desc')} className="h-6 px-2 py-1 text-xs"><ArrowUpZA className="mr-2 h-4 w-4" /> Sort Z-A</Button>
                         </div>
                         {availableSearch.trim() && (
                             <p className="text-xs text-muted-foreground" aria-live="polite">
-                                {filteredAvailableChips.length} of {totalAvailableCount} actions match
+                                {filteredAvailableChips.length} of {totalAvailableCount} shortcuts match
                             </p>
                         )}
                     </div>
@@ -447,12 +484,20 @@ export function ManageDashboardView() {
                     onDrop={(item) => handleDrop(item, 'available')}
                     className="min-h-[150px] flex flex-col flex-nowrap gap-5 p-4"
                 >
-                    {availableGroups.length === 0 ? (
+                    {filteredAvailableChips.length === 0 ? (
                         <p className="w-full py-8 text-center text-sm text-muted-foreground">
                             {availableSearch.trim()
-                                ? <>No actions match &ldquo;{availableSearch.trim()}&rdquo;.</>
-                                : 'No available actions right now.'}
+                                ? <>No shortcuts match &ldquo;{availableSearch.trim()}&rdquo;.</>
+                                : 'No available shortcuts right now.'}
                         </p>
+                    ) : availableView === 'all' ? (
+                        /* Flat view: every chip in one list, so Sort A-Z/Z-A and
+                           search results apply across the whole inventory. */
+                        <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 place-items-center">
+                            {filteredAvailableChips.map((chip, index) => (
+                                <ActionChip key={chip.id} chip={chip} index={index} onDelete={() => handleTrashChip(chip)} onEdit={() => handleEditChip(chip)} />
+                            ))}
+                        </div>
                     ) : (
                         availableGroups.map((group) => {
                             const GroupIcon = group.icon;

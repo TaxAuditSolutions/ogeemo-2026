@@ -9,7 +9,7 @@ The Ogeemo Assistant is the conversational entry point into the platform. It ans
 
 ## Core Concepts
 - **BKS**: Bookkeeping Kept Simple. Ogeemo's bookkeeping approach is designed to keep records organized, auditable, and easy to understand.
-- **Action Chips**: Compact action controls that launch common workflows or navigation shortcuts.
+- **Shortcuts**: Compact controls that launch common workflows or navigation links.
 - **Activity Manager**: The main operational workspace for tasks, events, and action-driven coordination.
 - **Financial Hub**: The area for ledger, invoicing, bill, and payroll-related work.
 - **Left Sidebar Menu**: The primary navigation structure for moving between major Ogeemo modules.
@@ -19,8 +19,8 @@ The Ogeemo Assistant is the conversational entry point into the platform. It ans
 - **Audit-Ready**: Keep records structured so work can be traced and reviewed.
 - **Success-Scaled**: Support users as their operations grow without changing the underlying workflow model.
 
-## How Action Chips Work
-Action Chips are atomic operational units used across the platform to trigger specific workflows.
+## How Shortcuts Work
+Shortcuts are atomic operational units used across the platform to trigger specific workflows.
 - **Ledger Chips**: Open income and expense ledger workflows.
 - **Task Chips**: Launch the Activity Manager or task-related actions.
 - **AI Chips**: Trigger Ogeemo Co-Pilot and deeper assistant-driven analysis.

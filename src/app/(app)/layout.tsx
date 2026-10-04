@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Settings, Building2, HelpCircle } from 'lucide-react';
+import { Settings, Building2, HelpCircle, PlayCircle } from 'lucide-react';
 import { SidebarViewProvider } from '@/context/sidebar-view-context';
 import { ThemeOrchestrator } from '@/components/layout/theme-orchestrator';
 import { HytexerciseProvider } from '@/context/hytexercise-context';
@@ -37,6 +37,40 @@ import {
   useOgeemoCopilotSidebar,
 } from '@/context/ogeemo-copilot-sidebar-context';
 
+
+/**
+ * Global shortcut to the Activity Manager (the primary execution hub).
+ *
+ * Beta feedback: the Activity Manager is a core operational function users
+ * need from anywhere in Ogeemo, so it gets a permanent, clearly-labelled home
+ * in the header rather than a fixed button on the My Shortcuts landing screen
+ * (where it duplicated the personalization purpose, and could itself be added
+ * as a user shortcut). Deliberately always visible - like Co-Pilot, this is a
+ * global action, not a sidebar entry, so sidebar allowlist/blocklist curation
+ * does not apply to it. Uses PlayCircle, the same icon as the sidebar entry,
+ * so the action stays recognizable across both surfaces.
+ */
+function ActivityManagerHeaderButton() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          className="flex h-8 items-center gap-2 rounded-full border border-black/10 bg-white/35 px-3 py-0 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/50"
+          aria-label="Open the Activity Manager"
+        >
+          <Link href="/event-manager">
+            <PlayCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Activity Manager</span>
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>Your primary execution hub - open it from anywhere in Ogeemo.</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function CopilotHeaderButton() {
   const { openAndPin, close, state, isMobile, isMobileOpen } = useOgeemoCopilotSidebar();
@@ -181,9 +215,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <GlobalSearch isOpen={searchOpen} onOpenChange={setSearchOpen} />
                       </div>
 
-                      {/* Center Column: Intelligence Nodes */}
+                      {/* Center Column: Global Actions */}
                       <div className="flex items-center justify-center gap-4">
                         <TooltipProvider>
+                          <ActivityManagerHeaderButton />
                           <CopilotHeaderButton />
                         </TooltipProvider>
                       </div>

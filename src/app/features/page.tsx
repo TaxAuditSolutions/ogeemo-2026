@@ -126,14 +126,14 @@ export default function FeaturesPage() {
 
     const featureDetails: Record<string, FeatureDetailProps> = {
         actionChips: {
-            title: "Action Chips",
+            title: "Shortcuts",
             description: "The control nodes of your business spider web.",
             icon: Zap,
-            overview: "Action Chips are revolutionary control nodes that allow you to sculpt Ogeemo to match your exact business mind. They aren't just shortcuts; they are programmable entry points that carry your context across the platform, eliminating digital noise and maximizing navigation speed.",
+            overview: "Shortcuts are revolutionary control nodes that allow you to sculpt Ogeemo to match your exact business mind. They aren't just links; they are programmable entry points that carry your context across the platform, eliminating digital noise and maximizing navigation speed.",
             usageSteps: [
-                { title: "Personalize Your Hub", description: "Visit the Action Manager Settings to view all available modules. Drag your most-used tools into the 'Selected' list.", icon: Settings },
-                { title: "One-Click Hub Pivots", description: "Your chips automatically populate your dashboard and sidebar 'Command Strip'. Click a chip to jump between context hubs instantly.", icon: Zap },
-                { title: "Sculpt Your Focus", description: "Remove chips for modules you don't use. This keeps your workspace clean, professional, and optimized for high-speed operation.", icon: Layers }
+                { title: "Personalize Your Hub", description: "Visit Customize My Shortcuts to view all available modules. Drag your most-used tools into the 'My Shortcuts' list.", icon: Settings },
+                { title: "One-Click Hub Pivots", description: "Your shortcuts automatically populate your dashboard and sidebar 'Command Strip'. Click a shortcut to jump between context hubs instantly.", icon: Zap },
+                { title: "Sculpt Your Focus", description: "Remove shortcuts for modules you don't use. This keeps your workspace clean, professional, and optimized for high-speed operation.", icon: Layers }
             ]
         },
         commandCentre: {
@@ -193,7 +193,7 @@ export default function FeaturesPage() {
                         </div>
 
                         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Ogeemo is not a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one Action Chip.
+                            Ogeemo is not a collection of tools; it's a single, interconnected ecosystem designed to run your entire business from one shortcut.
                         </p>
                     </div>
                 </section>
@@ -214,7 +214,7 @@ export default function FeaturesPage() {
                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4">
                                     <Zap className="h-6 w-6" />
                                 </div>
-                                <CardTitle>Action Chips</CardTitle>
+                                <CardTitle>Shortcuts</CardTitle>
                                 <CardDescription>The control nodes of your business spider web.</CardDescription>
                             </CardHeader>
                             <CardContent className="text-sm text-muted-foreground space-y-2">

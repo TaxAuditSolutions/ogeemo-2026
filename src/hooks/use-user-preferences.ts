@@ -21,6 +21,9 @@ const defaultPreferences: UserProfile['preferences'] = {
     showRoleBadge: true,
     showHomeBanner: true,
     defaultSidebarView: 'grouped',
+    // Customize My Shortcuts > Available Shortcuts chip view:
+    // 'grouped' (default, group headings) or 'all' (one flat list).
+    actionChipView: 'grouped',
     shortcutsExpanded: false,
     themeColors: {
         primary: '#1E8E86',

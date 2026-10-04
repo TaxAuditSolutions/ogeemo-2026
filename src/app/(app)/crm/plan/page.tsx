@@ -276,7 +276,7 @@ function CrmPlanContent() {
               <Button asChild variant="outline" size="sm" className="whitespace-nowrap">
                   <Link href="/action-manager">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Action Manager
+                      Back to My Shortcuts
                   </Link>
               </Button>
               <Button asChild variant="outline" size="sm" className="whitespace-nowrap">

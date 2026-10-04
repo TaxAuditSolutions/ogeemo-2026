@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
  * "Make It Your Own" — the personalization pathway from the home screen
  * (beta feedback: personalization should be a primary user pathway, with AI
  * supporting rather than replacing it). An intro that routes to where
- * personalization actually lives (Action Manager Settings and Settings)
+ * personalization actually lives (Customize My Shortcuts and Settings)
  * instead of duplicating those controls.
  */
 
@@ -22,11 +22,11 @@ const personalizeSections: {
 }[] = [
   {
     title: 'Your shortcuts',
-    description: "Add, remove and reorder Action Chips — they appear on your dashboard and in the sidebar's Shortcuts section.",
+    description: "Add, remove and reorder shortcuts — they appear on your dashboard and in the sidebar's Shortcuts section.",
     icon: Zap,
     links: [
       { label: 'Customize your dashboard', href: '/action-manager/manage' },
-      { label: 'Read the Action Chip Magic guide', href: '/action-chips-info' },
+      { label: 'Read the Customize Shortcuts guide', href: '/action-chips-info' },
     ],
   },
   {

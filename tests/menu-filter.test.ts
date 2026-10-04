@@ -8,19 +8,19 @@ import { allMenuItems, type MenuItem } from '../src/lib/menu-items';
 test('sorts menu items by label without mutating the source array', () => {
     const items = [
         allMenuItems.find((item) => item.label === 'Backups')!,
-        allMenuItems.find((item) => item.label === 'Action Manager')!,
+        allMenuItems.find((item) => item.label === 'My Shortcuts')!,
         accountingMenuItems.find((item) => item.label === 'Bank Statements')!,
     ];
 
     assert.deepEqual(
         sortMenuItemsByLabel(items, 'asc').map((item) => item.label),
-        ['Action Manager', 'Backups', 'Bank Statements'],
+        ['Backups', 'Bank Statements', 'My Shortcuts'],
     );
     assert.deepEqual(
         sortMenuItemsByLabel(items, 'desc').map((item) => item.label),
-        ['Bank Statements', 'Backups', 'Action Manager'],
+        ['My Shortcuts', 'Bank Statements', 'Backups'],
     );
-    assert.deepEqual(items.map((item) => item.label), ['Backups', 'Action Manager', 'Bank Statements']);
+    assert.deepEqual(items.map((item) => item.label), ['Backups', 'My Shortcuts', 'Bank Statements']);
 });
 
 test('sorts empty and single-item menu lists', () => {

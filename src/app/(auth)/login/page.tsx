@@ -99,7 +99,7 @@ export default function LoginPage() {
     <>
       {isLoading && <LoadingModal message="Signing in..." />}
       <CardHeader className="flex flex-col items-center gap-4 text-center">
-        <Link href="/action-manager" aria-label="Go to Action Manager">
+        <Link href="/action-manager" aria-label="Go to My Shortcuts">
           <Logo />
         </Link>
         <div className="flex flex-col">

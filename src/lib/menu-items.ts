@@ -41,9 +41,9 @@ export interface MenuItem {
 }
 
 export const allMenuItems: MenuItem[] = [
-  { href: "/action-manager", label: "Action Manager", icon: LayoutDashboard },
+  { href: "/action-manager", label: "My Shortcuts", icon: LayoutDashboard },
   { href: "/event-manager", label: "Activity Manager", icon: PlayCircle },
-  { href: "/action-manager/manage", label: "Action Manager Settings", icon: LayoutDashboard },
+  { href: "/action-manager/manage", label: "Customize My Shortcuts", icon: LayoutDashboard },
   { href: "/hr-manager", label: "HR Hub", icon: Users2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
   { href: "/inventory-manager/track", label: "Inventory", icon: PackageSearch },

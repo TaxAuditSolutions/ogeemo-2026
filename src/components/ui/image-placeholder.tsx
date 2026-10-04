@@ -53,7 +53,7 @@ function getPlaceholderConfig(id: string): { icon: LucideIcon; label: string } {
     'pitch-architecture': { icon: Layers, label: 'Platform Architecture' },
     'features-dashboard': { icon: BarChart3, label: 'Dashboard' },
     'features-ecosystem': { icon: Network, label: 'Ogeemo Ecosystem' },
-    'action-chips-spider-web': { icon: Zap, label: 'Action Chips' },
+    'action-chips-spider-web': { icon: Zap, label: 'Shortcuts' },
     'pitch-strategy': { icon: TrendingUp, label: 'Strategy' },
     'tas-team-story': { icon: Users, label: 'TAS Founders' },
     'story-sarah': { icon: User, label: 'Sarah' },

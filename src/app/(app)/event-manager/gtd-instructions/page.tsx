@@ -20,7 +20,7 @@ export default function GtdInstructionsPage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <SectionHeader
-                parent={{ label: 'Action Manager', href: '/action-manager' }}
+                parent={{ label: 'My Shortcuts', href: '/action-manager' }}
                 title="The Ogeemo Method (TOM)"
                 description="Run your daily business operations with ease."
                 actions={
@@ -36,31 +36,31 @@ export default function GtdInstructionsPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3">
                         <BrainCircuit className="h-6 w-6 text-primary" />
-                        The Core Philosophy: The Spider Web
+                        The Core Philosophy: Connected Business Information
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                         <p>
-                           The Ogeemo Method (TOM) is built on the <strong>Spider Web Architecture</strong>. We believe that your business isn't a collection of silos, but a network of interconnected nodes. Every task, client communication, and ledger entry is a signal that travels across your web.
+                            Ogeemo connects the different parts of your business so information can flow between your clients, projects, activities, time, billing and reporting.
                         </p>
-                        <h3>Projects, Tasks, and the Activity Manager</h3>
                         <p>
-                           Ogeemo's productivity tools are deeply integrated. Understanding how they connect is the key to mastering your workflow.
+                            <strong>Enter information once and use it wherever you need it.</strong>
                         </p>
+                        <h3>Projects, Tasks and Activity Manager</h3>
                         <ul>
                             <li>
-                                <strong>Projects (The Outcomes):</strong> A Project is any goal requiring multiple steps. Manage high-level outcomes in the <Link href="/projects/all" className="text-primary hover:underline">Project Manager</Link>.
+                                <strong>Projects — What you're working toward:</strong> Use Projects to organize work that involves multiple activities or steps. Manage them in the <Link href="/projects/all" className="text-primary hover:underline">Project Manager</Link>.
                             </li>
                              <li>
-                                <strong>Tasks (The Actions):</strong> The individual steps that move a project forward. Manage these on visual Kanban boards within each project.
+                                <strong>Tasks — What needs to be done:</strong> Use Tasks to keep track of the individual actions needed to move work forward. Tasks live on visual boards within each project.
                             </li>
                              <li>
-                                <strong>Activity Manager (The Execution):</strong> Your visual time-based view. Any task with a specific date and time automatically appears here. Use the 5-minute temporal granularity to capture work that usually falls through the cracks.
+                                <strong>Activity Manager — What happened and when:</strong> Use the <Link href="/event-manager" className="text-primary hover:underline">Activity Manager</Link> to record appointments, calls, meetings, work sessions and other business activity. Link activities to clients and projects so your records stay connected, including the short jobs that usually get missed.
                             </li>
                         </ul>
                         <p>
-                            <strong>Native Integration:</strong> When you create an entry in the <Link href="/event-manager" className="text-primary hover:underline">Activity Manager</Link> and link it to a project, it instantly appears on that project's board and updates your time logs for billing.
+                            <strong>Connected automatically:</strong> When you record an activity and connect it to a project, Ogeemo makes that information available where it's needed — including the project board, project activity, time records and billing where applicable.
                         </p>
                     </div>
 
@@ -69,13 +69,13 @@ export default function GtdInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Inbox className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 1: Capture Signals</span>
+                                    <span className="font-semibold">Step 1: Capture</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Free your mind by offloading every thought into a trusted Ogeemo node.
+                                        Record tasks, ideas, appointments and other business activity as they happen.
                                     </p>
                                     <ul>
                                         <li><strong>For Actions:</strong> Use the <strong><Link href="/projects/inbox/tasks" className="text-primary hover:underline">"Action Items"</Link></strong> project as your primary inbox for to-dos.</li>
@@ -89,13 +89,13 @@ export default function GtdInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <BookOpen className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 2: Triage & Process</span>
+                                    <span className="font-semibold">Step 2: Organize</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Regularly process your inboxes. Go to the <strong>"Action Items"</strong> board and ask: "Is this actionable?"
+                                        Connect your work to the right client, project, person or schedule. Go to the <strong>"Action Items"</strong> board and ask: "Is this actionable?"
                                     </p>
                                     <ul>
                                         <li><strong>If it's a goal:</strong> Create a new project in the <Link href="/projects/all" className="text-primary hover:underline">Project Manager</Link>.</li>
@@ -110,18 +110,18 @@ export default function GtdInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <Zap className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 3: Sculpt Your Workspace</span>
+                                    <span className="font-semibold">Step 3: Personalize</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                    <p>
-                                      Use <strong>Action Chip Magic</strong> to customize your dashboard.
+                                      Set up your shortcuts and workspace around the tools you use most. Open <strong>Customize Shortcuts</strong> to get started.
                                    </p>
                                     <ul>
-                                        <li>Go to <strong><Link href="/action-manager/manage" className="text-primary hover:underline">Action Manager Settings</Link></strong>.</li>
-                                        <li>Drag only the tools you need into your "Selected" list.</li>
-                                        <li>This creates a personalized "Command Strip" in your sidebar, reducing cognitive load and maximizing speed.</li>
+                                        <li>Go to <strong><Link href="/action-manager/manage" className="text-primary hover:underline">Customize My Shortcuts</Link></strong>.</li>
+                                        <li>Drag only the tools you need into your "My Shortcuts" list.</li>
+                                        <li>Your shortcuts appear in the sidebar, so the tools you use most are always one click away.</li>
                                     </ul>
                                </div>
                             </AccordionContent>
@@ -130,13 +130,13 @@ export default function GtdInstructionsPage() {
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
                                     <CheckCircle className="h-5 w-5 text-primary"/>
-                                    <span className="font-semibold">Step 4: Execute & Review</span>
+                                    <span className="font-semibold">Step 4: Work &amp; Review</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Trust your system. Engage with your <strong>Action Manager</strong> dashboard to execute your daily mission. Perform a <strong>Weekly Review</strong> to ensure your web remains current, clear, and complete.
+                                        Complete your work and use Ogeemo to keep track of what's done, what's next and what needs attention. A <strong>Weekly Review</strong> is a good time to check that your shortcuts and projects still match how you work.
                                     </p>
                                 </div>
                             </AccordionContent>
@@ -153,19 +153,19 @@ export default function GtdInstructionsPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="prose prose-sm dark:prose-invert max-w-none">
-                    <h4>1. Audit Your Environment</h4>
+                    <h4>1. Choose Your Workspace</h4>
                     <p>
-                        Explore the sidebar. Notice the three views: Full Menu, Grouped, and Favorites. Decide which managers are critical to your operation and use the Action Manager to surface them.
+                        Choose the navigation view that works best for you — Full Menu, Grouped or Favorites — and set up shortcuts to the tools you use most with <Link href="/action-manager/manage" className="text-primary hover:underline">My Shortcuts</Link>.
                     </p>
                     
-                    <h4>2. Configure Your Profile</h4>
+                    <h4>2. Set Up Your Business</h4>
                     <p>
-                        Click <strong><Link href="/settings" className="text-primary hover:underline">Settings</Link></strong>. Enter your business name and BN. This ensures your <Link href="/accounting/invoices/create" className="text-primary hover:underline">Invoices</Link> and <Link href="/accounting/tax/categories" className="text-primary hover:underline">Tax Categories</Link> are professionally aligned from day one.
+                        Add or confirm your business information, logo, tax settings and other company details in <strong><Link href="/settings" className="text-primary hover:underline">Settings</Link></strong>. This ensures your <Link href="/accounting/invoices/create" className="text-primary hover:underline">Invoices</Link> and <Link href="/accounting/tax/categories" className="text-primary hover:underline">Tax Categories</Link> are professionally aligned from day one.
                     </p>
 
-                    <h4>3. Decide and Act</h4>
+                    <h4>3. Start Working</h4>
                     <p>
-                        Everything in Ogeemo is a decision followed by an action. Most items are intuitive, and you can always click an info icon (<Info className="inline h-4 w-4" />) or 3-dot menu (<MoreVertical className="inline h-4 w-4" />) for more options.
+                        Add a client, create a project or record an activity — Ogeemo will connect related information as you work. Most items are intuitive, and you can always click an info icon (<Info className="inline h-4 w-4" />) or 3-dot menu (<MoreVertical className="inline h-4 w-4" />) for more options.
                     </p>
                 </CardContent>
             </Card>

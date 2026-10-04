@@ -172,7 +172,7 @@ export default function ForConsultantsPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-muted-foreground leading-relaxed">
-                                        Sculpt your workspace. Use Action Chips to create a customized command strip of the tools you use for each specific engagement.
+                                        Sculpt your workspace. Use shortcuts to create a customized command strip of the tools you use for each specific engagement.
                                     </p>
                                 </CardContent>
                             </Card>

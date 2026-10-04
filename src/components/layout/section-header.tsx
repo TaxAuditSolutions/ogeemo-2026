@@ -25,7 +25,9 @@ interface SectionHeaderProps {
  * The shared back-link header for drill-down pages (navigation tier: in-page).
  * A labelled "Back to X" button beats a generic Back button: the destination is
  * deterministic even for deep links, and it teaches the hierarchy. Lives at
- * the top-left of page content — the global header stays utilities-only.
+ * the top-left of page content — the global header stays focused on global
+ * utilities (search, workspace, role, user) and global actions (Activity
+ * Manager, Co-Pilot), not page navigation.
  */
 export function SectionHeader({ parent, title, description, actions, className }: SectionHeaderProps) {
   return (

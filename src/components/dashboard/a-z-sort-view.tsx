@@ -152,7 +152,7 @@ export function AZSortView() {
                 </CardDescription>
                  <div className="flex justify-center gap-2 pt-2">
                     <Button asChild variant="outline">
-                        <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Action Manager</Link>
+                        <Link href="/action-manager"><ArrowLeft className="mr-2 h-4 w-4"/> Back to My Shortcuts</Link>
                     </Button>
                     <Button onClick={() => handleSort('asc')}><ArrowDownAZ className="mr-2 h-4 w-4" /> Sort A-Z</Button>
                     <Button onClick={() => handleSort('desc')}><ArrowUpZA className="mr-2 h-4 w-4" /> Sort Z-A</Button>

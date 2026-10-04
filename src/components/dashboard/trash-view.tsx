@@ -63,7 +63,7 @@ export function TrashView() {
     if (!user || trashedChips.length === 0) return;
     try {
         await restoreActionChips(user.uid, trashedChips);
-        toast({ title: "All Items Restored", description: "All items have been moved back to 'Available Actions'."});
+        toast({ title: "All Items Restored", description: "All items have been moved back to 'Available Shortcuts'."});
         setTrashedChips([]);
         // Notify other components that chips have been updated
         window.dispatchEvent(new Event('chipsUpdated'));

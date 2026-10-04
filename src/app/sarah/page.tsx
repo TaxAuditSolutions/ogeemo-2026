@@ -125,8 +125,8 @@ export default function SarahStoryPage() {
                     <div className="flex gap-6 items-start p-6 bg-card rounded-2xl border border-primary/5 hover:border-primary/20 transition-all shadow-sm">
                         <div className="p-3 bg-primary/10 rounded-xl shrink-0"><Zap className="h-6 w-6 text-primary"/></div>
                         <div>
-                            <h4 className="font-bold text-xl mb-2">The Master Action Chip</h4>
-                            <p className="text-muted-foreground leading-relaxed">From one central header, Sarah could pivot her entire business view. By managing her chips, she organized Ogeemo to suit her exact needs, reducing clutter and saving time. She gained absolute control over the elements of her spider web.</p>
+                            <h4 className="font-bold text-xl mb-2">The Master Shortcut</h4>
+                            <p className="text-muted-foreground leading-relaxed">From one central header, Sarah could pivot her entire business view. By managing her shortcuts, she organized Ogeemo to suit her exact needs, reducing clutter and saving time. She gained absolute control over the elements of her spider web.</p>
                         </div>
                     </div>
                     <div className="flex gap-6 items-start p-6 bg-card rounded-2xl border border-primary/5 hover:border-primary/20 transition-all shadow-sm">

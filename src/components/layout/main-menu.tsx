@@ -10,7 +10,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Save, Briefcase, Users, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
+import { Save, Briefcase, Users, Users2, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -29,11 +29,14 @@ export const groupedMenuItems: Record<string, { icon: any; items: string[]; mast
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
     Workspace: { icon: Briefcase, items: ['/event-manager', '/action-manager', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan'] },
+    // People = your internal team (workers, HR, leave); Relationships stays
+    // outward-facing (contacts, leads).
+    People: { icon: Users2, items: ['/workers', '/hr-manager', '/hr-manager/time-off'] },
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
     Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
-    Administration: { icon: Settings, items: ['/hr-manager', '/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
+    Administration: { icon: Settings, items: ['/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
     'Google Apps': { icon: Chrome, items: ['/google'] },
 };
 

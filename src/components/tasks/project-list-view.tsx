@@ -19,6 +19,9 @@ import {
   Check,
   FilePlus2,
   X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -50,8 +53,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, deleteProjects, addProjectTemplate } from '@/services/project-service';
+import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, deleteProjects, addProjectTemplate, getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
+import { getWorkers, type Worker } from '@/services/payroll-service';
+import { sortProjectList, type ProjectListSortKey } from '@/lib/project-picker';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -76,6 +81,10 @@ export function ProjectListView() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [events, setEvents] = useState<TaskEvent[]>([]);
+  // Sortable register headers (beta request): name / contact / status / worker.
+  const [sortConfig, setSortConfig] = useState<{ key: ProjectListSortKey; direction: 'asc' | 'desc' } | null>(null);
 
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactFolders, setContactFolders] = useState<FolderData[]>([]);
@@ -95,9 +104,11 @@ export function ProjectListView() {
     }
     setIsLoading(true);
     try {
-      const [fetchedProjects, fetchedContacts] = await Promise.all([
+      const [fetchedProjects, fetchedContacts, fetchedWorkers, fetchedEvents] = await Promise.all([
         getProjects(user.uid),
         getContacts(user.uid),
+        getWorkers(user.uid).catch(() => []),
+        getTasksForUser(user.uid).catch(() => []),
       ]);
 
       const fetchedFolders = await getContactFolders(user.uid).catch(() => []);
@@ -106,6 +117,8 @@ export function ProjectListView() {
 
       setProjects(fetchedProjects);
       setContacts(fetchedContacts);
+      setWorkers(fetchedWorkers);
+      setEvents(fetchedEvents);
       setContactFolders(fetchedFolders);
       setCompanies(fetchedCompanies);
       setCustomIndustries(fetchedIndustries);
@@ -209,6 +222,52 @@ export function ProjectListView() {
   };
 
 
+  const contactNameById = useMemo(() => new Map(contacts.map((c) => [c.id, c.name])), [contacts]);
+
+  // Projects -> worker display names, derived from Activity Manager events
+  // (each event carries projectId + workerId). Multiple workers per project
+  // are listed alphabetically; the first name is the sort key.
+  const workerNamesByProject = useMemo(() => {
+    const nameById = new Map<string, string>();
+    workers.forEach((w) => nameById.set(w.id, w.name));
+    if (user) nameById.set(user.uid, user.displayName || 'You');
+    const byProject = new Map<string, string[]>();
+    for (const ev of events) {
+      if (!ev.projectId) continue;
+      const name = (ev.workerId ? nameById.get(ev.workerId) : undefined) || '';
+      if (!name) continue;
+      const list = byProject.get(ev.projectId) ?? [];
+      if (!list.includes(name)) list.push(name);
+      byProject.set(ev.projectId, list);
+    }
+    byProject.forEach((list) => list.sort((a, b) => a.localeCompare(b)));
+    return byProject;
+  }, [workers, events, user]);
+
+  const sortedProjects = useMemo(
+    () =>
+      sortConfig
+        ? sortProjectList(projects, sortConfig.key, sortConfig.direction, { contactNameById, workerNamesByProject })
+        : projects,
+    [projects, sortConfig, contactNameById, workerNamesByProject],
+  );
+
+  const requestSort = (key: ProjectListSortKey) => {
+    setSortConfig((prev) =>
+      prev?.key === key
+        ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+        : { key, direction: 'asc' },
+    );
+  };
+  const sortIcon = (key: ProjectListSortKey) =>
+    sortConfig?.key !== key ? (
+      <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
+    ) : sortConfig.direction === 'asc' ? (
+      <ArrowUp className="h-3.5 w-3.5" />
+    ) : (
+      <ArrowDown className="h-3.5 w-3.5" />
+    );
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-4">
@@ -276,21 +335,38 @@ export function ProjectListView() {
                         aria-label="Select all projects"
                       />
                     </TableHead>
-                    <TableHead>Project Name</TableHead>
-                    <TableHead>Contact (Client/Lead)</TableHead>
-                    <TableHead>Current Status</TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 font-semibold" onClick={() => requestSort('name')}>
+                        Project Name {sortIcon('name')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 font-semibold" onClick={() => requestSort('contact')}>
+                        Contact (Client/Lead) {sortIcon('contact')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 font-semibold" onClick={() => requestSort('status')}>
+                        Current Status {sortIcon('status')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 font-semibold" onClick={() => requestSort('worker')}>
+                        Worker {sortIcon('worker')}
+                      </Button>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {projects.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                         No projects found. Use the button above to start your first project.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    projects.map(p => {
+                    sortedProjects.map(p => {
                       const contact = contacts.find(c => c.id === p.contactId);
                       return (
                         <TableRow key={p.id}>
@@ -309,6 +385,9 @@ export function ProjectListView() {
                           <TableCell>{contact?.name || 'Unassigned'}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{statusDisplayMap[p.status || 'planning']}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {(workerNamesByProject.get(p.id) || []).join(', ') || '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>

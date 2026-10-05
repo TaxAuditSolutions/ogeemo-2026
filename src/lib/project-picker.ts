@@ -122,3 +122,64 @@ export function buildProjectGroups(
 
     return groups;
 }
+
+/* ------------------------------------------------------------------ *
+ * Project register sorting (sortable table headers)
+ * ------------------------------------------------------------------ */
+
+export type ProjectListSortKey = 'name' | 'contact' | 'status' | 'worker';
+
+export interface ProjectListSortData {
+    contactNameById: Map<string, string>;
+    /** projectId -> resolved worker display names (alphabetical, deduped). */
+    workerNamesByProject: Map<string, string[]>;
+}
+
+/** Status lifecycle rank; unknown statuses rank with planning. */
+export function statusRank(project: Project): number {
+    return STATUS_RANK[project.status ?? 'unknown'] ?? 2;
+}
+
+function sortValue(project: Project, key: ProjectListSortKey, data: ProjectListSortData): string | number {
+    switch (key) {
+        case 'contact':
+            return (project.contactId ? data.contactNameById.get(project.contactId) : '') || '';
+        case 'status':
+            return statusRank(project);
+        case 'worker':
+            return data.workerNamesByProject.get(project.id)?.[0] ?? '';
+        case 'name':
+        default:
+            return project.name;
+    }
+}
+
+/**
+ * Sorts the Project register by one of the beta-requested keys.
+ * Rules: ties break alphabetically by project name; unassigned/empty values
+ * always sink to the bottom regardless of direction (asc and desc).
+ */
+export function sortProjectList(
+    projects: Project[],
+    key: ProjectListSortKey,
+    direction: 'asc' | 'desc',
+    data: ProjectListSortData,
+): Project[] {
+    return [...projects].sort((a, b) => {
+        const va = sortValue(a, key, data);
+        const vb = sortValue(b, key, data);
+        const aEmpty = va === '';
+        const bEmpty = vb === '';
+        if (aEmpty && bEmpty) return a.name.localeCompare(b.name);
+        if (aEmpty) return 1;
+        if (bEmpty) return -1;
+        let r: number;
+        if (typeof va === 'number' && typeof vb === 'number') {
+            r = va - vb;
+        } else {
+            r = String(va).localeCompare(String(vb));
+        }
+        if (direction === 'desc') r = -r;
+        return r !== 0 ? r : a.name.localeCompare(b.name);
+    });
+}

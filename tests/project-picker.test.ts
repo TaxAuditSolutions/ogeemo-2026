@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildProjectGroups, statusLabel, type ProjectPickGroup } from '../src/lib/project-picker';
+import { buildProjectGroups, statusLabel, sortProjectList, type ProjectPickGroup, type ProjectListSortData } from '../src/lib/project-picker';
 import { type Project } from '../src/types/calendar-types';
 
 /**
@@ -85,4 +85,48 @@ test('statusLabel maps every known status and blanks unknown', () => {
     assert.equal(statusLabel('completed'), 'Completed');
     assert.equal(statusLabel('unknown'), '');
     assert.equal(statusLabel(undefined), '');
+});
+
+/* --- Project register sorting (sortable table headers) --- */
+
+const SORT_DATA: ProjectListSortData = {
+    contactNameById: new Map([
+        ['c1', 'Acme Corp'],
+        ['c2', 'Beta LLC'],
+    ]),
+    workerNamesByProject: new Map([
+        ['p1', ['Dan White']],
+        ['p6', ['Dan White', 'Julie White']],
+    ]),
+};
+
+test('register sort: by name, asc and desc are mirrors', () => {
+    const asc = sortProjectList(PROJECTS, 'name', 'asc', SORT_DATA).map((p) => p.name);
+    assert.deepEqual(asc, [...asc].sort((a, b) => a.localeCompare(b)));
+    const desc = sortProjectList(PROJECTS, 'name', 'desc', SORT_DATA).map((p) => p.name);
+    assert.deepEqual(desc, [...asc].sort((a, b) => b.localeCompare(a)));
+});
+
+test('register sort: by contact, unassigned last in both directions', () => {
+    for (const dir of ['asc', 'desc'] as const) {
+        const sorted = sortProjectList(PROJECTS, 'contact', dir, SORT_DATA);
+        assert.equal(sorted[sorted.length - 1].id, 'p5', `${dir}: no-contact project must be last`);
+        const contactOrder = [...new Set(sorted.slice(0, -1).map((p) => p.contactId))];
+        assert.deepEqual(contactOrder, dir === 'asc' ? ['c1', 'c2'] : ['c2', 'c1'], `${dir}: grouped by contact`);
+    }
+});
+
+test('register sort: by status asc puts active first, desc puts completed first', () => {
+    const asc = sortProjectList(PROJECTS, 'status', 'asc', SORT_DATA);
+    assert.equal(asc[0].status, 'active');
+    const desc = sortProjectList(PROJECTS, 'status', 'desc', SORT_DATA);
+    assert.equal(desc[0].status, 'completed');
+});
+
+test('register sort: by worker, projects without workers last', () => {
+    const sorted = sortProjectList(PROJECTS, 'worker', 'asc', SORT_DATA);
+    const assignedFirst = sorted.slice(0, 2).map((p) => p.id).sort();
+    assert.deepEqual(assignedFirst, ['p1', 'p6'], 'projects with workers sort to the top');
+    const assignedCount = sorted.filter((p) => SORT_DATA.workerNamesByProject.has(p.id)).length;
+    assert.deepEqual(sorted.slice(0, assignedCount).map((p) => p.id).sort(), ['p1', 'p6']);
 });

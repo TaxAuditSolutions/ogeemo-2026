@@ -47,6 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -145,6 +146,21 @@ export function TimeManagerView() {
     const [contactAction, setContactAction] = React.useState<string>('select');
     const [isProjectPopoverOpen, setIsProjectPopoverOpen] = React.useState(false);
     const [projectAction, setProjectAction] = React.useState<string>('select');
+    // Project picker ordering (beta feedback: selection must stay simple as
+    // project counts grow). Session-local for now; promote to a saved
+    // preference only if the Projects/Activity Manager audit asks for it.
+    const [projectSortMode, setProjectSortMode] = React.useState<ProjectSortMode>('active');
+    const contactNameById = React.useMemo(() => new Map(contacts.map((c) => [c.id, c.name])), [contacts]);
+    const projectGroups = React.useMemo(
+        () =>
+            buildProjectGroups(
+                projects,
+                contactNameById,
+                projectSortMode,
+                contacts.find((c) => c.id === selectedContactId)?.name ?? null,
+            ),
+        [projects, contactNameById, projectSortMode, contacts, selectedContactId],
+    );
     const [newProjectName, setNewProjectName] = React.useState('');
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
     
@@ -595,7 +611,43 @@ export function TimeManagerView() {
                                         {projectAction === 'select' ? (
                                             <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
                                                 <PopoverTrigger asChild><Button variant="outline" className="w-full justify-between mt-2 text-xs truncate">{selectedProjectId ? projects.find(p => p.id === selectedProjectId)?.name : "Select project..."}<ChevronsUpDown className="h-3 w-3 opacity-50" /></Button></PopoverTrigger>
-                                                <PopoverContent className="w-full p-0"><Command><CommandInput placeholder="Search..." /><CommandList><CommandEmpty>No results.</CommandEmpty><CommandGroup>{projects.map(p => (<CommandItem key={p.id} onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}> <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")}/>{p.name}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent>
+                                                <PopoverContent className="w-full p-0">
+                                                    <div className="flex items-center gap-1 border-b p-2">
+                                                        {PROJECT_SORT_MODES.map((mode) => (
+                                                            <Button key={mode.value} type="button" variant={projectSortMode === mode.value ? 'secondary' : 'ghost'} size="sm" className="h-7 flex-1 px-2 text-xs" onClick={() => setProjectSortMode(mode.value)}>
+                                                                {mode.label}
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                    <Command>
+                                                        <CommandInput placeholder="Search projects or clients..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>No results.</CommandEmpty>
+                                                            {projectGroups.map((group) => (
+                                                                <CommandGroup key={group.key} heading={group.label}>
+                                                                    {group.items.map(({ project: p, contactName, status }) => (
+                                                                        <CommandItem
+                                                                            key={p.id}
+                                                                            value={`${p.name} ${contactName} ${statusLabel(status)} ${p.id}`}
+                                                                            onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}
+                                                                            className={group.subdued ? 'opacity-60' : undefined}
+                                                                        >
+                                                                            <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")} />
+                                                                            <span className="flex min-w-0 flex-col">
+                                                                                <span className="truncate">{p.name}</span>
+                                                                                {(contactName || statusLabel(status)) && (
+                                                                                    <span className="truncate text-[10px] text-muted-foreground">
+                                                                                        {[contactName, statusLabel(status)].filter(Boolean).join(' · ')}
+                                                                                    </span>
+                                                                                )}
+                                                                            </span>
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            ))}
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
                                             </Popover>
                                         ) : <div className="flex gap-1 mt-2"><Input placeholder="Name..." value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className="text-xs h-8"/><Button onClick={handleCreateProject} size="sm" className="h-8">Create</Button></div>}
                                     </CardContent>

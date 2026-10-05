@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, BookOpen, Building2, Palette, PanelLeft, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Building2, Palette, PanelLeft, Settings, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -46,6 +46,12 @@ const personalizeSections: {
     description: 'Pick the theme colors and visual identity for your workspace.',
     icon: Palette,
     links: [{ label: 'Open Visual Identity in Settings', href: '/settings' }],
+  },
+  {
+    title: 'Settings',
+    description: 'Manage your profile, preferences and defaults — voice dictation, button tips, tax rate and planning rituals.',
+    icon: Settings,
+    links: [{ label: 'Open Settings', href: '/settings' }],
   },
   {
     title: 'Learn it first',

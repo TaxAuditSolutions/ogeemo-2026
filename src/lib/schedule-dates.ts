@@ -44,3 +44,14 @@ export function resolveStartClock(
     }
     return { hour: now.getHours(), minute: now.getMinutes() };
 }
+
+/**
+ * End-time default for time-logging dialogs: one hour after *now* (minute
+ * floored to the 5-minute step), clamped to 23:55 so End stays inside the
+ * same day - replacing the old hardcoded 17:00 that broke evening entries.
+ */
+export function oneHourLaterValue(now: Date): { hour: string; minute: string } {
+    const startMinutes = now.getHours() * 60 + Math.floor(now.getMinutes() / 5) * 5;
+    const total = Math.min(startMinutes + 60, 23 * 60 + 55);
+    return { hour: String(Math.floor(total / 60)).padStart(2, '0'), minute: String(total % 60).padStart(2, '0') };
+}

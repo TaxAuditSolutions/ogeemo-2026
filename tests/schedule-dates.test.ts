@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock } from '../src/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock, oneHourLaterValue } from '../src/lib/schedule-dates';
 
 const day = (iso: string) => new Date(iso);
 
@@ -48,4 +48,13 @@ test('resolveStartClock: a user-chosen time is preserved', () => {
 test('resolveStartClock: touched hour without minute falls back to now\'s minute', () => {
     const now = new Date('2026-10-05T14:37:00');
     assert.deepEqual(resolveStartClock(now, true, '08', undefined), { hour: 8, minute: 37 });
+});
+
+test('oneHourLaterValue: one hour after now with the minute floored to 5', () => {
+    assert.deepEqual(oneHourLaterValue(new Date('2026-10-05T14:37:00')), { hour: '15', minute: '35' });
+    assert.deepEqual(oneHourLaterValue(new Date('2026-10-05T09:00:00')), { hour: '10', minute: '00' });
+});
+
+test('oneHourLaterValue: clamps to 23:55 so End stays inside the same day', () => {
+    assert.deepEqual(oneHourLaterValue(new Date('2026-10-05T23:30:00')), { hour: '23', minute: '55' });
 });

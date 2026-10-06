@@ -33,6 +33,13 @@ import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { presetHourValue, presetMinuteValue, oneHourLaterValue } from '@/lib/schedule-dates';
+
+/** Start-time default: the computer's current clock (never a hardcoded 9 AM). */
+function currentClock(): { hour: string; minute: string } {
+    const now = new Date();
+    return { hour: presetHourValue(now), minute: presetMinuteValue(now) };
+}
 
 interface LogTimeDialogProps {
     isOpen: boolean;
@@ -54,8 +61,8 @@ export function LogTimeDialog({
     preselectedContactId = null,
 }: LogTimeDialogProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    const [startTime, setStartTime] = useState({ hour: '09', minute: '00' });
-    const [endTime, setEndTime] = useState({ hour: '17', minute: '00' });
+    const [startTime, setStartTime] = useState(currentClock);
+    const [endTime, setEndTime] = useState(() => oneHourLaterValue(new Date()));
     const [subject, setSubject] = useState('');
     const [notes, setNotes] = useState('');
     const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
@@ -117,8 +124,9 @@ export function LogTimeDialog({
                 setBillableRate(entryToEdit.billableRate || 0);
             } else {
                 setDate(new Date());
-                setStartTime({ hour: '09', minute: '00' });
-                setEndTime({ hour: '17', minute: '00' });
+                // Beta UX: defaults follow the computer's clock, not 9 AM - 5 PM.
+                setStartTime(currentClock());
+                setEndTime(oneHourLaterValue(new Date()));
                 setSubject('');
                 setNotes('');
                 setSelectedWorkerId(preselectedWorkerId || user.uid);

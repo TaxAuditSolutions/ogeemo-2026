@@ -26,3 +26,21 @@ export function presetMinuteValue(now: Date, step = 5): string {
     const minutes = Math.floor(now.getMinutes() / step) * step;
     return String(minutes).padStart(2, '0');
 }
+
+/**
+ * Clock values for a scheduled Start: the user's chosen hour/minute when they
+ * made one, otherwise *now*. An untouched Start still carries the mount-time
+ * preset (page load), which is stale later - a tab opened at 9 AM saving at
+ * 2 PM should start at 2 PM, not 9 AM.
+ */
+export function resolveStartClock(
+    now: Date,
+    touched: boolean,
+    hour: string | undefined,
+    minute: string | undefined,
+): { hour: number; minute: number } {
+    if (touched && hour) {
+        return { hour: parseInt(hour, 10), minute: minute ? parseInt(minute, 10) : now.getMinutes() };
+    }
+    return { hour: now.getHours(), minute: now.getMinutes() };
+}

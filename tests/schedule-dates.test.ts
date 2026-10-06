@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { endFollowsStart, presetHourValue, presetMinuteValue } from '../src/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock } from '../src/lib/schedule-dates';
 
 const day = (iso: string) => new Date(iso);
 
@@ -33,4 +33,19 @@ test('presetMinuteValue: floors to the 5-minute step (never a future time)', () 
     assert.equal(presetMinuteValue(new Date('2026-10-05T14:37:00')), '35');
     assert.equal(presetMinuteValue(new Date('2026-10-05T14:00:00')), '00');
     assert.equal(presetMinuteValue(new Date('2026-10-05T14:59:00')), '55');
+});
+
+test('resolveStartClock: untouched Start uses the current time, not the page-load preset', () => {
+    const now = new Date('2026-10-05T14:37:00');
+    assert.deepEqual(resolveStartClock(now, false, '09', '00'), { hour: 14, minute: 37 });
+});
+
+test('resolveStartClock: a user-chosen time is preserved', () => {
+    const now = new Date('2026-10-05T14:37:00');
+    assert.deepEqual(resolveStartClock(now, true, '08', '30'), { hour: 8, minute: 30 });
+});
+
+test('resolveStartClock: touched hour without minute falls back to now\'s minute', () => {
+    const now = new Date('2026-10-05T14:37:00');
+    assert.deepEqual(resolveStartClock(now, true, '08', undefined), { hour: 8, minute: 37 });
 });

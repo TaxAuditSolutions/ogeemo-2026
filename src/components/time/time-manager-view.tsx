@@ -48,7 +48,7 @@ import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
-import { endFollowsStart, presetHourValue, presetMinuteValue } from '@/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock } from '@/lib/schedule-dates';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -173,16 +173,20 @@ export function TimeManagerView() {
     ].filter(Boolean).join(' · ');
 
     // Opening "Add scheduling & billing details" pre-fills the schedule with
-    // now: Start and End on the current day, Start's clock time to the
-    // current time. Existing values are never overwritten - the section is a
-    // view/edit surface, so re-opening or editing keeps the user's choices.
+    // *now*: Start and End on the current day, Start's clock time to the
+    // current time. The mount-time preset freezes Start at page-load hour
+    // (a tab opened at 9 AM stays 9 AM), so untouched values are REFRESHED
+    // here - anything the user chose, or that was loaded from an existing
+    // event, is never overwritten.
     const applyScheduleDefaults = () => {
         const now = new Date();
-        const base = startDate ?? now;
-        if (!startDate) setStartDate(now);
-        if (!endDate) setEndDate(base);
-        if (startHour === undefined) setStartHour(presetHourValue(now));
-        if (startMinute === undefined) setStartMinute(presetMinuteValue(now));
+        const startFinal = startDateTouchedRef.current ? (startDate ?? now) : now;
+        if (!startDateTouchedRef.current) setStartDate(now);
+        if (!endDate) setEndDate(startFinal);
+        if (!startTimeTouchedRef.current) {
+            setStartHour(presetHourValue(now));
+            setStartMinute(presetMinuteValue(now));
+        }
     };
     const [newProjectName, setNewProjectName] = React.useState('');
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
@@ -208,6 +212,12 @@ export function TimeManagerView() {
 
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
+    // Has the user chosen Start themselves? Untouched Start still carries the
+    // mount-time preset (page-load hour), which must refresh to *now* when the
+    // scheduling section opens or a save happens - touched Start (or a Start
+    // loaded from an existing event) is never overwritten.
+    const startDateTouchedRef = useRef(false);
+    const startTimeTouchedRef = useRef(false);
 
     // Initial client-side setup
     useEffect(() => {
@@ -324,8 +334,11 @@ export function TimeManagerView() {
                 start = startOfDay(startDate);
                 end = endOfDay(endDate || startDate);
             } else {
-                const hour = startHour ? parseInt(startHour) : new Date().getHours();
-                const minute = startMinute ? parseInt(startMinute) : new Date().getMinutes();
+                // Untouched Start means *now* - the mount preset freezes the
+                // hour at page load, which is stale for later saves.
+                const clock = resolveStartClock(new Date(), startTimeTouchedRef.current, startHour, startMinute);
+                const hour = clock.hour;
+                const minute = clock.minute;
                 start = set(startDate, { hours: hour, minutes: minute });
                 const finalEndDate = endDate || startDate;
                 const finalEndHour = endHour ? parseInt(endHour) : hour;
@@ -371,6 +384,7 @@ export function TimeManagerView() {
         setSubject(""); setNotes(""); setSelectedProjectId(null); setSelectedContactId(null);
         setIsBillable(false); setBillableRate(100); setStartDate(now);
         setStartHour(formatDate(now, 'HH')); setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
+        startDateTouchedRef.current = false; startTimeTouchedRef.current = false;
         
         setEndDate(undefined); setEndHour(undefined); setEndMinute(undefined);
         setIsAllDay(false);
@@ -451,6 +465,7 @@ export function TimeManagerView() {
                     setBillableRate(eventData.billableRate || 0); setSessions(eventData.sessions || []);
                     if (eventData.start) {
                         const sDate = new Date(eventData.start);
+                        startDateTouchedRef.current = true; startTimeTouchedRef.current = true;
                         setStartDate(sDate); setStartHour(String(sDate.getHours()).padStart(2, '0')); setStartMinute(String(sDate.getMinutes()).padStart(2, '0'));
                     }
                     if (eventData.end) {
@@ -467,6 +482,7 @@ export function TimeManagerView() {
                 if (sParam) {
                     const sDate = parseISO(sParam);
                     if (isValid(sDate)) {
+                        startDateTouchedRef.current = true; startTimeTouchedRef.current = true;
                         setStartDate(sDate); setStartHour(String(sDate.getHours()).padStart(2, '0')); setStartMinute(String(sDate.getMinutes()).padStart(2, '0'));
                     }
                 }
@@ -766,9 +782,9 @@ export function TimeManagerView() {
                                         <Label className="text-xs">Start</Label>
                                         <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                                             <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{startDate ? formatDate(startDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { const follow = endFollowsStart(startDate, endDate); setStartDate(d); if (follow) setEndDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
+                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { startDateTouchedRef.current = true; const follow = endFollowsStart(startDate, endDate); setStartDate(d); if (follow) setEndDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
                                         </Popover>
-                                        <div className="flex gap-1"><Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                                        <div className="flex gap-1"><Select value={startHour} onValueChange={(v) => { startTimeTouchedRef.current = true; setStartHour(v); }} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={(v) => { startTimeTouchedRef.current = true; setStartMinute(v); }} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-xs">End</Label>

@@ -48,6 +48,7 @@ import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
+import { endFollowsStart } from '@/lib/schedule-dates';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -748,7 +749,7 @@ export function TimeManagerView() {
                                         <Label className="text-xs">Start</Label>
                                         <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
                                             <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{startDate ? formatDate(startDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { setStartDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
+                                            <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { const follow = endFollowsStart(startDate, endDate); setStartDate(d); if (follow) setEndDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
                                         </Popover>
                                         <div className="flex gap-1"><Select value={startHour} onValueChange={setStartHour} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={setStartMinute} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
                                     </div>

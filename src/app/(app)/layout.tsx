@@ -36,6 +36,7 @@ import {
   OgeemoCopilotSidebarProvider,
   useOgeemoCopilotSidebar,
 } from '@/context/ogeemo-copilot-sidebar-context';
+import { GlobalDictation } from '@/components/ui/global-dictation-button';
 
 
 /**
@@ -294,6 +295,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </main>
                   </div>
                   <OgeemoCopilotSidebar />
+                  <GlobalDictation />
                 </div>
               </HytexerciseProvider>
             </SidebarViewProvider>

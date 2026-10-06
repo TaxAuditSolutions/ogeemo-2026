@@ -16,10 +16,17 @@ not document work if recording it means too much typing or too many steps.
 - **Meeting Agenda** moved from a competing full-width button into a
   *More tools* menu beside Details — discoverable, not promotional.
 
-**Voice-to-text** (`DictationButton`, Web Speech API):
-- Mic on **Details**, **Active Session Notes** and the session-edit
-  **Session Notes**; tap → speak → tap to stop; phrases are appended, never
-  replaced (`appendTranscript`, unit-tested).
+**Voice-to-text** (`GlobalDictation`, Web Speech API — one mic, any field):
+- A single floating microphone on every screen (bottom-right, 48px). Click
+  into any text field — Details, session notes, any form, any page — and tap
+  the mic; or tap it first, and your last-touched field is remembered (with
+  Activity Manager Details as the sensible default).
+- Clicking the mic never steals focus from your field; while recording a pill
+  shows where words are landing (`Listening → Details`) and the button pulses
+  red. If nothing sensible is selected it prompts to select a field instead
+  of silently recording into the void.
+- Phrases are appended, never replaced (`appendTranscript` + target picker,
+  unit-tested), driven through React's controlled-input pathway.
 - Honors the existing **Voice Dictation** preference (Settings → Preferences),
   which previously toggled nothing — it is now real.
 - Hidden automatically where the browser lacks speech recognition. Best on

@@ -48,8 +48,6 @@ import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
-import { DictationButton } from '@/components/ui/dictation-button';
-import { appendTranscript } from '@/lib/transcript';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -708,7 +706,6 @@ export function TimeManagerView() {
                                 <div className="flex items-center justify-between gap-2">
                                     <Label htmlFor="notes">Details</Label>
                                     <div className="flex items-center gap-1">
-                                        <DictationButton label="details" onTranscript={(t) => setNotes((prev) => appendTranscript(prev, t))} />
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs text-muted-foreground">
@@ -862,10 +859,7 @@ export function TimeManagerView() {
                             </div>
                             <div className="flex gap-2 items-end">
                                 <div className="flex-1">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
-                                        <DictationButton label="active session notes" onTranscript={(t) => setCurrentSessionNotes((prev) => appendTranscript(prev, t))} />
-                                    </div>
+                                    <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
                                     <Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" placeholder="Describe the current session you are working on" />
                                 </div>
                                 <Button onClick={handleLogCurrentSession} variant="outline" size="sm" disabled={!timerState?.isActive} className="h-10">
@@ -918,10 +912,7 @@ export function TimeManagerView() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                                <Label className="text-xs">Session Notes</Label>
-                                <DictationButton label="session notes" onTranscript={(t) => setEditSessionNotes((prev) => appendTranscript(prev, t))} />
-                            </div>
+                            <Label className="text-xs">Session Notes</Label>
                             <Textarea value={editSessionNotes} onChange={e => setEditSessionNotes(e.target.value)} rows={4} />
                         </div>
                     </div>

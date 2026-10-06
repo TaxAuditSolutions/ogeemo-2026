@@ -30,13 +30,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserInTenant, updateUserInTenant } from '@/app/actions/user-actions';
+import { addWorker, updateWorker } from '@/services/payroll-service';
 
 import type { SidebarAccessConfig, UserProfile } from '@/core/user-profile-service';
 import { createTenantWithSuperAdmin } from '@/app/actions/org-actions';
 import { getAssignableRoles, ROLE_LABELS } from '@/core/rbac';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { allMenuItems } from '@/lib/menu-items';
-import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info, Building2 } from 'lucide-react';
+import { LoaderCircle, Eye, EyeOff, Search, UserPlus, ChevronsUpDown, Check, X, Save, Info, Building2, Users } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -67,9 +68,11 @@ interface AddUserDialogProps {
     onOpenChange: (isOpen: boolean) => void;
     onUserAdded: () => void;
     userToEdit: UserProfile | null;
+    /** Pre-fill for the mirror "Create sign-in" flow from the Workers list. */
+    preset?: { name?: string; email?: string };
 }
 
-export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }: AddUserDialogProps) {
+export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, preset }: AddUserDialogProps) {
     const [isSaving, setIsSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -77,6 +80,9 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [isCreatingNewTenant, setIsCreatingNewTenant] = useState(false);
+    // One-onboarding model: creating a user also establishes their Worker
+    // record unless the admin opts out (people-model.md).
+    const [addToWorkforce, setAddToWorkforce] = useState(true);
     const [sidebarAccessMode, setSidebarAccessMode] = useState<'inherit' | 'allowlist'>('inherit');
     const [selectedSidebarTargets, setSelectedSidebarTargets] = useState<Set<string>>(() => new Set(allMenuItems.map((item) => item.href)));
 
@@ -136,7 +142,8 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                 setSelectedSidebarTargets(new Set(configuredMenuAccess));
                 setSelectedContactId(null);
             } else {
-                reset({ name: '', email: '', employeeNumber: '', password: '', notes: '', accessLevel: 'viewer', companyName: '', menuAccessMode: 'inherit' });
+                setAddToWorkforce(true);
+                reset({ name: preset?.name ?? '', email: preset?.email ?? '', employeeNumber: '', password: '', notes: '', accessLevel: 'viewer', companyName: '', menuAccessMode: 'inherit' });
                 setSidebarAccessMode('inherit');
                 setSelectedSidebarTargets(new Set(allMenuItems.map((item) => item.href)));
                 setSelectedContactId(null);
@@ -229,7 +236,31 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                     sidebarAccess,
                 });
 
-                toast({ title: 'User Created' });
+                if (addToWorkforce) {
+                    const emailNorm = (values.email || '').trim().toLowerCase();
+                    const existing =
+                        (selectedContactId ? contacts.find((c) => c.id === selectedContactId) : undefined) ||
+                        contacts.find((c) => c.email && c.email.toLowerCase() === emailNorm);
+                    if (existing) {
+                        // Same person already in the directory: convert them to a
+                        // Worker (updateWorker re-files into the Workers taxonomy).
+                        await updateWorker(existing.id, { workerType: 'employee' });
+                    } else {
+                        await addWorker({
+                            name: values.name,
+                            email: values.email,
+                            employeeNumber: values.employeeNumber,
+                            workerType: 'employee',
+                            payType: 'salary',
+                            payRate: 0,
+                            userId: currentUser.uid,
+                            folderId: '',
+                        });
+                    }
+                    toast({ title: 'User Created', description: `${values.name} was also added to Workers and can now be assigned work.` });
+                } else {
+                    toast({ title: 'User Created' });
+                }
             }
             onUserAdded();
             onOpenChange(false);
@@ -319,6 +350,21 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit }:
                                         </Button>
                                     )}
                                 </div>
+                            </div>
+                        )}
+
+                        {!userToEdit && !isCreatingNewTenant && (
+                            <div className="px-6 py-4 bg-primary/5 border-b flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <Users className="h-5 w-5 shrink-0 text-primary" />
+                                    <div>
+                                        <Label className="font-semibold">Add to Workers (team member)</Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            Files this person as a Worker so they can be assigned work in the Activity Manager, tracked in the Time Log, and included in payroll. Uses the selected contact (or a matching email) when one exists.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Switch checked={addToWorkforce} onCheckedChange={setAddToWorkforce} />
                             </div>
                         )}
 

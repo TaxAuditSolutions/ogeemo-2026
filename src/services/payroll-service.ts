@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
+import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -147,13 +148,31 @@ export async function getWorkers(userId: string): Promise<Worker[]> {
     }
 }
 
+/** Resolves the system folder a worker must live in (getWorkers requires it). */
+async function resolveWorkerFolderId(workerType?: Worker['workerType']): Promise<string> {
+    const currentUser = getCurrentAuthContext();
+    const folders = await ensureSystemFolders(currentUser.uid);
+    const wanted = workerType === 'contractor' ? 'contractors' : 'employees';
+    const target =
+        folders.find((f) => f.name?.toLowerCase() === wanted) ||
+        folders.find((f) => f.name?.toLowerCase() === 'workers');
+    if (!target) {
+        throw new Error('Worker system folders are unavailable; cannot file this worker.');
+    }
+    return target.id;
+}
+
 export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
     const currentUser = getCurrentAuthContext();
     const now = new Date();
+    // Workers must live in the Workers taxonomy or getWorkers cannot see them
+    // (beta gap: workers added through the UI were invisible). File by type.
+    const folderId = data.folderId || (await resolveWorkerFolderId(data.workerType));
     const dataToSave = {
         ...data,
+        folderId,
         orgId,
         createdBy: currentUser.uid,
         updatedBy: currentUser.uid,
@@ -175,8 +194,26 @@ export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' |
         throw new Error('Worker not found for the current organization.');
     }
 
+    const before = snapshot.data() as any;
+    const patch: Record<string, unknown> = { ...data };
+    const finalWorkerType = data.workerType !== undefined ? data.workerType : before?.workerType;
+    if (finalWorkerType) {
+        // Self-heal: a worker record outside the Workers taxonomy is invisible
+        // to getWorkers. Re-file it (also converts plain contacts on demand).
+        const folders = await ensureSystemFolders(currentUser.uid);
+        const workerFolderIds = new Set(
+            folders
+                .filter((f) => ['employees', 'contractors', 'workers'].includes(String(f.name || '').toLowerCase()))
+                .map((f) => f.id),
+        );
+        const currentFolder = data.folderId !== undefined ? data.folderId : before?.folderId;
+        if (!currentFolder || !workerFolderIds.has(currentFolder)) {
+            patch.folderId = await resolveWorkerFolderId(finalWorkerType);
+        }
+    }
+
     await updateDoc(workerRef, {
-        ...data,
+        ...patch,
         updatedBy: currentUser.uid,
         updatedAt: new Date(),
     });

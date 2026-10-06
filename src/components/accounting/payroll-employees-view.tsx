@@ -23,10 +23,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge, Clock, PlayCircle, Contact } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge, Clock, PlayCircle, Contact, UserPlus } from "lucide-react";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
+import { getUsers } from '@/core/user-profile-service';
+import { AddUserDialog } from '@/components/data/add-user-dialog';
 import { WorkerFormDialog } from './WorkerFormDialog';
 import { Badge } from '../ui/badge';
 import {
@@ -62,6 +64,9 @@ export function PayrollEmployeesView() {
     const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
     const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
     const [workerToMerge, setWorkerToMerge] = useState<Worker | null>(null);
+    // Sign-in status (people-model.md): matched by email against users.
+    const [signInEmails, setSignInEmails] = useState<Set<string>>(new Set());
+    const [signInPreset, setSignInPreset] = useState<{ name: string; email?: string } | null>(null);
     
     const { user } = useAuth();
     const { toast } = useToast();
@@ -73,8 +78,12 @@ export function PayrollEmployeesView() {
         }
         setIsLoading(true);
         try {
-            const fetchedWorkers = await getWorkers(user.uid);
+            const [fetchedWorkers, fetchedUsers] = await Promise.all([
+                getWorkers(user.uid),
+                getUsers().catch(() => []),
+            ]);
             setWorkers(fetchedWorkers);
+            setSignInEmails(new Set(fetchedUsers.map((u) => (u.email || '').toLowerCase()).filter(Boolean)));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load workers', description: error.message });
         } finally {
@@ -237,6 +246,7 @@ export function PayrollEmployeesView() {
                                 <TableHead>Type</TableHead>
                                 <TableHead>Pay Type</TableHead>
                                 <TableHead className="text-right">Pay Rate</TableHead>
+                                <TableHead>Sign-in</TableHead>
                                 <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -261,6 +271,13 @@ export function PayrollEmployeesView() {
                                     {emp.payRate?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || '$0.00'}
                                     {emp.payType === 'hourly' && ' / hr'}
                                 </TableCell>
+                                <TableCell>
+                                    {signInEmails.has((emp.email || '').toLowerCase()) ? (
+                                        <Badge variant="outline">Signed in</Badge>
+                                    ) : (
+                                        <Badge variant="secondary">No sign-in</Badge>
+                                    )}
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -268,6 +285,7 @@ export function PayrollEmployeesView() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onSelect={() => handleOpenForm(emp)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => setSignInPreset({ name: emp.name, email: emp.email })}><UserPlus className="mr-2 h-4 w-4"/>Create Sign-in</DropdownMenuItem>
                                             <DropdownMenuItem onSelect={() => handleMergeClick(emp)}><GitMerge className="mr-2 h-4 w-4"/>Merge Duplicate</DropdownMenuItem>
                                             <DropdownMenuItem onSelect={() => setWorkerToDelete(emp)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -293,7 +311,15 @@ export function PayrollEmployeesView() {
             onWorkerSave={handleWorkerSave}
             onWorkerUpdate={handleWorkerUpdate}
         />
-    
+
+        <AddUserDialog
+            isOpen={!!signInPreset}
+            onOpenChange={(open) => { if (!open) setSignInPreset(null); }}
+            onUserAdded={() => { setSignInPreset(null); loadWorkers(); }}
+            userToEdit={null}
+            preset={signInPreset ?? undefined}
+        />
+
         <AlertDialog open={!!workerToDelete} onOpenChange={() => setWorkerToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{workerToDelete?.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>

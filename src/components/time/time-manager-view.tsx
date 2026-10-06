@@ -673,9 +673,16 @@ export function TimeManagerView() {
                                                                 Me (Admin)
                                                             </CommandItem>
                                                             {workers.map(w => (
-                                                                <CommandItem key={w.id} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
+                                                                <CommandItem key={w.id} value={`${w.name} ${w.jobRole || ''} ${w.workerType || ''} ${w.id}`} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
                                                                     <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
-                                                                    {w.name}
+                                                                    <span className="flex min-w-0 flex-col">
+                                                                        <span className="truncate">{w.name}</span>
+                                                                        {(w.jobRole || w.workerType) && (
+                                                                            <span className="truncate text-[10px] text-muted-foreground">
+                                                                                {[w.jobRole, w.workerType].filter(Boolean).join(' · ')}
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
                                                                 </CommandItem>
                                                             ))}
                                                         </CommandGroup>

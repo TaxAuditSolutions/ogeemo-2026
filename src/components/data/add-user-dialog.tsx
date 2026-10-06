@@ -30,6 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createUserInTenant, updateUserInTenant } from '@/app/actions/user-actions';
+import { getUsers } from '@/core/user-profile-service';
 import { addWorker, updateWorker } from '@/services/payroll-service';
 
 import type { SidebarAccessConfig, UserProfile } from '@/core/user-profile-service';
@@ -83,6 +84,7 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, p
     // One-onboarding model: creating a user also establishes their Worker
     // record unless the admin opts out (people-model.md).
     const [addToWorkforce, setAddToWorkforce] = useState(true);
+    const [signInEmails, setSignInEmails] = useState<Set<string>>(new Set());
     const [sidebarAccessMode, setSidebarAccessMode] = useState<'inherit' | 'allowlist'>('inherit');
     const [selectedSidebarTargets, setSelectedSidebarTargets] = useState<Set<string>>(() => new Set(allMenuItems.map((item) => item.href)));
 
@@ -114,8 +116,12 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, p
         if (!currentUser) return;
         setIsLoadingContacts(true);
         try {
-            const fetchedContacts = await getContacts(); // Synchronized Directory
+            const [fetchedContacts, fetchedUsers] = await Promise.all([
+                getContacts(), // Synchronized Directory
+                getUsers().catch(() => []),
+            ]);
             setContacts(fetchedContacts);
+            setSignInEmails(new Set(fetchedUsers.map((u) => (u.email || '').toLowerCase()).filter(Boolean)));
         } catch (error) {
             // Error is centrally handled by the FirebaseErrorListener
         } finally {
@@ -329,13 +335,23 @@ export function AddUserDialog({ isOpen, onOpenChange, onUserAdded, userToEdit, p
                                                         {contacts.map((contact) => (
                                                             <CommandItem
                                                                 key={contact.id}
-                                                                value={`${contact.name} ${contact.email}`}
+                                                                value={`${contact.name} ${contact.email} ${contact.workerType ? 'worker' : ''} ${signInEmails.has((contact.email || '').toLowerCase()) ? 'signed in' : ''}`}
                                                                 onSelect={() => handleSelectContact(contact)}
                                                             >
                                                                 <Check className={cn("mr-2 h-4 w-4", selectedContactId === contact.id ? "opacity-100" : "opacity-0")} />
                                                                 <div className="flex flex-col">
                                                                     <span className="font-medium">{contact.name}</span>
                                                                     <span className="text-[10px] text-muted-foreground">{contact.email}</span>
+                                                                    {(contact.workerType || signInEmails.has((contact.email || '').toLowerCase())) && (
+                                                                        <span className="mt-0.5 flex gap-1">
+                                                                            {contact.workerType && (
+                                                                                <span className="rounded border px-1 text-[9px] uppercase tracking-wide text-muted-foreground">Worker</span>
+                                                                            )}
+                                                                            {signInEmails.has((contact.email || '').toLowerCase()) && (
+                                                                                <span className="rounded border bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">Signed in</span>
+                                                                            )}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </CommandItem>
                                                         ))}

@@ -26,6 +26,7 @@ const workerSchema = z.object({
     name: z.string().min(2, "Name is required."),
     email: z.string().email("Invalid email address.").optional().or(z.literal('')),
     employeeNumber: z.string().optional(), // New ID field
+    jobRole: z.string().optional(),
     sin: z.string().optional(),
     workerType: z.enum(["employee", "contractor"]),
     payType: z.enum(["hourly", "salary"]),
@@ -48,6 +49,7 @@ const defaultFormValues: WorkerFormData = {
     name: "",
     email: "",
     employeeNumber: "",
+    jobRole: "",
     sin: "",
     workerType: "employee",
     payType: "hourly",
@@ -85,6 +87,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
                 ...workerToEdit,
                 email: workerToEdit.email || "",
                 employeeNumber: workerToEdit.employeeNumber || "",
+                jobRole: workerToEdit.jobRole || "",
                 sin: workerToEdit.sin || "",
                 address: workerToEdit.streetAddress || "",
                 homePhone: workerToEdit.homePhone || "",
@@ -110,7 +113,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
         const formKey = key as keyof WorkerFormData;
         let currentValue = data[formKey];
 
-        const optionalStringFields: (keyof WorkerFormData)[] = ['email', 'employeeNumber', 'sin', 'address', 'homePhone', 'cellPhone', 'emergencyContactName', 'emergencyContactPhone', 'specialNeeds', 'notes'];
+        const optionalStringFields: (keyof WorkerFormData)[] = ['email', 'employeeNumber', 'jobRole', 'sin', 'address', 'homePhone', 'cellPhone', 'emergencyContactName', 'emergencyContactPhone', 'specialNeeds', 'notes'];
         const dateFields: (keyof WorkerFormData)[] = ['hireDate', 'startDate'];
 
         if (optionalStringFields.includes(formKey) && currentValue === '') {
@@ -187,6 +190,7 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="employeeNumber" render={({ field }) => ( <FormItem><FormLabel>Worker ID Number</FormLabel><FormControl><Input placeholder="e.g. W-1234" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="jobRole" render={({ field }) => ( <FormItem><FormLabel>Job Role</FormLabel><FormControl><Input placeholder="e.g. Crew Lead" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Address</FormLabel><FormControl><Textarea {...field} rows={2} /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="homePhone" render={({ field }) => ( <FormItem><FormLabel>Home Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />

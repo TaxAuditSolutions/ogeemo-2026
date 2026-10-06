@@ -10,7 +10,7 @@ connect the records. Enforced by code noted inline.
 |---|---|---|
 | **User (login)** | Firebase Auth identity + custom claims (org, access level) + `users/{uid}` profile | Can they sign in? What can they access? |
 | **Contact (person)** | The single source of truth for a human in the workspace (`contacts` collection) | Who is this person? |
-| **Worker** | A Contact filed in the **Workers taxonomy** (system folders Workers → Employees / Contractors) with `workerType` + pay fields | Can they be assigned work, time, payroll? |
+| **Worker** | A Contact filed in the **Workers taxonomy** (system folders Workers → Employees / Contractors) with `workerType`, display-only `jobRole` (e.g. Crew Lead) and pay fields | Can they be assigned work, time, payroll? |
 | **Access role** | `accessLevel` on the User (super_admin / org_admin / editor / viewer) — **orthogonal** to Worker status | What can they do in the app? |
 
 Relationships:
@@ -58,6 +58,21 @@ Relationships:
 - **User Manager / app access** → Users only
 - **/workers (People group)** → Workers, with the Sign-in column showing the
   User connection (matched by email)
+
+## Adopted decisions (Stage 2 review, 2026-10)
+
+- **D1 — (c): job role AND access are separate axes.** `jobRole` on the Worker
+  is display-only (e.g. "Crew Lead"), shown in the Activity Manager worker
+  selector, the Workers table (Role column) and the Add Worker form. The
+  access level stays on the User.
+- **D2 — `editor`** remains the default access level for crew until role
+  templates exist.
+- **D3 — explicit "Add to Workers" toggle, default on**; no automatic
+  conversion of every workspace member.
+- **D4 — evolve the Add User dialog** (no separate onboarding hub for beta).
+  Existing logins are connected via the User Manager row action
+  "Add to Workers", and the dialog's directory picker now shows
+  Worker / Signed-in link status.
 
 ## Deferred to the focused onboarding review (Phase 3)
 

@@ -244,6 +244,7 @@ export function PayrollEmployeesView() {
                                 <TableHead>Name</TableHead>
                                 <TableHead>ID Number</TableHead>
                                 <TableHead>Type</TableHead>
+                                <TableHead>Role</TableHead>
                                 <TableHead>Pay Type</TableHead>
                                 <TableHead className="text-right">Pay Rate</TableHead>
                                 <TableHead>Sign-in</TableHead>
@@ -266,6 +267,7 @@ export function PayrollEmployeesView() {
                                 </TableCell>
                                 <TableCell>{emp.employeeNumber || 'N/A'}</TableCell>
                                 <TableCell><Badge variant={emp.workerType === 'employee' ? 'default' : 'secondary'}>{emp.workerType}</Badge></TableCell>
+                                <TableCell className="text-muted-foreground">{emp.jobRole || '—'}</TableCell>
                                 <TableCell className="capitalize">{emp.payType}</TableCell>
                                 <TableCell className="text-right font-mono">
                                     {emp.payRate?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || '$0.00'}

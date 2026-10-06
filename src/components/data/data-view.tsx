@@ -1,6 +1,6 @@
 'use client';
 
-import { MoreVertical, Plus, LoaderCircle, Trash2, Pencil, KeyRound, Info } from "lucide-react";
+import { MoreVertical, Plus, LoaderCircle, Trash2, Pencil, KeyRound, Info, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getUsers, deleteUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { getOrganizationsByIds } from '@/core/organization-service';
 import { format } from "date-fns";
+import { addWorker, updateWorker } from '@/services/payroll-service';
+import { getContacts } from '@/services/contact-service';
 
 export function UserListView() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
@@ -84,6 +86,41 @@ export function UserListView() {
   const handleEdit = (user: UserProfile) => {
     setUserToEdit(user);
     setIsAddUserDialogOpen(true);
+  };
+
+  // One-onboarding model (people-model.md): connect an existing login to a
+  // Worker record so the person becomes assignable in the Activity Manager.
+  const handleAddToWorkers = async (profile: UserProfile) => {
+    try {
+      const email = (profile.email || '').trim().toLowerCase();
+      if (!email) {
+        toast({ variant: 'destructive', title: 'No email', description: 'This user has no email address to link a Worker record.' });
+        return;
+      }
+      const contacts = await getContacts();
+      const existing = contacts.find((c) => c.email && c.email.toLowerCase() === email);
+      if (existing?.workerType) {
+        toast({ title: 'Already a Worker', description: `${existing.name} is already in the Workers list.` });
+        return;
+      }
+      if (existing) {
+        await updateWorker(existing.id, { workerType: 'employee' });
+      } else {
+        await addWorker({
+          name: profile.displayName || email,
+          email: profile.email,
+          employeeNumber: profile.employeeNumber || '',
+          workerType: 'employee',
+          payType: 'salary',
+          payRate: 0,
+          userId: user?.uid || profile.id,
+          folderId: '',
+        });
+      }
+      toast({ title: 'Added to Workers', description: `${profile.displayName || email} can now be assigned work in the Activity Manager.` });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to add worker', description: error.message });
+    }
   };
 
   const handleDelete = (user: UserProfile) => {
@@ -176,6 +213,7 @@ export function UserListView() {
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
                               <DropdownMenuItem onSelect={() => handleEdit(userProfile)}><Pencil className="mr-2 h-4 w-4" /> Edit Profile</DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleChangePassword(userProfile)}><KeyRound className="mr-2 h-4 w-4" /> Change Password</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleAddToWorkers(userProfile)}><UserPlus className="mr-2 h-4 w-4" /> Add to Workers</DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onSelect={() => handleDelete(userProfile)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete Profile</DropdownMenuItem>
                             </DropdownMenuContent>

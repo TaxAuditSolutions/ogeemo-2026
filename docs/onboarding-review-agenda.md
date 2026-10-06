@@ -43,10 +43,10 @@ Worker connection). This agenda structures that session. Background model:
 
 | # | Decision | Options | Recommendation | Outcome |
 |---|---|---|---|---|
-| D1 | What are "Crew Lead"/"Crew Member"? | (a) job labels → `jobRole` field on Worker, shown in selectors · (b) role templates = access level + worker type + pay defaults · (c) both | **(c)** — job role and access are different axes | |
-| D2 | Default access level for crew | editor today vs template-driven | keep editor until templates exist | |
-| D3 | Worker-creation policy | explicit toggle (current) vs automatic for all members | **explicit toggle, default on** — respects contractors with no login | |
-| D4 | Where onboarding lives | evolve Add User dialog vs dedicated Onboarding hub in the People group | decide after walkthrough | |
+| D1 | What are "Crew Lead"/"Crew Member"? | (a) job labels → `jobRole` field on Worker, shown in selectors · (b) role templates = access level + worker type + pay defaults · (c) both | **(c)** — job role and access are different axes | **Adopted (c)**: `jobRole` shipped on Worker, form and selectors |
+| D2 | Default access level for crew | editor today vs template-driven | keep editor until templates exist | **Adopted**: editor stays the default |
+| D3 | Worker-creation policy | explicit toggle (current) vs automatic for all members | **explicit toggle, default on** — respects contractors with no login | **Adopted**: toggle default on + row action for existing users |
+| D4 | Where onboarding lives | evolve Add User dialog vs dedicated Onboarding hub in the People group | decide after walkthrough | **Adopted**: evolve the dialog (row action + directory link status); no hub for beta |
 
 ## Outputs
 

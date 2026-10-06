@@ -10,11 +10,12 @@ dotenv.config({ path: ".env.local" });
  * before the "Add to Workers" toggle existed are not assignable in the
  * Activity Manager).
  *
- * For each email: creates a Worker contact (employee -> Employees folder,
- * matching getWorkers' contract) in the target org, unless a worker with the
- * same email already exists there. Additive and idempotent.
+ * For each entry ("email" or "email|Job Role"): creates a Worker contact
+ * (employee -> Employees folder, matching getWorkers' contract) in the target
+ * org, unless a worker with the same email already exists there — in which
+ * case a provided jobRole is applied. Additive and idempotent.
  *
- * Usage: npx tsx scripts/connect-users-to-workers.ts <orgId> <email> [email...]
+ * Usage: npx tsx scripts/connect-users-to-workers.ts <orgId> <email[|Job Role]>...
  */
 const CREATOR_UID = "p7Qt5BayrsbSoQMSsGoZ651nLzp2"; // running admin (matches shipped flows)
 
@@ -46,15 +47,24 @@ async function main() {
         workerFolders.find((f) => String(f.name).toLowerCase() === "employees")?.id ||
         workerFolders.find((f) => String(f.name).toLowerCase() === "workers")?.id;
 
-    for (const email of emails) {
-        const norm = email.trim().toLowerCase();
+    for (const entry of emails) {
+        // "email" or "email|Job Role" (jobRole is display-only, e.g. Crew Lead)
+        const [emailPart, jobRole] = entry.split("|");
+        const norm = emailPart.trim().toLowerCase();
+        const role = jobRole?.trim();
         const existing = await db.collection("contacts").where("orgId", "==", orgId).get();
         const already = existing.docs.find((d) => {
             const c = d.data() as any;
             return c.workerType != null && String(c.email || "").toLowerCase() === norm;
         });
         if (already) {
-            console.log(`SKIP ${norm}: worker already exists (${already.id})`);
+            const current = already.data() as any;
+            if (role && current.jobRole !== role) {
+                await already.ref.update({ jobRole: role, updatedBy: CREATOR_UID, updatedAt: Timestamp.now() });
+                console.log(`UPDATED ${current.name} <${norm}>: jobRole = "${role}"`);
+            } else {
+                console.log(`SKIP ${norm}: worker already exists (${already.id})`);
+            }
             continue;
         }
         let person;
@@ -72,6 +82,7 @@ async function main() {
             orgId,
             folderId: pickFolder(),
             workerType: "employee",
+            ...(role ? { jobRole: role } : {}),
             payType: "salary",
             payRate: 0,
             employeeNumber: "",
@@ -82,7 +93,7 @@ async function main() {
             updatedAt: now,
             keywords: [...name.toLowerCase().split(/\s+/), ...norm.split(/[@._-]+/)].filter(Boolean),
         });
-        console.log(`CONNECTED ${name} <${norm}> -> worker ${ref.id} in ${orgId}`);
+        console.log(`CONNECTED ${name} <${norm}> -> worker ${ref.id} in ${orgId}${role ? ` (jobRole: ${role})` : ""}`);
     }
 }
 

@@ -41,6 +41,7 @@ export interface Contact {
   // HR & Payroll Specialized Metadata (Integrated from deprecated collection)
   sin?: string;
   workerType?: 'employee' | 'contractor';
+  jobRole?: string; // Display-only role (e.g. Crew Lead) - separate from accessLevel
   payType?: 'hourly' | 'salary';
   payRate?: number;
   hireDate?: any; // Date or Timestamp

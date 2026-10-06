@@ -48,6 +48,8 @@ import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
+import { DictationButton } from '@/components/ui/dictation-button';
+import { appendTranscript } from '@/lib/transcript';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -150,6 +152,9 @@ export function TimeManagerView() {
     // project counts grow). Session-local for now; promote to a saved
     // preference only if the Projects/Activity Manager audit asks for it.
     const [projectSortMode, setProjectSortMode] = React.useState<ProjectSortMode>('active');
+    // Low-friction capture (docs/activity-capture.md): scheduling/billing are
+    // advanced details - collapsed until asked for, summarized when populated.
+    const [showAdvancedDetails, setShowAdvancedDetails] = React.useState(false);
     const contactNameById = React.useMemo(() => new Map(contacts.map((c) => [c.id, c.name])), [contacts]);
     const projectGroups = React.useMemo(
         () =>
@@ -161,6 +166,12 @@ export function TimeManagerView() {
             ),
         [projects, contactNameById, projectSortMode, contacts, selectedContactId],
     );
+
+    // One-line summary of collapsed scheduling/billing details.
+    const advancedSummary = [
+        startDate ? formatDate(startDate, 'PP') : '',
+        isBillable ? `Billable${billableRate ? ` · $${billableRate}/hr` : ''}` : '',
+    ].filter(Boolean).join(' · ');
     const [newProjectName, setNewProjectName] = React.useState('');
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
     
@@ -582,7 +593,7 @@ export function TimeManagerView() {
                     <Card>
                         <CardContent className="pt-6 space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="subject">Subject Title *</Label>
+                                <Label htmlFor="subject">Subject Title</Label>
                                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} ref={subjectInputRef} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -693,15 +704,43 @@ export function TimeManagerView() {
                                     </CardContent>
                                 </Card>
                             </div>
-                            <div className="space-y-2"><Label htmlFor="notes">Details</Label><Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} /></div>
-                            <div className="pt-2">
-                                <Button variant="outline" onClick={() => setIsAgendaFormOpen(true)} className="w-full sm:w-auto">
-                                    <UsersIcon className="mr-2 h-4 w-4" /> Create Agenda
-                                </Button>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label htmlFor="notes">Details</Label>
+                                    <div className="flex items-center gap-1">
+                                        <DictationButton label="details" onTranscript={(t) => setNotes((prev) => appendTranscript(prev, t))} />
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs text-muted-foreground">
+                                                    <MoreVertical className="h-3.5 w-3.5" /> More tools
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => setIsAgendaFormOpen(true)}>
+                                                    <UsersIcon className="mr-2 h-4 w-4" /> Meeting Agenda
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </div>
+                                <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
                             </div>
                         </CardContent>
                     </Card>
 
+                    <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 gap-1 px-2 text-xs font-medium text-muted-foreground"
+                            onClick={() => setShowAdvancedDetails((v) => !v)}
+                        >
+                            {showAdvancedDetails ? 'Hide' : 'Add'} scheduling &amp; billing details
+                        </Button>
+                        {advancedSummary && <span className="truncate text-[11px] text-muted-foreground">{advancedSummary}</span>}
+                    </div>
+                    {showAdvancedDetails && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader className="p-4"><CardTitle className="text-sm">Scheduling</CardTitle></CardHeader>
@@ -757,6 +796,7 @@ export function TimeManagerView() {
                             </CardContent>
                         </Card>
                     </div>
+                    )}
 
                     <Card>
                         <CardHeader className="p-4 flex flex-row items-start justify-between gap-4">
@@ -822,7 +862,10 @@ export function TimeManagerView() {
                             </div>
                             <div className="flex gap-2 items-end">
                                 <div className="flex-1">
-                                    <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>
+                                        <DictationButton label="active session notes" onTranscript={(t) => setCurrentSessionNotes((prev) => appendTranscript(prev, t))} />
+                                    </div>
                                     <Textarea id="sn" value={currentSessionNotes} onChange={e => setCurrentSessionNotes(e.target.value)} rows={2} className="text-sm" placeholder="Describe the current session you are working on" />
                                 </div>
                                 <Button onClick={handleLogCurrentSession} variant="outline" size="sm" disabled={!timerState?.isActive} className="h-10">
@@ -875,7 +918,10 @@ export function TimeManagerView() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs">Session Notes</Label>
+                            <div className="flex items-center justify-between gap-2">
+                                <Label className="text-xs">Session Notes</Label>
+                                <DictationButton label="session notes" onTranscript={(t) => setEditSessionNotes((prev) => appendTranscript(prev, t))} />
+                            </div>
                             <Textarea value={editSessionNotes} onChange={e => setEditSessionNotes(e.target.value)} rows={4} />
                         </div>
                     </div>

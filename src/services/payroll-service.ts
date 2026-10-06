@@ -83,6 +83,10 @@ const docToWorker = (doc: any): Worker => {
         payRate: Number(data.payRate) || 0,
         createdAt: toDate(data.createdAt) ?? data.createdAt,
         updatedAt: toDate(data.updatedAt) ?? data.updatedAt,
+        // Normalize date fields at the boundary so consumers never see raw
+        // Timestamps (the Edit Worker form converts them to input values).
+        hireDate: toDate(data.hireDate) ?? data.hireDate,
+        startDate: toDate(data.startDate) ?? data.startDate,
     } as Worker;
 };
 

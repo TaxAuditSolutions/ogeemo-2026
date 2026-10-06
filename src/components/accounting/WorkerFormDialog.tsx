@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { toDateInputValue } from "@/lib/date-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,8 +97,8 @@ export function WorkerFormDialog({ isOpen, onOpenChange, workerToEdit, onWorkerS
                 emergencyContactPhone: workerToEdit.emergencyContactPhone || "",
                 specialNeeds: workerToEdit.specialNeeds || "",
                 notes: workerToEdit.notes || "",
-                hireDate: workerToEdit.hireDate ? new Date(workerToEdit.hireDate).toISOString().split('T')[0] : '',
-                startDate: workerToEdit.startDate ? new Date(workerToEdit.startDate).toISOString().split('T')[0] : '',
+                hireDate: toDateInputValue(workerToEdit.hireDate),
+                startDate: toDateInputValue(workerToEdit.startDate),
             };
             form.reset(formValues);
         } else {

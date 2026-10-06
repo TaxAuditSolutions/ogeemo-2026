@@ -482,8 +482,13 @@ export function TimeManagerView() {
                 if (sParam) {
                     const sDate = parseISO(sParam);
                     if (isValid(sDate)) {
-                        startDateTouchedRef.current = true; startTimeTouchedRef.current = true;
-                        setStartDate(sDate); setStartHour(String(sDate.getHours()).padStart(2, '0')); setStartMinute(String(sDate.getMinutes()).padStart(2, '0'));
+                        // Calendar/CRM handoff: honor the clicked *date*, but
+                        // the TIME always defaults to the computer's clock
+                        // (beta directive) - startHour/startMinute stay
+                        // untouched, so they refresh to *now* whenever the
+                        // scheduling section opens or a save happens.
+                        startDateTouchedRef.current = true;
+                        setStartDate(sDate);
                     }
                 }
             }

@@ -48,7 +48,7 @@ import { cn, formatTime } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
-import { endFollowsStart } from '@/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue } from '@/lib/schedule-dates';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -171,6 +171,19 @@ export function TimeManagerView() {
         startDate ? formatDate(startDate, 'PP') : '',
         isBillable ? `Billable${billableRate ? ` · $${billableRate}/hr` : ''}` : '',
     ].filter(Boolean).join(' · ');
+
+    // Opening "Add scheduling & billing details" pre-fills the schedule with
+    // now: Start and End on the current day, Start's clock time to the
+    // current time. Existing values are never overwritten - the section is a
+    // view/edit surface, so re-opening or editing keeps the user's choices.
+    const applyScheduleDefaults = () => {
+        const now = new Date();
+        const base = startDate ?? now;
+        if (!startDate) setStartDate(now);
+        if (!endDate) setEndDate(base);
+        if (startHour === undefined) setStartHour(presetHourValue(now));
+        if (startMinute === undefined) setStartMinute(presetMinuteValue(now));
+    };
     const [newProjectName, setNewProjectName] = React.useState('');
     const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
     
@@ -732,7 +745,11 @@ export function TimeManagerView() {
                             variant="ghost"
                             size="sm"
                             className="h-7 gap-1 px-2 text-xs font-medium text-muted-foreground"
-                            onClick={() => setShowAdvancedDetails((v) => !v)}
+                            onClick={() => {
+                                const opening = !showAdvancedDetails;
+                                if (opening) applyScheduleDefaults();
+                                setShowAdvancedDetails(opening);
+                            }}
                         >
                             {showAdvancedDetails ? 'Hide' : 'Add'} scheduling &amp; billing details
                         </Button>

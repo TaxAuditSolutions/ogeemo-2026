@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { endFollowsStart } from '../src/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue } from '../src/lib/schedule-dates';
 
 const day = (iso: string) => new Date(iso);
 
@@ -21,4 +21,16 @@ test('endFollowsStart: a hand-set multi-day End is never stomped by a Start chan
 
 test('endFollowsStart: End chosen before Start stays put', () => {
     assert.equal(endFollowsStart(undefined, day('2026-10-10')), false);
+});
+
+test('presetHourValue: zero-pads to the hour select format', () => {
+    assert.equal(presetHourValue(new Date('2026-10-05T09:07:00')), '09');
+    assert.equal(presetHourValue(new Date('2026-10-05T23:59:00')), '23');
+    assert.equal(presetHourValue(new Date('2026-10-05T00:30:00')), '00');
+});
+
+test('presetMinuteValue: floors to the 5-minute step (never a future time)', () => {
+    assert.equal(presetMinuteValue(new Date('2026-10-05T14:37:00')), '35');
+    assert.equal(presetMinuteValue(new Date('2026-10-05T14:00:00')), '00');
+    assert.equal(presetMinuteValue(new Date('2026-10-05T14:59:00')), '55');
 });

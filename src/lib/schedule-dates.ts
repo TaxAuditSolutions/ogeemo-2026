@@ -12,3 +12,17 @@ export function endFollowsStart(prevStart: Date | undefined | null, end: Date | 
     if (!prevStart) return false; // End chosen before Start: user's choice - keep
     return end.getTime() === prevStart.getTime(); // still the auto-derived value
 }
+
+/**
+ * Preset values for the Scheduling time selects when the advanced section is
+ * opened: Start gets the current clock time (hour select uses '00'-'23',
+ * minute select steps by 5, floored so the default is never a future time).
+ */
+export function presetHourValue(now: Date): string {
+    return String(now.getHours()).padStart(2, '0');
+}
+
+export function presetMinuteValue(now: Date, step = 5): string {
+    const minutes = Math.floor(now.getMinutes() / step) * step;
+    return String(minutes).padStart(2, '0');
+}

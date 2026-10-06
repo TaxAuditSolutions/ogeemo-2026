@@ -13,6 +13,9 @@ not document work if recording it means too much typing or too many steps.
 - **Scheduling** and **Billing Status** collapsed behind
   *Add scheduling & billing details*; when populated they show a one-line
   summary (`Oct 4, 2026 · Billable · $100/hr`) so nothing hides silently.
+  Opening the section pre-fills the schedule with **now**: Start and End on
+  the current day, Start's time to the current clock time (floored to the
+  5-minute step, never a future time); existing values are never overwritten.
 - **Meeting Agenda** moved from a competing full-width button into a
   *More tools* menu beside Details — discoverable, not promotional.
 

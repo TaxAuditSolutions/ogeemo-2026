@@ -27,7 +27,7 @@ import { filterMenuItems, sortMenuItemsByLabel, type MenuSortDirection } from '@
 
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
-    Workspace: { icon: Briefcase, items: ['/event-manager', '/action-manager', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
+    Workspace: { icon: Briefcase, items: ['/event-manager', '/reports/time-log', '/action-manager', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan'] },
     // People = your internal team (workers, HR, leave); Relationships stays
     // outward-facing (contacts, leads).
@@ -41,7 +41,10 @@ export const groupedMenuItems: Record<string, { icon: any; items: string[]; mast
 };
 
 const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean, accessLevel: string | null }) => (
-    <Accordion type="multiple" defaultValue={['Ogeemo Owner']} className="w-full space-y-1">
+    // Beta feedback (Time Log discoverability): the primary Workflow group
+    // opens by default so core destinations like Time Logs are immediately
+    // identifiable without expanding anything.
+    <Accordion type="multiple" defaultValue={['Ogeemo Owner', 'Workspace']} className="w-full space-y-1">
         {Object.entries(groupedMenuItems).map(([groupName, groupData]) => {
             const ownerConsoleVisible = groupData.masterTenantOnly && (isMasterTenant || accessLevel === 'super_admin');
             if (groupData.masterTenantOnly && !ownerConsoleVisible) return null;

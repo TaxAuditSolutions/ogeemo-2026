@@ -52,6 +52,23 @@ export function WorkerSelector({ workers, selectedWorkerId, onSelect, isLoading 
           <CommandList>
             <CommandEmpty>No worker found.</CommandEmpty>
             <CommandGroup>
+              {/* Clear option: without it, selecting a worker (or clicking
+                  one in the report rows) would be a one-way filter. */}
+              <CommandItem
+                value="All Workers"
+                onSelect={() => {
+                  onSelect(null);
+                  setIsPopoverOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    selectedWorkerId === null ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+                <span>All Workers</span>
+              </CommandItem>
               {workers.map((worker) => (
                 <CommandItem
                   key={worker.id}

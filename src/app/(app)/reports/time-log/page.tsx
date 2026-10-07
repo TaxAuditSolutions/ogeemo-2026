@@ -421,7 +421,19 @@ function WorkerTimeLogReportContent() {
                                     ) : allMergedEntries.length > 0 ? (
                                         allMergedEntries.map(entry => (
                                             <TableRow key={entry.id}>
-                                                <TableCell className="font-medium">{entry.workerName}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    {/* Drill-down: clicking the worker filters the report
+                                                        (rows + totals) to their data - same state as the
+                                                        header picker, which shows the selection. */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedWorkerId(entry.workerId)}
+                                                        title={`Show only ${entry.workerName}'s entries`}
+                                                        className="max-w-full truncate cursor-pointer text-left underline decoration-dotted underline-offset-4 hover:text-primary"
+                                                    >
+                                                        {entry.workerName}
+                                                    </button>
+                                                </TableCell>
                                                 <TableCell>{entry.contactName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
                                                 <TableCell>

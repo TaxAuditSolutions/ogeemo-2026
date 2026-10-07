@@ -16,6 +16,7 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
+import { omitUndefined, replaceUndefinedWithNull } from '@/lib/write-payload';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -174,7 +175,11 @@ export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
     // Workers must live in the Workers taxonomy or getWorkers cannot see them
     // (beta gap: workers added through the UI were invisible). File by type.
     const folderId = data.folderId || (await resolveWorkerFolderId(data.workerType));
-    const dataToSave = {
+    // Firestore rejects `undefined` field values outright (the SDK throws
+    // "Unsupported field value: undefined", failing the save) - the worker
+    // form maps every blank optional field to undefined. Strip them:
+    // absent = "not provided".
+    const dataToSave = omitUndefined({
         ...data,
         folderId,
         orgId,
@@ -182,7 +187,7 @@ export async function addWorker(data: Omit<Worker, 'id'>): Promise<Worker> {
         updatedBy: currentUser.uid,
         createdAt: now,
         updatedAt: now,
-    };
+    });
     const docRef = await addDoc(collection(db, CONTACTS_COLLECTION), dataToSave);
     return { id: docRef.id, ...dataToSave } as Worker;
 }
@@ -216,8 +221,10 @@ export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' |
         }
     }
 
+    // `undefined` is invalid for Firestore writes (see addWorker); a cleared
+    // optional field means null ("empty"), never undefined.
     await updateDoc(workerRef, {
-        ...patch,
+        ...replaceUndefinedWithNull(patch),
         updatedBy: currentUser.uid,
         updatedAt: new Date(),
     });

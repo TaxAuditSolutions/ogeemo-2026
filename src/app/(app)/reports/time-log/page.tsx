@@ -76,6 +76,7 @@ import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
+import { findSelfContact } from '@/lib/self-contact';
 import { WorkerSelector } from '@/components/reports/WorkerSelector';
 import type { DateRange } from 'react-day-picker';
 import { Label } from '@/components/ui/label';
@@ -288,7 +289,11 @@ function WorkerTimeLogReportContent() {
     };
 
     const workersForSelection = useMemo(() => {
-        const adminContact = contacts.find(c => c.userId === user?.uid);
+        // Identity check must verify EMAIL: manually added workers are also
+        // stamped with the saving user's userId, so a bare userId match
+        // labelled the first added worker "(Admin)" (beta report: Brian
+        // Manzer) and then deduped his real worker row away.
+        const adminContact = findSelfContact(contacts, user);
         
         const adminWorker: Worker = adminContact ? { ...adminContact, name: `${adminContact.name} (Admin)` } : {
             id: user?.uid || '',

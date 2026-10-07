@@ -22,6 +22,8 @@ coverage/
 temp-ai-debug.log
 test.js
 .modified
+# Session scratch space (test/tsc output redirected here)
+scratch/
 
 # Firebase service account key
 keys/ogeemo-firebase-firebase-adminsdk-fbsvc-ef0acfe30c.json

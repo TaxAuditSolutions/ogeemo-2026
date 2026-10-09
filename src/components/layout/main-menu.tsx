@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { allMenuItems, WORKSPACE_GROUP_ITEMS, type MenuItem } from '@/lib/menu-items';
+import { getUserWorkflows } from '@/services/workflow-service';
+import { resolveWorkspaceItemHrefs } from '@/lib/workspace-workflow';
 import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
@@ -43,7 +45,7 @@ export const groupedMenuItems: Record<string, { icon: any; items: string[]; mast
     'Google Apps': { icon: Chrome, items: ['/google'] },
 };
 
-const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean, accessLevel: string | null }) => (
+const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel, workspaceItems }: { pathname: string, isAdmin: boolean, isMasterTenant: boolean, accessLevel: string | null, workspaceItems: string[] }) => (
     // Beta feedback (Time Log discoverability): the primary Workflow group
     // opens by default so core destinations like Time Logs are immediately
     // identifiable without expanding anything.
@@ -88,7 +90,11 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel }
             }
 
             const CategoryIcon = groupData.icon;
-            const groupItems = groupData.items
+            // The Workspace group is navigation-defaults aware: an active
+            // user workflow overrides it, otherwise the default items apply
+            // (resolution + fallbacks live in src/lib/workspace-workflow.ts).
+            const itemHrefs = groupName === 'Workspace' ? workspaceItems : groupData.items;
+            const groupItems = itemHrefs
                 .map(href => allMenuItems.find(item => item.href === href))
                 .filter(Boolean) as MenuItem[];
 
@@ -144,6 +150,37 @@ export function MainMenu() {
     const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
     const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
     const { isPinned, togglePinned } = useSidebar();
+    // Resolved Workspace items: an active workflow (Workflows page) overrides
+    // the default; anything unexpected falls back to WORKSPACE_GROUP_ITEMS.
+    const [workspaceItems, setWorkspaceItems] = React.useState<string[]>([...WORKSPACE_GROUP_ITEMS]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const resolve = async () => {
+            try {
+                const activeId = preferences?.activeWorkflowId;
+                if (!user || !activeId) {
+                    if (!cancelled) setWorkspaceItems([...WORKSPACE_GROUP_ITEMS]);
+                    return;
+                }
+                const workflows = await getUserWorkflows(user.uid);
+                if (!cancelled) {
+                    setWorkspaceItems(resolveWorkspaceItemHrefs(workflows, activeId, WORKSPACE_GROUP_ITEMS));
+                }
+            } catch {
+                if (!cancelled) setWorkspaceItems([...WORKSPACE_GROUP_ITEMS]);
+            }
+        };
+        void resolve();
+        // The Workflows page dispatches this after save/apply/delete so the
+        // sidebar refreshes without a reload.
+        const handleWorkflowsUpdated = () => void resolve();
+        window.addEventListener('workflowsUpdated', handleWorkflowsUpdated);
+        return () => {
+            cancelled = true;
+            window.removeEventListener('workflowsUpdated', handleWorkflowsUpdated);
+        };
+    }, [user, preferences?.activeWorkflowId]);
 
     useEffect(() => {
         if (!user) {
@@ -388,7 +425,7 @@ export function MainMenu() {
                 ) : view === 'dashboard' ? (
                     <ActionChipMenu chips={actionChips} isLoading={isLoadingChips} />
                 ) : (
-                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} accessLevel={accessLevel} />
+                    <GroupedMenuView pathname={pathname || ''} isAdmin={isAdmin} isMasterTenant={isMasterTenant} accessLevel={accessLevel} workspaceItems={workspaceItems} />
                 )}
             </div>
 

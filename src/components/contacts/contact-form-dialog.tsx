@@ -404,6 +404,13 @@ export default function ContactFormDialog({
                                         <FormField control={form.control} name="city" render={({ field }) => (<Input placeholder="City" {...field} />)} />
                                         <FormField control={form.control} name="provinceState" render={({ field }) => (<Input placeholder="Prov/State" {...field} />)} />
                                     </div>
+                                    {/* Beta feedback: mailing code had no input even though the
+                                        schema/model (and invoice/quote address blocks) already
+                                        support it; Country was missing the same way. */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <FormField control={form.control} name="postalCode" render={({ field }) => (<Input placeholder="Postal / Mailing Code" {...field} />)} />
+                                        <FormField control={form.control} name="country" render={({ field }) => (<Input placeholder="Country" {...field} />)} />
+                                    </div>
                                 </div>
                                 <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Administrative Notes</FormLabel><FormControl><Textarea placeholder="Background info or specific permission rationale..." rows={6} className="resize-none" {...field} /></FormControl></FormItem>)} />
                             </div>

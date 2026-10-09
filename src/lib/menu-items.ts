@@ -26,7 +26,8 @@ import {
   Crown,
   Building2,
   StickyNote,
-  Inbox
+  Inbox,
+  Workflow
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { accountingMenuItems } from '@/data/accounting-menu-items';
@@ -44,6 +45,7 @@ export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "My Shortcuts", icon: LayoutDashboard },
   { href: "/event-manager", label: "Activity Manager", icon: PlayCircle },
   { href: "/action-manager/manage", label: "Customize My Shortcuts", icon: LayoutDashboard },
+  { href: "/workflows", label: "Workflows", icon: Workflow },
   { href: "/hr-manager", label: "HR Hub", icon: Users2 },
   { href: "/crm/plan", label: "CRM Hub", icon: Users2 },
   { href: "/inventory-manager/track", label: "Inventory", icon: PackageSearch },
@@ -105,6 +107,7 @@ export const CORE_WORKFLOW_DESTINATIONS = [
 export const WORKSPACE_GROUP_ITEMS = [
     ...CORE_WORKFLOW_DESTINATIONS,
     '/action-manager',
+    '/workflows',
     '/to-do',
     '/document-manager',
     '/user-notes',

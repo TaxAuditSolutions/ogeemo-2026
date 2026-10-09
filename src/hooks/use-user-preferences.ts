@@ -21,6 +21,8 @@ const defaultPreferences: UserProfile['preferences'] = {
     // Global kill-switch for hover tooltips (Settings > Preferences > Button Tips).
     showButtonTips: true,
     defaultSidebarView: 'grouped',
+    // Active sidebar workflow (Workflows page); null = default Workspace.
+    activeWorkflowId: null as string | null,
     // Customize My Shortcuts > Available Shortcuts chip view:
     // 'grouped' (default, group headings) or 'all' (one flat list).
     actionChipView: 'grouped',

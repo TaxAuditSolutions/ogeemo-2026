@@ -7,7 +7,9 @@ const optionalDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YY
 
 export const AssistantContactDraftSchema = z.object({
     name: z.string().trim().min(2),
-    folderId: z.string().trim().min(1),
+    // Optional: a contact may be drafted/submitted without a role (beta
+    // requirement). When absent, dispatch falls back to the default folder.
+    folderId: z.string().trim().min(1).optional(),
     email: z.string().trim().email().optional().or(z.literal('')),
     birthDate: optionalDate,
     website: optionalText,

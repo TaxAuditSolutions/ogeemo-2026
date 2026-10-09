@@ -1,6 +1,8 @@
 export type ContactValues = Record<string, unknown>;
 
-const REQUIRED_CONTACT_KEYS = new Set(['name', 'folderId']);
+// Only Full Legal Name is mandatory; the role/folder is optional per beta
+// requirement (a contact may be saved unfiled, or with the default folder).
+const REQUIRED_CONTACT_KEYS = new Set(['name']);
 
 export function isBlankValue(value: unknown): boolean {
     return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');

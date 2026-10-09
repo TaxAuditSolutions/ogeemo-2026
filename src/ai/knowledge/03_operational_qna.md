@@ -8,9 +8,9 @@
 -->
 
 ## Contacts & Relationships
-**How do I add a contact?** Contacts Hub (`/contacts`) → pick a contact folder → **New Contact** → complete the form → **Create Identity**. Requires Editor or higher. Folders act as categories; every contact must land in one.
+**How do I add a contact?** Contacts Hub (`/contacts`) → **New Contact** → complete the form → **Create Identity**. The **Role Assignment (Folder) is optional** — a default role is pre-selected and the contact can be saved without choosing one. Requires Editor or higher. Folders are categories that group contacts; folder-less contacts still appear under the **All** view.
 **How do I update a contact?** `/contacts` → search/browse → open the row or action menu → **Edit Contact** → change fields → **Save Changes**.
-**Assisted (Co-Pilot) creation:** gather minimum info (full name + folder), check for likely duplicates by name/email first, prepare the form pre-filled — the contact is only created when the user clicks **Create Identity**; cancelling creates nothing.
+**Assisted (Co-Pilot) creation:** gather the name (folder optional — a default is applied when omitted), check for likely duplicates by name/email first, prepare the form pre-filled — the contact is only created when the user clicks **Create Identity**; cancelling creates nothing.
 **Confidential fields (SIN, pay rate, dates):** chat history is retained — warn the user and get explicit consent before accepting them; otherwise leave blank for manual entry. Never choose tenant, audit or folder IDs.
 **Assigning contact owners:** edit the contact record (owner/assignment fields live on the contact form).
 

@@ -59,7 +59,7 @@ const contactSchema = z.object({
     faxNumber: z.string().optional(),
     primaryPhoneType: z.enum(['businessPhone', 'cellPhone', 'homePhone']).nullable().default(null),
     notes: z.string().optional(),
-    folderId: z.string({ required_error: "Please select a folder." }).min(1, { message: "Folder is required." }),
+    folderId: z.string().optional(),
 
     sin: z.string().optional(),
     workerType: z.enum(["employee", "contractor"]).optional().nullable(),
@@ -352,7 +352,7 @@ export default function ContactFormDialog({
                                     const roleId = field.value || (contactToEdit ? findMatchingContactFolder(contactToEdit.folderId, folders)?.id ?? '' : '');
                                     const roleName = folders.find(f => f.id === roleId)?.name;
                                     return (
-                                        <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select key={`${contactToEdit?.id ?? 'new'}:${folders.length}`} onValueChange={field.onChange} value={roleId}><SelectTrigger><SelectValue placeholder="Assign role...">{roleName}</SelectValue></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Role Assignment (Folder) (optional)</FormLabel><div className="flex gap-2"><FormControl><Select key={`${contactToEdit?.id ?? 'new'}:${folders.length}`} onValueChange={field.onChange} value={roleId}><SelectTrigger><SelectValue placeholder="Assign role...">{roleName}</SelectValue></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
                                     );
                                 }} />
                                 <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />

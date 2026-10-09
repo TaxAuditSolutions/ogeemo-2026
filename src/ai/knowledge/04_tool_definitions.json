@@ -40,7 +40,7 @@
   "flows": [
     {
       "name": "contactCapability",
-      "description": "Structured contact create/edit flow: Co-Pilot gathers the minimum (name + folder), checks for duplicates by name/email, prepares the contact form with gathered values, and the contact is only created when the user reviews and clicks Create Identity. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
+      "description": "Structured contact create/edit flow: Co-Pilot gathers the name (folder is optional - a default is applied when omitted), checks for duplicates by name/email, prepares the contact form with gathered values, and the contact is only created when the user reviews and clicks Create Identity. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
       "inputs": ["message", "history?", "userId", "orgId?", "accessLevel?", "folders", "contacts?"],
       "sideEffects": "UI-assisted only: it prepares forms and navigation; the user's click performs the write."
     }

@@ -9,6 +9,7 @@
     "build:win": "pwsh -NoProfile -File scripts/build.ps1",
     "repair-next-cache": "pwsh -NoProfile -File scripts/prepare-next-cache.ps1",
     "start": "next start -p 3000",
+    "deploy": "npx firebase-tools deploy",
     "test": "node --import tsx --test tests/*.test.ts",
     "lint": "next lint",
     "clean": "rm -rf .next .next-dev .next-build node_modules",

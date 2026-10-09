@@ -25,10 +25,13 @@ interface ActionChipProps {
   onDelete?: () => void;
   onEdit?: () => void;
   onMove?: (dragIndex: number, hoverIndex: number) => void;
+  /** When provided, replaces the default navigate-on-click behavior
+      (e.g. Workflows builder palette: click adds instead of navigating). */
+  onChipClick?: () => void;
 }
 
 export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
-  ({ chip, index, onDelete, onEdit, onMove }, ref) => {
+  ({ chip, index, onDelete, onEdit, onMove, onChipClick }, ref) => {
     const router = useRouter();
     const localRef = useRef<HTMLDivElement>(null);
     const { href, label } = chip;
@@ -74,6 +77,10 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
     drag(drop(localRef));
     
     const handleClick = (e: React.MouseEvent) => {
+      if (onChipClick) {
+        onChipClick();
+        return;
+      }
       if (!href) return;
       
       const hrefValue = typeof href === 'string' ? href : href.pathname;

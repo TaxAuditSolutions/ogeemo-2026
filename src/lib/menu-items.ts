@@ -77,3 +77,36 @@ export const allMenuItems: MenuItem[] = [
   ...accountingMenuItems,
   ...hrMenuItems,
 ];
+
+/**
+ * Core daily-workflow destinations (beta default Workspace), in workflow
+ * order: customer -> project -> work/activity -> schedule -> recorded time.
+ *
+ * Beta feedback: the default Workspace should mirror the user's business
+ * workflow, not Ogeemo's internal module categories (e.g. Contacts buried
+ * under "Relationships"). Coordination: OG-065 (which destinations are
+ * surfaced by default) and OG-035 (the navigation/default Groups mechanism).
+ * Named constant so it can later seed a selectable workflow preset;
+ * personalization always wins over defaults.
+ */
+export const CORE_WORKFLOW_DESTINATIONS = [
+    '/contacts',
+    '/projects/all',
+    '/event-manager',
+    '/calendar',
+    '/reports/time-log',
+];
+
+/**
+ * Default items of the sidebar's Workspace group: the core workflow first,
+ * then personal/workspace extras (To-Do, Documents, Notes and Meetings exist
+ * in no other group, so they must stay here).
+ */
+export const WORKSPACE_GROUP_ITEMS = [
+    ...CORE_WORKFLOW_DESTINATIONS,
+    '/action-manager',
+    '/to-do',
+    '/document-manager',
+    '/user-notes',
+    '/meetings',
+];

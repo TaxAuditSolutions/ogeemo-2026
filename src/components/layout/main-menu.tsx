@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from "next/navigation";
-import { allMenuItems, type MenuItem } from '@/lib/menu-items';
+import { allMenuItems, WORKSPACE_GROUP_ITEMS, type MenuItem } from '@/lib/menu-items';
 import { allApps as allGoogleApps } from '@/lib/google-apps';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
@@ -27,7 +27,10 @@ import { filterMenuItems, sortMenuItemsByLabel, type MenuSortDirection } from '@
 
 export const groupedMenuItems: Record<string, { icon: any; items: string[]; masterTenantOnly?: boolean }> = {
     'Ogeemo Owner': { icon: Crown, items: ['/owner', '/tenant-manager'], masterTenantOnly: true },
-    Workspace: { icon: Briefcase, items: ['/event-manager', '/reports/time-log', '/action-manager', '/calendar', '/to-do', '/document-manager', '/user-notes', '/meetings'] },
+    // Core workflow first (customer -> project -> work -> schedule -> time,
+    // OG-065), then personal extras. Contacts/Projects also remain in their
+    // module groups - cross-group duplication already has precedent.
+    Workspace: { icon: Briefcase, items: WORKSPACE_GROUP_ITEMS },
     Relationships: { icon: Users, items: ['/contacts', '/crm/plan'] },
     // People = your internal team (workers, HR, leave); Relationships stays
     // outward-facing (contacts, leads).

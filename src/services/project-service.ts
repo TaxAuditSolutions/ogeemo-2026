@@ -42,6 +42,8 @@ const defaultChips: Omit<ActionChipData, 'id' | 'userId'>[] = [
     { label: 'Contacts Hub', icon: Contact, href: '/contacts' },
     { label: 'Projects', icon: Briefcase, href: '/projects/all' },
     { label: 'Activity Manager', icon: BrainCircuit, href: '/event-manager' },
+    // Core workflow order (OG-065): customer -> project -> work -> schedule -> time.
+    { label: 'Calendar', icon: Calendar, href: '/calendar' },
     // Beta feedback: Time Logs are a core business workflow (accumulated
     // work, billable amounts) - a default Workspace destination, not a
     // report you have to discover through the Activity Manager.

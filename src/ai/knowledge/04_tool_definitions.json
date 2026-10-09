@@ -1,0 +1,66 @@
+{
+  "about": "Tool truth for the Co-Pilot. Generated from src/ai/flows/ogeemo-chat.ts and src/lib/command-processor.ts - document ONLY what exists. Enforced by tests/knowledge-base.test.ts; update in the same commit as agent changes.",
+  "tools": [
+    {
+      "name": "syncReceipts",
+      "description": "Scans the Google Drive \"Receipts\" folder for new PDF invoices. Returns a list of files ready for extraction.",
+      "inputs": {},
+      "sideEffects": "Read-only scan of Google Drive; recommends navigating to the Extraction Hub (/accounting/receipt-processor).",
+      "auth": "Requires an authenticated user; safe to call when the user asks to check or sync receipts."
+    },
+    {
+      "name": "searchContacts",
+      "description": "Searches the user's contact directory for phone numbers, emails or IDs.",
+      "inputs": { "searchTerm": "string - name, company or email fragment" },
+      "sideEffects": "Read-only (Firestore contacts, org-scoped).",
+      "auth": "Requires authenticated user + org (tenant)."
+    },
+    {
+      "name": "searchGlobal",
+      "description": "MANDATORY first action for any single name, company or entity. Searches local context (browser pulse of contacts) and the web.",
+      "inputs": { "query": "string - search query or keyword" },
+      "sideEffects": "Read-only search; no writes.",
+      "auth": "Works for guests (falls back to web-only)."
+    },
+    {
+      "name": "createTask",
+      "description": "Creates a task or calendar event in the Activity Manager.",
+      "inputs": {
+        "title": "string (required)",
+        "description": "string (optional)",
+        "startTime": "ISO datetime (optional; presence makes it a scheduled event)",
+        "endTime": "ISO datetime (optional)",
+        "contactId": "string (optional)",
+        "projectId": "string (optional)"
+      },
+      "sideEffects": "WRITES a document to the Firestore 'tasks' collection with status 'todo'. If admin keys are missing (dev), it simulates success without writing.",
+      "auth": "Requires authenticated user."
+    }
+  ],
+  "flows": [
+    {
+      "name": "contactCapability",
+      "description": "Structured contact create/edit flow: Co-Pilot gathers the minimum (name + folder), checks for duplicates by name/email, prepares the contact form with gathered values, and the contact is only created when the user reviews and clicks Create Identity. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
+      "inputs": ["message", "history?", "userId", "orgId?", "accessLevel?", "folders", "contacts?"],
+      "sideEffects": "UI-assisted only: it prepares forms and navigation; the user's click performs the write."
+    }
+  ],
+  "commands": {
+    "how": "The command processor maps normalized natural-language words to navigation and simple actions (src/lib/command-processor.ts). Examples:",
+    "examples": [
+      { "say": "timer, start timer, log time, track time", "does": "opens /event-manager?startTimer=true (Activity Manager timer)" },
+      { "say": "activity manager, time manager", "does": "opens /event-manager" },
+      { "say": "my shortcuts, dashboard", "does": "opens /action-manager" },
+      { "say": "ledger, books, general ledger", "does": "opens /accounting/ledgers (BKS Ledger)" },
+      { "say": "income / expense", "does": "opens the income or expenses tab of the ledger" },
+      { "say": "tax", "does": "opens /accounting/tax (Tax Center)" },
+      { "say": "co-pilot, ogeemo ai, dispatch", "does": "opens /co-pilot" }
+    ]
+  },
+  "cannotYet": [
+    "Query business data: time logs, unbilled totals, invoice lists, payroll runs and calendar contents cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md.",
+    "Create or edit invoices, quotes, receipts, contacts' records or payroll directly as writes (contact work is UI-assisted via the contactCapability flow only).",
+    "Send emails, notifications or file changes; manage users, tenants or settings.",
+    "Modify or delete existing tasks/events (createTask only creates)."
+  ]
+}

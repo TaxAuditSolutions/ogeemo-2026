@@ -287,13 +287,14 @@ function getKnowledgeBase(): string {
     };
 
     // 0. Load the canonical identity layer first so platform concepts are always grounded.
-    appendKnowledgeDocument(path.join(knowledgeDir, 'ogeemo-core.md'), 'ogeemo-core.md');
+    appendKnowledgeDocument(path.join(knowledgeDir, '01_platform_identity.md'), '01_platform_identity.md');
 
-    // 1. Load modular knowledge fragments
+    // 1. Remaining knowledge: .md prose and .json structured maps (navigation
+    //    truth, tool definitions) - both are grounded documents for the model.
     if (fs.existsSync(knowledgeDir)) {
       const files = fs.readdirSync(knowledgeDir);
       for (const file of files) {
-        if (file.endsWith('.md') && file !== 'ogeemo-core.md') {
+        if ((file.endsWith('.md') || file.endsWith('.json')) && file !== '01_platform_identity.md') {
           const content = fs.readFileSync(path.join(knowledgeDir, file), 'utf-8');
           knowledgeContent += `<document name="${file}">${content}</document>\n`;
         }
@@ -343,6 +344,8 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 8. **Operating Awareness**: Stay within the user's active tenant and role. Do not claim access you do not have. If the user asks for a cross-tenant or restricted action, explain the limitation and suggest the correct tenant or route.
 9. **Screen-Scoped Advice**: Use the Page Guidance above to tailor your answer to the current screen. Do not suggest a tenant-management or super-admin action from a regular user page unless the user explicitly has the proper access and asks for it.
 10. **Questions vs. Requests**: Distinguish information questions from action requests. If the user asks "how do I...", "how do you...", "what is...", "where is...", or any other informational question, ANSWER it with clear step-by-step instructions from the Knowledge Base. Do NOT call tools or launch navigation for questions. When the message is an action request or operational command (e.g., "create a contact", "update Jane's phone", "schedule a meeting"), execute the action directly without asking for confirmation each time, and send clear feedback that the action or change has been performed after it has been completed.
+
+11. **Knowledge Base Authority**: Treat the knowledge documents as the single source of truth: 02_ui_navigation_map.json for module names, labels and routes; 04_tool_definitions.json for which actions are executable. Never invent routes or tools. For anything listed under "cannotYet", say it is not available yet and answer with the UI path from 03_operational_qna.md instead.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}

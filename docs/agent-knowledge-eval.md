@@ -1,9 +1,15 @@
 # Co-Pilot Knowledge Base — Golden-Question Eval
 
+**Automated runner:** `npm run kb:eval` executes these ten questions through the
+real agent flow (same prompt/KB/tools/model as production; admin credentials
+stripped so nothing can write) and writes answers to
+`scratch/kb-eval-results.md` — then grade them against the table below.
+Exits non-zero if any question errors.
+
 Run this checklist after any change to `src/ai/knowledge/` or the agent prompt
-(`src/ai/flows/ogeemo-chat.ts`). Ask each question in the Co-Pilot sidebar and
-tick what you see. Any ✗ = fix before shipping (usually a knowledge file, not
-the model).
+(`src/ai/flows/ogeemo-chat.ts`). Ask each question in the Co-Pilot sidebar (or
+via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
+(usually a knowledge file, not the model).
 
 | # | Ask | Expect |
 |---|-----|--------|

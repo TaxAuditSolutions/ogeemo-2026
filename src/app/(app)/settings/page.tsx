@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Save, LoaderCircle, X, Users2, ArrowRight, Layers, Building2 } from "lucide-react";
+import { Save, LoaderCircle, X, Users2, ArrowRight, Layers, Building2, LayoutDashboard } from "lucide-react";
 import { useSidebarView, type SidebarViewType } from "@/context/sidebar-view-context";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { PlanningRitualsCard } from "@/components/settings/planning-rituals-card";
@@ -217,6 +217,32 @@ export default function SettingsPage() {
                   </Button>
                 ))}
               </CardContent>
+            </Card>
+
+            {/* Beta feedback: My Shortcuts (and its customize page) were hard
+                to find - personalization access belongs in Settings. */}
+            <Card className="border-primary/20 bg-primary/5 shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <LayoutDashboard className="h-6 w-6 text-primary" />
+                  <CardTitle>My Shortcuts</CardTitle>
+                </div>
+                <CardDescription>
+                  Your personal workspace landing: open it directly, or choose which shortcuts appear on it.
+                </CardDescription>
+              </CardHeader>
+              <CardFooter className="flex flex-wrap gap-2">
+                <Button asChild className="flex-1 min-w-[160px] font-bold shadow-lg">
+                  <Link href="/action-manager">
+                    Open My Shortcuts <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="flex-1 min-w-[160px] font-bold">
+                  <Link href="/action-manager/manage">
+                    Customize Shortcuts <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
             </Card>
 
             <Card className="border-primary/20 bg-primary/5 shadow-md">

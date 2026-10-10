@@ -10,6 +10,7 @@
     "repair-next-cache": "pwsh -NoProfile -File scripts/prepare-next-cache.ps1",
     "start": "next start -p 3000",
     "deploy": "npx firebase-tools deploy",
+    "deploy:app": "npx firebase-tools deploy --only hosting,firestore:rules,storage",
     "test": "node --import tsx --test tests/*.test.ts",
     "kb:eval": "node --import tsx scripts/run-kb-eval.ts",
     "lint": "next lint",

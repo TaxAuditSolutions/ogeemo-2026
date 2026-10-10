@@ -8,6 +8,8 @@ import { getFirebaseServices } from '@/firebase';
  * Beta feedback: default Workspace navigation should follow the user's
  * business workflow; rather than shipping speculative built-in presets, users
  * compose their own from existing destinations. One document per user.
+ * User-invoked templates (src/lib/workflow-templates.ts) copy into this same
+ * list - nothing is applied implicitly.
  * Coordination: OG-035 (navigation/default Groups mechanism) - the sidebar
  * override resolves through src/lib/workspace-workflow.ts.
  */

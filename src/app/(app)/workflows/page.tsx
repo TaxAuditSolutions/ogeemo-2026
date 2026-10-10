@@ -7,6 +7,7 @@ import {
     Check,
     Inbox,
     LayoutGrid,
+    LayoutTemplate,
     LoaderCircle,
     Plus,
     Save,
@@ -35,6 +36,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { WORKFLOW_TEMPLATES, applyWorkflowTemplate, type WorkflowTemplate } from '@/lib/workflow-templates';
 
 /**
  * Workflows: named, user-authored sets of destinations (e.g. "Bookkeeping",
@@ -44,6 +54,10 @@ import {
  * that workflow's destinations (resolution/fallbacks in
  * src/lib/workspace-workflow.ts; the default five remain untouched until a
  * workflow is applied, and one click restores them). Coordination: OG-035.
+ *
+ * Shipped templates (Accountant, Lawyer) live in src/lib/workflow-templates.ts
+ * and arrive via the Template Workflows menu - copied into the user's list,
+ * never applied implicitly.
  */
 
 const OTHER_GROUP = 'Other Destinations';
@@ -90,6 +104,36 @@ function StepTile({ step, item }: { step: number; item: WorkflowItem }) {
                 <span className="truncate text-sm font-medium">{item.label}</span>
             </span>
         </button>
+    );
+}
+
+/**
+ * Dropdown of shipped role templates. Picking one copies it into the user's
+ * list (direct add - it stays fully editable and is never auto-applied).
+ */
+function TemplateWorkflowsButton({ onSelect }: { onSelect: (template: WorkflowTemplate) => void }) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <LayoutTemplate className="mr-2 h-4 w-4" /> Template Workflows
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Start from a template</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {WORKFLOW_TEMPLATES.map((template) => (
+                    <DropdownMenuItem key={template.name} onSelect={() => onSelect(template)}>
+                        <div className="flex w-full flex-col gap-0.5">
+                            <span className="font-medium">{template.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                                {template.blurb} ({template.items.length} steps)
+                            </span>
+                        </div>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
 
@@ -169,6 +213,28 @@ export default function WorkflowsPage() {
             setView({ mode: 'edit', id: wf.id });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to create workflow', description: error.message });
+        }
+    };
+
+    const handleAddTemplate = async (template: WorkflowTemplate) => {
+        const result = applyWorkflowTemplate(workflows, template, () =>
+            `wf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        );
+        if (result.status === 'duplicate') {
+            toast({
+                title: 'Already in your workflows',
+                description: `"${template.name}" is in your list - open it there to edit or rename it.`,
+            });
+            return;
+        }
+        try {
+            await persist([...result.workflows]);
+            toast({
+                title: `Template "${template.name}" added`,
+                description: 'Open it to review the steps, or apply it to the sidebar.',
+            });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to add template', description: error.message });
         }
     };
 
@@ -299,9 +365,12 @@ export default function WorkflowsPage() {
                     </p>
                 </div>
                 {view.mode === 'list' ? (
-                    <Button onClick={() => setShowCreate((v) => !v)}>
-                        <Plus className="mr-2 h-4 w-4" /> New Workflow
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <TemplateWorkflowsButton onSelect={(t) => void handleAddTemplate(t)} />
+                        <Button onClick={() => setShowCreate((v) => !v)}>
+                            <Plus className="mr-2 h-4 w-4" /> New Workflow
+                        </Button>
+                    </div>
                 ) : (
                     <Button variant="outline" onClick={() => (view.mode === 'edit' ? leaveEdit() : setView({ mode: 'list' }))}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -348,10 +417,13 @@ export default function WorkflowsPage() {
                         <Card>
                             <CardContent className="p-10 text-center text-muted-foreground space-y-3">
                                 <WorkflowIcon className="mx-auto h-10 w-10" />
-                                <p>No workflows yet. Create one to group the destinations of a way of working.</p>
-                                <Button onClick={() => setShowCreate(true)}>
-                                    <Plus className="mr-2 h-4 w-4" /> Create your first workflow
-                                </Button>
+                                <p>No workflows yet. Start from a template or create one to group the destinations of a way of working.</p>
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <TemplateWorkflowsButton onSelect={(t) => void handleAddTemplate(t)} />
+                                    <Button onClick={() => setShowCreate(true)}>
+                                        <Plus className="mr-2 h-4 w-4" /> Create your first workflow
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     ) : (

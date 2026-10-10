@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, BookOpen, Building2, Palette, PanelLeft, Settings, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Building2, Palette, PanelLeft, Settings, Workflow, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
  * "Make It Your Own" — the personalization pathway from the home screen
  * (beta feedback: personalization should be a primary user pathway, with AI
  * supporting rather than replacing it). An intro that routes to where
- * personalization actually lives (Customize My Shortcuts and Settings)
- * instead of duplicating those controls.
+ * personalization actually lives (Customize My Shortcuts, Workflows and
+ * Settings) instead of duplicating those controls.
  */
 
 const personalizeSections: {
@@ -28,6 +28,12 @@ const personalizeSections: {
       { label: 'Customize your dashboard', href: '/action-manager/manage' },
       { label: 'Read the Customize Shortcuts guide', href: '/action-chips-info' },
     ],
+  },
+  {
+    title: 'Your workflows',
+    description: 'Create named, ordered workflows — e.g. Bookkeeping or Quotes — from any destinations, then apply one so the sidebar Workspace follows your way of working. Restore the default anytime.',
+    icon: Workflow,
+    links: [{ label: 'Create a workflow', href: '/workflows' }],
   },
   {
     title: 'Your sidebar',

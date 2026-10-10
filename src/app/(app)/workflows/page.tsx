@@ -110,10 +110,21 @@ function StepTile({ step, item }: { step: number; item: WorkflowItem }) {
 /**
  * Dropdown of shipped role templates. Picking one copies it into the user's
  * list (direct add - it stays fully editable and is never auto-applied).
+ *
+ * Controlled open state: the Make It Your Own "Start from a template" link
+ * deep-links to /workflows?templates=1 so the menu is already open on arrival.
  */
-function TemplateWorkflowsButton({ onSelect }: { onSelect: (template: WorkflowTemplate) => void }) {
+function TemplateWorkflowsButton({
+    onSelect,
+    open,
+    onOpenChange,
+}: {
+    onSelect: (template: WorkflowTemplate) => void;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
     return (
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={onOpenChange}>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                     <LayoutTemplate className="mr-2 h-4 w-4" /> Template Workflows
@@ -151,6 +162,17 @@ export default function WorkflowsPage() {
     const [draftItems, setDraftItems] = React.useState<WorkflowItem[]>([]);
     const [paletteSearch, setPaletteSearch] = React.useState('');
     const [deleteTarget, setDeleteTarget] = React.useState<Workflow | null>(null);
+    const [templatesOpen, setTemplatesOpen] = React.useState(false);
+
+    // Deep link (?templates=1, used by Make It Your Own) opens the template
+    // menu on arrival; strip the param so a refresh doesn't reopen it.
+    React.useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('templates') === '1') {
+            setTemplatesOpen(true);
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }, []);
 
     const activeId: string | null = preferences?.activeWorkflowId ?? null;
 
@@ -366,7 +388,11 @@ export default function WorkflowsPage() {
                 </div>
                 {view.mode === 'list' ? (
                     <div className="flex flex-wrap items-center gap-2">
-                        <TemplateWorkflowsButton onSelect={(t) => void handleAddTemplate(t)} />
+                        <TemplateWorkflowsButton
+                            onSelect={(t) => void handleAddTemplate(t)}
+                            open={templatesOpen}
+                            onOpenChange={setTemplatesOpen}
+                        />
                         <Button onClick={() => setShowCreate((v) => !v)}>
                             <Plus className="mr-2 h-4 w-4" /> New Workflow
                         </Button>
@@ -419,7 +445,11 @@ export default function WorkflowsPage() {
                                 <WorkflowIcon className="mx-auto h-10 w-10" />
                                 <p>No workflows yet. Start from a template or create one to group the destinations of a way of working.</p>
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <TemplateWorkflowsButton onSelect={(t) => void handleAddTemplate(t)} />
+                                    <TemplateWorkflowsButton
+                                        onSelect={(t) => void handleAddTemplate(t)}
+                                        open={templatesOpen}
+                                        onOpenChange={setTemplatesOpen}
+                                    />
                                     <Button onClick={() => setShowCreate(true)}>
                                         <Plus className="mr-2 h-4 w-4" /> Create your first workflow
                                     </Button>

@@ -35,7 +35,7 @@ const personalizeSections: {
     icon: Workflow,
     links: [
       { label: 'Create a workflow', href: '/workflows' },
-      { label: 'Start from a template', href: '/workflows' },
+      { label: 'Start from a template', href: '/workflows?templates=1' },
     ],
   },
   {

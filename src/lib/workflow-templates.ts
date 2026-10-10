@@ -10,6 +10,10 @@ import type { Workflow, WorkflowItem } from '@/services/workflow-service';
  * the user's list on click, never applied implicitly, and is thereafter
  * identical to a self-authored workflow (rename, edit, delete freely).
  *
+ * New templates are derived from beta-provided role task lists (see commit
+ * history); add one by mapping its tasks onto real menu destinations - the
+ * guard test rejects any step that does not resolve.
+ *
  * Every item href/label must match the menu registry (tests/workflow-templates.test.ts
  * enforces this) or the sidebar resolver in src/lib/workspace-workflow.ts would
  * silently drop the step from the Workspace group.
@@ -32,9 +36,10 @@ const item = (href: string, label: string): WorkflowItem => ({
 
 /**
  * NOTE: /inquiries carries adminOnly in the menu registry (the destination
- * palette skips admin-only entries). It is kept here because intake is the
- * first step of the legal day-to-day list and beta accounts are firm owners
- * (admins); for non-admin users it is the one step that may be guarded.
+ * palette skips admin-only entries). It is kept as the first step of the
+ * legal templates (Lawyer, Paralegal) because intake leads the legal
+ * day-to-day list and beta accounts are firm owners (admins); for non-admin
+ * users it is the one step that may be guarded.
  */
 export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
     {
@@ -64,6 +69,105 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
             item('/event-manager', 'Activity Manager'),
             item('/document-manager', 'Document Manager'),
             item('/reports/client-statement', 'Client Statement'),
+        ],
+    },
+    {
+        name: 'Consultant',
+        blurb: 'Consulting: proposals, milestones, deliverables and retainers.',
+        items: [
+            item('/accounting/quotes/create', 'Create Quote'),
+            item('/projects/all', 'Projects'),
+            item('/event-manager', 'Activity Manager'),
+            item('/document-manager', 'Document Manager'),
+            item('/reports/time-log', 'Worker Time Log Report'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/reports/client-statement', 'Client Statement'),
+            item('/accounting/ledgers', 'BKS Ledger'),
+        ],
+    },
+    {
+        name: 'Virtual Assistant',
+        blurb: 'Admin support: requests, agendas, follow-ups, receipts and time.',
+        items: [
+            item('/to-do', 'To-Do List'),
+            item('/calendar', 'Calendar'),
+            item('/crm/plan', 'CRM Hub'),
+            item('/event-manager', 'Activity Manager'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/accounting/invoices/create', 'Create Invoice'),
+            item('/reports/time-log', 'Worker Time Log Report'),
+            item('/reports/work-activity', 'Work Activity Summary'),
+        ],
+    },
+    {
+        name: 'Paralegal',
+        blurb: 'Legal support: intakes, filings, deadlines, time and pre-billing.',
+        items: [
+            item('/inquiries', 'Inquiries'),
+            item('/contacts', 'Contacts Hub'),
+            item('/document-manager', 'Document Manager'),
+            item('/event-manager', 'Activity Manager'),
+            item('/reports/time-log', 'Worker Time Log Report'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/reports/client-statement', 'Client Statement'),
+            item('/accounting/ledgers', 'BKS Ledger'),
+        ],
+    },
+    {
+        name: 'Field Contractor',
+        blurb: 'Trades: work orders, crew scheduling, field time and job invoicing.',
+        items: [
+            item('/accounting/work-orders', 'Work Orders'),
+            item('/accounting/quotes/create', 'Create Quote'),
+            item('/calendar', 'Calendar'),
+            item('/event-manager', 'Activity Manager'),
+            item('/reports/time-log', 'Worker Time Log Report'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/accounting/invoices/create', 'Create Invoice'),
+            item('/accounting/ledgers', 'BKS Ledger'),
+        ],
+    },
+    {
+        name: 'Marketing Agency',
+        blurb: 'Agency work: scopes, campaigns, assets, ad spend and retainers.',
+        items: [
+            item('/accounting/quotes/create', 'Create Quote'),
+            item('/projects/all', 'Projects'),
+            item('/event-manager', 'Activity Manager'),
+            item('/document-manager', 'Document Manager'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/accounting/invoices/create', 'Create Invoice'),
+            item('/reports/client-statement', 'Client Statement'),
+            item('/accounting/ledgers', 'BKS Ledger'),
+        ],
+    },
+    {
+        name: 'Property Manager',
+        blurb: 'Properties: tenants, work orders, rent billing and owner statements.',
+        items: [
+            item('/contacts', 'Contacts Hub'),
+            item('/accounting/quotes/create', 'Create Quote'),
+            item('/accounting/work-orders', 'Work Orders'),
+            item('/event-manager', 'Activity Manager'),
+            item('/calendar', 'Calendar'),
+            item('/accounting/invoices/create', 'Create Invoice'),
+            item('/accounting/accounts-receivable', 'Accounts Receivable'),
+            item('/accounting/receipt-processor', 'Receipt Intake'),
+            item('/reports/client-statement', 'Client Statement'),
+        ],
+    },
+    {
+        name: 'IT & MSP',
+        blurb: 'IT services: tickets, proposals, time tracking and retainer billing.',
+        items: [
+            item('/to-do', 'To-Do List'),
+            item('/event-manager', 'Activity Manager'),
+            item('/contacts', 'Contacts Hub'),
+            item('/accounting/quotes/create', 'Create Quote'),
+            item('/document-manager', 'Document Manager'),
+            item('/reports/time-log', 'Worker Time Log Report'),
+            item('/reports/client-statement', 'Client Statement'),
+            item('/accounting/ledgers', 'BKS Ledger'),
         ],
     },
 ];

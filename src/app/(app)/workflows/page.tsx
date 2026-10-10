@@ -55,9 +55,9 @@ import { WORKFLOW_TEMPLATES, applyWorkflowTemplate, type WorkflowTemplate } from
  * src/lib/workspace-workflow.ts; the default five remain untouched until a
  * workflow is applied, and one click restores them). Coordination: OG-035.
  *
- * Shipped templates (Accountant, Lawyer) live in src/lib/workflow-templates.ts
- * and arrive via the Template Workflows menu - copied into the user's list,
- * never applied implicitly.
+ * Shipped role templates live in src/lib/workflow-templates.ts and arrive
+ * via the Template Workflows menu - copied into the user's list, never
+ * applied implicitly.
  */
 
 const OTHER_GROUP = 'Other Destinations';
@@ -130,7 +130,7 @@ function TemplateWorkflowsButton({
                     <LayoutTemplate className="mr-2 h-4 w-4" /> Template Workflows
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
                 <DropdownMenuLabel>Start from a template</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {WORKFLOW_TEMPLATES.map((template) => (

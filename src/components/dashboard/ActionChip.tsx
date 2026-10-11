@@ -7,7 +7,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { Button } from '@/components/ui/button';
 import { type ActionChipData } from '@/types/calendar';
 import { cn } from '@/lib/utils';
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,13 +25,17 @@ interface ActionChipProps {
   onDelete?: () => void;
   onEdit?: () => void;
   onMove?: (dragIndex: number, hoverIndex: number) => void;
+  /** Step-editor menu actions: click-based reordering (also the
+      keyboard/touch alternative to drag-and-drop). */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   /** When provided, replaces the default navigate-on-click behavior
       (e.g. Workflows builder palette: click adds instead of navigating). */
   onChipClick?: () => void;
 }
 
 export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
-  ({ chip, index, onDelete, onEdit, onMove, onChipClick }, ref) => {
+  ({ chip, index, onDelete, onEdit, onMove, onMoveUp, onMoveDown, onChipClick }, ref) => {
     const router = useRouter();
     const localRef = useRef<HTMLDivElement>(null);
     const { href, label } = chip;
@@ -112,12 +116,12 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
             "hover:from-glass-start/90 hover:to-glass-end/90",
             "active:mt-1 active:border-b-2",
             !href && "cursor-default active:mt-0 active:border-b-4",
-            (onDelete || onEdit) && "pr-8" // Add padding if menu is present
+            (onDelete || onEdit || onMoveUp || onMoveDown) && "pr-8" // Add padding if menu is present
           )}
         >
           <span className="truncate">{label}</span>
         </Button>
-        {(onDelete || onEdit) && (
+        {(onDelete || onEdit || onMoveUp || onMoveDown) && (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
@@ -133,6 +137,16 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
                     {onEdit && (
                         <DropdownMenuItem onSelect={onEdit}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                    )}
+                    {onMoveUp && (
+                        <DropdownMenuItem onSelect={onMoveUp}>
+                            <ChevronUp className="mr-2 h-4 w-4" /> Move up
+                        </DropdownMenuItem>
+                    )}
+                    {onMoveDown && (
+                        <DropdownMenuItem onSelect={onMoveDown}>
+                            <ChevronDown className="mr-2 h-4 w-4" /> Move down
                         </DropdownMenuItem>
                     )}
                     {onDelete && (

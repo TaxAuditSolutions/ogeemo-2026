@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
+    ArrowUpDown,
     Check,
     Inbox,
     LayoutGrid,
@@ -45,6 +46,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { WORKFLOW_TEMPLATES, applyWorkflowTemplate, type WorkflowTemplate } from '@/lib/workflow-templates';
+import { sortWorkflowItemsByLabel } from '@/lib/workflow-sort';
 
 /**
  * Workflows: named, user-authored sets of destinations (e.g. "Bookkeeping",
@@ -338,6 +340,10 @@ export default function WorkflowsPage() {
             return next;
         });
 
+    const handleSortDraft = (direction: 'asc' | 'desc') => {
+        setDraftItems((prev) => sortWorkflowItemsByLabel(prev, direction));
+    };
+
     const groupNameByHref = React.useMemo(() => {
         const map = new Map<string, string>();
         for (const [name, def] of Object.entries(groupedMenuItems)) {
@@ -565,10 +571,30 @@ export default function WorkflowsPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-base">Workflow steps ({draftItems.length})</CardTitle>
-                                <CardDescription>
-                                    Drag to reorder. Drag a step back to the palette (or use its menu) to remove it.
-                                </CardDescription>
+                                <div className="flex flex-row items-start justify-between gap-2">
+                                    <div className="space-y-1.5">
+                                        <CardTitle className="text-base">Workflow steps ({draftItems.length})</CardTitle>
+                                        <CardDescription>
+                                            Drag to reorder, or use a step&apos;s menu to move it up/down. Drag a step back
+                                            to the palette (or use its menu) to remove it.
+                                        </CardDescription>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="sm" disabled={draftItems.length < 2}>
+                                                <ArrowUpDown className="mr-2 h-4 w-4" /> Sort
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => handleSortDraft('asc')}>
+                                                Name A → Z
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleSortDraft('desc')}>
+                                                Name Z → A
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </CardHeader>
                             <ChipDropZone
                                 className="min-h-[140px] rounded-b-xl"
@@ -583,6 +609,8 @@ export default function WorkflowsPage() {
                                         chip={workflowItemToChip(item)}
                                         index={idx}
                                         onDelete={() => removeFromDraft(item.id)}
+                                        onMoveUp={idx > 0 ? () => moveInDraft(idx, idx - 1) : undefined}
+                                        onMoveDown={idx < draftItems.length - 1 ? () => moveInDraft(idx, idx + 1) : undefined}
                                         onChipClick={() => undefined}
                                     />
                                 ))}

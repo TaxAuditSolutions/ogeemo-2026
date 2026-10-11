@@ -12,3 +12,23 @@ env:
     secret: OGEEMO_ASSISTANT_URL
     availability:
       - RUNTIME
+  - variable: SMTP_USER
+    secret: SMTP_USER
+    availability:
+      - RUNTIME
+  - variable: SMTP_PASS
+    secret: SMTP_PASS
+    availability:
+      - RUNTIME
+  - variable: SMTP_HOST
+    value: smtp.gmail.com
+    availability:
+      - RUNTIME
+  - variable: SMTP_PORT
+    value: "465"
+    availability:
+      - RUNTIME
+  - variable: OGEEMO_NOTIFICATIONS_EMAIL
+    value: nick@taxauditsolutions.com
+    availability:
+      - RUNTIME

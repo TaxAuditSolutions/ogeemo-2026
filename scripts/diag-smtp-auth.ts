@@ -32,7 +32,7 @@ const pass = parsed;
 
 async function tryPort(port: number, secure: boolean): Promise<boolean> {
   const transport = nodemailer.createTransport({
-    host: 'mail.ogeemo.com',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port,
     secure,
     auth: { user, pass },

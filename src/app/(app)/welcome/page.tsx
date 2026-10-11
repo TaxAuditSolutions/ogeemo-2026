@@ -10,11 +10,13 @@ import {
   ArrowRight, Building2, Check,
   Bot,
   Paintbrush, Compass, LayoutDashboard,
+  Workflow as WorkflowIcon,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { getUserWorkflows } from '@/services/workflow-service';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -43,6 +45,39 @@ export default function WelcomePage() {
       setLearnDone(0);
     }
   }, [user]);
+
+  // Start Your Day's workflow line: one small read of the user's workflow list
+  // (the same per-user doc the Workflows page uses) + the active id that
+  // useUserPreferences already provides. On load failure both stay null and
+  // the line falls back to the neutral "Your workflow".
+  const [workflowCount, setWorkflowCount] = useState<number | null>(null);
+  const [activeWorkflowName, setActiveWorkflowName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    getUserWorkflows(user.uid)
+      .then((list) => {
+        if (!isMounted) return;
+        const activeId = preferences?.activeWorkflowId ?? null;
+        setActiveWorkflowName(list.find((w) => w.id === activeId)?.name ?? null);
+        setWorkflowCount(list.length);
+      })
+      .catch(() => {
+        // Keep the neutral label rather than guessing.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [user, preferences?.activeWorkflowId]);
+
+  const workflowLineLabel =
+    workflowCount === null
+      ? 'Your workflow'
+      : activeWorkflowName
+        ? `Your workflow: ${activeWorkflowName}`
+        : workflowCount > 0
+          ? 'Choose a workflow'
+          : 'Create your workflow';
 
   const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
@@ -151,7 +186,11 @@ export default function WelcomePage() {
         <CurrentWorkPanel />
 
         {/* Three doors: the journey in order - learn, shape your workspace,
-            then work. Calendar/money context comes from CurrentWorkPanel. */}
+            then work. Calendar/money context comes from CurrentWorkPanel.
+            Start Your Day carries a second, always-visible line to the user's
+            own workflow - applying a workflow is what shapes the day, so it
+            gets a one-click path from the home screen. Each card is a primary
+            link (icon/title) plus the optional line - never nested anchors. */}
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
@@ -164,36 +203,49 @@ export default function WelcomePage() {
                   : learnDone >= LEARN_TOTAL
                     ? `You have finished all ${LEARN_TOTAL} steps. Come back any time to revisit a lesson or guide.`
                     : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
+              workflowLine: false,
             },
             {
               href: '/make-it-your-own',
               icon: Paintbrush,
               title: 'Make It Your Own',
               description: 'Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.',
+              workflowLine: false,
             },
             {
               href: '/action-manager',
               icon: LayoutDashboard,
               title: 'Start Your Day',
               description: 'Your shortcuts — where the workday begins.',
+              workflowLine: true,
             },
           ].map((door) => {
             const DoorIcon = door.icon;
             return (
-              <Link key={door.href} href={door.href} className="group">
-                <Card className="h-full transition-all hover:-translate-y-1 hover:shadow-xl">
-                  <CardContent className="flex h-full flex-col items-center gap-2 p-6 text-center">
+              <Card key={door.href} className="group h-full transition-all hover:-translate-y-1 hover:shadow-xl">
+                <CardContent className="flex h-full flex-col items-center gap-2 p-6 text-center">
+                  <Link href={door.href} className="flex flex-col items-center gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                       <DoorIcon className="h-6 w-6 text-primary" strokeWidth={2.25} />
                     </div>
                     <p className="text-lg font-bold">{door.title}</p>
                     <p className="text-sm text-muted-foreground">{door.description}</p>
-                    <span className="mt-auto flex items-center gap-1 pt-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="flex items-center gap-1 pt-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
                       Open <ArrowRight className="h-4 w-4" />
                     </span>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </Link>
+                  {door.workflowLine && (
+                    <Link
+                      href="/workflows"
+                      className="mt-auto flex w-full items-center justify-center gap-1.5 border-t pt-3 text-sm font-semibold text-primary hover:underline"
+                    >
+                      <WorkflowIcon className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 truncate">{workflowLineLabel}</span>
+                      <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
             );
           })}
         </div>

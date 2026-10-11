@@ -168,6 +168,21 @@ test('the welcome screen keeps a work-start door to My Shortcuts', () => {
   );
 });
 
+test("the welcome screen offers a one-click line to the user's workflow", () => {
+  // Beta feedback: the flow from the home screen to the user's own workflow
+  // must be intuitive - a line on the Start Your Day door, not a detour
+  // through Make It Your Own.
+  const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
+  assert.ok(
+    welcome.includes('href="/workflows"'),
+    'expected the welcome page to link to /workflows',
+  );
+  assert.ok(
+    /workflowLine: true/.test(welcome),
+    'expected the Start Your Day door to carry the workflow line',
+  );
+});
+
 test('every home-screen pathway resolves to a page', () => {
   const hrefs = homeScreenHrefs();
   assert.ok(

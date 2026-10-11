@@ -29,6 +29,6 @@ env:
     availability:
       - RUNTIME
   - variable: OGEEMO_NOTIFICATIONS_EMAIL
-    value: nick@taxauditsolutions.com
+    value: mail@ogeemo.com
     availability:
       - RUNTIME

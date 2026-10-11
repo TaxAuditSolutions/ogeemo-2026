@@ -262,7 +262,16 @@ export default function WorkflowsPage() {
 
     const openEdit = (wf: Workflow) => {
         setDraftName(wf.name);
-        setDraftItems([...wf.items]);
+        // Heal any legacy duplicates (the old double-add race could save two
+        // copies of the same chip); the first occurrence wins.
+        const seen = new Set<string>();
+        setDraftItems(
+            wf.items.filter((i) => {
+                if (seen.has(i.id)) return false;
+                seen.add(i.id);
+                return true;
+            }),
+        );
         setView({ mode: 'edit', id: wf.id });
     };
 
@@ -311,8 +320,12 @@ export default function WorkflowsPage() {
     };
 
     const addToDraft = (chip: ActionChipData) => {
-        if (draftItems.some((i) => i.id === chip.id)) return;
-        setDraftItems((prev) => [...prev, chipToWorkflowItem(chip)]);
+        // Guard INSIDE the updater: a rapid double-click/drop fires twice with
+        // the same stale snapshot, and checking outside used to append the
+        // chip twice (React "two children with the same key" error).
+        setDraftItems((prev) =>
+            prev.some((i) => i.id === chip.id) ? prev : [...prev, chipToWorkflowItem(chip)],
+        );
     };
 
     const removeFromDraft = (id: string) => setDraftItems((prev) => prev.filter((i) => i.id !== id));
@@ -566,7 +579,7 @@ export default function WorkflowsPage() {
                             >
                                 {draftItems.map((item, idx) => (
                                     <ActionChip
-                                        key={item.id}
+                                        key={`${item.id}-${idx}`}
                                         chip={workflowItemToChip(item)}
                                         index={idx}
                                         onDelete={() => removeFromDraft(item.id)}

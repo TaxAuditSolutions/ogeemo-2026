@@ -257,7 +257,7 @@ export function processCommand(input: string): CommandResult {
             return {
                 type: 'action',
                 target: `/event-manager?title=${encodeURIComponent(title)}`,
-                label: 'Meeting Scheduler',
+                label: 'Schedule Meeting',
                 message: 'Action: [Schedule Meeting]',
                 description: name ? `A meeting with "${name}" is ready to schedule.` : 'Scheduling flow is ready.',
                 category: 'Workspace',
@@ -295,7 +295,7 @@ export function processCommand(input: string): CommandResult {
                 target: `/event-manager${title ? `?title=${encodeURIComponent(title)}` : ''}`,
                 label: 'Activity Manager',
                 message: 'Action: [Schedule Entry]',
-                description: title ? `"${title}" is ready to add to the timeline.` : 'Scheduler is ready.',
+                description: title ? `"${title}" is ready to add to the timeline.` : 'Activity Manager is ready.',
                 category: 'Workspace',
             };
         }

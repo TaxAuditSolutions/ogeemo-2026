@@ -225,7 +225,7 @@ function CrmPlanContent() {
             notes: `Follow-up regarding potential lead from ${lead.businessName || 'N/A'}.`,
             contactId: lead.id,
         });
-        toast({ title: 'Rescheduling...', description: 'Taking you to the scheduler to book your follow-up.' });
+        toast({ title: 'Rescheduling...', description: 'Taking you to Activity Manager to book your follow-up.' });
         router.push(`/event-manager?${query.toString()}`);
     } 
     

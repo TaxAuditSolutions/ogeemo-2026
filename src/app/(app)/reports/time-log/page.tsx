@@ -463,7 +463,7 @@ function WorkerTimeLogReportContent() {
                                                                     <DropdownMenuItem onSelect={() => setEntryToDelete(entry)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                                                                 </>
                                                             ) : (
-                                                                <DropdownMenuItem onSelect={() => router.push(`/event-manager?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit in Scheduler</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => router.push(`/event-manager?eventId=${entry.id}`)}><Edit className="mr-2 h-4 w-4" /> Edit Activity</DropdownMenuItem>
                                                             )}
                                                         </DropdownMenuContent>
                                                      </DropdownMenu>

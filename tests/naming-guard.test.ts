@@ -126,3 +126,11 @@ test('the retired term "Action Manager" is gone from app copy and live guides', 
 test('the retired term "Action Chip" is gone from app copy and live guides', () => {
     assert.deepEqual(findRetiredTerminology(/action chip/i), []);
 });
+
+test('the retired term "Scheduler" is gone from app copy and live guides', () => {
+    // Beta report: "Edit in Scheduler" / "Meeting Scheduler" used "Scheduler"
+    // as an alternate name for Activity Manager. Verbs/adjectives ("schedule",
+    // "scheduled", "Rescheduling") remain allowed; only the standalone noun
+    // is retired. Archive transcripts are excluded as usual.
+    assert.deepEqual(findRetiredTerminology(/\bscheduler\b/i), []);
+});

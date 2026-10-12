@@ -3,23 +3,24 @@ import nodemailer, { type Transporter } from 'nodemailer';
 /**
  * Ogeemo Email Service (server-only)
  *
- * Sends form-submission notifications to the Ogeemo team mailboxes hosted on
- * the WHC cPanel mail server (mail.ogeemo.com):
- *   - notifications@ogeemo.com  (sender / archive copy)
+ * Sends form-submission notifications to the Ogeemo team mailboxes through
+ * Google Workspace SMTP (ogeemo.com MX is Google):
+ *   - notifications@ogeemo.com  (archive copy)
  *   - dan@ogeemo.com            (human recipient)
  *
  * Server criteria (SSL/TLS, requires authentication):
- *   Outgoing Server: mail.ogeemo.com — SMTP Port 465 (implicit SSL)
- *   Username: notifications@ogeemo.com (Password: the mailbox account password)
+ *   Outgoing Server: smtp.gmail.com — SMTP Port 465 (implicit SSL)
+ *   Username: the Workspace mailbox; Password: a 16-character Google App Password
+ *   (2-Step Verification required; the normal account password is rejected)
  *
  * Configuration comes from environment variables so the same code works in
  * local development (.env.local) and production (App Hosting / Secret Manager):
  *
- *   SMTP_HOST                 - SMTP server (default: mail.ogeemo.com)
+ *   SMTP_HOST                 - SMTP server (default: smtp.gmail.com)
  *   SMTP_PORT                 - SMTP port (default: 465)
- *   SMTP_USER                 - mailbox that SENDS the alert (notifications@ogeemo.com)
- *   SMTP_PASS                 - the notifications@ mailbox account password
- *   OGEEMO_NOTIFICATIONS_EMAIL- From: address (default: notifications@ogeemo.com)
+ *   SMTP_USER                 - Workspace mailbox that SENDS the alert
+ *   SMTP_PASS                 - that mailbox's Google App Password
+ *   OGEEMO_NOTIFICATIONS_EMAIL- From: address (default: SMTP_USER, then notifications@ogeemo.com)
  *   OGEEMO_NOTIFY_RECIPIENTS  - comma-separated recipients
  *                               (default: notifications@ogeemo.com,dan@ogeemo.com)
  *
@@ -27,13 +28,20 @@ import nodemailer, { type Transporter } from 'nodemailer';
  * outage can never break a form submission.
  */
 
-const SMTP_HOST = process.env.SMTP_HOST || 'mail.ogeemo.com';
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
 const SMTP_PORT = Number(process.env.SMTP_PORT || '465');
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 
-export const NOTIFICATIONS_EMAIL =
-  process.env.OGEEMO_NOTIFICATIONS_EMAIL || 'notifications@ogeemo.com';
+// Gmail rewrites or rejects a From address that is not the authenticated user or one of its aliases.
+export function resolveSenderEmail(opts: { override?: string; smtpUser?: string }): string {
+  return opts.override || opts.smtpUser || 'notifications@ogeemo.com';
+}
+
+export const NOTIFICATIONS_EMAIL = resolveSenderEmail({
+  override: process.env.OGEEMO_NOTIFICATIONS_EMAIL,
+  smtpUser: SMTP_USER,
+});
 
 export const NOTIFY_RECIPIENTS = (
   process.env.OGEEMO_NOTIFY_RECIPIENTS || 'notifications@ogeemo.com,dan@ogeemo.com'
@@ -58,6 +66,8 @@ export interface FormNotificationPayload {
   replyTo?: string;
   /** ISO timestamp of the submission (defaults to now). */
   submittedAt?: string;
+  /** Overrides the default team recipients (NOTIFY_RECIPIENTS). */
+  recipients?: string[];
 }
 
 export interface EmailSendResult {
@@ -146,6 +156,41 @@ export function buildFormNotificationEmail(payload: FormNotificationPayload): {
   return { subject, text: textLines.join('\n'), html };
 }
 
+export const REGISTRATION_NOTIFY_EMAIL = 'info@ogeemo.com';
+
+export interface RegistrationNotificationInput {
+  orgName: string;
+  name?: string;
+  email: string;
+  orgId: string;
+  uid: string;
+}
+
+/** Never include the password here; this payload is emailed in plain text. */
+export function buildRegistrationNotification(
+  input: RegistrationNotificationInput
+): FormNotificationPayload {
+  return {
+    formName: 'Account Registration',
+    heading: `New Organization Registration — ${input.orgName}`,
+    fields: [
+      { label: 'Organization Name', value: input.orgName },
+      { label: 'Contact Name', value: input.name || '' },
+      { label: 'Email', value: input.email },
+      { label: 'Organization ID', value: input.orgId },
+      { label: 'User ID', value: input.uid },
+      { label: 'Access Level', value: 'super_admin' },
+    ],
+    replyTo: input.email,
+    recipients: [REGISTRATION_NOTIFY_EMAIL],
+  };
+}
+
+export function resolveRecipients(payload: Pick<FormNotificationPayload, 'recipients'>): string[] {
+  const custom = (payload.recipients || []).map((addr) => addr.trim()).filter(Boolean);
+  return custom.length > 0 ? custom : NOTIFY_RECIPIENTS;
+}
+
 export async function sendFormNotification(
   payload: FormNotificationPayload
 ): Promise<EmailSendResult> {
@@ -156,10 +201,11 @@ export async function sendFormNotification(
     }
 
     const { subject, text, html } = buildFormNotificationEmail(payload);
+    const recipients = resolveRecipients(payload);
 
     await client.sendMail({
       from: `"Ogeemo Notifications" <${NOTIFICATIONS_EMAIL}>`,
-      to: NOTIFY_RECIPIENTS.join(', '),
+      to: recipients.join(', '),
       ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
       subject,
       text,
@@ -167,7 +213,7 @@ export async function sendFormNotification(
     });
 
     console.info(
-      `[Email Service] Notification sent for "${payload.formName}" -> ${NOTIFY_RECIPIENTS.join(', ')}`
+      `[Email Service] Notification sent for "${payload.formName}" -> ${recipients.join(', ')}`
     );
     return { sent: true };
   } catch (error: any) {

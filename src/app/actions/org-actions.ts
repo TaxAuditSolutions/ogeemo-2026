@@ -5,6 +5,7 @@ import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AccessLevel } from '@/core/user-profile-service';
 import { canManageTargetRole } from '@/core/rbac';
+import { buildRegistrationNotification, sendFormNotification } from '@/core/email-service';
 
 // Canonical tenant shape. isMasterTenant is true only for the single "Ogeemo"
 // organization whose super_admins manage tenant lifecycle (see createTenantWithSuperAdmin).
@@ -136,6 +137,15 @@ export async function registerOrganization(data: { orgName: string; email: strin
             accessLevel: 'super_admin',
             isMasterTenant: false,
         });
+
+        // sendFormNotification never throws, so a mail outage cannot trigger the rollback below.
+        await sendFormNotification(buildRegistrationNotification({
+            orgName: data.orgName,
+            name: data.name,
+            email: data.email,
+            orgId,
+            uid: createdUid,
+        }));
 
         return { success: true, orgId, uid: createdUid };
 
@@ -665,28 +675,28 @@ export async function listCompanies(): Promise<Array<{ id: string; name: string;
     const companies = await Promise.all(snapshot.docs
         .filter((docSnap) => docSnap.data()?.isMasterTenant !== true)
         .map(async (docSnap) => {
-        const data = docSnap.data();
-        const ownerUid = (data.ownerUid as string | null) ?? null;
+            const data = docSnap.data();
+            const ownerUid = (data.ownerUid as string | null) ?? null;
 
-        let adminEmail = '';
-        let adminName = '';
-        if (ownerUid) {
-            const userSnap = await adminDb.collection('users').doc(ownerUid).get();
-            if (userSnap.exists) {
-                adminEmail = (userSnap.data()?.email as string) || '';
-                adminName = (userSnap.data()?.displayName as string) || '';
+            let adminEmail = '';
+            let adminName = '';
+            if (ownerUid) {
+                const userSnap = await adminDb.collection('users').doc(ownerUid).get();
+                if (userSnap.exists) {
+                    adminEmail = (userSnap.data()?.email as string) || '';
+                    adminName = (userSnap.data()?.displayName as string) || '';
+                }
             }
-        }
 
-        return {
-            id: docSnap.id,
-            name: data.name as string,
-            ownerUid,
-            status: (data.status as 'active' | 'suspended') ?? 'active',
-            adminEmail,
-            adminName,
-        };
-    }));
+            return {
+                id: docSnap.id,
+                name: data.name as string,
+                ownerUid,
+                status: (data.status as 'active' | 'suspended') ?? 'active',
+                adminEmail,
+                adminName,
+            };
+        }));
 
     return companies;
 }

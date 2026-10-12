@@ -4,8 +4,7 @@
  * Usage:  npx tsx scripts/send-test-email.ts
  *
  * Requires SMTP_USER/SMTP_PASS to be set in .env.local. Sends one test email
- * to the configured recipients (notifications@ogeemo.com + dan@ogeemo.com)
- * exactly as the real form notifications will be sent.
+ * to info@ogeemo.com.
  */
 import dotenv from 'dotenv';
 
@@ -18,7 +17,7 @@ async function main() {
   if (!isEmailServiceConfigured()) {
     console.error(
       '[Test] SMTP credentials are not configured.\n' +
-        '       Set SMTP_USER and SMTP_PASS in .env.local (see the "Ogeemo Form Notification Email" block).'
+      '       Set SMTP_USER and SMTP_PASS in .env.local (see the "Ogeemo Form Notification Email" block).'
     );
     process.exit(1);
   }
@@ -30,13 +29,14 @@ async function main() {
     fields: [
       { label: 'Status', value: 'This is a test of the Ogeemo form notification pipeline.' },
       { label: 'Trigger', value: 'scripts/send-test-email.ts' },
-      { label: 'Expected Recipients', value: 'notifications@ogeemo.com, dan@ogeemo.com' },
+      { label: 'Expected Recipients', value: 'info@ogeemo.com' },
     ],
+    recipients: ['info@ogeemo.com'],
     replyTo: 'notifications@ogeemo.com',
   });
 
   if (result.sent) {
-    console.info('[Test] SUCCESS — check the inboxes of notifications@ogeemo.com and dan@ogeemo.com.');
+    console.info('[Test] SUCCESS — check the info@ogeemo.com inbox.');
   } else {
     console.error(`[Test] FAILED — ${result.error}`);
     process.exit(1);

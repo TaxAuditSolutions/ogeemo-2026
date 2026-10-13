@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { LoaderCircle, FileDown } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { getTasksForUser, type Event as TaskEvent } from '@/services/project-service';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -58,7 +59,9 @@ export function TimeLogImportDialog({ isOpen, onOpenChange, contactId, onSave }:
             (task) =>
               task.contactId === contactId &&
               task.isBillable &&
-              (task.duration || 0) > 0
+              (task.duration || 0) > 0 &&
+              // Planned schedule spans are not invoiceable until worked.
+              !isScheduledPlaceholder(task)
           );
           setEntries(relevantEntries);
         } catch (error: any) {

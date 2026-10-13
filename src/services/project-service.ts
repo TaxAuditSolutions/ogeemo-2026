@@ -163,6 +163,7 @@ const docToTask = (doc: any): TaskEvent => {
         isScheduled: data.isScheduled || false,
         isTodoItem: data.isTodoItem || false,
         duration: data.duration,
+        durationSource: data.durationSource ?? null,
         isBillable: data.isBillable,
         billableRate: data.billableRate,
         sessions: (data.sessions || []).map((session: any) => ({

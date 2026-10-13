@@ -131,6 +131,7 @@ export default function LogEmployeeTimePage() {
                     start: startTime,
                     end: endTime,
                     duration: durationSeconds,
+                    durationSource: 'manual' as const,
                     workerId: selectedEmployeeId,
                     userId: user.uid,
                     status: 'done' as const,

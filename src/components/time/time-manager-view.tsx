@@ -49,6 +49,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
 import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock } from '@/lib/schedule-dates';
+import { computeDurationAndSource, type DurationSource } from '@/lib/duration-source';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -235,20 +236,24 @@ export function TimeManagerView() {
     const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') })), []);
     const minuteOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; }), []);
     
-    const totalAccumulatedSeconds = useMemo(() => sessions.reduce((acc, session) => acc + session.durationSeconds, 0), [sessions]);
-    
-    // Fallback: If no sessions/timer exist, calculate duration from scheduled start/end
-    const calculatedDuration = useMemo(() => {
-        if (sessions.length > 0 || elapsedSeconds > 0) {
-            return totalAccumulatedSeconds + elapsedSeconds;
-        }
+    // Planned start/end span in seconds (0 when unavailable or all-day). This
+    // is a calendar/planning value only - it is never billed on its own.
+    const scheduledSpanSeconds = useMemo(() => {
         if (startDate && startHour && startMinute && endDate && endHour && endMinute && !isAllDay) {
             const s = set(startDate, { hours: parseInt(startHour), minutes: parseInt(startMinute), seconds: 0, milliseconds: 0 });
             const e = set(endDate, { hours: parseInt(endHour), minutes: parseInt(endMinute), seconds: 0, milliseconds: 0 });
             if (e > s) return (e.getTime() - s.getTime()) / 1000;
         }
         return 0;
-    }, [totalAccumulatedSeconds, elapsedSeconds, sessions.length, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay]);
+    }, [startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay]);
+
+    // Displayed duration + provenance. Actual sessions/timer always win; the
+    // scheduled span is a labelled non-billable placeholder until work exists
+    // (beta feedback: scheduled time silently showed up as billable time).
+    const { durationSeconds: calculatedDuration, source: durationSource } = useMemo(
+        () => computeDurationAndSource({ sessions, elapsedSeconds, scheduledSpanSeconds }),
+        [sessions, elapsedSeconds, scheduledSpanSeconds]
+    );
 
     const totalTime = calculatedDuration;
 
@@ -321,7 +326,7 @@ export function TimeManagerView() {
         }
     }, []);
 
-    const handleSaveEvent = useCallback(async (andClose: boolean = false) => {
+    const handleSaveEvent = useCallback(async (andClose: boolean = false, sessionOverride?: { sessions: TimeSession[]; durationSeconds: number; durationSource: DurationSource | null }) => {
         if (!user || !subject.trim()) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a subject for the event.' });
             return;
@@ -348,6 +353,14 @@ export function TimeManagerView() {
             }
             isScheduled = true;
         }
+        // When logging a session, the caller passes the just-logged sessions
+        // array explicitly: React state has not flushed yet at this point, so
+        // reading `sessions` from this closure would silently drop the new
+        // session (stale state -> session never persisted -> duration
+        // recalculated from the schedule on reopen).
+        const sessionsToSave = sessionOverride?.sessions ?? sessions;
+        const durationToSave = sessionOverride?.durationSeconds ?? calculatedDuration;
+        const durationSourceToSave = sessionOverride?.durationSource ?? durationSource;
         const eventData: Partial<Omit<TaskEvent, 'id' | 'userId'>> = {
             title: subject,
             description: notes,
@@ -358,8 +371,9 @@ export function TimeManagerView() {
             projectId: selectedProjectId === 'inbox' ? null : selectedProjectId,
             contactId: selectedContactId,
             workerId: selectedWorkerId || user.uid,
-            duration: calculatedDuration,
-            sessions: sessions,
+            duration: durationToSave,
+            durationSource: durationSourceToSave,
+            sessions: sessionsToSave,
             isBillable: isBillable,
             billableRate: isBillable ? (Number(billableRate) || 0) : 0,
         };
@@ -376,7 +390,7 @@ export function TimeManagerView() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, calculatedDuration]);
+    }, [user, subject, notes, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, sessions, eventToEdit, toast, router, calculatedDuration, durationSource]);
 
     const handleSaveAndNew = async () => {
         await handleSaveEvent(false);
@@ -406,10 +420,14 @@ export function TimeManagerView() {
             durationSeconds: elapsedSeconds,
             notes: currentSessionNotes,
         };
-        setSessions(prev => [...prev, newSession]);
+        const sessionsWithNew = [...sessions, newSession];
+        setSessions(sessionsWithNew);
         setCurrentSessionNotes('');
         broadcastTimerState(null);
-        await handleSaveEvent(false);
+        // Persist the just-logged session explicitly (state hasn't flushed yet),
+        // with duration derived from the updated session list.
+        const computed = computeDurationAndSource({ sessions: sessionsWithNew, elapsedSeconds: 0, scheduledSpanSeconds });
+        await handleSaveEvent(false, { sessions: sessionsWithNew, durationSeconds: computed.durationSeconds, durationSource: computed.source });
         toast({ title: 'Session Logged' });
     };
 
@@ -861,8 +879,13 @@ export function TimeManagerView() {
                                     </>
                                 ) : null}
                                 <div className="text-right">
-                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Total on this event</span>
-                                    <div className="font-mono text-lg font-bold text-primary">{formatTime(calculatedDuration)}</div>
+                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                                        {durationSource === 'scheduled' ? 'Scheduled (not yet worked)' : 'Total on this event'}
+                                    </span>
+                                    <div className={cn('font-mono text-lg font-bold', durationSource === 'scheduled' ? 'text-muted-foreground' : 'text-primary')}>{formatTime(calculatedDuration)}</div>
+                                    {durationSource === 'scheduled' && (
+                                        <p className="text-[10px] text-muted-foreground">Planned time only — not billable until a session is logged.</p>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>

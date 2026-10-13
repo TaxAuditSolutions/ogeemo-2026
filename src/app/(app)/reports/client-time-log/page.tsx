@@ -58,6 +58,7 @@ import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { ContactSelector } from '@/components/contacts/contact-selector';
@@ -163,6 +164,7 @@ function ClientTimeLogReportContent() {
                     billableRate: tl.billableRate || 0,
                     subject: tl.subject || '',
                     details: tl.notes || '',
+                    scheduledOnly: false,
                 };
             });
 
@@ -187,6 +189,9 @@ function ClientTimeLogReportContent() {
                     billableRate: t.billableRate || 0,
                     subject: t.title || '',
                     details: t.description || '',
+                    // Planned schedule span with no session worked yet: shown for
+                    // context but never counted as worked or billable time.
+                    scheduledOnly: isScheduledPlaceholder(t),
                 };
             });
 
@@ -226,8 +231,8 @@ function ClientTimeLogReportContent() {
         return combined;
     }, [timeLogs, tasks, workers, contacts, selectedContactId, dateRange, user, adminName, sortConfig]);
 
-    const totalBillableDuration = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [clientEntries]);
-    const totalBillableAmount = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [clientEntries]);
+    const totalBillableDuration = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable && !e.scheduledOnly ? e.durationSeconds : 0), 0), [clientEntries]);
+    const totalBillableAmount = useMemo(() => clientEntries.reduce((acc, e) => acc + (e.isBillable && !e.scheduledOnly ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [clientEntries]);
 
     const handleConfirmDelete = async () => {
         if (!entryToDelete) return;
@@ -385,10 +390,15 @@ function ClientTimeLogReportContent() {
                                             <TableCell className="font-medium">{entry.contactName}</TableCell>
                                             <TableCell>{entry.workerName}</TableCell>
                                             <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
-                                            <TableCell className="max-w-xs truncate">{entry.subject || entry.title}</TableCell>
+                                            <TableCell className="max-w-xs truncate">
+                                                {entry.subject || entry.title}
+                                                {entry.scheduledOnly && (
+                                                    <Badge variant="outline" className="ml-2 text-amber-700 border-amber-300 bg-amber-50 text-[9px]">Scheduled – not yet worked</Badge>
+                                                )}
+                                            </TableCell>
                                             <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
                                             <TableCell className="text-right font-mono">
-                                                {entry.isBillable ? formatCurrency((entry.durationSeconds / 3600) * (entry.billableRate || 0)) : '-'}
+                                                {entry.isBillable && !entry.scheduledOnly ? formatCurrency((entry.durationSeconds / 3600) * (entry.billableRate || 0)) : '-'}
                                             </TableCell>
                                             <TableCell>
                                                     <DropdownMenu>

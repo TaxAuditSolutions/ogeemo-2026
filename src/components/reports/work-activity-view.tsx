@@ -49,6 +49,7 @@ import { getTimeLogs, type TimeLog } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn, formatTime, formatCurrency } from '@/lib/utils';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -67,6 +68,7 @@ type CombinedActivity = {
     billableRate: number;
     source: 'Manual Log' | 'Activity Manager' | 'Field App' | 'Ritual';
     type: 'Staff / Worker' | 'Ritual';
+    scheduledOnly?: boolean;
 };
 
 const MetricCard = ({ title, value, icon: Icon, colorClass }: { title: string; value: string; icon: React.ElementType; colorClass: string }) => (
@@ -146,7 +148,10 @@ export function WorkActivityView() {
                 isBillable: t.isBillable || false,
                 billableRate: t.billableRate || 0,
                 source: (t.ritualType ? 'Ritual' : 'Activity Manager') as 'Ritual' | 'Activity Manager',
-                type: (t.ritualType ? 'Ritual' : 'Staff / Worker') as 'Ritual' | 'Staff / Worker'
+                type: (t.ritualType ? 'Ritual' : 'Staff / Worker') as 'Ritual' | 'Staff / Worker',
+                // Planned schedule span with no session worked yet: shown for
+                // context but never counted as worked or billable time.
+                scheduledOnly: isScheduledPlaceholder(t),
             }))
         ];
 
@@ -160,10 +165,11 @@ export function WorkActivityView() {
     }, [selectedContactId, timeLogs, tasks, dateRange]);
 
     const stats = useMemo(() => {
-        const totalSeconds = activityData.reduce((sum, a) => sum + a.durationSeconds, 0);
-        const billableSeconds = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + a.durationSeconds, 0);
+        const worked = activityData.filter(a => !a.scheduledOnly);
+        const totalSeconds = worked.reduce((sum, a) => sum + a.durationSeconds, 0);
+        const billableSeconds = worked.filter(a => a.isBillable).reduce((sum, a) => sum + a.durationSeconds, 0);
         const ritualSeconds = activityData.filter(a => a.type === 'Ritual').reduce((sum, a) => sum + a.durationSeconds, 0);
-        const earned = activityData.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * (a.billableRate || 0), 0);
+        const earned = worked.filter(a => a.isBillable).reduce((sum, a) => sum + (a.durationSeconds / 3600) * (a.billableRate || 0), 0);
 
         return { totalSeconds, billableSeconds, ritualSeconds, earned };
     }, [activityData]);
@@ -313,7 +319,9 @@ export function WorkActivityView() {
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono text-xs">{formatTime(a.durationSeconds)}</TableCell>
                                                     <TableCell className="text-right">
-                                                        {a.isBillable ? (
+                                                        {a.scheduledOnly ? (
+                                                            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 h-5 text-[9px]">Scheduled – not yet worked</Badge>
+                                                        ) : a.isBillable ? (
                                                             <div className="flex flex-col items-end">
                                                                 <Badge className="bg-green-100 text-green-800 border-green-200 h-5 text-[9px]">Billable</Badge>
                                                                 <span className="text-[10px] font-mono font-bold mt-0.5">@{formatCurrency(a.billableRate)}/hr</span>

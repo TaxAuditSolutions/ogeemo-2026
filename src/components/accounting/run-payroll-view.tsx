@@ -78,6 +78,7 @@ import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { getUserProfile, getUsers } from '@/core/user-profile-service';
 import { cn } from '@/lib/utils';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type PayrollEmployee = Worker & {
@@ -204,10 +205,12 @@ export function RunPayrollView() {
             // Resolve the worker's UID if it's a registry record
             const resolvedUid = emp.userId || (emp.email ? emailToUidMap.get(emp.email.toLowerCase()) : null);
 
+            // Payroll counts WORKED time only: planned schedule spans with no
+            // session recorded (durationSource 'scheduled') are never paid.
             const taskSeconds = allTasks
                 .filter(t => {
                     const matchId = t.workerId === emp.id || (resolvedUid && t.workerId === resolvedUid);
-                    return matchId && t.start && isWithinInterval(new Date(t.start), { start, end });
+                    return matchId && t.start && isWithinInterval(new Date(t.start), { start, end }) && !isScheduledPlaceholder(t);
                 })
                 .reduce((sum, t) => sum + (t.duration || 0), 0);
 

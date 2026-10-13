@@ -73,6 +73,7 @@ import { getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
@@ -183,6 +184,7 @@ function WorkerTimeLogReportContent() {
                 billableRate: tl.billableRate || 0,
                 notes: tl.notes || tl.description || tl.subject || '',
                 documentFolderId: worker?.documentFolderId,
+                scheduledOnly: false,
             };
         });
 
@@ -204,6 +206,9 @@ function WorkerTimeLogReportContent() {
                 billableRate: t.billableRate || 0,
                 notes: t.description || t.title || '',
                 documentFolderId: worker?.documentFolderId,
+                // Planned schedule span with no session worked yet: shown for
+                // context but never counted as worked or billable time.
+                scheduledOnly: isScheduledPlaceholder(t),
             };
         });
 
@@ -243,9 +248,10 @@ function WorkerTimeLogReportContent() {
         return combined;
     }, [timeLogs, tasks, workers, contacts, selectedWorkerId, startDate, endDate, user, adminName, sortConfig]);
 
-    const totalDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + e.durationSeconds, 0), [allMergedEntries]);
-    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? e.durationSeconds : 0), 0), [allMergedEntries]);
-    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
+    const actualDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.scheduledOnly ? 0 : e.durationSeconds), 0), [allMergedEntries]);
+    const scheduledDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.scheduledOnly ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const billableDurationSeconds = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable && !e.scheduledOnly ? e.durationSeconds : 0), 0), [allMergedEntries]);
+    const totalBillableAmount = useMemo(() => allMergedEntries.reduce((acc, e) => acc + (e.isBillable && !e.scheduledOnly ? (e.durationSeconds / 3600) * (e.billableRate || 0) : 0), 0), [allMergedEntries]);
 
     const requestSort = (key: string) => {
         let direction: 'asc' | 'desc' = 'asc';
@@ -437,9 +443,15 @@ function WorkerTimeLogReportContent() {
                                                 <TableCell>{entry.contactName}</TableCell>
                                                 <TableCell>{format(entry.startTime, 'yyyy-MM-dd')}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={entry.isBillable ? "default" : "secondary"}>
-                                                        {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
-                                                    </Badge>
+                                                    {entry.scheduledOnly ? (
+                                                        <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
+                                                            Scheduled – not yet worked
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant={entry.isBillable ? "default" : "secondary"}>
+                                                            {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
+                                                        </Badge>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatTime(entry.durationSeconds)}</TableCell>
@@ -477,8 +489,13 @@ function WorkerTimeLogReportContent() {
                                 {allMergedEntries.length > 0 && (
                                     <TableFooter>
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-right font-bold">Total Hours (All Entries):</TableCell>
-                                            <TableCell className="text-right font-bold font-mono">{formatTime(totalDurationSeconds)}</TableCell>
+                                            <TableCell colSpan={5} className="text-right font-bold">Total Hours (Actual Worked):</TableCell>
+                                            <TableCell className="text-right font-bold font-mono">{formatTime(actualDurationSeconds)}</TableCell>
+                                            <TableCell />
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-right text-muted-foreground">Scheduled (not yet worked):</TableCell>
+                                            <TableCell className="text-right font-mono text-muted-foreground">{formatTime(scheduledDurationSeconds)}</TableCell>
                                             <TableCell />
                                         </TableRow>
                                         <TableRow className="bg-muted/30">

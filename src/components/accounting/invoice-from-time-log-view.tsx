@@ -20,6 +20,7 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getTasksForUser, updateTask, deleteTask, type Event as TaskEvent } from '@/services/project-service';
 import { cn } from '@/lib/utils';
+import { isScheduledPlaceholder } from '@/lib/duration-source';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,7 +98,7 @@ export function InvoiceFromTimeLogView() {
         if (!selectedContactId) return [];
         
         return allEntries
-            .filter(entry => entry.contactId === selectedContactId && entry.isBillable && (entry.duration || 0) > 0)
+            .filter(entry => entry.contactId === selectedContactId && entry.isBillable && (entry.duration || 0) > 0 && !isScheduledPlaceholder(entry))
             .filter(entry => {
                 if (!dateRange || !dateRange.from || !entry.start) return true;
                 const entryDate = new Date(entry.start);

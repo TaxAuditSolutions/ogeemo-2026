@@ -1,6 +1,7 @@
 
 
 import type { LucideIcon } from 'lucide-react';
+import type { DurationSource } from '@/lib/duration-source';
 
 export type TaskStatus = 'todo' | 'inProgress' | 'done';
 
@@ -34,6 +35,9 @@ export interface Event {
   isScheduled?: boolean;
   isTodoItem?: boolean;
   duration?: number; // in seconds, CUMULATIVE total
+  // Provenance of `duration`: actual sessions vs planned schedule span vs manual entry.
+  // Null/undefined on legacy docs - readers fall back to resolveDurationSource().
+  durationSource?: DurationSource | null;
   isBillable?: boolean;
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];

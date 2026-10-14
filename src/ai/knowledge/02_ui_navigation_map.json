@@ -3,7 +3,7 @@
   "modules": [
     {"route": "/action-manager", "label": "My Shortcuts", "group": "Workspace", "capability": "personal landing page of shortcut chips; customize at /action-manager/manage"},
     {"route": "/event-manager", "label": "Activity Manager", "group": "Workspace", "capability": "primary workspace: start timer, log sessions, schedule billable work"},
-    {"route": "/workflows", "label": "Workflows", "group": "Workspace", "capability": "named ordered destination sets; apply one to drive the sidebar Workspace group"},
+    {"route": "/workflows", "label": "Workflows", "group": "Workspace", "capability": "named ordered destination sets; set one as your standard workflow to drive the sidebar Workspace group and greet you at login"},
     {"route": "/calendar", "label": "Calendar", "group": "Workspace", "capability": "month/week calendar; click a slot to schedule work"},
     {"route": "/to-do", "label": "To-Do List", "group": "Workspace", "capability": "personal task list"},
     {"route": "/document-manager", "label": "Document Manager", "group": "Workspace", "capability": "dual-mirror Google Drive structure and file naming protocol"},

@@ -41,6 +41,10 @@ export interface Event {
   isBillable?: boolean;
   billableRate?: number; // rate per hour
   sessions?: TimeSession[];
+  // Billing state (OG-070): set when this Activity is placed on an invoice,
+  // cleared when that invoice is deleted or the entry is removed from it.
+  billedInvoiceId?: string | null;
+  billedAt?: Date | null;
   urgency?: ProjectUrgency;
   importance?: ProjectImportance;
   ritualType?: 'daily' | 'weekly';

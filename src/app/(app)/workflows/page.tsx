@@ -52,10 +52,12 @@ import { sortWorkflowItemsByLabel } from '@/lib/workflow-sort';
  * Workflows: named, user-authored sets of destinations (e.g. "Bookkeeping",
  * "Quotes") - beta feedback on workflow customization.
  *
- * A workflow can be APPLIED to the sidebar: the Workspace group then shows
- * that workflow's destinations (resolution/fallbacks in
- * src/lib/workspace-workflow.ts; the default five remain untouched until a
- * workflow is applied, and one click restores them). Coordination: OG-035.
+ * A workflow can be SET AS STANDARD (saved as the user's default): it stays
+ * selected across logins, drives the welcome page's start button, and the
+ * sidebar's Workspace group then shows that workflow's destinations
+ * (resolution/fallbacks in src/lib/workspace-workflow.ts; the default five
+ * remain untouched until a workflow is applied, and one click restores
+ * them). Coordination: OG-035.
  *
  * Shipped role templates live in src/lib/workflow-templates.ts and arrive
  * via the Template Workflows menu - copied into the user's list, never
@@ -208,13 +210,17 @@ export default function WorkflowsPage() {
     const handleApply = async (id: string) => {
         await updatePreferences({ activeWorkflowId: id });
         window.dispatchEvent(new Event('workflowsUpdated'));
-        toast({ title: 'Workflow applied to sidebar', description: 'The sidebar Workspace group now follows this workflow.' });
+        const name = workflows.find((w) => w.id === id)?.name ?? 'This workflow';
+        toast({
+            title: 'Standard workflow saved',
+            description: `${name} is now your standard workflow - it stays selected across logins and the sidebar Workspace group follows it.`,
+        });
     };
 
     const handleRestore = async () => {
         await updatePreferences({ activeWorkflowId: null });
         window.dispatchEvent(new Event('workflowsUpdated'));
-        toast({ title: 'Default Workspace restored' });
+        toast({ title: 'Standard workflow cleared', description: 'The default Workspace destinations are back.' });
     };
 
     const handleCreate = async () => {
@@ -401,8 +407,9 @@ export default function WorkflowsPage() {
                         <WorkflowIcon className="h-7 w-7" /> Workflows
                     </h1>
                     <p className="text-muted-foreground text-sm">
-                        Named, ordered sets of destinations - e.g. Bookkeeping, Quotes. Apply one to make the
-                        sidebar&apos;s Workspace group follow it; the default is always one click away.
+                        Named, ordered sets of destinations - e.g. Bookkeeping, Quotes. Set one as your standard
+                        workflow to save it as the default that greets you at every login; the sidebar&apos;s
+                        Workspace group follows it, and the original default is always one click away.
                     </p>
                 </div>
                 {view.mode === 'list' ? (
@@ -450,8 +457,9 @@ export default function WorkflowsPage() {
                     {activeId && (
                         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
                             <span>
-                                Sidebar is showing:{' '}
+                                Your standard workflow:{' '}
                                 <strong>{workflows.find((w) => w.id === activeId)?.name ?? 'a deleted workflow'}</strong>
+                                <span className="text-muted-foreground"> — saved as your default; greets you at every login</span>
                             </span>
                             <Button variant="outline" size="sm" onClick={() => void handleRestore()}>
                                 Restore default Workspace
@@ -484,7 +492,7 @@ export default function WorkflowsPage() {
                                             <span className="truncate">{wf.name}</span>
                                             {wf.id === activeId && (
                                                 <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                                                    <Check className="h-3 w-3" /> Active
+                                                    <Check className="h-3 w-3" /> Standard
                                                 </span>
                                             )}
                                         </CardTitle>
@@ -501,11 +509,11 @@ export default function WorkflowsPage() {
                                         </Button>
                                         {wf.id === activeId ? (
                                             <Button size="sm" variant="outline" onClick={() => void handleRestore()}>
-                                                Restore default
+                                                Clear standard
                                             </Button>
                                         ) : (
                                             <Button size="sm" variant="secondary" onClick={() => void handleApply(wf.id)}>
-                                                Apply to sidebar
+                                                Set as standard
                                             </Button>
                                         )}
                                         <Button
@@ -530,11 +538,11 @@ export default function WorkflowsPage() {
                         <span className="text-lg font-semibold">{current.name}</span>
                         {current.id === activeId ? (
                             <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                                <Check className="h-3 w-3" /> Applied to sidebar
+                                <Check className="h-3 w-3" /> Standard workflow
                             </span>
                         ) : (
                             <Button size="sm" variant="secondary" onClick={() => void handleApply(current.id)}>
-                                Apply to sidebar
+                                Set as standard
                             </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => openEdit(current)}>

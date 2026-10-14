@@ -183,6 +183,25 @@ test("the welcome screen offers a one-click line to the user's workflow", () => 
   );
 });
 
+test('the welcome doors collapse behind an applied workflow', () => {
+  // Once the user applies a workflow (Make It Your Own -> Your workflows),
+  // repeat logins go straight to the start button instead of re-prompting;
+  // the choice persists in the profile, and one click brings the doors back.
+  const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
+  assert.ok(
+    welcome.includes('activeWorkflowName'),
+    'expected the doors to be gated on the applied workflow',
+  );
+  assert.ok(
+    welcome.includes('ogeemo-welcome-doors'),
+    'expected a persisted restore override for the doors',
+  );
+  assert.ok(
+    welcome.includes('Show the getting-started doors'),
+    'expected a click that brings the doors back',
+  );
+});
+
 test('every home-screen pathway resolves to a page', () => {
   const hrefs = homeScreenHrefs();
   assert.ok(

@@ -74,6 +74,9 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { isScheduledPlaceholder } from '@/lib/duration-source';
+import { isEligibleForBilling, type EntryRef } from '@/lib/billing-eligibility';
+import { writeInvoiceDraftHandoff } from '@/lib/invoice-handoff';
+import { FileDigit } from 'lucide-react';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
@@ -294,6 +297,46 @@ function WorkerTimeLogReportContent() {
         router.push(`/event-manager?${query.toString()}`);
     };
 
+    // Eligible unbilled billable entries in the current view (OG-070 rules).
+    const eligibleEntries = useMemo(
+        () => allMergedEntries.filter((e) => isEligibleForBilling(e)),
+        [allMergedEntries]
+    );
+
+    const eligibleByContact = useMemo(() => {
+        const groups = new Map<string, { entries: typeof eligibleEntries; amount: number }>();
+        eligibleEntries.forEach((e) => {
+            if (!e.contactId) return;
+            const group = groups.get(e.contactId) || { entries: [], amount: 0 };
+            group.entries.push(e);
+            group.amount += (e.durationSeconds / 3600) * (e.billableRate || 0);
+            groups.set(e.contactId, group);
+        });
+        return groups;
+    }, [eligibleEntries]);
+
+    // Single client -> straight into the invoice workflow carrying the entries;
+    // multiple clients -> pick one (each carries only its own entries).
+    const handleCreateInvoice = (contactId: string) => {
+        const group = eligibleByContact.get(contactId);
+        if (!group || group.entries.length === 0) return;
+        const entryRefs: EntryRef[] = group.entries.map((e) => ({
+            id: e.id,
+            source: e.source === 'log' ? 'log' : 'event',
+        }));
+        writeInvoiceDraftHandoff({ contactId, entryRefs });
+        router.push(`/accounting/invoices/create?contactId=${contactId}`);
+    };
+
+    const handleAddEntryToInvoice = (entry: any) => {
+        if (!entry.contactId || !isEligibleForBilling(entry)) return;
+        writeInvoiceDraftHandoff({
+            contactId: entry.contactId,
+            entryRefs: [{ id: entry.id, source: entry.source === 'log' ? 'log' : 'event' }],
+        });
+        router.push(`/accounting/invoices/create?contactId=${entry.contactId}`);
+    };
+
     const workersForSelection = useMemo(() => {
         // Identity check must verify EMAIL: manually added workers are also
         // stamped with the saving user's userId, so a bare userId match
@@ -447,6 +490,10 @@ function WorkerTimeLogReportContent() {
                                                         <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
                                                             Scheduled – not yet worked
                                                         </Badge>
+                                                    ) : entry.billedInvoiceId ? (
+                                                        <Badge variant="secondary" className="text-blue-700 border-blue-200 bg-blue-50">
+                                                            Invoiced
+                                                        </Badge>
                                                     ) : (
                                                         <Badge variant={entry.isBillable ? "default" : "secondary"}>
                                                             {entry.isBillable ? `Billable (${formatCurrency(entry.billableRate)}/hr)` : 'Non-Billable'}
@@ -459,6 +506,12 @@ function WorkerTimeLogReportContent() {
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onSelect={() => handleAddEntryToInvoice(entry)}
+                                                                disabled={!entry.contactId || !isEligibleForBilling(entry)}
+                                                            >
+                                                                <FileDigit className="mr-2 h-4 w-4" /> Add to Invoice
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem onSelect={() => handleScheduleEvent(entry)}>
                                                                 <Clock className="mr-2 h-4 w-4" /> Schedule an event
                                                             </DropdownMenuItem>
@@ -513,6 +566,39 @@ function WorkerTimeLogReportContent() {
                             </Table>
                         </div>
                     </CardContent>
+                    {eligibleEntries.length > 0 && (
+                        <CardFooter className="justify-end border-t p-4 gap-2">
+                            {eligibleByContact.size === 1 ? (
+                                <Button onClick={() => handleCreateInvoice([...eligibleByContact.keys()][0])}>
+                                    <FileDigit className="mr-2 h-4 w-4" />
+                                    Create Invoice ({eligibleEntries.length} billable {eligibleEntries.length === 1 ? 'entry' : 'entries'})
+                                </Button>
+                            ) : (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button>
+                                            <FileDigit className="mr-2 h-4 w-4" />
+                                            Create Invoice
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-72">
+                                        {[...eligibleByContact.entries()].map(([contactId, group]) => (
+                                            <DropdownMenuItem key={contactId} onSelect={() => handleCreateInvoice(contactId)}>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">
+                                                        {contacts.find(c => c.id === contactId)?.name || 'Unknown client'}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {group.entries.length} billable {group.entries.length === 1 ? 'entry' : 'entries'} · {formatCurrency(group.amount)}
+                                                    </span>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
             

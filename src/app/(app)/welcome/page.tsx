@@ -10,13 +10,16 @@ import {
   ArrowRight, Building2, Check,
   Bot,
   Paintbrush, Compass, LayoutDashboard,
+  Inbox,
   Workflow as WorkflowIcon,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { getUserWorkflows } from '@/services/workflow-service';
+import { getUserWorkflows, type Workflow } from '@/services/workflow-service';
+import { allMenuItems } from '@/lib/menu-items';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -24,9 +27,12 @@ import { getUserWorkflows } from '@/services/workflow-service';
 
 /** Step count of the Learn Ogeemo guided path (kept in sync by a guard test). */
 const LEARN_TOTAL = 8;
+/** Per-user localStorage map recording the "bring the welcome doors back" override. */
+const DOORS_SHOWN_KEY = 'ogeemo-welcome-doors';
 export default function WelcomePage() {
   const { user, accessLevel, isMasterTenant } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [tenantOptions, setTenantOptions] = useState<Array<{ orgId: string; companyName: string; isActive: boolean }>>([]);
   const [isSwitchingTenant, setIsSwitchingTenant] = useState(false);
   const { preferences } = useUserPreferences();
@@ -52,6 +58,7 @@ export default function WelcomePage() {
   // the line falls back to the neutral "Your workflow".
   const [workflowCount, setWorkflowCount] = useState<number | null>(null);
   const [activeWorkflowName, setActiveWorkflowName] = useState<string | null>(null);
+  const [workflowList, setWorkflowList] = useState<Workflow[]>([]);
   useEffect(() => {
     if (!user) return;
     let isMounted = true;
@@ -61,6 +68,7 @@ export default function WelcomePage() {
         const activeId = preferences?.activeWorkflowId ?? null;
         setActiveWorkflowName(list.find((w) => w.id === activeId)?.name ?? null);
         setWorkflowCount(list.length);
+        setWorkflowList(list);
       })
       .catch(() => {
         // Keep the neutral label rather than guessing.
@@ -78,6 +86,53 @@ export default function WelcomePage() {
         : workflowCount > 0
           ? 'Choose a workflow'
           : 'Create your workflow';
+
+  // Repeat-user doors: once an active workflow is applied (Make It Your Own
+  // -> Your workflows -> Apply) the three doors collapse into a single start
+  // button. The active workflow lives in the user's profile, so it carries
+  // across logins and devices - nothing to re-pick. "Show the getting-started
+  // doors" writes a per-user override so the doors stay back-on for good.
+  const [doorsRestored, setDoorsRestored] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = window.localStorage.getItem(DOORS_SHOWN_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+      setDoorsRestored(all[user.uid] === true);
+    } catch {
+      setDoorsRestored(false);
+    }
+  }, [user]);
+
+  const handleShowDoors = () => {
+    if (!user) return;
+    setDoorsRestored(true);
+    try {
+      const raw = window.localStorage.getItem(DOORS_SHOWN_KEY);
+      const all = raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+      all[user.uid] = true;
+      window.localStorage.setItem(DOORS_SHOWN_KEY, JSON.stringify(all));
+    } catch (error) {
+      console.error('Failed to save welcome door preference:', error);
+    }
+  };
+
+  // One-click "select and save" for the standard workflow is intentionally
+  // NOT here: the welcome page shows the chosen workflow, and switching
+  // standards happens on the Workflows page ("Set as standard").
+
+  // Doors stay as the safe entry path while the workflow list loads, when it
+  // fails to load, and when no workflow is active - they only collapse once a
+  // workflow is confirmed active (name resolved) and the user has not
+  // brought them back.
+  const showDoors = doorsRestored || activeWorkflowName === null;
+
+  // The chosen workflow itself, steps included - the welcome page displays
+  // this, not a list of choices; switching standards happens on /workflows.
+  const activeWorkflow = workflowList.find((w) => w.id === (preferences?.activeWorkflowId ?? null)) ?? null;
+
+  // Greeting for the workflow-led header ("Welcome back, Dan").
+  const firstName = (user?.displayName ?? '').trim().split(/\s+/)[0] ?? '';
 
   const currentWorkspaceName = tenantOptions.find((tenant) => tenant.isActive)?.companyName || 'Current Workspace';
   const roleLabel = isMasterTenant ? 'Master Tenant' : accessLevel === 'super_admin' ? 'Super Admin' : accessLevel === 'org_admin' ? 'Org Admin' : accessLevel === 'editor' ? 'Editor' : accessLevel === 'viewer' ? 'Viewer' : 'Member';
@@ -171,84 +226,172 @@ export default function WelcomePage() {
       )}
 
       <div className="w-full max-w-4xl space-y-6 animate-in fade-in zoom-in-95 duration-700">
+        {/* Header: new users get the generic welcome; once a standard
+            workflow is saved the page IS the workflow - its name leads and
+            its steps are the main content below. */}
         <header className="text-center space-y-3">
           <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
             <Logo iconOnly markSize={48} />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary tracking-tight">
-            Welcome to Ogeemo
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Your business workspace is ready. <br className="hidden md:block" /> Pick a task below to get started.
-          </p>
+          {showDoors ? (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary tracking-tight">
+                Welcome to Ogeemo
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Your business workspace is ready. <br className="hidden md:block" /> Pick a task below to get started.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">
+                Welcome back{firstName ? `, ${firstName}` : ''}
+              </p>
+              <h1 className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold font-headline text-primary tracking-tight">
+                <WorkflowIcon className="h-7 w-7" strokeWidth={2.25} />
+                {activeWorkflowName}
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Your standard workflow — {activeWorkflow?.items.length ?? 0}{' '}
+                {activeWorkflow?.items.length === 1 ? 'step' : 'steps'}. Pick up where you left off.
+              </p>
+            </>
+          )}
         </header>
 
-        <CurrentWorkPanel />
+        {showDoors && <CurrentWorkPanel />}
 
         {/* Three doors: the journey in order - learn, shape your workspace,
             then work. Calendar/money context comes from CurrentWorkPanel.
             Start Your Day carries a second, always-visible line to the user's
             own workflow - applying a workflow is what shapes the day, so it
             gets a one-click path from the home screen. Each card is a primary
-            link (icon/title) plus the optional line - never nested anchors. */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              href: '/learn',
-              icon: Compass,
-              title: 'Get Started',
-              description:
-                learnDone === 0
-                  ? 'New here? Follow the guided path — it walks you through Ogeemo step by step.'
-                  : learnDone >= LEARN_TOTAL
-                    ? `You have finished all ${LEARN_TOTAL} steps. Come back any time to revisit a lesson or guide.`
-                    : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
-              workflowLine: false,
-            },
-            {
-              href: '/make-it-your-own',
-              icon: Paintbrush,
-              title: 'Make It Your Own',
-              description: 'Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.',
-              workflowLine: false,
-            },
-            {
-              href: '/action-manager',
-              icon: LayoutDashboard,
-              title: 'Start Your Day',
-              description: 'Your shortcuts — where the workday begins.',
-              workflowLine: true,
-            },
-          ].map((door) => {
-            const DoorIcon = door.icon;
-            return (
-              <Card key={door.href} className="group h-full transition-all hover:-translate-y-1 hover:shadow-xl">
-                <CardContent className="flex h-full flex-col items-center gap-2 p-6 text-center">
-                  <Link href={door.href} className="flex flex-col items-center gap-2">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                      <DoorIcon className="h-6 w-6 text-primary" strokeWidth={2.25} />
-                    </div>
-                    <p className="text-lg font-bold">{door.title}</p>
-                    <p className="text-sm text-muted-foreground">{door.description}</p>
-                    <span className="flex items-center gap-1 pt-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                      Open <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </Link>
-                  {door.workflowLine && (
-                    <Link
-                      href="/workflows"
-                      className="mt-auto flex w-full items-center justify-center gap-1.5 border-t pt-3 text-sm font-semibold text-primary hover:underline"
-                    >
-                      <WorkflowIcon className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 truncate">{workflowLineLabel}</span>
-                      <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+            link (icon/title) plus the optional line - never nested anchors.
+
+            Repeat users (an applied workflow) collapse this grid into their
+            own workflow below; the choice persists in the profile, so it
+            carries across logins, and one click brings the doors back. */}
+        {showDoors && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                href: '/learn',
+                icon: Compass,
+                title: 'Get Started',
+                description:
+                  learnDone === 0
+                    ? 'New here? Follow the guided path — it walks you through Ogeemo step by step.'
+                    : learnDone >= LEARN_TOTAL
+                      ? `You have finished all ${LEARN_TOTAL} steps. Come back any time to revisit a lesson or guide.`
+                      : `You are ${learnDone} of ${LEARN_TOTAL} steps in — pick up where you left off.`,
+                workflowLine: false,
+              },
+              {
+                href: '/make-it-your-own',
+                icon: Paintbrush,
+                title: 'Make It Your Own',
+                description: 'Personalize your shortcuts, sidebar, header and look — make Ogeemo match how you work.',
+                workflowLine: false,
+              },
+              {
+                href: '/action-manager',
+                icon: LayoutDashboard,
+                title: 'Start Your Day',
+                description: 'Your shortcuts — where the workday begins.',
+                workflowLine: true,
+              },
+            ].map((door) => {
+              const DoorIcon = door.icon;
+              return (
+                <Card key={door.href} className="group h-full transition-all hover:-translate-y-1 hover:shadow-xl">
+                  <CardContent className="flex h-full flex-col items-center gap-2 p-6 text-center">
+                    <Link href={door.href} className="flex flex-col items-center gap-2">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                        <DoorIcon className="h-6 w-6 text-primary" strokeWidth={2.25} />
+                      </div>
+                      <p className="text-lg font-bold">{door.title}</p>
+                      <p className="text-sm text-muted-foreground">{door.description}</p>
+                      <span className="flex items-center gap-1 pt-2 text-sm font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                        Open <ArrowRight className="h-4 w-4" />
+                      </span>
                     </Link>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    {door.workflowLine && (
+                      <Link
+                        href="/workflows"
+                        className="mt-auto flex w-full items-center justify-center gap-1.5 border-t pt-3 text-sm font-semibold text-primary hover:underline"
+                      >
+                        <WorkflowIcon className="h-4 w-4 shrink-0" />
+                        <span className="min-w-0 truncate">{workflowLineLabel}</span>
+                        <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Repeat-user state: with a workflow applied the page becomes the
+            workflow - ordered steps first, controls beneath. The choice is
+            persisted, so there is nothing to re-pick on login; switching
+            standards happens on the Workflows page. */}
+        {!showDoors && (
+          <div className="flex flex-col items-center gap-5">
+            {activeWorkflow && activeWorkflow.items.length > 0 && (
+              <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {activeWorkflow.items.map((item, idx) => {
+                  const StepIcon = allMenuItems.find((m) => m.href === item.href)?.icon ?? Inbox;
+                  return (
+                    <button
+                      key={`${item.id}-${idx}`}
+                      type="button"
+                      onClick={() => router.push(item.href)}
+                      className="group flex items-center gap-3 rounded-xl border bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                        {idx + 1}
+                      </span>
+                      <StepIcon className="h-5 w-5 shrink-0 text-muted-foreground group-hover:text-primary" />
+                      <span className="min-w-0 truncate text-sm font-semibold">{item.label}</span>
+                      <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {activeWorkflow && activeWorkflow.items.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                This workflow has no steps yet — add destinations on the Workflows page.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button asChild className="max-w-full">
+                <Link href="/action-manager">
+                  <LayoutDashboard className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="min-w-0 truncate">Start your day — {activeWorkflowName}</span>
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/workflows">
+                  <WorkflowIcon className="mr-2 h-4 w-4" /> Change workflow
+                </Link>
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto px-2 text-xs text-muted-foreground underline-offset-4 hover:underline"
+              onClick={handleShowDoors}
+            >
+              Show the getting-started doors
+            </Button>
+          </div>
+        )}
+
+        {/* Day context (calendar/money): above the doors for new users, but
+            after the workflow steps for workflow users. */}
+        {!showDoors && <CurrentWorkPanel />}
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link

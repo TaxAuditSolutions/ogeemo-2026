@@ -769,6 +769,11 @@ export function TimeManagerView() {
                                                 <DropdownMenuItem onSelect={() => setIsAgendaFormOpen(true)}>
                                                     <UsersIcon className="mr-2 h-4 w-4" /> Meeting Agenda
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href="/calendar">
+                                                        <CalendarIcon className="mr-2 h-4 w-4" /> Plan tasks &amp; events
+                                                    </Link>
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

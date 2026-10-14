@@ -166,6 +166,8 @@ const docToTask = (doc: any): TaskEvent => {
         durationSource: data.durationSource ?? null,
         isBillable: data.isBillable,
         billableRate: data.billableRate,
+        billedInvoiceId: data.billedInvoiceId ?? null,
+        billedAt: toClientDate(data.billedAt) ?? null,
         sessions: (data.sessions || []).map((session: any) => ({
             ...session,
             startTime: toClientDate(session.startTime) || new Date(),

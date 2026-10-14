@@ -10,13 +10,14 @@ test('core workflow destinations resolve to real menu entries', () => {
     }
 });
 
-test('Workspace group leads with the five core destinations in workflow order', () => {
-    assert.deepEqual(WORKSPACE_GROUP_ITEMS.slice(0, 5), [
+test('Workspace group leads with the six core destinations in workflow order', () => {
+    assert.deepEqual(WORKSPACE_GROUP_ITEMS.slice(0, 6), [
         '/contacts',
         '/projects/all',
         '/event-manager',
         '/calendar',
         '/reports/time-log',
+        '/accounting/invoices/create',
     ]);
 });
 

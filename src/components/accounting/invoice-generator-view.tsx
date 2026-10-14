@@ -32,7 +32,8 @@ import { getUserProfile } from '@/core/user-profile-service';
 import type { UserProfile } from '@/core/user-profile-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { TimeLogImportDialog } from './time-log-import-dialog';
-import { Event as TaskEvent } from '@/types/calendar-types';
+import { toInvoiceLineItem, type InvoiceableEntry, type EntryRef } from '@/lib/billing-eligibility';
+import { readInvoiceDraftHandoff } from '@/lib/invoice-handoff';
 import { Logo } from '@/components/logo';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -55,6 +56,9 @@ interface LocalLineItem {
     taxType?: string;
     taxRate?: number;
     serviceItemId?: string;
+    // OG-070: time-log-derived lines point back at their source record.
+    sourceEntryId?: string;
+    sourceEntryType?: 'log' | 'event';
 }
 
 const formatCurrency = (amount: number) => {
@@ -202,6 +206,9 @@ export function InvoiceGeneratorView() {
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
     const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
     const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
+    // Time Log -> Invoice handoff: entries carried from the Time Log Report,
+    // pre-checked in Add from Time Log (null once the dialog is closed).
+    const [pendingEntryRefs, setPendingEntryRefs] = useState<EntryRef[] | null>(null);
     const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
     const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
     const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
@@ -327,6 +334,18 @@ export function InvoiceGeneratorView() {
                     localStorage.removeItem('editInvoiceTemplate');
                 }
 
+                // Time Log -> Invoice handoff (read-once): preselect the client
+                // and open Add from Time Log with the carried entries checked.
+                // Skipped when editing an existing invoice.
+                if (!invoiceId) {
+                    const handoff = readInvoiceDraftHandoff();
+                    if (handoff && fetchedContacts.some((c) => c.id === handoff.contactId)) {
+                        setSelectedContactId(handoff.contactId);
+                        setPendingEntryRefs(handoff.entryRefs);
+                        setIsTimeLogDialogOpen(true);
+                    }
+                }
+
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
             } finally {
@@ -421,18 +440,8 @@ export function InvoiceGeneratorView() {
         setLineItems(prev => prev.filter(item => item.id !== id));
     };
 
-    const handleAddTimeLogEntries = (entries: TaskEvent[]) => {
-        const newItems: LocalLineItem[] = entries.map((entry, index) => {
-            const hours = (entry.duration || 0) / 3600;
-            return {
-                id: `time_${Date.now()}_${index}`,
-                description: `${entry.title} - ${entry.start ? format(new Date(entry.start), 'PPP') : 'N/A'}`,
-                internalNotes: entry.description || '',
-                categoryNumber: '',
-                quantity: parseFloat(hours.toFixed(2)),
-                price: entry.billableRate || 0,
-            };
-        });
+    const handleAddTimeLogEntries = (entries: InvoiceableEntry[]) => {
+        const newItems: LocalLineItem[] = entries.map((entry, index) => toInvoiceLineItem(entry, index));
         setLineItems(prev => [...prev, ...newItems]);
         toast({ title: `${newItems.length} time entries added to invoice.` });
     };
@@ -1169,9 +1178,13 @@ export function InvoiceGeneratorView() {
             {selectedContactId && (
                 <TimeLogImportDialog
                     isOpen={isTimeLogDialogOpen}
-                    onOpenChange={setIsTimeLogDialogOpen}
+                    onOpenChange={(open) => {
+                        setIsTimeLogDialogOpen(open);
+                        if (!open) setPendingEntryRefs(null);
+                    }}
                     contactId={selectedContactId}
                     onSave={handleAddTimeLogEntries}
+                    preselectedEntryIds={pendingEntryRefs || undefined}
                 />
             )}
         </>

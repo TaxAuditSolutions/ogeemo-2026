@@ -56,7 +56,7 @@
 
 ## Personalization
 **Customize shortcuts:** Customize My Shortcuts (`/action-manager/manage`) or Settings → My Shortcuts — drag chips between Available/Selected, then **Save Order** (changes are NOT automatic). Quick Navigation in the Accounting/HR Hubs follows the same drag pattern (`/accounting/manage-navigation`, `/hr-manager/manage-navigation`) and also needs **Save Order**.
-**Workflows:** Workflows (`/workflows`) — build a named, ordered destination set (drag or click to add steps), then **Apply to sidebar** to make the Workspace group follow it; **Restore default Workspace** returns the standard five (Contacts → Projects → Activity Manager → Calendar → Time Logs).
+**Workflows:** Workflows (`/workflows`) — build a named, ordered destination set (drag or click to add steps), then **Set as standard** to save it as your default workflow (persists across logins and makes the Workspace group follow it); **Clear standard / Restore default Workspace** returns the standard five (Contacts → Projects → Activity Manager → Calendar → Time Logs).
 
 ## Navigation Commands (command processor)
 Natural-language phrases map to routes: "timer/start timer/log time" → Activity Manager timer; "activity manager/time manager" → `/event-manager`; "my shortcuts/dashboard" → `/action-manager`; "ledger/books" → BKS Ledger; "income"/"expense" → ledger tabs; "tax" → Tax Center; "co-pilot/ogeemo ai" → `/co-pilot`.

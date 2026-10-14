@@ -48,6 +48,34 @@ deliberately keeps scheduled placeholders visible in the Time Log so planners ca
 see planned work — but with an unmissable label, so their meaning never passes
 for recorded work.
 
+## Time Log → Invoice (OG-065 / OG-070 / OG-071)
+
+Billable work leads directly into invoicing, in both directions, over the
+**same underlying records** (no second billing mechanism):
+
+- **Time Log → Invoice:** the Time Log Report offers *Add to Invoice* (row)
+  and *Create Invoice* (footer). Eligible entries are handed to the Invoice
+  Generator via a read-once sessionStorage payload (`src/lib/invoice-handoff.ts`)
+  plus the existing `?contactId=` param; *Add from Time Log* opens with those
+  entries pre-checked.
+- **Invoice → Time Log:** the existing *Add from Time Log* button in the
+  invoice/quote generators now lists **both** `timeLogs` and Activity Manager
+  records (normalized via `src/lib/billing-eligibility.ts`), so a record is
+  recognized from either side.
+- **Eligibility (OG-070):** only unbilled, actually-worked, billable entries
+  with a client are offered (`isEligibleForBilling`). Already-invoiced entries
+  stay visible in the dialog, disabled and labelled *Invoiced INV-x*.
+- **Duplicate-billing guard:** invoice line items carry
+  `sourceEntryId`/`sourceEntryType`; saving the invoice stamps
+  `billedInvoiceId`/`billedAt` onto the source docs (batched). Editing an
+  invoice reconciles stamps; deleting one unstamps only entries it owns.
+  Time Log rows show an *Invoiced* badge.
+- **Workspace default (OG-065):** `/accounting/invoices/create` joins the core
+  destinations, after `/reports/time-log` (recorded time → bill it).
+- **Known scope limits (OG-071 follow-up):** quotes share the entry picker but
+  do **not** stamp billing state; a quote later converted to an invoice stamps
+  only if its line items carry source refs.
+
 ## Retest sequence (from beta report)
 
 1. Create a one-hour scheduled billable Activity with no session → Time Log shows

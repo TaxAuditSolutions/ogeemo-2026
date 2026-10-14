@@ -29,7 +29,7 @@ import { getUserProfile } from '@/core/user-profile-service';
 import type { UserProfile } from '@/core/user-profile-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { TimeLogImportDialog } from './time-log-import-dialog';
-import { Event as TaskEvent } from '@/types/calendar-types';
+import { toInvoiceLineItem, type InvoiceableEntry } from '@/lib/billing-eligibility';
 import { Logo } from '@/components/logo';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -53,6 +53,9 @@ interface LocalLineItem {
   taxRate?: number;
   itemType?: 'service' | 'product';
   serviceItemId?: string;
+  // OG-070: time-log-derived lines point back at their source record.
+  sourceEntryId?: string;
+  sourceEntryType?: 'log' | 'event';
 }
 
 const formatCurrency = (amount: number) => {
@@ -429,19 +432,13 @@ export function QuoteGeneratorView() {
     setLineItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const handleAddTimeLogEntries = (entries: TaskEvent[]) => {
-    const newItems: LocalLineItem[] = entries.map((entry, index) => {
-      const hours = (entry.duration || 0) / 3600;
-      return {
-        id: `time_${Date.now()}_${index}`,
-        description: `${entry.title} - ${entry.start ? format(new Date(entry.start), 'PPP') : 'N/A'}`,
-        internalNotes: entry.description || '',
-        categoryNumber: '',
-        quantity: parseFloat(hours.toFixed(2)),
-        price: entry.billableRate || 0,
-        itemType: 'service',
-      };
-    });
+  const handleAddTimeLogEntries = (entries: InvoiceableEntry[]) => {
+    // Quotes share the entry mapping but deliberately do NOT stamp billing
+    // state (OG-071: duplicate-billing protection is invoice-side for now).
+    const newItems: LocalLineItem[] = entries.map((entry, index) => ({
+      ...toInvoiceLineItem(entry, index),
+      itemType: 'service' as const,
+    }));
     setLineItems(prev => [...prev, ...newItems]);
     toast({ title: `${newItems.length} time entries added to quote.` });
   };

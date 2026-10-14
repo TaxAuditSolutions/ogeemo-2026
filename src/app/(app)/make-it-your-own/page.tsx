@@ -31,7 +31,7 @@ const personalizeSections: {
   },
   {
     title: 'Your workflows',
-    description: 'Create named, ordered workflows — e.g. Bookkeeping or Quotes — from any destinations, then apply one so the sidebar Workspace follows your way of working. Start from a ready-made template (Accountant, Lawyer, Consultant and more) or build your own. Restore the default anytime.',
+    description: 'Create named, ordered workflows — e.g. Bookkeeping or Quotes — from any destinations, then set one as your standard workflow: it saves to your account, greets you at every login, and the sidebar Workspace follows it. Start from a ready-made template (Accountant, Lawyer, Consultant and more) or build your own. Restore the default anytime.',
     icon: Workflow,
     links: [
       { label: 'Create a workflow', href: '/workflows' },

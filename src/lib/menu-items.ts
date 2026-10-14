@@ -82,7 +82,8 @@ export const allMenuItems: MenuItem[] = [
 
 /**
  * Core daily-workflow destinations (beta default Workspace), in workflow
- * order: customer -> project -> work/activity -> schedule -> recorded time.
+ * order: customer -> project -> work/activity -> schedule -> recorded time
+ * -> billing.
  *
  * Beta feedback: the default Workspace should mirror the user's business
  * workflow, not Ogeemo's internal module categories (e.g. Contacts buried
@@ -97,6 +98,9 @@ export const CORE_WORKFLOW_DESTINATIONS = [
     '/event-manager',
     '/calendar',
     '/reports/time-log',
+    // Billing closes the recorded-time loop (OG-065: billable work leads
+    // naturally into invoicing - beta feedback on Time Log -> Invoice).
+    '/accounting/invoices/create',
 ];
 
 /**

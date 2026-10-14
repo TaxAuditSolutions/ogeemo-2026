@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { reconcileSourceRefs, sourceRefsFromLineItems, type EntryRef } from '@/lib/billing-eligibility';
 
 
 function getDb() {
@@ -185,6 +186,10 @@ export interface InvoiceLineItem {
   taxRate?: number;
   itemType?: 'service' | 'product';
   serviceItemId?: string;
+  // Link back to the billable record this line was created from (OG-070
+  // duplicate-billing guard). Present only on time-log-derived lines.
+  sourceEntryId?: string;
+  sourceEntryType?: 'log' | 'event';
   userId: string;
 }
 
@@ -804,6 +809,56 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
 }
 
 
+/**
+ * OG-070 duplicate-billing guard: stamps (or unstamps, with invoiceId=null)
+ * billedInvoiceId/billedAt onto the source billable records. Refs point at
+ * the timeLogs or tasks collection depending on sourceEntryType.
+ */
+function sourceEntryDoc(db: ReturnType<typeof getDb>, ref: EntryRef) {
+  const collectionName = ref.source === 'log' ? 'timeLogs' : 'tasks';
+  return doc(db, collectionName, ref.id);
+}
+
+function stampSourceEntries(
+  batch: ReturnType<typeof writeBatch>,
+  refs: EntryRef[],
+  invoiceId: string | null,
+  orgId: string,
+  uid: string
+): void {
+  refs.forEach((ref) => {
+    batch.set(
+      sourceEntryDoc(getDb(), ref),
+      {
+        billedInvoiceId: invoiceId,
+        billedAt: invoiceId ? new Date() : null,
+        orgId,
+        updatedBy: uid,
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    );
+  });
+}
+
+/**
+ * Clears billing stamps only on entries currently stamped with THIS invoice,
+ * so deleting/editing one invoice can never clobber a stamp owned by another
+ * (possible with data that predates the duplicate-billing guard).
+ */
+async function unstampOwnEntries(
+  batch: ReturnType<typeof writeBatch>,
+  refs: EntryRef[],
+  invoiceId: string,
+  orgId: string,
+  uid: string
+): Promise<void> {
+  const db = getDb();
+  const snapshots = await Promise.all(refs.map((ref) => getDoc(sourceEntryDoc(db, ref))));
+  const owned = refs.filter((ref, i) => snapshots[i].exists() && snapshots[i].data()?.billedInvoiceId === invoiceId);
+  stampSourceEntries(batch, owned, null, orgId, uid);
+}
+
 export async function addInvoiceWithLineItems(
   invoiceData: Omit<Invoice, 'id' | 'createdAt'>,
   lineItems: Omit<InvoiceLineItem, 'invoiceId' | 'id' | 'userId'>[]
@@ -839,6 +894,10 @@ export async function addInvoiceWithLineItems(
       updatedAt: new Date(),
     });
   });
+
+  // OG-070: stamp the source billable records so they can't be offered for
+  // billing again (billedInvoiceId is the duplicate-billing guard).
+  stampSourceEntries(batch, sourceRefsFromLineItems(lineItems), invoiceRef.id, orgId, currentUser.uid);
 
   await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {
@@ -908,6 +967,17 @@ export async function updateInvoiceWithLineItems(
     });
   });
 
+  // OG-070: reconcile billing stamps against the OLD line items - entries
+  // removed from the invoice become billable again; newly added ones are
+  // stamped so no other invoice can offer them.
+  const oldRefs = sourceRefsFromLineItems(
+    existingItemsSnapshot.docs.map((d) => d.data() as { sourceEntryId?: string; sourceEntryType?: 'log' | 'event' })
+  );
+  const newRefs = sourceRefsFromLineItems(lineItems);
+  const { toStamp, toUnstamp } = reconcileSourceRefs(oldRefs, newRefs);
+  stampSourceEntries(batch, toStamp, invoiceId, orgId, currentUser.uid);
+  await unstampOwnEntries(batch, toUnstamp, invoiceId, orgId, currentUser.uid);
+
   await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -944,6 +1014,13 @@ export async function deleteInvoice(userId: string, invoiceId: string): Promise<
   lineItemsSnapshot.forEach(doc => {
     batch.delete(doc.ref);
   });
+
+  // OG-070: entries billed by this invoice become billable again when the
+  // invoice is deleted (only stamps owned by this invoice are cleared).
+  const billedRefs = sourceRefsFromLineItems(
+    lineItemsSnapshot.docs.map((d) => d.data() as { sourceEntryId?: string; sourceEntryType?: 'log' | 'event' })
+  );
+  await unstampOwnEntries(batch, billedRefs, invoiceId, orgId, userId);
 
   await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {

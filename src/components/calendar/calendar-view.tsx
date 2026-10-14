@@ -96,7 +96,8 @@ const CALENDAR_START_HOUR_KEY = 'calendarStartHour';
 const CALENDAR_END_HOUR_KEY = 'calendarEndHour';
 const CALENDAR_SLOTS_CONFIG_KEY = 'calendarSlotsConfig';
 
-const dayOptions = [1, 2, 3, 4, 5, 7];
+const MAX_DAY_COUNT = 31;
+const dayOptions = Array.from({ length: MAX_DAY_COUNT }, (_, i) => i + 1);
 
 const isAllDayEvent = (event: Event): boolean => {
   if (!event.start || !event.end) return false;
@@ -119,8 +120,8 @@ const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDro
             onClick={onClick}
             className={cn("relative h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors group", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
         >
-            <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                <Plus className="h-5 w-5"/>
+            <Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 h-7 whitespace-nowrap bg-white px-2.5 text-xs shadow-md opacity-0 transition-opacity group-hover:opacity-100">
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Activity Manager
             </Button>
             <div className="relative z-10 flex flex-col gap-1">
                 {children}
@@ -176,8 +177,8 @@ const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, o
           slot < slotsPerHour - 1 && "border-b border-b-gray-200"
       )}
     >
-      <Button variant="ghost" size="icon" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-20" onClick={handleSlotClick}>
-          <Plus className="h-5 w-5"/>
+      <Button variant="outline" size="sm" aria-label="Open Activity Manager for this time" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 h-7 whitespace-nowrap bg-white px-2.5 text-xs shadow-md opacity-0 transition-opacity group-hover:opacity-100" onClick={handleSlotClick}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Activity Manager
       </Button>
       <div className="flex-1 flex flex-col gap-1 w-full h-full">
         {slotEvents.map(event => (
@@ -253,7 +254,12 @@ export function CalendarView() {
     if (!isClient) return;
     try {
       const savedDayCount = localStorage.getItem(CALENDAR_DAY_COUNT_KEY);
-      if (savedDayCount) setDayCount(parseInt(savedDayCount, 10));
+      if (savedDayCount) {
+        const parsedDayCount = parseInt(savedDayCount, 10);
+        if (Number.isFinite(parsedDayCount)) {
+          setDayCount(Math.min(Math.max(parsedDayCount, 1), MAX_DAY_COUNT));
+        }
+      }
 
       const savedStartHour = localStorage.getItem(CALENDAR_START_HOUR_KEY);
       if (savedStartHour) setStartHour(parseInt(savedStartHour, 10));
@@ -270,7 +276,7 @@ export function CalendarView() {
   }, [isClient]);
 
   const handleDayCountChange = (value: string) => {
-    const newDayCount = Number(value);
+    const newDayCount = Math.min(Math.max(Number(value) || 1, 1), MAX_DAY_COUNT);
     setDayCount(newDayCount);
     try {
       localStorage.setItem(CALENDAR_DAY_COUNT_KEY, String(newDayCount));
@@ -675,7 +681,7 @@ export function CalendarView() {
                 const allDayEvents = dayEvents.filter(event => isAllDayEvent(event));
                 return (
                     <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
-                        <p className="font-semibold text-base">{format(date, 'EEE d')}</p>
+                        <p className={cn('font-semibold', dayCount > 14 ? 'text-xs' : 'text-base')}>{format(date, 'EEE d')}</p>
                         <AllDayDropZone date={date} onDrop={handleAllDayDrop} onClick={() => handleAllDayClick(date)}>
                             {allDayEvents.map(event => (
                                 <CalendarEvent

@@ -8,7 +8,7 @@ export interface WorkflowLike {
 /**
  * Resolves what the sidebar's Workspace group should contain.
  *
- * One seam for navigation defaults (OG-065 default = the five core workflow
+ * One seam for navigation defaults (OG-065 default = the core workflow
  * destinations; OG-035 navigation mechanism): an active, valid user-authored
  * workflow overrides the group; anything else falls back to the default -
  * no active id, unknown/deleted id, empty workflow, or items that cannot

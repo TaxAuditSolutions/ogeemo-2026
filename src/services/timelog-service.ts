@@ -39,6 +39,10 @@ export interface TimeLog {
   status: 'unprocessed' | 'processed' | 'ready-for-payroll';
   isBillable?: boolean;
   billableRate?: number;
+  // Billing state (OG-070): set when this record is placed on an invoice,
+  // cleared when that invoice is deleted or the entry is removed from it.
+  billedInvoiceId?: string | null;
+  billedAt?: Date | null;
 }
 
 const TIME_LOGS_COLLECTION = 'timeLogs';
@@ -91,6 +95,8 @@ const docToTimeLog = (doc: any): TimeLog => {
     subject: data.subject || '',
     contactId: data.contactId || null,
     contactName: data.contactName || null,
+    billedInvoiceId: data.billedInvoiceId || null,
+    billedAt: (data.billedAt as Timestamp)?.toDate() ?? data.billedAt ?? null,
   } as TimeLog;
 };
 

@@ -5,6 +5,10 @@ import type { DurationSource } from '@/lib/duration-source';
 
 export type TaskStatus = 'todo' | 'inProgress' | 'done';
 
+// Activity Manager capture type (Julie's redo): what kind of activity this
+// record represents. Legacy docs carry no field - readers default to 'task'.
+export type ActivityType = 'task' | 'appointment' | 'project' | 'note';
+
 export interface TimeSession {
   id: string;
   startTime: Date;
@@ -49,6 +53,7 @@ export interface Event {
   importance?: ProjectImportance;
   ritualType?: 'daily' | 'weekly';
   workOrderId?: string | null;
+  activityType?: ActivityType;
 }
 
 export type ProjectStatus = 'planning' | 'active' | 'on-hold' | 'completed';

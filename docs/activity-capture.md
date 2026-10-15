@@ -4,7 +4,7 @@ Principle adopted from the beta Activity Manager audit: **basic documentation
 must be exceptionally fast and easy**. Field workers and small businesses will
 not document work if recording it means too much typing or too many steps.
 
-## What shipped (beta interim)
+## What shipped (beta interim — superseded by the Activity Manager redo below)
 
 **Essential capture surface** (`/event-manager`):
 - Subject → Contact / Project / Worker → Details → record. The misleading
@@ -35,7 +35,26 @@ not document work if recording it means too much typing or too many steps.
 - Hidden automatically where the browser lacks speech recognition. Best on
   Android Chrome / desktop Chrome / Edge; iOS Safari via webkit prefix.
 
-## Deliberately deferred to the Activity Manager redesign
+## Shipped in the Activity Manager redo (Julie's design)
+
+The interim capture surface above was replaced by the single-card
+"Create a new activity" form on `/event-manager`:
+
+- **Activity type tiles** (Task / Appointment / Project / Note) — persisted
+  as `Event.activityType` (legacy docs default to `task`). The Appointment
+  tile flips the Schedule switch on.
+- **Title \*** / **Details (optional)** / **Client + Project + Assign to**
+  search pickers. "Add new contact…" and inline project creation live inside
+  the pickers (the Select/Add-New radios are gone).
+- **Schedule and Billable toggle switches** replace the interim "Add
+  scheduling & billing details" bar; an explicit **Status** select
+  (To Do / In Progress / Done) replaces the implicit status-by-schedule.
+- **Cancel / Create Activity** footer (Save & New kept; Delete appears when
+  editing). The Time Sessions card, Gmail tools, and Meeting Agenda stay.
+- New events default to **unscheduled** (Schedule toggle off); the interim
+  behaviour of implicitly scheduling every new event at "now" is gone.
+
+## Still deferred
 
 - Single-screen quick-log flow and field-reordering studies
 - Agenda (Meeting Agenda) UX redesign

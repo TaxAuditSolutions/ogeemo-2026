@@ -142,6 +142,7 @@ export function LedgersView() {
   const [isReconciliationWizardOpen, setIsReconciliationWizardOpen] = React.useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [isPhilosophyDialogOpen, setIsPhilosophyDialogOpen] = React.useState(false);
+  const [transactionToInspect, setTransactionToInspect] = React.useState<GeneralTransaction | null>(null);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
@@ -192,7 +193,7 @@ export function LedgersView() {
         ]);
         setIncomeLedger(income); 
         setExpenseLedger(expenses); 
-        setInvoices(invs.filter(i => i.originalAmount - i.amountPaid > 0.01));
+        setInvoices(invs);
         setPayableBills(bills);
         setContacts(fetchedContacts);
         setContactFolders(fetchedFolders);
@@ -338,6 +339,43 @@ export function LedgersView() {
       setIsTransactionDialogOpen(true);
   };
 
+  // --- "View original" support -------------------------------------------------
+  // Firestore may hand back Timestamps for fields typed as Date; coerce for display.
+  const safeDate = (value: any): Date | null => {
+      if (!value) return null;
+      const d: Date = value?.toDate ? value.toDate() : new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+  };
+
+  const formatDateValue = (value: any, fallback = '-'): string => {
+      const d = safeDate(value);
+      return d ? format(d, 'PP') : fallback;
+  };
+
+  // Best-effort resolution of the original document behind a posted entry:
+  // invoice payments and bill payments post to the ledger with the source
+  // document number (see accounting-service record-payment / bill-payment),
+  // receipts and imports carry a document URL, and anything else was posted
+  // directly to the ledger.
+  const resolveSource = (item: GeneralTransaction):
+      | { kind: 'invoice'; invoice: Invoice }
+      | { kind: 'bill'; bill: PayableBill }
+      | { kind: 'attachment' }
+      | { kind: 'manual' } => {
+      const docNumber = (item.documentNumber || '').trim().toLowerCase();
+      if (docNumber) {
+          if (item.transactionType === 'income') {
+              const invoice = invoices.find(i => (i.invoiceNumber || '').trim().toLowerCase() === docNumber);
+              if (invoice) return { kind: 'invoice', invoice };
+          } else {
+              const bill = payableBills.find(b => (b.invoiceNumber || '').trim().toLowerCase() === docNumber);
+              if (bill) return { kind: 'bill', bill };
+          }
+      }
+      if (item.documentUrl) return { kind: 'attachment' };
+      return { kind: 'manual' };
+  };
+
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
@@ -436,12 +474,14 @@ export function LedgersView() {
                         <TableRow 
                             id={`row-${item.id}`} 
                             key={item.id} 
+                            onClick={() => setTransactionToInspect(item)}
                             className={cn(
+                                "cursor-pointer hover:bg-muted/40",
                                 highlightedId === item.id && "bg-primary/10 animate-pulse ring-2 ring-primary ring-inset",
                                 isDupe && !showDuplicatesOnly && "bg-amber-50/30"
                             )}
                         >
-                            <TableCell className="text-center">
+                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                                 <Checkbox 
                                     checked={selectedIds.includes(item.id)} 
                                     onCheckedChange={() => handleToggleSelect(item.id)} 
@@ -479,19 +519,20 @@ export function LedgersView() {
                                         </TooltipProvider>
                                     )}
                                     {item.documentUrl ? (
-                                        <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                        <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary hover:text-primary/80">
                                             <LinkIcon className="h-4 w-4" />
                                         </a>
                                     ) : '-'}
                                 </div>
                             </TableCell>
-                            <TableCell className="print:hidden">
+                            <TableCell className="print:hidden" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => setTransactionToInspect(item)}><Eye className="mr-2 h-4 w-4"/>View Original</DropdownMenuItem>
                                             <DropdownMenuItem onSelect={() => handleEdit(item)}><Pencil className="mr-2 h-4 w-4"/>Edit Details</DropdownMenuItem>
                                             <DropdownMenuItem onSelect={() => setTransactionToDelete(item)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -657,7 +698,7 @@ export function LedgersView() {
             onOpenChange={setIsReconciliationWizardOpen}
             incomeLedger={incomeLedger}
             expenseLedger={expenseLedger}
-            invoices={invoices}
+            invoices={invoices.filter(i => i.originalAmount - i.amountPaid > 0.01)}
             payableBills={payableBills}
             incomeCategories={incomeCategories}
             expenseCategories={expenseCategories}
@@ -857,6 +898,135 @@ export function LedgersView() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!transactionToInspect} onOpenChange={(open) => { if (!open) setTransactionToInspect(null); }}>
+            {transactionToInspect && (() => {
+                const source = resolveSource(transactionToInspect);
+                const catNum = transactionToInspect.transactionType === 'income'
+                    ? (transactionToInspect as IncomeTransaction).incomeCategory
+                    : (transactionToInspect as ExpenseTransaction).category;
+                return (
+                    <DialogContent className="max-w-2xl text-black">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <ScanSearch className="h-5 w-5 text-primary" /> Original item
+                            </DialogTitle>
+                            <DialogDescription>
+                                {source.kind === 'invoice' && 'This ledger entry was posted from an invoice payment.'}
+                                {source.kind === 'bill' && 'This ledger entry was posted from a bill payment.'}
+                                {source.kind === 'attachment' && 'This ledger entry was posted with an attached document.'}
+                                {source.kind === 'manual' && 'This ledger entry was posted directly to the ledger.'}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                            {source.kind === 'invoice' && (
+                                <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Invoice — original document</p>
+                                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                                        <span className="text-muted-foreground">Invoice #</span>
+                                        <span className="font-semibold">{source.invoice.invoiceNumber}</span>
+                                        <span className="text-muted-foreground">Client</span>
+                                        <span>{source.invoice.companyName}</span>
+                                        <span className="text-muted-foreground">Invoice date</span>
+                                        <span>{formatDateValue(source.invoice.invoiceDate)}</span>
+                                        <span className="text-muted-foreground">Due date</span>
+                                        <span>{formatDateValue(source.invoice.dueDate)}</span>
+                                        <span className="text-muted-foreground">Total</span>
+                                        <span className="font-mono">{formatCurrency(source.invoice.originalAmount)}</span>
+                                        <span className="text-muted-foreground">Balance owing</span>
+                                        <span className="font-mono">{formatCurrency(source.invoice.originalAmount - source.invoice.amountPaid)}</span>
+                                    </div>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href="/accounting/accounts-receivable">Find it in Accounts Receivable</Link>
+                                    </Button>
+                                </div>
+                            )}
+
+                            {source.kind === 'bill' && (
+                                <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Bill — original document</p>
+                                    <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                                        <span className="text-muted-foreground">Bill #</span>
+                                        <span className="font-semibold">{source.bill.invoiceNumber || '-'}</span>
+                                        <span className="text-muted-foreground">Vendor</span>
+                                        <span>{source.bill.vendor}</span>
+                                        <span className="text-muted-foreground">Due date</span>
+                                        <span>{formatDateValue(source.bill.dueDate)}</span>
+                                        <span className="text-muted-foreground">Total</span>
+                                        <span className="font-mono">{formatCurrency(source.bill.totalAmount)}</span>
+                                        <span className="text-muted-foreground">Description</span>
+                                        <span>{source.bill.description || '-'}</span>
+                                    </div>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href="/accounting/accounts-payable">Find it in Accounts Payable</Link>
+                                    </Button>
+                                </div>
+                            )}
+
+                            {source.kind === 'manual' && (
+                                <div className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
+                                    This transaction was entered straight onto the ledger (Post Transaction, receipt import or reconciliation) — the posted entry below is the original record.
+                                    {transactionToInspect.documentNumber && (
+                                        <span> Reference: <span className="font-semibold text-foreground">{transactionToInspect.documentNumber}</span>.</span>
+                                    )}
+                                </div>
+                            )}
+
+                            {transactionToInspect.documentUrl && (
+                                <div className="rounded-md border p-4 flex items-center justify-between gap-3 text-sm">
+                                    <span className="flex items-center gap-2"><LinkIcon className="h-4 w-4 text-primary" /> Attached document</span>
+                                    <Button asChild size="sm" variant="outline">
+                                        <a href={transactionToInspect.documentUrl} target="_blank" rel="noopener noreferrer">Open attachment</a>
+                                    </Button>
+                                </div>
+                            )}
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Posted ledger entry</p>
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                                    <span className="text-muted-foreground">Date</span>
+                                    <span>{formatDateValue(transactionToInspect.date)}</span>
+                                    <span className="text-muted-foreground">Type</span>
+                                    <span>
+                                        <Badge variant={transactionToInspect.transactionType === 'income' ? 'default' : 'destructive'} className="text-[10px] uppercase">{transactionToInspect.transactionType}</Badge>
+                                    </span>
+                                    <span className="text-muted-foreground">Contact</span>
+                                    <span>{transactionToInspect.company}</span>
+                                    <span className="text-muted-foreground">Category</span>
+                                    <span>{getCategoryName(catNum, transactionToInspect.transactionType)}</span>
+                                    {typeof transactionToInspect.preTaxAmount === 'number' && (
+                                        <>
+                                            <span className="text-muted-foreground">Pre-tax</span>
+                                            <span className="font-mono">{formatCurrency(transactionToInspect.preTaxAmount)}</span>
+                                            <span className="text-muted-foreground">Tax{transactionToInspect.taxType ? ` (${transactionToInspect.taxType})` : ''}</span>
+                                            <span className="font-mono">{formatCurrency(transactionToInspect.taxAmount ?? 0)}</span>
+                                        </>
+                                    )}
+                                    <span className="text-muted-foreground">Total</span>
+                                    <span className="font-mono font-semibold">{formatCurrency(transactionToInspect.totalAmount)}</span>
+                                    <span className="text-muted-foreground">Payment method</span>
+                                    <span>{transactionToInspect.paymentMethod || '-'}</span>
+                                    <span className="text-muted-foreground">Reconciled</span>
+                                    <span>{transactionToInspect.isReconciled ? 'Yes — matched to bank record' : 'No'}</span>
+                                    <span className="text-muted-foreground">Rationale</span>
+                                    <span>{[transactionToInspect.description, transactionToInspect.explanation].filter(Boolean).join(' — ') || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => { const t = transactionToInspect; setTransactionToInspect(null); if (t) handleEdit(t); }}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
+                            </Button>
+                            <Button onClick={() => setTransactionToInspect(null)}>Close</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                );
+            })()}
+        </Dialog>
 
         <ContactFormDialog
             isOpen={isContactFormOpen}

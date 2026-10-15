@@ -578,7 +578,13 @@ export function ContactsView() {
                           <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedContactIds.includes(contact.id)} onCheckedChange={(checked) => setSelectedContactIds(prev => checked ? [...prev, contact.id] : prev.filter(id => id !== contact.id))} /></TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center">
-                              <button className="text-left hover:underline" onClick={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}>{contact.name}</button>
+                              <button
+                                className="text-left font-medium hover:underline"
+                                title={`Open ${contact.name}'s client record`}
+                                onClick={() => router.push(`/contacts/${contact.id}`)}
+                              >
+                                {contact.name}
+                              </button>
                             </div>
                           </TableCell>
                           <TableCell>{contact.email}</TableCell>
@@ -589,6 +595,7 @@ export function ContactsView() {
                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onSelect={() => { setContactToEdit(contact); setIsContactFormOpen(true); }}><Pencil className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}><Users className="mr-2 h-4 w-4" /> Open Client Record</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => { setPreselectedContactId(contact.id); setIsLogTimeDialogOpen(true); }}><Clock className="mr-2 h-4 w-4" /> Log Time</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push(`/event-manager?contactId=${contact.id}`)}><Calendar className="mr-2 h-4 w-4" /> Schedule Task</DropdownMenuItem>

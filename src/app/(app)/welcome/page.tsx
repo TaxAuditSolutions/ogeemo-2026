@@ -11,6 +11,7 @@ import {
   Bot,
   Paintbrush, Compass, LayoutDashboard,
   Inbox,
+  Users,
   Workflow as WorkflowIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -19,7 +20,15 @@ import { listMyOrgMemberships, switchActiveOrg } from '@/app/actions/org-actions
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { getUserWorkflows, type Workflow } from '@/services/workflow-service';
+import { getContacts, type Contact } from '@/services/contact-service';
 import { allMenuItems } from '@/lib/menu-items';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -29,6 +38,103 @@ import { allMenuItems } from '@/lib/menu-items';
 const LEARN_TOTAL = 8;
 /** Per-user localStorage map recording the "bring the welcome doors back" override. */
 const DOORS_SHOWN_KEY = 'ogeemo-welcome-doors';
+/**
+ * "Client Report" frame (welcome page): a client dropdown that jumps straight
+ * to the client record (/contacts/[id]). Sits directly after the CurrentWork
+ * "to-do" panel in both welcome states. Fails soft: empty list on error.
+ */
+function ClientReportFrame({
+  variant = 'frame',
+  stepNumber,
+}: {
+  /** 'frame' = standalone welcome frame; 'step' = numbered tile in the workflow steps grid. */
+  variant?: 'frame' | 'step';
+  stepNumber?: number;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [clients, setClients] = useState<Contact[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    getContacts()
+      .then((list) => {
+        if (!isMounted) return;
+        setClients([...list].sort((a, b) => a.name.localeCompare(b.name)));
+      })
+      .catch(() => {
+        if (isMounted) setClients([]);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingClients(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  const placeholder = isLoadingClients
+    ? 'Loading clients…'
+    : clients.length > 0
+      ? 'Select a client…'
+      : 'No clients yet';
+
+  const clientSelect = (
+    <Select value="" onValueChange={(id) => router.push(`/contacts/${id}`)}>
+      <SelectTrigger
+        className={variant === 'step' ? 'w-full bg-card' : 'w-[220px] bg-card'}
+        aria-label="Select a client"
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {clients.map((client) => (
+          <SelectItem key={client.id} value={client.id}>
+            {client.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  if (variant === 'step') {
+    return (
+      <div className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+            {stepNumber ?? ''}
+          </span>
+          <Users className="h-5 w-5 text-muted-foreground" />
+          <span className="min-w-0 truncate text-sm font-semibold">Client Report</span>
+        </div>
+        {clientSelect}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-3xl rounded-2xl border border-primary/20 bg-white p-4 shadow-lg">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Users className="h-5 w-5 text-primary" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">Client Report</p>
+          <p className="text-xs text-muted-foreground">
+            Pick a client to see their full record — activity, tasks, projects and invoicing.
+          </p>
+        </div>
+        {clientSelect}
+        <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+          <Link href="/contacts">All clients</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function WelcomePage() {
   const { user, accessLevel, isMasterTenant } = useAuth();
   const { toast } = useToast();
@@ -226,9 +332,9 @@ export default function WelcomePage() {
       )}
 
       <div className="w-full max-w-4xl space-y-6 animate-in fade-in zoom-in-95 duration-700">
-        {/* Header: new users get the generic welcome; once a standard
-            workflow is saved the page IS the workflow - its name leads and
-            its steps are the main content below. */}
+        {/* Header: new users get the generic welcome; repeat users get a
+            personal greeting and a page-level title - the chosen workflow
+            is featured as the steps below, not as the page title. */}
         <header className="text-center space-y-3">
           <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
             <Logo iconOnly markSize={48} />
@@ -247,19 +353,19 @@ export default function WelcomePage() {
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">
                 Welcome back{firstName ? `, ${firstName}` : ''}
               </p>
-              <h1 className="flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold font-headline text-primary tracking-tight">
-                <WorkflowIcon className="h-7 w-7" strokeWidth={2.25} />
-                {activeWorkflowName}
+              <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary tracking-tight">
+                Your Day
               </h1>
               <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Your standard workflow — {activeWorkflow?.items.length ?? 0}{' '}
-                {activeWorkflow?.items.length === 1 ? 'step' : 'steps'}. Pick up where you left off.
+                Your workflow steps, today&apos;s work and your clients — all in one place.
               </p>
             </>
           )}
         </header>
 
         {showDoors && <CurrentWorkPanel />}
+
+        {showDoors && <ClientReportFrame />}
 
         {/* Three doors: the journey in order - learn, shape your workspace,
             then work. Calendar/money context comes from CurrentWorkPanel.
@@ -339,6 +445,12 @@ export default function WelcomePage() {
         {!showDoors && (
           <div className="flex flex-col items-center gap-5">
             {activeWorkflow && activeWorkflow.items.length > 0 && (
+              <p className="w-full text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Your {activeWorkflow.name} workflow — {activeWorkflow.items.length}{' '}
+                {activeWorkflow.items.length === 1 ? 'step' : 'steps'}
+              </p>
+            )}
+            {activeWorkflow && activeWorkflow.items.length > 0 && (
               <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {activeWorkflow.items.map((item, idx) => {
                   const StepIcon = allMenuItems.find((m) => m.href === item.href)?.icon ?? Inbox;
@@ -358,6 +470,7 @@ export default function WelcomePage() {
                     </button>
                   );
                 })}
+                <ClientReportFrame variant="step" stepNumber={activeWorkflow.items.length + 1} />
               </div>
             )}
             {activeWorkflow && activeWorkflow.items.length === 0 && (
@@ -392,6 +505,11 @@ export default function WelcomePage() {
         {/* Day context (calendar/money): above the doors for new users, but
             after the workflow steps for workflow users. */}
         {!showDoors && <CurrentWorkPanel />}
+
+        {/* Fall back to the standalone frame when there is no workflow steps
+            row to host the numbered Client Report tile (new users, or a
+            saved workflow with no steps yet). */}
+        {!showDoors && (!activeWorkflow || activeWorkflow.items.length === 0) && <ClientReportFrame />}
 
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link

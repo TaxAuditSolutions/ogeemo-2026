@@ -15,11 +15,13 @@ import {
     ArrowRight,
     Users,
     Handshake,
-    GraduationCap
+    GraduationCap,
+    Crown
 } from 'lucide-react';
 import { ImagePlaceholder } from '@/components/ui/image-placeholder';
 import { MEMBERSHIP_FEE } from '@/lib/constants';
 import { Separator } from '@/components/ui/separator';
+import { FOUNDING_OFFER, STANDARD_TRIAL_DAYS, foundingClaimLabel, foundingCloseLabel } from '@/lib/launch-offer';
 
 export default function PricingPage() {
   return (
@@ -64,6 +66,24 @@ export default function PricingPage() {
         {/* Membership Pricing Card */}
         <section className="py-24 bg-muted/30 border-y">
           <div className="container px-4 mx-auto">
+            {/* Founding 100 launch offer (review item #2): the single offer
+                story, rendered from src/lib/launch-offer.ts. */}
+            <div className="max-w-2xl mx-auto mb-8 rounded-2xl border-2 border-primary bg-primary/10 p-6 text-center space-y-3">
+              <p className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                <Crown className="h-4 w-4" /> {FOUNDING_OFFER.headline}
+              </p>
+              <p className="text-2xl font-bold font-headline">{FOUNDING_OFFER.terms}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                The first {FOUNDING_OFFER.totalSpots} members join for 6 months free, then stay at {FOUNDING_OFFER.lifetimePrice}.
+                After the founding spots close, membership opens with a {STANDARD_TRIAL_DAYS}-day free trial at ${MEMBERSHIP_FEE}/mo.
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary/80">
+                {[foundingClaimLabel(), foundingCloseLabel() ? `Closes ${foundingCloseLabel()}` : null].filter(Boolean).join(' • ')}
+              </p>
+              <Button asChild size="lg" className="w-full sm:w-auto px-10 font-bold">
+                <Link href="/register">Claim a Founding Spot</Link>
+              </Button>
+            </div>
             <Card className="max-w-2xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform bg-card text-card-foreground">
                 <CardHeader className="bg-primary text-primary-foreground text-center py-12">
                     <h2 className="text-3xl font-headline uppercase tracking-tight">Community Membership</h2>

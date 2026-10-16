@@ -22,6 +22,7 @@ import {
     Zap
 } from 'lucide-react';
 import { useState } from 'react';
+import { FOUNDING_OFFER, foundingClaimLabel } from '@/lib/launch-offer';
 
 /**
  * @fileOverview The "Ogeemo Gateway" landing page.
@@ -144,10 +145,11 @@ export function Gateway() {
                                     </ul>
                                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-1">
                                         <p className="flex items-center gap-2 text-sm font-bold text-primary">
-                                            <Crown className="h-4 w-4 shrink-0" /> The Founding 100
+                                            <Crown className="h-4 w-4 shrink-0" /> {FOUNDING_OFFER.headline}
                                         </p>
                                         <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Claim 1 of 100 Founding Builder spots — <span className="font-semibold text-foreground">6 months free + 50% off for life.</span>
+                                            Claim 1 of {FOUNDING_OFFER.totalSpots} Founding Builder spots — <span className="font-semibold text-foreground">{FOUNDING_OFFER.terms}.</span>
+                                            {foundingClaimLabel() ? ` ${foundingClaimLabel()}` : ''}
                                         </p>
                                     </div>
                                     <Button asChild size="lg" className="w-full font-bold">
@@ -230,6 +232,12 @@ export function Gateway() {
                 {/* CTA Section */}
                 <section className="py-24 bg-primary text-primary-foreground text-center">
                     <div className="container px-4 text-center space-y-8">
+                        <blockquote className="max-w-2xl mx-auto space-y-2">
+                            <p className="text-primary-foreground/90 text-lg md:text-xl font-medium italic">
+                                &quot;We built a digital operating layer for the people doing the real work.&quot;
+                            </p>
+                            <footer className="text-sm uppercase tracking-widest text-primary-foreground/60">— The Ogeemo founding team</footer>
+                        </blockquote>
                         <h2 className="text-3xl md:text-5xl font-bold font-headline">Ready to take back command?</h2>
                         <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">Become a member and find sanity in the Ogeemo Spider Web — every client, task, and dollar connected in one system.</p>
                         <div className="flex flex-wrap justify-center gap-4 pt-4">

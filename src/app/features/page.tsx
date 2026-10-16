@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { FOUNDING_OFFER, STANDARD_TRIAL_DAYS } from '@/lib/launch-offer';
 
 interface FeatureDetailProps {
     title: string;
@@ -358,10 +359,10 @@ export default function FeaturesPage() {
                 <section className="py-20 bg-primary text-primary-foreground text-center">
                     <div className="container px-4 mx-auto space-y-8">
                         <h2 className="text-3xl md:text-5xl font-bold font-headline">Ready to unify your business?</h2>
-                        <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">Experience the Ogeemo Method — one connected way of running your day — with a 30-day free trial.</p>
+                        <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">Experience the Ogeemo Method — one connected way of running your day. Join the {FOUNDING_OFFER.headline}: {FOUNDING_OFFER.terms} — or start a {STANDARD_TRIAL_DAYS}-day free trial.</p>
                         <div className="flex flex-wrap justify-center gap-4">
                             <Button asChild size="lg" variant="secondary" className="font-bold">
-                                <Link href="/register">Start Free Trial</Link>
+                                <Link href="/pricing">Become a Member</Link>
                             </Button>
                             <Button asChild size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
                                 <Link href="/contact">Get in Touch</Link>

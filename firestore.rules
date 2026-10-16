@@ -114,7 +114,10 @@ service cloud.firestore {
       allow create: if isOrgAdmin() && isRightTenant(request.resource.data.orgId) && canManageTargetRole(request.resource.data.accessLevel);
       // Self-updates may never change accessLevel (prevents client-side role self-escalation).
       allow update: if isSignedIn() && (
-        (request.auth.uid == userId && request.resource.data.accessLevel == resource.data.accessLevel) ||
+        // .get(..., null) instead of direct field access: a profile doc missing
+        // accessLevel would otherwise ERROR the whole rule and silently deny
+        // every self-update (prefs like activeWorkflowId never persist).
+        (request.auth.uid == userId && request.resource.data.get('accessLevel', null) == resource.data.get('accessLevel', null)) ||
         (isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel) && canManageTargetRole(request.resource.data.accessLevel))
       );
       allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel);

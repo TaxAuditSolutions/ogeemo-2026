@@ -208,7 +208,15 @@ export default function WorkflowsPage() {
     };
 
     const handleApply = async (id: string) => {
-        await updatePreferences({ activeWorkflowId: id });
+        const saved = await updatePreferences({ activeWorkflowId: id });
+        if (!saved) {
+            toast({
+                variant: 'destructive',
+                title: 'Could not save standard workflow',
+                description: 'The workflow itself is saved in your list, but marking it as standard was refused. Refresh and try "Set as standard" again - if it persists, check the browser console for a permission error.',
+            });
+            return;
+        }
         window.dispatchEvent(new Event('workflowsUpdated'));
         const name = workflows.find((w) => w.id === id)?.name ?? 'This workflow';
         toast({
@@ -218,7 +226,15 @@ export default function WorkflowsPage() {
     };
 
     const handleRestore = async () => {
-        await updatePreferences({ activeWorkflowId: null });
+        const saved = await updatePreferences({ activeWorkflowId: null });
+        if (!saved) {
+            toast({
+                variant: 'destructive',
+                title: 'Could not clear standard workflow',
+                description: 'Refresh and try again - if it persists, check the browser console for a permission error.',
+            });
+            return;
+        }
         window.dispatchEvent(new Event('workflowsUpdated'));
         toast({ title: 'Standard workflow cleared', description: 'The default Workspace destinations are back.' });
     };

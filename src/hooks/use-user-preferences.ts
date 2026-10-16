@@ -96,7 +96,14 @@ export function useUserPreferences() {
                 }
 
                 if (needsUpdate) {
-                    await updateUserProfile(userId, profile.email || '', { preferences: globalPrefs });
+                    // Migration writes must not poison the load: if this fails
+                    // (e.g. a rules denial), still keep the loaded prefs below
+                    // instead of falling back to defaults on every login.
+                    try {
+                        await updateUserProfile(userId, profile.email || '', { preferences: globalPrefs });
+                    } catch (migrationError) {
+                        console.error('useUserPreferences: migration write failed', migrationError);
+                    }
                 }
             }
         } catch (error) {
@@ -130,20 +137,26 @@ export function useUserPreferences() {
         };
     }, [user, fetchPreferences, notify]);
 
-    const updatePreferences = async (newPrefs: Partial<UserProfile['preferences']>) => {
-        if (!user) return;
+    const updatePreferences = async (newPrefs: Partial<UserProfile['preferences']>): Promise<boolean> => {
+        if (!user) return false;
 
-        // 1. Optimistic Global Update
+        // 1. Optimistic Global Update (kept for revert if persistence fails)
+        const previousPrefs = globalPrefs;
         globalPrefs = { ...globalPrefs, ...newPrefs, sidebarViewDefaultMigrated: true };
         notify();
 
         // 2. Persist to Firestore
         try {
             await updateUserProfile(user.uid, user.email || '', { preferences: globalPrefs });
+            return true;
         } catch (error) {
             console.error("useUserPreferences: Persistence failed", error);
-            // In a professional environment we might revert here, but for this
-            // prototype we prioritize immediate UI feedback.
+            // Roll back the optimistic update so the UI reflects reality.
+            // A silent failure here is how "it saved but came back after
+            // reload" bugs hide (e.g. the welcome page's active workflow).
+            globalPrefs = previousPrefs;
+            notify();
+            return false;
         }
     };
 

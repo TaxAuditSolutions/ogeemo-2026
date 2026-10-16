@@ -31,3 +31,6 @@ GOOGLE_APPLICATION_CREDjson
 tmp/thread-*.json
 # Dev server log (recreated by scripts/start-dev.ps1 -Detached on every run)
 dev-server.log
+.next-dev-server.log
+# Firebase deploy output
+.deploy-run.log

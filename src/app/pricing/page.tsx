@@ -74,8 +74,8 @@ export default function PricingPage() {
               </p>
               <p className="text-2xl font-bold font-headline">{FOUNDING_OFFER.terms}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                The first {FOUNDING_OFFER.totalSpots} members join for 6 months free, then stay at {FOUNDING_OFFER.lifetimePrice}.
-                After the founding spots close, membership opens with a {STANDARD_TRIAL_DAYS}-day free trial at ${MEMBERSHIP_FEE}/mo.
+                The first {FOUNDING_OFFER.totalSpots} members — the Founders — join for 6 months free, then pay {FOUNDING_OFFER.lifetimePrice} (50% off ${MEMBERSHIP_FEE}).
+                After the founding spots close, membership opens with a {STANDARD_TRIAL_DAYS}-day free trial at ${MEMBERSHIP_FEE}/mo for up to 5 users.
               </p>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary/80">
                 {[foundingClaimLabel(), foundingCloseLabel() ? `Closes ${foundingCloseLabel()}` : null].filter(Boolean).join(' • ')}
@@ -87,14 +87,15 @@ export default function PricingPage() {
             <Card className="max-w-2xl mx-auto border-2 border-primary shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform bg-card text-card-foreground">
                 <CardHeader className="bg-primary text-primary-foreground text-center py-12">
                     <h2 className="text-3xl font-headline uppercase tracking-tight">Community Membership</h2>
+                    <p className="mt-2 text-sm font-medium opacity-90">Membership includes full access to the Ogeemo Suite.</p>
                     <div className="mt-4 flex flex-col items-center">
                         <div className="flex items-baseline gap-1">
                             <span className="text-6xl font-bold font-mono">${MEMBERSHIP_FEE}.00</span>
                             <span className="text-primary-foreground/80">/month total</span>
                         </div>
                         <div className="mt-4 space-y-1">
-                            <p className="font-bold uppercase tracking-[0.2em] text-sm opacity-90">Locked for life • Full access</p>
-                            <p className="text-xs font-medium opacity-80 italic">Includes 5 seats. Additional seats are $5.00 each per month.</p>
+                            <p className="font-bold uppercase tracking-[0.2em] text-sm opacity-90">Your price never changes for life • Full access</p>
+                            <p className="text-xs font-medium opacity-80 italic">Membership for life is ${MEMBERSHIP_FEE} per month for up to 5 users. Each additional user is $5 per user per month.</p>
                         </div>
                     </div>
                 </CardHeader>

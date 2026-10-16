@@ -85,8 +85,8 @@ export default function PricingPage() {
                         </h3>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                             {[
-                                "BKS Ledger & Audit Shield",
-                                "Neural AI Ingestion Terminal",
+                                "BKS Ledger & Audit Shield — Bookkeeping Kept Simple, with every entry traceable to its source document",
+                                "Neural AI Ingestion Terminal — AI document intake that turns receipts and files into structured, audit-ready entries",
                                 "Integrated Payroll & Remittances",
                                 "GDrive Dual-Mirror Management",
                                 "Project Forge & Kanban Boards",
@@ -95,7 +95,7 @@ export default function PricingPage() {
                                 "Inventory Manager & POS",
                                 "Capital Asset Management (CCA)",
                                 "Advanced AI Search & Dispatch",
-                                "Hytexercise Wellness Manager",
+                                "Hytexercise Wellness Manager — wellness activity logs for you and your team",
                                 "Data Portability & Secure Backups",
                                 "Professional Invoicing & Reports",
                                 "Direct Access to the Mentor Team",

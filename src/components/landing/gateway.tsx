@@ -95,7 +95,8 @@ export function Gateway() {
                             Welcome! What brings you in today?
                         </h1>
                         <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
-                            Ogeemo is an anti-greed, success-scaled business operating system — and a community
+                            Ogeemo is one system for your books, clients, quoting, and time — instead of
+                            five disconnected apps. An anti-greed, success-scaled platform, and a community
                             of the people who run one. Tell us what brings you here, and we will take you
                             straight to it.
                         </p>
@@ -197,7 +198,7 @@ export function Gateway() {
                                 </CardHeader>
                                 <CardContent className="space-y-4 flex-1 flex flex-col">
                                     <ul className="space-y-2 text-sm text-muted-foreground leading-relaxed flex-1">
-                                        <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> The Master Shortcut and Action-to-Protocol Bridge connect ideas to billable work.</li>
+                                        <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> The Master Shortcut (one central header of custom shortcuts that runs your business from anywhere) and the Action-to-Protocol Bridge (turning ideas into scheduled, billable work) connect ideas to billable work.</li>
                                         <li className="flex items-start gap-2"><Code2 className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Audit-ready data schemas on resilient infrastructure.</li>
                                         <li className="flex items-start gap-2"><Handshake className="h-4 w-4 text-primary mt-0.5 shrink-0" /> Collaboration, white-label, and ecosystem programs.</li>
                                     </ul>
@@ -230,7 +231,7 @@ export function Gateway() {
                 <section className="py-24 bg-primary text-primary-foreground text-center">
                     <div className="container px-4 text-center space-y-8">
                         <h2 className="text-3xl md:text-5xl font-bold font-headline">Ready to take back command?</h2>
-                        <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">Become a member and find sanity in the Ogeemo Spider Web.</p>
+                        <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">Become a member and find sanity in the Ogeemo Spider Web — every client, task, and dollar connected in one system.</p>
                         <div className="flex flex-wrap justify-center gap-4 pt-4">
                             <Button asChild size="lg" variant="secondary" className="h-14 px-10 text-xl font-bold shadow-2xl">
                                 <Link href="/register">Start Your Free Trial</Link>

@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
                                 <h2 className="text-2xl font-bold font-headline text-primary tracking-tight">1. Introduction</h2>
                             </div>
                             <p className="text-muted-foreground leading-relaxed">
-                                Ogeemo Inc. ("Ogeemo," "we," "us," or "our") is a cloud-based business management platform headquartered in Vancouver, BC, Canada. We provide accounting, human resources, customer relationship management (CRM), project management, and AI-powered automation tools to small businesses, consultants, and professional service firms.
+                                Ogeemo Inc. ("Ogeemo," "we," "us," or "our") is a cloud-based business management platform headquartered in Gilberts Cove, NS, Canada. We provide accounting, human resources, customer relationship management (CRM), project management, and AI-powered automation tools to small businesses, consultants, and professional service firms.
                             </p>
                             <p className="text-muted-foreground leading-relaxed">
                                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (www.ogeemo.com) and our software platform (the "Ogeemo Suite"). We are committed to transparency and to treating your data as we would want our own treated.
@@ -179,7 +179,7 @@ export default function PrivacyPolicyPage() {
                                 <li><strong>Object:</strong> Object to certain uses of your data, including for marketing purposes</li>
                             </ul>
                             <p className="text-muted-foreground leading-relaxed">
-                                To exercise any of these rights, contact us at <a href="mailto:clients@ogeemo.com" className="text-primary underline">clients@ogeemo.com</a>.
+                                To exercise any of these rights, contact us at <a href="mailto:info@ogeemo.com" className="text-primary underline">info@ogeemo.com</a>.
                             </p>
                         </div>
 
@@ -248,11 +248,11 @@ export default function PrivacyPolicyPage() {
                             <div className="bg-muted/30 p-6 rounded-2xl border border-primary/10 space-y-4">
                                 <div className="flex items-center gap-3">
                                     <Mail className="h-5 w-5 text-primary" />
-                                    <a href="mailto:clients@ogeemo.com" className="text-primary underline font-medium">clients@ogeemo.com</a>
+                                    <a href="mailto:info@ogeemo.com" className="text-primary underline font-medium">info@ogeemo.com</a>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <MapPin className="h-5 w-5 text-primary" />
-                                    <span className="text-muted-foreground font-medium">Vancouver, BC, Canada</span>
+                                    <span className="text-muted-foreground font-medium">Gilberts Cove, NS, Canada</span>
                                 </div>
                             </div>
                         </div>

@@ -174,7 +174,7 @@ export default function TermsOfServicePage() {
                                 <li><strong>Platform Role:</strong> Ogeemo facilitates the connection between members and mentors but is not a party to the consulting agreement. Mentors are independent contractors, not employees of Ogeemo.</li>
                                 <li><strong>Commission:</strong> Ogeemo charges a platform commission of 10–20% on transactions processed through the marketplace. The exact rate is displayed before booking.</li>
                                 <li><strong>Quality Assurance:</strong> Certified Mentors are vetted through a peer-review process. However, Ogeemo does not guarantee the outcome of any consulting engagement.</li>
-                                <li><strong>Disputes:</strong> If you are dissatisfied with a mentor engagement, Ogeemo provides a mediation protocol. Contact clients@ogeemo.com to initiate mediation.</li>
+                                <li><strong>Disputes:</strong> If you are dissatisfied with a mentor engagement, Ogeemo provides a mediation protocol. Contact info@ogeemo.com to initiate mediation.</li>
                             </ul>
                         </div>
 
@@ -261,7 +261,7 @@ export default function TermsOfServicePage() {
                                 We believe in resolving disputes like professionals, not adversaries. If a dispute arises:
                             </p>
                             <ul className="space-y-3 text-muted-foreground leading-relaxed pl-6 list-disc">
-                                <li><strong>Step 1 — Direct Contact:</strong> Contact us at clients@ogeemo.com. We commit to responding within 5 business days.</li>
+                                <li><strong>Step 1 — Direct Contact:</strong> Contact us at info@ogeemo.com. We commit to responding within 5 business days.</li>
                                 <li><strong>Step 2 — Mediation:</strong> If direct contact does not resolve the issue, we will engage in good-faith mediation through a mutually agreed-upon mediator.</li>
                                 <li><strong>Step 3 — Arbitration:</strong> If mediation fails, disputes will be resolved through binding arbitration in Vancouver, BC, under the laws of British Columbia and Canada. The arbitrator's decision is final and binding.</li>
                             </ul>
@@ -308,11 +308,11 @@ export default function TermsOfServicePage() {
                             <div className="bg-muted/30 p-6 rounded-2xl border border-primary/10 space-y-4">
                                 <div className="flex items-center gap-3">
                                     <Mail className="h-5 w-5 text-primary" />
-                                    <a href="mailto:clients@ogeemo.com" className="text-primary underline font-medium">clients@ogeemo.com</a>
+                                    <a href="mailto:info@ogeemo.com" className="text-primary underline font-medium">info@ogeemo.com</a>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <MapPin className="h-5 w-5 text-primary" />
-                                    <span className="text-muted-foreground font-medium">Vancouver, BC, Canada</span>
+                                    <span className="text-muted-foreground font-medium">Gilberts Cove, NS, Canada</span>
                                 </div>
                             </div>
                         </div>

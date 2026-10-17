@@ -86,7 +86,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-xl tracking-tight">Direct Channel</h4>
-                                        <p className="text-muted-foreground font-medium underline decoration-primary/30 hover:decoration-primary transition-all">clients@ogeemo.com</p>
+                                        <p className="text-muted-foreground font-medium underline decoration-primary/30 hover:decoration-primary transition-all">info@ogeemo.com</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6 group">
@@ -95,7 +95,7 @@ export default function ContactPage() {
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-xl tracking-tight">Global Command</h4>
-                                        <p className="text-muted-foreground font-medium">Vancouver, BC, Canada</p>
+                                        <p className="text-muted-foreground font-medium">Gilberts Cove, NS, Canada</p>
                                     </div>
                                 </div>
                             </div>

@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { writeDoorsOverride } from '@/lib/welcome-doors';
 import { getUserWorkflows, saveUserWorkflows, type Workflow, type WorkflowItem } from '@/services/workflow-service';
 import { allMenuItems, type MenuItem } from '@/lib/menu-items';
 import { groupedMenuItems } from '@/components/layout/main-menu';
@@ -217,6 +218,9 @@ export default function WorkflowsPage() {
             });
             return;
         }
+        // Setting a standard also clears any "bring the doors back" override
+        // on Welcome - the saved standard is the stronger choice.
+        if (user) writeDoorsOverride(user.uid, false);
         window.dispatchEvent(new Event('workflowsUpdated'));
         const name = workflows.find((w) => w.id === id)?.name ?? 'This workflow';
         toast({

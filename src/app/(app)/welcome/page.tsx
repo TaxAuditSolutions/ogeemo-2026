@@ -29,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useSidebar } from '@/components/ui/sidebar';
+import { readDoorsOverride, writeDoorsOverride } from '@/lib/welcome-doors';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -36,8 +38,6 @@ import {
 
 /** Step count of the Learn Ogeemo guided path (kept in sync by a guard test). */
 const LEARN_TOTAL = 8;
-/** Per-user localStorage map recording the "bring the welcome doors back" override. */
-const DOORS_SHOWN_KEY = 'ogeemo-welcome-doors';
 /**
  * "Client Report" frame (welcome page): a client dropdown that jumps straight
  * to the client record (/contacts/[id]). Sits directly after the CurrentWork
@@ -197,30 +197,27 @@ export default function WelcomePage() {
   // -> Your workflows -> Apply) the three doors collapse into a single start
   // button. The active workflow lives in the user's profile, so it carries
   // across logins and devices - nothing to re-pick. "Show the getting-started
-  // doors" writes a per-user override so the doors stay back-on for good.
+  // doors" writes a per-browser, per-user override; it clears again from the
+  // doors view itself ("Back to your workflow") or on the Workflows page
+  // ("Set as standard"), so a saved standard is never trapped behind it.
   const [doorsRestored, setDoorsRestored] = useState(false);
   useEffect(() => {
     if (!user) return;
-    try {
-      const raw = window.localStorage.getItem(DOORS_SHOWN_KEY);
-      const all = raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
-      setDoorsRestored(all[user.uid] === true);
-    } catch {
-      setDoorsRestored(false);
-    }
+    setDoorsRestored(readDoorsOverride(user.uid));
   }, [user]);
 
   const handleShowDoors = () => {
     if (!user) return;
     setDoorsRestored(true);
-    try {
-      const raw = window.localStorage.getItem(DOORS_SHOWN_KEY);
-      const all = raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
-      all[user.uid] = true;
-      window.localStorage.setItem(DOORS_SHOWN_KEY, JSON.stringify(all));
-    } catch (error) {
-      console.error('Failed to save welcome door preference:', error);
-    }
+    writeDoorsOverride(user.uid, true);
+  };
+
+  // One click back to the applied workflow: clears the override for good
+  // (persisted per user), so the next visit opens on the workflow again.
+  const handleDismissDoors = () => {
+    if (!user) return;
+    setDoorsRestored(false);
+    writeDoorsOverride(user.uid, false);
   };
 
   // One-click "select and save" for the standard workflow is intentionally
@@ -347,6 +344,16 @@ export default function WelcomePage() {
               <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                 Your business workspace is ready. <br className="hidden md:block" /> Pick a task below to get started.
               </p>
+              {activeWorkflowName && (
+                <button
+                  type="button"
+                  onClick={handleDismissDoors}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                >
+                  <WorkflowIcon className="h-4 w-4" />
+                  Back to your workflow — {activeWorkflowName}
+                </button>
+              )}
             </>
           ) : (
             <>

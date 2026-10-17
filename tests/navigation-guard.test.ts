@@ -193,12 +193,30 @@ test('the welcome doors collapse behind an applied workflow', () => {
     'expected the doors to be gated on the applied workflow',
   );
   assert.ok(
-    welcome.includes('ogeemo-welcome-doors'),
+    welcome.includes('welcome-doors'),
+    'expected the welcome page to use the shared doors-override helper',
+  );
+  const doors = readFileSync(path.join(REPO_ROOT, 'src', 'lib', 'welcome-doors.ts'), 'utf8');
+  assert.ok(
+    doors.includes('ogeemo-welcome-doors'),
     'expected a persisted restore override for the doors',
   );
   assert.ok(
     welcome.includes('Show the getting-started doors'),
     'expected a click that brings the doors back',
+  );
+});
+
+test('setting a standard workflow clears the welcome doors override', () => {
+  // The override must never trap a user: "Set as standard" on /workflows
+  // clears it so the saved standard always wins on Welcome.
+  const workflows = readFileSync(
+    path.join(REPO_ROOT, 'src', 'app', '(app)', 'workflows', 'page.tsx'),
+    'utf8',
+  );
+  assert.ok(
+    workflows.includes('writeDoorsOverride'),
+    'expected "Set as standard" to clear the doors restore override',
   );
 });
 

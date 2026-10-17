@@ -299,6 +299,19 @@ export default function WorkflowsPage() {
         setView({ mode: 'edit', id: wf.id });
     };
 
+    // Deep link from Welcome ("Edit order" / "add destinations"):
+    // /workflows?edit=<id> opens that workflow straight in edit mode, so the
+    // standard's order can be changed in one click from Your Day. The param
+    // is dropped from the URL so refresh/Back doesn't force the editor open.
+    React.useEffect(() => {
+        if (view.mode !== 'list' || workflows.length === 0) return;
+        const editId = new URLSearchParams(window.location.search).get('edit');
+        if (!editId) return;
+        window.history.replaceState(null, '', window.location.pathname);
+        const target = workflows.find((w) => w.id === editId);
+        if (target) openEdit(target);
+    }, [view.mode, workflows]);
+
     const handleSaveDraft = async () => {
         if (view.mode !== 'edit') return;
         const name = draftName.trim();

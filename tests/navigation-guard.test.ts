@@ -217,6 +217,24 @@ test('setting a standard workflow leaves no local doors state behind', () => {
   );
 });
 
+test('Your Day can jump straight into editing the workflow order', () => {
+  // "Edit order" on Welcome deep-links to /workflows?edit=<id>, which opens
+  // that workflow's editor directly - one click instead of list -> Edit.
+  const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
+  assert.ok(
+    welcome.includes('workflows?edit='),
+    'expected an Edit order deep link on Your Day',
+  );
+  const workflows = readFileSync(
+    path.join(REPO_ROOT, 'src', 'app', '(app)', 'workflows', 'page.tsx'),
+    'utf8',
+  );
+  assert.ok(
+    workflows.includes("get('edit')"),
+    'expected /workflows to honour the edit deep link',
+  );
+});
+
 test('every home-screen pathway resolves to a page', () => {
   const hrefs = homeScreenHrefs();
   assert.ok(

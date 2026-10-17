@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/logo';
 import { CurrentWorkPanel } from '@/components/welcome/current-work-panel';
 import {
-  ArrowRight, Building2, Check,
+  ArrowRight, ArrowUpDown, Building2, Check,
   Bot,
   Paintbrush, Compass, LayoutDashboard,
   Inbox,
@@ -477,7 +477,14 @@ export default function WelcomePage() {
             )}
             {activeWorkflow && activeWorkflow.items.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                This workflow has no steps yet — add destinations on the Workflows page.
+                This workflow has no steps yet —{' '}
+                <Link
+                  href={`/workflows?edit=${activeWorkflow.id}`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  add destinations
+                </Link>{' '}
+                on the Workflows page.
               </p>
             )}
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -487,6 +494,13 @@ export default function WelcomePage() {
                   <span className="min-w-0 truncate">Start your day — {activeWorkflowName}</span>
                 </Link>
               </Button>
+              {activeWorkflow && (
+                <Button asChild variant="outline">
+                  <Link href={`/workflows?edit=${activeWorkflow.id}`}>
+                    <ArrowUpDown className="mr-2 h-4 w-4" /> Edit order
+                  </Link>
+                </Button>
+              )}
               <Button asChild variant="outline">
                 <Link href="/workflows">
                   <WorkflowIcon className="mr-2 h-4 w-4" /> Change workflow

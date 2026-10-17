@@ -14,9 +14,11 @@ import {
     Code2,
     Compass,
     Crown,
+    Database,
     FileText,
     Handshake,
     HeartHandshake,
+    Scale,
     Sparkles,
     Users,
     Zap
@@ -225,6 +227,61 @@ export function Gateway() {
                                     <Link href="/login">Already a member? Log in to the Suite</Link>
                                 </Button>
                             )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Software Independence Manifesto - operational & economic
+                    sovereignty framing (adapted from the Euro-Office playbook):
+                    growth tax, data ownership, community-built. Placed after the
+                    functional hero/doors so the "what is this?" answer stays first. */}
+                <section className="py-20 border-b bg-muted/30">
+                    <div className="container px-4 max-w-6xl mx-auto space-y-10">
+                        <div className="text-center max-w-3xl mx-auto space-y-4">
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-4 py-1 rounded-full uppercase tracking-widest text-[10px] font-bold">
+                                Software Independence
+                            </Badge>
+                            <h2 className="text-3xl md:text-5xl font-bold font-headline text-primary">The Ogeemo Manifesto</h2>
+                            <p className="text-lg text-muted-foreground leading-relaxed">
+                                Big Tech software wasn&apos;t built to help your business scale — it was built to extract
+                                recurring revenue from every seat you hire. Ogeemo is the anti-greed business operating
+                                system for independent operators: audit-ready, success-scaled, and guided by a
+                                user-first community.
+                            </p>
+                        </div>
+                        <div className="grid gap-8 md:grid-cols-3 text-center md:text-left">
+                            <div className="space-y-2">
+                                <div className="mx-auto md:mx-0 h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <Scale className="h-5 w-5 text-primary" />
+                                </div>
+                                <h3 className="font-bold text-lg">Stop paying the growth tax</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    Per-seat SaaS fees punish you for hiring. Ogeemo is one flat price — $30/month for
+                                    up to 5 users, $5 per additional user — with the full suite unlocked for every
+                                    member. Your price never changes for life.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="mx-auto md:mx-0 h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <Database className="h-5 w-5 text-primary" />
+                                </div>
+                                <h3 className="font-bold text-lg">Your data belongs to you</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    Your receipts, invoices, and audit trails mirror into your own Google Drive and
+                                    audit-ready ledgers. Export everything anytime — Ogeemo is a bridge to your
+                                    records, not a vault. No vendor lock-in, ever.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="mx-auto md:mx-0 h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <Users className="h-5 w-5 text-primary" />
+                                </div>
+                                <h3 className="font-bold text-lg">Built with Founding Builders</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    No corporate ad networks, no bloated sales teams. We build the product alongside
+                                    the {FOUNDING_OFFER.headline} — the first members who shape what Ogeemo becomes.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </section>

@@ -239,7 +239,7 @@ export default function PricingPage() {
                         </div>
                         <h3 className="text-2xl font-bold font-headline uppercase tracking-tight">The Ethical Exit</h3>
                         <p className="text-muted-foreground leading-relaxed text-lg">
-                            Paradoxically, the easier it is to leave, the more likely people are to stay. If you ever decide Ogeemo isn't for you, your data goes with you. No hidden fees to export your own records.
+                            Paradoxically, the easier it is to leave, the more likely people are to stay. If you ever decide Ogeemo isn't for you, your data goes with you. No hidden fees to export your own records. Your files mirror into your own Google Drive while you're a member — Ogeemo is a bridge to your records, not a vault.
                         </p>
                     </div>
                     <div className="space-y-4">

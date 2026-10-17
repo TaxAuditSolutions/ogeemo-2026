@@ -99,7 +99,7 @@ export function Gateway() {
                         </h1>
                         <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium">
                             Ogeemo is one system for your books, clients, quoting, and time — instead of
-                            five disconnected apps. An anti-greed, success-scaled platform, and a community
+                            disconnected apps. An anti-greed, success-scaled platform, and a community
                             of the people who run one. Tell us what brings you here, and we will take you
                             straight to it.
                         </p>

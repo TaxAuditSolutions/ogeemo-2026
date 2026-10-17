@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: '%s | Ogeemo',
   },
   description:
-    'Ogeemo is one system for your books, clients, quoting, and time — instead of five disconnected apps. An anti-greed, success-scaled business operating system.',
+    'Ogeemo is one system for your books, clients, quoting, and time — instead of disconnected apps. An anti-greed, success-scaled business operating system.',
   openGraph: {
     siteName: 'Ogeemo',
     type: 'website',

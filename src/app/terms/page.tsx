@@ -263,7 +263,7 @@ export default function TermsOfServicePage() {
                             <ul className="space-y-3 text-muted-foreground leading-relaxed pl-6 list-disc">
                                 <li><strong>Step 1 — Direct Contact:</strong> Contact us at info@ogeemo.com. We commit to responding within 5 business days.</li>
                                 <li><strong>Step 2 — Mediation:</strong> If direct contact does not resolve the issue, we will engage in good-faith mediation through a mutually agreed-upon mediator.</li>
-                                <li><strong>Step 3 — Arbitration:</strong> If mediation fails, disputes will be resolved through binding arbitration in Vancouver, BC, under the laws of British Columbia and Canada. The arbitrator's decision is final and binding.</li>
+                                <li><strong>Step 3 — Arbitration:</strong> If mediation fails, disputes will be resolved through binding arbitration in Nova Scotia, under the laws of Nova Scotia and Canada. The arbitrator's decision is final and binding.</li>
                             </ul>
                             <p className="text-muted-foreground leading-relaxed">
                                 <strong>Class Action Waiver.</strong> You agree that any dispute will be resolved individually, not as part of a class action.
@@ -279,7 +279,7 @@ export default function TermsOfServicePage() {
                                 <h2 className="text-2xl font-bold font-headline text-primary tracking-tight">13. Governing Law</h2>
                             </div>
                             <p className="text-muted-foreground leading-relaxed">
-                                These Terms are governed by the laws of the Province of British Columbia and the federal laws of Canada. Any legal action arising from these Terms shall be brought in the courts of British Columbia, Canada.
+                                These Terms are governed by the laws of the Province of Nova Scotia and the federal laws of Canada. Any legal action arising from these Terms shall be brought in the courts of Nova Scotia, Canada.
                             </p>
                         </div>
 

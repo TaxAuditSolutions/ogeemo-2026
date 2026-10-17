@@ -221,4 +221,4 @@ This is what Ogeemo means by **"No Gaps. No Ghosts. No Guesswork."** — the quo
 ---
 
 *Part of the Ogeemo BKS (Bookkeeping Kept Simple) accounting module.*
-*Built by Tax Audit Solutions (TAS) — Vancouver, BC, Canada.*
+*Built by Tax Audit Solutions (TAS) — Gilberts Cove, NS, Canada.*

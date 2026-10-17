@@ -7,7 +7,7 @@
 
 **Ogeemo** is a comprehensive, cloud-based business management platform (ERP) built to unify the entire operational backbone of small businesses, professional service firms, and independent consultants. Rather than forcing users to stitch together a dozen disconnected SaaS subscriptions, Ogeemo consolidates accounting, human resources, customer relationship management (CRM), project management, document management, and AI-powered automation into a single, deeply integrated ecosystem.
 
-The platform was built by **Tax Audit Solutions (TAS)**, a real-world accounting and compliance firm, as an internal tool to solve their own operational pain points. After proving its value in the trenches of real audit work, TAS is now bringing Ogeemo to market as a commercial product. The company is headquartered in **Vancouver, BC, Canada**.
+The platform was built by **Tax Audit Solutions (TAS)**, a real-world accounting and compliance firm, as an internal tool to solve their own operational pain points. After proving its value in the trenches of real audit work, TAS is now bringing Ogeemo to market as a commercial product. The company is headquartered in **Gilberts Cove, NS, Canada**.
 
 Ogeemo is currently in a **go-to-market ready state** — the core platform is built, operational, and ready for commercial scale.
 
@@ -237,4 +237,4 @@ The platform is **built, operational, and ready for commercial scale.** The comp
 
 ---
 
-*Contact: clients@ogeemo.com | Vancouver, BC, Canada*
+*Contact: info@ogeemo.com | Gilberts Cove, NS, Canada*

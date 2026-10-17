@@ -30,7 +30,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useSidebar } from '@/components/ui/sidebar';
-import { readDoorsOverride, writeDoorsOverride } from '@/lib/welcome-doors';
 
 /**
  * @fileOverview The primary welcome landing page for authenticated members.
@@ -196,28 +195,24 @@ export default function WelcomePage() {
   // Repeat-user doors: once an active workflow is applied (Make It Your Own
   // -> Your workflows -> Apply) the three doors collapse into a single start
   // button. The active workflow lives in the user's profile, so it carries
-  // across logins and devices - nothing to re-pick. "Show the getting-started
-  // doors" writes a per-browser, per-user override; it clears again from the
-  // doors view itself ("Back to your workflow") or on the Workflows page
-  // ("Set as standard"), so a saved standard is never trapped behind it.
+  // across logins and devices - nothing to re-pick: on load a resolved
+  // standard always wins and "Your Day" opens directly. "Show the
+  // getting-started doors" only brings the doors back for the current visit;
+  // nothing is persisted (a persisted override once hid the saved workflow
+  // behind the doors permanently, with no way back even after a hard reset).
+  // Session-only: nothing about the doors is persisted. The old restored
+  // override lived in localStorage and could never be cleared again, so a
+  // user with a saved standard was trapped behind the doors even after a
+  // hard reset - on load a resolved workflow now always wins.
   const [doorsRestored, setDoorsRestored] = useState(false);
-  useEffect(() => {
-    if (!user) return;
-    setDoorsRestored(readDoorsOverride(user.uid));
-  }, [user]);
 
   const handleShowDoors = () => {
-    if (!user) return;
     setDoorsRestored(true);
-    writeDoorsOverride(user.uid, true);
   };
 
-  // One click back to the applied workflow: clears the override for good
-  // (persisted per user), so the next visit opens on the workflow again.
+  // One click back to the applied workflow within this visit.
   const handleDismissDoors = () => {
-    if (!user) return;
     setDoorsRestored(false);
-    writeDoorsOverride(user.uid, false);
   };
 
   // One-click "select and save" for the standard workflow is intentionally

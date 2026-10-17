@@ -1,0 +1,5 @@
+
+> nextn@0.1.1 dev:win
+> pwsh -NoProfile -File scripts/start-dev.ps1
+
+Terminate batch job (Y/N)? 

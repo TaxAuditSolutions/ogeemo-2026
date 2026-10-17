@@ -186,20 +186,17 @@ test("the welcome screen offers a one-click line to the user's workflow", () => 
 test('the welcome doors collapse behind an applied workflow', () => {
   // Once the user applies a workflow (Make It Your Own -> Your workflows),
   // repeat logins go straight to the start button instead of re-prompting;
-  // the choice persists in the profile, and one click brings the doors back.
+  // the choice persists in the profile. Nothing about the doors is persisted
+  // locally: the old restore override could never be cleared, trapping a
+  // saved standard behind the doors even after a hard reset.
   const welcome = readFileSync(path.join(REPO_ROOT, 'src', 'app', '(app)', 'welcome', 'page.tsx'), 'utf8');
   assert.ok(
     welcome.includes('activeWorkflowName'),
     'expected the doors to be gated on the applied workflow',
   );
   assert.ok(
-    welcome.includes('welcome-doors'),
-    'expected the welcome page to use the shared doors-override helper',
-  );
-  const doors = readFileSync(path.join(REPO_ROOT, 'src', 'lib', 'welcome-doors.ts'), 'utf8');
-  assert.ok(
-    doors.includes('ogeemo-welcome-doors'),
-    'expected a persisted restore override for the doors',
+    !welcome.includes('ogeemo-welcome-doors'),
+    'expected no persisted doors override - a saved standard must win on load',
   );
   assert.ok(
     welcome.includes('Show the getting-started doors'),
@@ -207,16 +204,16 @@ test('the welcome doors collapse behind an applied workflow', () => {
   );
 });
 
-test('setting a standard workflow clears the welcome doors override', () => {
-  // The override must never trap a user: "Set as standard" on /workflows
-  // clears it so the saved standard always wins on Welcome.
+test('setting a standard workflow leaves no local doors state behind', () => {
+  // /workflows must not write any local doors override either - the welcome
+  // view is decided purely by the profile's activeWorkflowId.
   const workflows = readFileSync(
     path.join(REPO_ROOT, 'src', 'app', '(app)', 'workflows', 'page.tsx'),
     'utf8',
   );
   assert.ok(
-    workflows.includes('writeDoorsOverride'),
-    'expected "Set as standard" to clear the doors restore override',
+    !workflows.includes('ogeemo-welcome-doors') && !workflows.includes('welcome-doors'),
+    'expected no doors-override writes from the workflows page',
   );
 });
 

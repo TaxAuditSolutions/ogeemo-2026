@@ -1,0 +1,32 @@
+No Firebase app associated with site ogeemo-firebase, injecting project default config.
+  You can link a Web app to a Hosting site here https://console.firebase.google.com/project/ogeemo-firebase/settings/general/web
+Warning: Global esbuild version (0.28.1) does not match the required version (^0.19.2).
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: ollama-ai-provider-v2@1.5.5
+npm warn Found: zod@3.25.76
+npm warn node_modules/zod
+npm warn   zod@"^3.25.76" from the root project
+npm warn   22 more (@ai-sdk/amazon-bedrock, @ai-sdk/anthropic, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer zod@"^4.0.16" from ollama-ai-provider-v2@1.5.5
+npm warn node_modules/@browserbasehq/stagehand/node_modules/ollama-ai-provider-v2
+npm warn   optional ollama-ai-provider-v2@"^1.5.0" from @browserbasehq/stagehand@3.6.0
+npm warn   node_modules/@browserbasehq/stagehand
+npm warn
+npm warn Conflicting peer dependency: zod@4.6.7
+npm warn node_modules/zod
+npm warn   peer zod@"^4.0.16" from ollama-ai-provider-v2@1.5.5
+npm warn   node_modules/@browserbasehq/stagehand/node_modules/ollama-ai-provider-v2
+npm warn     optional ollama-ai-provider-v2@"^1.5.0" from @browserbasehq/stagehand@3.6.0
+npm warn     node_modules/@browserbasehq/stagehand
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'nextn@0.1.1',
+npm warn EBADENGINE   required: { node: '22' },
+npm warn EBADENGINE   current: { node: 'v24.14.1', npm: '11.11.0' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'firebase-frameworks@0.11.8',
+npm warn EBADENGINE   required: { node: '^16.0.0 || ^18.0.0 || ^20.0.0 || ^22.0.0' },
+npm warn EBADENGINE   current: { node: 'v24.14.1', npm: '11.11.0' }
+npm warn EBADENGINE }

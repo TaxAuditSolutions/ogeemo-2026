@@ -34,3 +34,6 @@ dev-server.log
 .next-dev-server.log
 # Firebase deploy output
 .deploy-run.log
+.deploy-run.err.log
+.dev-run.log
+.dev-run.err.log

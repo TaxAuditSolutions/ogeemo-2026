@@ -24,7 +24,8 @@ function getCurrentAuthContext() {
     return currentUser;
 }
 
-async function getCurrentOrgId(): Promise<string> {
+/** Resolves the caller's active workspace (org) id from claims, then profile. */
+export async function getCurrentOrgId(): Promise<string> {
     const currentUser = getCurrentAuthContext();
     let tokenResult;
     try {

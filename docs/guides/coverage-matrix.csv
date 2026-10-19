@@ -399,7 +399,7 @@ tools,image-manager,refresh-image-library-after-change,admin,important,verified,
 tools,image-manager,manage-image-library-assets,admin,important,verified,copilot-auto-verify,image-manager--manage-image-library-assets
 backup,backup,open-backup-manager-workspace,admin,important,verified,copilot-auto-verify,backup--open-backup-manager-workspace
 backup,backup,select-backup-types-for-export,admin,important,verified,copilot-auto-verify,backup--select-backup-types-for-export
-backup,backup,execute-firestore-backup-export,admin,critical,draft,copilot-auto-verify,backup--execute-firestore-backup-export
+backup,backup,execute-firestore-backup-export,admin,critical,verified,copilot-auto-verify,backup--execute-firestore-backup-export
 backup,backup,execute-auth-backup-export,admin,critical,verified,copilot-auto-verify,backup--execute-auth-backup-export
 backup,backup,run-combined-firestore-and-auth-backup,admin,critical,verified,copilot-auto-verify,backup--run-combined-firestore-and-auth-backup
 backup,backup,prevent-backup-run-without-selection,admin,important,verified,copilot-auto-verify,backup--prevent-backup-run-without-selection
@@ -407,7 +407,7 @@ backup,backup,monitor-backup-session-status,admin,important,verified,copilot-aut
 backup,backup,handle-firestore-backup-failure,admin,critical,verified,copilot-auto-verify,backup--handle-firestore-backup-failure
 backup,backup,handle-auth-backup-failure,admin,critical,verified,copilot-auto-verify,backup--handle-auth-backup-failure
 backup,backup,locate-backup-bucket-destination,admin,important,verified,copilot-auto-verify,backup--locate-backup-bucket-destination
-backup,backup,download-exported-backup-payloads,admin,important,draft,copilot-auto-verify,backup--download-exported-backup-payloads
+backup,backup,download-exported-backup-payloads,admin,important,verified,copilot-auto-verify,backup--download-exported-backup-payloads
 backup,backup,prepare-export-payload-for-third-party-ingestion,admin,important,verified,copilot-auto-verify,backup--prepare-export-payload-for-third-party-ingestion
 admin,user-manager,open-user-manager-dashboard,admin,important,verified,copilot-auto-verify,user-manager--open-user-manager-dashboard
 admin,user-manager,enforce-admin-only-user-manager-access,admin,critical,verified,copilot-auto-verify,user-manager--enforce-admin-only-user-manager-access

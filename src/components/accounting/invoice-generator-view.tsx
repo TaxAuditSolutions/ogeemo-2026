@@ -34,7 +34,7 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { TimeLogImportDialog } from './time-log-import-dialog';
 import { toInvoiceLineItem, type InvoiceableEntry, type EntryRef } from '@/lib/billing-eligibility';
 import { readInvoiceDraftHandoff } from '@/lib/invoice-handoff';
-import { Logo } from '@/components/logo';
+import { DocumentBrandLogo } from '@/components/documents/document-brand-logo';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -87,7 +87,7 @@ const InvoiceDocument = ({
 }: any) => (
     <div className="p-12 bg-white text-black min-h-[11in] w-full max-w-[8.5in] mx-auto shadow-sm">
         <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
-            <Logo className="text-primary" />
+            <DocumentBrandLogo />
             <div className="text-right">
                 <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
                 <p className="text-gray-500">#{invoiceNumber}</p>

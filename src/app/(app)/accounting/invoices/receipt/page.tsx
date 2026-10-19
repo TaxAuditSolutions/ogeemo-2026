@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Logo } from '@/components/logo';
+import { DocumentBrandLogo } from '@/components/documents/document-brand-logo';
 import { Separator } from '@/components/ui/separator';
 import { Printer, Mail, ArrowLeft, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -126,7 +126,7 @@ export default function ReceiptPage() {
                         </div>
                     )}
                     <header className="flex justify-between items-start pb-6 border-b">
-                        <Logo className="text-primary"/>
+                        <DocumentBrandLogo/>
                         <div className="text-right">
                             <h1 className="text-4xl font-bold uppercase text-gray-700">Receipt</h1>
                             <p className="text-gray-500">#{invoice.invoiceNumber}</p>

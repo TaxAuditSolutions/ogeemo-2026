@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Logo } from '@/components/logo';
+import { DocumentBrandLogo } from '@/components/documents/document-brand-logo';
 import { Separator } from '@/components/ui/separator';
 import { Printer, ArrowLeft, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -132,7 +132,7 @@ function PreviewContent() {
              <Card id="invoice-preview" className="max-w-4xl mx-auto print:shadow-none print:border-none print:rounded-none">
                 <CardContent className="p-8 md:p-12">
                     <header className="flex justify-between items-start pb-6 border-b">
-                        <Logo className="text-primary"/>
+                        <DocumentBrandLogo/>
                         <div className="text-right">
                             <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
                             <p className="text-gray-500">#{invoiceData.invoiceNumber}</p>

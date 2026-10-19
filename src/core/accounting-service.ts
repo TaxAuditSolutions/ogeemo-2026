@@ -241,6 +241,15 @@ export interface Quote {
   userId: string;
 }
 
+export interface InvoiceShippingAddress {
+  mode: 'client' | 'home' | 'custom';
+  street?: string;
+  city?: string;
+  provinceState?: string;
+  postalCode?: string;
+  country?: string;
+}
+
 export interface Invoice {
   id: string;
   orgId?: string;
@@ -260,6 +269,7 @@ export interface Invoice {
   status: 'outstanding' | 'paid' | 'partially_paid' | 'overdue';
   notes: string;
   lineItemDetails?: string;
+  shippingAddress?: InvoiceShippingAddress;
   taxType: string;
   userId: string;
 }
@@ -374,6 +384,7 @@ const docToInvoice = (doc: any): Invoice => {
     userId: data.userId,
     createdAt: toClientDate(data.createdAt),
     updatedAt: toClientDate(data.updatedAt),
+    shippingAddress: data.shippingAddress || null,
   } as Invoice;
 };
 

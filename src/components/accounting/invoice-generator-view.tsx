@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
+import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceShippingAddress, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,8 @@ const InvoiceDocument = ({
     subtotal,
     tax,
     total,
-    attachReport
+    attachReport,
+    shipToLines
 }: any) => (
     <div className="p-12 bg-white text-black min-h-[11in] w-full max-w-[8.5in] mx-auto shadow-sm">
         <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
@@ -111,6 +112,15 @@ const InvoiceDocument = ({
                 <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Due Date:</span> {format(dueDate, 'PP')}</p>
             </div>
         </section>
+        {shipToLines && shipToLines.length > 0 && (
+            <section className="mt-6">
+                <h2 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Ship To</h2>
+                <p className="font-bold">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {shipToLines.join('\n')}
+                </p>
+            </section>
+        )}
         <section className="mt-12">
             <Table className="border-t border-b border-gray-900">
                 <TableHeader>
@@ -196,6 +206,7 @@ export function InvoiceGeneratorView() {
     const [notes, setNotes] = useState("Thank you for your business!");
     const [lineItemDetails, setLineItemDetails] = useState('');
     const [attachReport, setAttachReport] = useState(false);
+    const [shippingAddress, setShippingAddress] = useState<InvoiceShippingAddress>({ mode: 'client' });
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -236,6 +247,7 @@ export function InvoiceGeneratorView() {
             if (invoiceData.lineItemDetails) setLineItemDetails(invoiceData.lineItemDetails);
             setSelectedContactId(invoiceData.contactId);
             setSelectedSupplierId(invoiceData.supplierId || null);
+            setShippingAddress(invoiceData.shippingAddress || { mode: 'client' });
 
             const mappedLineItems = lineItemsData.map((item: any) => ({
                 id: item.id || `item_${Math.random()}`,
@@ -497,6 +509,7 @@ export function InvoiceGeneratorView() {
             status: 'outstanding' as const,
             notes,
             lineItemDetails,
+            shippingAddress,
             taxType: 'gst_hst',
             userId: user.uid,
         };
@@ -614,6 +627,7 @@ export function InvoiceGeneratorView() {
         setLineItemDetails('');
         setSelectedContactId(null);
         setSelectedSupplierId(null);
+        setShippingAddress({ mode: 'client' });
         setLineItems([]);
         setAttachReport(false);
         if (!silent) toast({ title: "Form Cleared" });
@@ -647,6 +661,26 @@ export function InvoiceGeneratorView() {
         ? [userProfile.businessAddress.street, [userProfile.businessAddress.city, userProfile.businessAddress.state, userProfile.businessAddress.postalCode].filter(Boolean).join(", "), userProfile.businessAddress.country].filter(Boolean)
         : [];
 
+    const shipToLines = (() => {
+        const mode = shippingAddress?.mode || 'client';
+        if (mode === 'custom') {
+            return [
+                shippingAddress.street,
+                [shippingAddress.city, shippingAddress.provinceState, shippingAddress.postalCode].filter(Boolean).join(', '),
+                shippingAddress.country,
+            ].filter(Boolean);
+        }
+        if (mode === 'home' && selectedContact?.homeAddress) {
+            const h = selectedContact.homeAddress;
+            return [
+                h.street,
+                [h.city, h.provinceState, h.postalCode].filter(Boolean).join(', '),
+                h.country,
+            ].filter(Boolean);
+        }
+        return [];
+    })();
+
     const documentProps = {
         invoiceNumber,
         businessNumber,
@@ -660,7 +694,8 @@ export function InvoiceGeneratorView() {
         subtotal,
         tax,
         total,
-        attachReport
+        attachReport,
+        shipToLines
     };
 
   return (
@@ -728,7 +763,8 @@ export function InvoiceGeneratorView() {
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="space-y-6">
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Client <span className="text-destructive">*</span></Label>
                                     <div className="flex gap-2">
@@ -789,6 +825,52 @@ export function InvoiceGeneratorView() {
                                 ) : (
                                     <p className="text-sm text-muted-foreground">Select a client to see their details here.</p>
                                 )}
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shippingAddress">Shipping / Service Address <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                                            <Select value={shippingAddress.mode} onValueChange={(v) => setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] }))}>
+                                                <SelectTrigger id="shippingAddress" className="w-full">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="client">Same as client address</SelectItem>
+                                                    {selectedContact?.homeAddress && (
+                                                        <SelectItem value="home">Client's home address</SelectItem>
+                                                    )}
+                                                    <SelectItem value="custom">Enter a different address...</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        {shippingAddress.mode === 'custom' && (
+                                            <div className="space-y-3 rounded-md border p-3">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="shipStreet">Street</Label>
+                                                    <Input id="shipStreet" value={shippingAddress.street || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))} />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="shipCity">City</Label>
+                                                        <Input id="shipCity" value={shippingAddress.city || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="shipProvince">Province / State</Label>
+                                                        <Input id="shipProvince" value={shippingAddress.provinceState || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, provinceState: e.target.value }))} />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="shipPostal">Postal Code</Label>
+                                                        <Input id="shipPostal" value={shippingAddress.postalCode || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="shipCountry">Country</Label>
+                                                        <Input id="shipCountry" value={shippingAddress.country || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, country: e.target.value }))} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_3fr_3fr_3fr] gap-4">
                                 <div className="space-y-2">

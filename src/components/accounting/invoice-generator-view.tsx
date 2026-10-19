@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, Send, Building2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -204,7 +204,6 @@ export function InvoiceGeneratorView() {
 
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
-    const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
     const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
     // Time Log -> Invoice handoff: entries carried from the Time Log Report,
     // pre-checked in Add from Time Log (null once the dialog is closed).
@@ -582,7 +581,7 @@ export function InvoiceGeneratorView() {
     const loadTemplateMenu = (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" title="Start a new invoice from a saved template">Select a Template</Button>
+                <Button variant="outline" size="sm" title="Start a new invoice from a saved template">Select from Template</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 {invoiceTemplates.length > 0 ? invoiceTemplates.map((t, idx) => (
@@ -593,6 +592,9 @@ export function InvoiceGeneratorView() {
                     <DropdownMenuItem disabled>No templates saved yet</DropdownMenuItem>
                 )}
                 <Separator className="my-1" />
+                <DropdownMenuItem onClick={handleSaveTemplate}>
+                    <Save className="mr-2 h-4 w-4" /> Save as Template
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/accounting/invoices/templates">Manage Templates</Link>
                 </DropdownMenuItem>
@@ -641,7 +643,9 @@ export function InvoiceGeneratorView() {
     };
 
     const selectedContact = contacts.find(c => c.id === selectedContactId);
-    const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
+    const senderAddressLines = userProfile?.businessAddress
+        ? [userProfile.businessAddress.street, [userProfile.businessAddress.city, userProfile.businessAddress.state, userProfile.businessAddress.postalCode].filter(Boolean).join(", "), userProfile.businessAddress.country].filter(Boolean)
+        : [];
 
     const documentProps = {
         invoiceNumber,
@@ -663,76 +667,70 @@ export function InvoiceGeneratorView() {
     <>
       <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
         <InvoicePageHeader pageTitle="Create Invoice" />
-        <header className="relative text-center print:hidden">
-                    <div className="flex items-center justify-center gap-1">
-                        <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
-                        <HelpTip
-                            title="Invoices"
-                            learnHref="/learn/guides/invoices"
-                            learnLabel="Learn about invoices"
-                        >
-                            Turn completed work into a billable invoice, send it to a contact, and track it in Accounts Receivable.
-                        </HelpTip>
-                    </div>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Select contacts from your master list to generate a professional invoice.
-                    </p>
-                    <div className="absolute top-0 right-0 flex items-center gap-2">
-                        {loadTemplateMenu}
-                        <Button asChild variant="outline" size="sm">
-                            <Link href="/accounting/accounts-receivable">Accounts Receivable</Link>
-                        </Button>
-                        <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
-                            <a className="cursor-pointer">
-                                <X className="h-5 w-5" />
-                                <span className="sr-only">Close</span>
-                            </a>
-                        </Button>
-                    </div>
-                </header>
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div className="flex items-center gap-1">
+                    <h1 className="text-3xl font-bold font-headline text-primary">Create an Invoice</h1>
+                    <HelpTip title="Invoices" learnHref="/learn/guides/invoices" learnLabel="Learn about invoices">
+                        Turn completed work into a billable invoice, send it to a contact, and track it in Accounts Receivable.
+                    </HelpTip>
+                </div>
+                <p className="text-muted-foreground max-w-2xl">
+                    Prepare and send a professional invoice to your client.
+                </p>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm">
+                    <Link href="/accounting/accounts-receivable">Accounts Receivable</Link>
+                </Button>
+                <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+                <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
+                    <Printer className="mr-2 h-4 w-4" /> Print & Export
+                </Button>
+                <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
+                    {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Issue Invoice
+                </Button>
+                <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                    <a className="cursor-pointer">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                    </a>
+                </Button>
+            </div>
+        </header>
 
                 <Card className="print:hidden shadow-lg border-primary/10">
-          <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
-            <div>
-              {selectedContact ? (
-                <div className="flex flex-col">
-                  <span className="font-bold text-xl text-primary">{selectedContact.businessName || selectedContact.name}</span>
-                  {selectedContact.businessName && selectedContact.name && selectedContact.name !== selectedContact.businessName && (
-                    <span className="text-sm font-medium text-muted-foreground">{selectedContact.name}</span>
-                  )}
-                  <span className="text-sm text-muted-foreground mt-1">
-                    {[selectedContact.streetAddress, selectedContact.city, selectedContact.provinceState].filter(Boolean).join(', ')}
-                  </span>
-                  <span className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
-                    {selectedContact.email && <span>📧 {selectedContact.email}</span>}
-                    {(selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone) && (
-                        <span>📞 {selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone}</span>
-                    )}
-                  </span>
-                </div>
-              ) : (
-                <CardTitle>Invoice Header</CardTitle>
-              )}
-            </div>
-                        <div className="flex items-center gap-2">
-                            <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
-                                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Invoice
-                            </Button>
-                            <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
-                            <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
-                                <Printer className="mr-2 h-4 w-4" /> Print Invoice & Report
-                            </Button>
-                            <Button variant="outline" onClick={handleSaveTemplate}>
-                                <Save className="mr-2 h-4 w-4" /> Save as a Template
-                            </Button>
+                    <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
+                        <div className="flex items-center gap-4">
+                            <DocumentBrandLogo className="h-14" />
+                            <div className="flex flex-col text-sm">
+                                <span className="font-bold text-lg text-primary">{userProfile?.companyName || userProfile?.displayName || "Your Company"}</span>
+                                {senderAddressLines.length > 0 && (
+                                    <span className="text-muted-foreground">{senderAddressLines.join(", ")}</span>
+                                )}
+                                <span className="text-xs text-muted-foreground mt-1 flex items-center gap-4">
+                                    {(userProfile?.businessPhone || userProfile?.cellPhone) && <span>📞 {userProfile?.businessPhone || userProfile?.cellPhone}</span>}
+                                    {userProfile?.email && <span>📧 {userProfile.email}</span>}
+                                    {businessNumber && <span>HST #: {businessNumber}</span>}
+                                </span>
+                            </div>
                         </div>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/settings"><Building2 className="mr-2 h-4 w-4" /> Change Business</Link>
+                        </Button>
+                    </CardHeader>
+                </Card>
+
+                <Card className="print:hidden shadow-lg border-primary/10">
+                    <CardHeader className="bg-primary/5 border-b">
+                        <CardTitle className="text-base">Client / Billing Details</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Billing To (Contact)</Label>
+                                    <Label>Client <span className="text-destructive">*</span></Label>
                                     <div className="flex gap-2">
                                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                             <PopoverTrigger asChild>
@@ -772,61 +770,34 @@ export function InvoiceGeneratorView() {
                                         </Button>
                                     </div>
                                 </div>
+                                {selectedContact ? (
+                                    <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                                        <p className="font-semibold">{selectedContact.businessName || selectedContact.name}</p>
+                                        {selectedContact.businessName && selectedContact.name && selectedContact.name !== selectedContact.businessName && (
+                                            <p className="text-muted-foreground">{selectedContact.name}</p>
+                                        )}
+                                        <p className="text-muted-foreground">
+                                            {[selectedContact.streetAddress, selectedContact.city, selectedContact.provinceState].filter(Boolean).join(", ")}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground flex items-center gap-4">
+                                            {selectedContact.email && <span>📧 {selectedContact.email}</span>}
+                                            {(selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone) && (
+                                                <span>📞 {selectedContact.businessPhone || selectedContact.cellPhone || selectedContact.homePhone}</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">Select a client to see their details here.</p>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_3fr_3fr_3fr] gap-4">
                                 <div className="space-y-2">
-                                    <Label>Billing From (Contact)</Label>
-                                    <div className="flex gap-2">
-                                        <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" role="combobox" className="w-full justify-between overflow-hidden">
-                                                    {selectedSupplier ? (
-                                                        <span className="truncate">{selectedSupplier.name} {selectedSupplier.businessName ? `(${selectedSupplier.businessName})` : ''}</span>
-                                                    ) : "Select contact..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                                <Command>
-                                                    <CommandInput placeholder="Search contacts..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>No contact found.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {contacts.map(c => (
-                                                                <CommandItem
-                                                                    key={c.id}
-                                                                    value={c.name}
-                                                                    onSelect={() => {
-                                                                        setSelectedSupplierId(c.id);
-                                                                        setIsSupplierPopoverOpen(false);
-                                                                    }}
-                                                                >
-                                                                    <Check className={cn("mr-2 h-4 w-4", selectedSupplierId === c.id ? "opacity-100" : "opacity-0")} />
-                                                                    {c.name} {c.businessName ? `(${c.businessName})` : ''}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Contact">
-                                            <UserPlus className="h-4 w-4" />
-                                        </Button>
+                                    <Label htmlFor="invoiceNumber">Invoice #</Label>
+                                    <div className="relative">
+                                        <Input id="invoiceNumber" className="pr-24" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} />
+                                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Auto-generated</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="invoiceNumber">Invoice #</Label>
-                                        <Input id="invoiceNumber" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="businessNumber">Business Number (BN)</Label>
-                                        <Input id="businessNumber" value={businessNumber} onChange={e => setBusinessNumber(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="invoiceDate">Invoice Date</Label>
                                     <Popover>
@@ -858,19 +829,49 @@ export function InvoiceGeneratorView() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="dueDate">Due Date</Label>
-                                    <Input id="dueDate" value={format(dueDate, 'PPP')} readOnly disabled />
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <CustomCalendar mode="single" selected={dueDate} onSelect={(date) => date && setDueDate(date)} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <p className="text-xs text-muted-foreground">
+                                        Based on {paymentTermsDays === '0' ? 'Due on receipt' : `Net ${paymentTermsDays}`}. You can edit the due date.
+                                    </p>
                                 </div>
                             </div>
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    {loadTemplateMenu}
-                                    <Button variant="outline" size="sm" onClick={handleAddEmptyLineItem} className="font-semibold">
-                                        <Plus className="mr-2 h-4 w-4" /> Line Items
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setIsTimeLogDialogOpen(true)} disabled={!selectedContactId} className="font-semibold">
-                                        <Clock className="mr-2 h-4 w-4" /> Add from Time Log
-                                    </Button>
-                                </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="print:hidden shadow-lg border-primary/10">
+                    <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
+                        <div>
+                            <div className="flex items-center gap-1">
+                                <CardTitle className="text-base">Services &amp; Items</CardTitle>
+                                <HelpTip title="Services & Items" learnHref="/learn/guides/invoices" learnLabel="Learn about invoices">
+                                    Pull items from your Products & Services library, import billable time, or start from a saved template.
+                                </HelpTip>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Add products, services or billable time to this invoice.</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={handleAddEmptyLineItem} className="font-semibold">
+                                <Plus className="mr-2 h-4 w-4" /> Add Item
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setIsTimeLogDialogOpen(true)} disabled={!selectedContactId} className="font-semibold">
+                                <Clock className="mr-2 h-4 w-4" /> Add from Time Log
+                            </Button>
+                            {loadTemplateMenu}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="space-y-6">
                 <div className="border rounded-md overflow-x-auto">
                   <Table className="min-w-[950px]">
                                         <TableHeader>
@@ -910,7 +911,6 @@ export function InvoiceGeneratorView() {
                               <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-1">
                                 <LibraryPickerPopover
                                   serviceItems={serviceItems}
-                                  searchValue={item.description}
                                   onSelect={(service) => {
                                     handleUpdateLineItem(item.id, 'description', service.description);
                                     handleUpdateLineItem(item.id, 'price', service.price);
@@ -1049,7 +1049,6 @@ export function InvoiceGeneratorView() {
                                         </TableBody>
                                     </Table>
                                 </div>
-                            </div>
 
                             <div className="pt-2 border-t">
                                 <Label htmlFor="lineItemDetails">Line Item Details</Label>
@@ -1078,47 +1077,50 @@ export function InvoiceGeneratorView() {
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="notes">Terms & Explanation</Label>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                                </TooltipTrigger>
-                                                <TooltipContent side="top" align="start">
-                                                    <p className="max-w-xs text-xs">
-                                                        Interest on overdue accounts will be charged at 1% for 30 days, 2% for 60 days, 3% for 90 days, and 5% thereafter, calculated monthly not in advance.
-                                                    </p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-                                    <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Add additional terms or explanation..." />
-                                </div>
-                                <div className="space-y-2 border rounded-lg p-4 bg-muted/50 h-fit self-end">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Subtotal:</span>
-                                        <span className="font-mono">{formatCurrency(subtotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Tax:</span>
-                                        <span className="font-mono">{formatCurrency(tax)}</span>
-                                    </div>
-                                    <Separator className="my-2" />
-                                    <div className="flex justify-between font-bold text-lg">
-                                        <span>Total Due:</span>
-                                        <span className="font-mono text-primary">{formatCurrency(total)}</span>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="print:hidden shadow-lg border-primary/10">
+                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="notes">Notes to Client (optional)</Label>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" align="start">
+                                        <p className="max-w-xs text-xs">
+                                            Interest on overdue accounts will be charged at 1% for 30 days, 2% for 60 days, 3% for 90 days, and 5% thereafter, calculated monthly not in advance.
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
-                    </CardContent>
-                    <CardFooter className="justify-between border-t p-4">
-                        <Button variant="ghost" size="sm" onClick={() => handleClearInvoice()}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
-                    </CardFooter>
-                </Card>
+                        <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Thank you for your business!" />
+                    </div>
+                    <div className="border rounded-lg p-4 bg-muted/50 h-fit self-end space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Subtotal:</span>
+                            <span className="font-mono">{formatCurrency(subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Tax:</span>
+                            <span className="font-mono">{formatCurrency(tax)}</span>
+                        </div>
+                        <Separator className="my-2" />
+                        <div className="flex justify-between items-baseline">
+                            <span className="font-semibold">Total Due</span>
+                            <span className="font-mono font-bold text-2xl text-primary">{formatCurrency(total)}</span>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="justify-between border-t p-4">
+                    <Button variant="ghost" size="sm" onClick={() => handleClearInvoice()}><X className="mr-2 h-4 w-4" /> Clear Form</Button>
+                </CardFooter>
+            </Card>
 
                 <div className="hidden">
                     <div ref={contentRef}>

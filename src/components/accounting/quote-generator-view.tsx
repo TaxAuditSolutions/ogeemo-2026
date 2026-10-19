@@ -671,7 +671,8 @@ export function QuoteGeneratorView() {
 
         <Card className="print:hidden shadow-lg border-primary/10">
           <CardHeader className="flex-row justify-between items-center bg-primary/5 border-b">
-            <div>
+            <div className="flex items-center gap-4">
+              <DocumentBrandLogo className="h-10" />
               {selectedContact ? (
                 <div className="flex flex-col">
                   <span className="font-bold text-xl text-primary">{selectedContact.businessName || selectedContact.name}</span>
@@ -821,7 +822,7 @@ export function QuoteGeneratorView() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="quoteDate">Quote Date</Label>
                   <Popover>
@@ -897,7 +898,6 @@ export function QuoteGeneratorView() {
                               <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-1">
                                 <LibraryPickerPopover
                                   serviceItems={serviceItems}
-                                  searchValue={item.description}
                                   onSelect={(service) => {
                                     handleUpdateLineItem(item.id, 'description', service.description);
                                     handleUpdateLineItem(item.id, 'price', service.price);

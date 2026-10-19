@@ -14,8 +14,6 @@ const formatCurrency = (amount: number) =>
 interface LibraryPickerPopoverProps {
     serviceItems: ServiceItem[];
     onSelect: (service: ServiceItem) => void;
-    /** Seeds the search box with text already typed into the description input. */
-    searchValue?: string;
 }
 
 /**
@@ -24,7 +22,7 @@ interface LibraryPickerPopoverProps {
  * ServiceItem back so the caller can auto-fill price, tax, and the library link.
  * The description input itself stays free-text; this is the browse affordance.
  */
-export function LibraryPickerPopover({ serviceItems, onSelect, searchValue = '' }: LibraryPickerPopoverProps) {
+export function LibraryPickerPopover({ serviceItems, onSelect }: LibraryPickerPopoverProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -43,7 +41,6 @@ export function LibraryPickerPopover({ serviceItems, onSelect, searchValue = '' 
                 <Command>
                     <CommandInput
                         placeholder="Search Products & Services library..."
-                        defaultValue={searchValue}
                         className="h-9"
                     />
                     <CommandList>

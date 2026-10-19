@@ -87,7 +87,7 @@ export async function uploadOrgLogo(orgId: string, file: File): Promise<{ url: s
 
 /** Removes the workspace's document logo (storage file + org fields). */
 export async function removeOrgLogo(orgId: string): Promise<void> {
-    const { db, auth } = getFirebaseServices();
+    const { db, auth, storage } = getFirebaseServices();
     const orgRef = doc(db, ORGANIZATIONS_COLLECTION, orgId);
     const snapshot = await getDoc(orgRef);
     const currentPath = snapshot.data()?.logoStoragePath;

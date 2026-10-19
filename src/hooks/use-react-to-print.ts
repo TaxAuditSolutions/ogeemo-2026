@@ -13,11 +13,18 @@ const cloneWithStyles = (node: HTMLElement, ownerDocument: Document): HTMLElemen
         const prop = computedStyle[i];
         clone.style.setProperty(prop, computedStyle.getPropertyValue(prop), computedStyle.getPropertyPriority(prop));
     }
+    // The popup window has no print stylesheet, so screen-only affordances
+    // (e.g. the document logo's "Select logo" button) must opt out explicitly.
+    if (node.hasAttribute('data-no-print')) {
+        clone.setAttribute('data-no-print', '');
+    }
     
     // Recurse for child nodes
     for (let i = 0; i < node.childNodes.length; i++) {
         const child = node.childNodes[i];
         if (child instanceof HTMLElement) {
+            // Skip screen-only elements entirely - they never reach the printout.
+            if (child.hasAttribute('data-no-print')) continue;
             clone.appendChild(cloneWithStyles(child, ownerDocument));
         } else {
             clone.appendChild(child.cloneNode(true));

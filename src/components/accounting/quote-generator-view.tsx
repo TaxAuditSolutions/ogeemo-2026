@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, getIncomeCategories, type IncomeCategory, type QuoteLineItem, type QuoteStatus, getCompanies, type Company } from '@/core/accounting-service';
+import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, getIncomeCategories, type IncomeCategory, type QuoteLineItem, type QuoteStatus, type InvoiceShippingAddress, getCompanies, type Company } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
@@ -80,7 +80,8 @@ const QuoteDocument = ({
   subtotal,
   tax,
   total,
-  attachReport
+  attachReport,
+  shipToLines
 }: any) => (
   <div className="p-12 bg-white text-black min-h-[11in] w-full max-w-[8.5in] mx-auto shadow-sm">
     <header className="flex justify-between items-start pb-6 border-b-2 border-gray-900">
@@ -108,6 +109,15 @@ const QuoteDocument = ({
         <p className="text-sm"><span className="font-bold text-gray-500 uppercase text-xs mr-2">Valid Until:</span> {format(expirationDate, 'PP')}</p>
       </div>
     </section>
+    {shipToLines && shipToLines.length > 0 && (
+      <section className="mt-6">
+        <h2 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Ship To</h2>
+        <p className="font-bold">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
+        <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+          {shipToLines.join('\n')}
+        </p>
+      </section>
+    )}
     <section className="mt-12">
       <Table className="border-t border-b border-gray-900">
         <TableHeader>
@@ -214,6 +224,7 @@ export function QuoteGeneratorView() {
   const [notes, setNotes] = useState('Thank you for your interest in our services.');
   const [lineItemDetails, setLineItemDetails] = useState('');
   const [attachReport, setAttachReport] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState<InvoiceShippingAddress>({ mode: 'client' });
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -253,6 +264,7 @@ export function QuoteGeneratorView() {
       setStatus(quoteData.status);
       setSelectedContactId(quoteData.contactId);
       setSelectedSupplierId(quoteData.supplierId || null);
+      setShippingAddress(quoteData.shippingAddress || { mode: 'client' });
 
       const mappedLineItems = lineItemsData.map((item: any) => ({
         id: item.id || `item_${Math.random()}`,
@@ -494,6 +506,7 @@ export function QuoteGeneratorView() {
       status,
       notes,
       lineItemDetails,
+      shippingAddress,
       taxType: 'gst_hst',
       userId: user.uid,
     };
@@ -608,6 +621,7 @@ export function QuoteGeneratorView() {
     setLineItemDetails('');
     setSelectedContactId(null);
     setSelectedSupplierId(null);
+    setShippingAddress({ mode: 'client' });
     setLineItems([]);
     setAttachReport(false);
     if (!silent) toast({ title: 'Form Cleared' });
@@ -630,6 +644,26 @@ export function QuoteGeneratorView() {
   const selectedContact = contacts.find(c => c.id === selectedContactId);
   const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
 
+  const shipToLines = (() => {
+    const mode = shippingAddress?.mode || 'client';
+    if (mode === 'custom') {
+      return [
+        shippingAddress.street,
+        [shippingAddress.city, shippingAddress.provinceState, shippingAddress.postalCode].filter(Boolean).join(', '),
+        shippingAddress.country,
+      ].filter(Boolean);
+    }
+    if (mode === 'home' && selectedContact?.homeAddress) {
+      const h = selectedContact.homeAddress;
+      return [
+        h.street,
+        [h.city, h.provinceState, h.postalCode].filter(Boolean).join(', '),
+        h.country,
+      ].filter(Boolean);
+    }
+    return [];
+  })();
+
   const documentProps = {
     quoteNumber,
     businessNumber,
@@ -644,6 +678,7 @@ export function QuoteGeneratorView() {
     tax,
     total,
     attachReport,
+    shipToLines,
   };
 
   return (
@@ -791,6 +826,51 @@ export function QuoteGeneratorView() {
                       <UserPlus className="h-4 w-4" />
                     </Button>
                   </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="shippingAddress">Shipping / Service Address <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Select value={shippingAddress.mode} onValueChange={(v) => setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] }))}>
+                    <SelectTrigger id="shippingAddress" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Same as client address</SelectItem>
+                      {selectedContact?.homeAddress && (
+                        <SelectItem value="home">Client's home address</SelectItem>
+                      )}
+                      <SelectItem value="custom">Enter a different address...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {shippingAddress.mode === 'custom' && (
+                    <div className="space-y-3 rounded-md border p-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="shipStreet">Street</Label>
+                        <Input id="shipStreet" value={shippingAddress.street || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="shipCity">City</Label>
+                          <Input id="shipCity" value={shippingAddress.city || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="shipProvince">Province / State</Label>
+                          <Input id="shipProvince" value={shippingAddress.provinceState || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, provinceState: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="shipPostal">Postal Code</Label>
+                          <Input id="shipPostal" value={shippingAddress.postalCode || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="shipCountry">Country</Label>
+                          <Input id="shipCountry" value={shippingAddress.country || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, country: e.target.value }))} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

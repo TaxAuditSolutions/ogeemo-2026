@@ -236,6 +236,7 @@ export interface Quote {
   status: QuoteStatus;
   notes: string;
   lineItemDetails?: string;
+  shippingAddress?: InvoiceShippingAddress;
   workOrderNumber?: string;
   taxType: string;
   userId: string;
@@ -463,6 +464,7 @@ const docToQuote = (doc: any): Quote => {
     userId: data.userId,
     createdAt: toClientDate(data.createdAt),
     updatedAt: toClientDate(data.updatedAt),
+    shippingAddress: data.shippingAddress || null,
   } as Quote;
 };
 

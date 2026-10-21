@@ -591,7 +591,7 @@ export function QuoteGeneratorView() {
   const loadTemplateMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" title="Start a new quote from a saved template">Select a Template</Button>
+        <Button variant="outline" size="sm" title="Start a new quote from a saved template">Select from Template</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {quoteTemplates.length > 0 ? quoteTemplates.map((t, idx) => (
@@ -602,6 +602,9 @@ export function QuoteGeneratorView() {
           <DropdownMenuItem disabled>No templates saved yet</DropdownMenuItem>
         )}
         <Separator className="my-1" />
+        <DropdownMenuItem onClick={handleSaveTemplate}>
+          <Save className="mr-2 h-4 w-4" /> Save as Template
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/accounting/quotes/templates">Manage Templates</Link>
         </DropdownMenuItem>
@@ -683,17 +686,25 @@ export function QuoteGeneratorView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
+      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen max-w-6xl mx-auto">
         <InvoicePageHeader pageTitle="Create Quote" hubPath="/accounting/quotes" hubLabel="Quotes" />
-        <header className="relative text-center print:hidden">
-          <h1 className="text-3xl font-bold font-headline text-primary">Create a Quote</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Build a professional quote that can be converted into an invoice once accepted.
-          </p>
-          <div className="absolute top-0 right-0 flex items-center gap-2">
-            {loadTemplateMenu}
-            <Button asChild variant="outline" size="sm">
-              <Link href="/accounting/quotes">Quote Manager</Link>
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-1">
+              <h1 className="text-3xl font-bold font-headline text-primary">Create a Quote</h1>
+            </div>
+            <p className="text-muted-foreground max-w-2xl">
+              Build a professional quote that can be converted into an invoice once accepted.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
+            <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
+              <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
+            </Button>
+            <Button onClick={handleSaveQuote} disabled={isSaving} className="font-bold">
+              {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save Quote
             </Button>
             <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
               <a className="cursor-pointer">
@@ -727,19 +738,6 @@ export function QuoteGeneratorView() {
               ) : (
                 <CardTitle>Quote Header</CardTitle>
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleSaveQuote} disabled={isSaving} className="font-bold">
-                {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Quote
-              </Button>
-              <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
-              <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
-                <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
-              </Button>
-              <Button variant="outline" onClick={handleSaveTemplate}>
-                <Save className="mr-2 h-4 w-4" /> Save as a Template
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-6">

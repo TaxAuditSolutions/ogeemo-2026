@@ -16,6 +16,16 @@ export interface Organization {
     updatedAt?: any;
     ownerUid: string;
     isMasterTenant: boolean;
+    businessAddress?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+    };
+    businessPhone?: string;
+    email?: string;
+    businessNumber?: string;
 }
 
 async function requireMasterTenantSuperAdmin() {

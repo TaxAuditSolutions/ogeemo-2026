@@ -13,6 +13,7 @@ import { ProfileCard } from "@/components/settings/profile-card";
 import { PreferencesCard } from "@/components/settings/preferences-card";
 import { VisualIdentityCard } from "@/components/settings/visual-identity-card";
 import { DocumentBrandingCard } from "@/components/settings/document-branding-card";
+import { CompanyInformationCard } from "@/components/settings/company-information-card";
 import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/core/user-profile-service';
@@ -286,6 +287,7 @@ export default function SettingsPage() {
           <div className="space-y-6">
             <VisualIdentityCard />
             <DocumentBrandingCard />
+            <CompanyInformationCard />
             <PlanningRitualsCard />
             <SiteImagesSettingsCard />
           </div>

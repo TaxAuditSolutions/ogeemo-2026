@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, Send, Building2 } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, Send } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -39,7 +39,7 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { AddLineItemDialog } from './add-line-item-dialog';
@@ -210,7 +210,7 @@ export function InvoiceGeneratorView() {
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
-    const [lineItems, setLineItems] = useState<LocalLineItem[]>([]);
+    const [lineItems, setLineItems] = useState<LocalLineItem[]>([{ id: `item_${Date.now()}`, description: '', quantity: 1, price: 0, taxType: 'None', taxRate: 0 }]);
     const [invoiceTemplates, setInvoiceTemplates] = useState<any[]>([]);
 
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
@@ -514,7 +514,7 @@ export function InvoiceGeneratorView() {
             userId: user.uid,
         };
 
-        const itemsToSave = lineItems.map(({ id, ...rest }) => {
+        const itemsToSave = lineItems.filter((item) => item.description.trim() !== '').map(({ id, ...rest }) => {
             const payload: any = { ...rest, userId: user.uid };
             Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
             return payload;
@@ -628,7 +628,7 @@ export function InvoiceGeneratorView() {
         setSelectedContactId(null);
         setSelectedSupplierId(null);
         setShippingAddress({ mode: 'client' });
-        setLineItems([]);
+        setLineItems([{ id: `item_${Date.now()}`, description: '', quantity: 1, price: 0, taxType: 'None', taxRate: 0 }]);
         setAttachReport(false);
         if (!silent) toast({ title: "Form Cleared" });
     };
@@ -700,7 +700,7 @@ export function InvoiceGeneratorView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen">
+      <div className="p-4 sm:p-6 space-y-6 text-black bg-background min-h-screen max-w-6xl mx-auto">
         <InvoicePageHeader pageTitle="Create Invoice" />
         <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -715,9 +715,6 @@ export function InvoiceGeneratorView() {
                 </p>
             </div>
             <div className="flex items-center gap-2">
-                <Button asChild variant="outline" size="sm">
-                    <Link href="/accounting/accounts-receivable">Accounts Receivable</Link>
-                </Button>
                 <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
                     <Printer className="mr-2 h-4 w-4" /> Print & Export
@@ -751,9 +748,6 @@ export function InvoiceGeneratorView() {
                                 </span>
                             </div>
                         </div>
-                        <Button asChild variant="outline" size="sm">
-                            <Link href="/settings"><Building2 className="mr-2 h-4 w-4" /> Change Business</Link>
-                        </Button>
                     </CardHeader>
                 </Card>
 
@@ -1132,31 +1126,9 @@ export function InvoiceGeneratorView() {
                                     </Table>
                                 </div>
 
-                            <div className="pt-2 border-t">
-                                <Label htmlFor="lineItemDetails">Line Item Details</Label>
-                                <Textarea id="lineItemDetails" value={lineItemDetails} onChange={e => setLineItemDetails(e.target.value)} rows={2} placeholder="Add extra details about the line items..." className="mt-2" />
-                            </div>
-
-                            <div className="p-4 border-2 border-dashed rounded-xl bg-primary/5 space-y-4">
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                    <ClipboardList className="h-4 w-4" /> Work Coverage Summary
-                                </h4>
-                                <div className="flex items-center gap-6">
-                                    <Label className="font-semibold">Attach Work Activity Evidence Report?</Label>
-                                    <RadioGroup value={attachReport ? 'yes' : 'no'} onValueChange={v => setAttachReport(v === 'yes')} className="flex gap-4">
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="yes" id="rep-yes" />
-                                            <Label htmlFor="rep-yes">Yes</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="no" id="rep-no" />
-                                            <Label htmlFor="rep-no">No</Label>
-                                        </div>
-                                    </RadioGroup>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground italic">
-                                    This will include a detailed summary of the work covered by this invoice, based on billable sessions and tasks linked to this client for the invoice period.
-                                </p>
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="attachReport" checked={attachReport} onCheckedChange={(checked) => setAttachReport(checked === true)} />
+                                <Label htmlFor="attachReport" className="text-sm font-normal cursor-pointer">Attach Work Activity Evidence Report</Label>
                             </div>
 
                     </div>

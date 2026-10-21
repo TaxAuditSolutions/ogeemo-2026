@@ -79,7 +79,7 @@ function InvoicingReportContent() {
         }
         setIsLoading(true);
         Promise.all([
-            getInvoices(user.uid),
+            getInvoices(user.uid, { includeDrafts: true }),
             getContacts(user.uid),
         ]).then(([invoiceData, contactData]) => {
             setInvoices(invoiceData);

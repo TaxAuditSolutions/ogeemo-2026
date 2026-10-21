@@ -267,7 +267,7 @@ export interface Invoice {
   amountPaid: number;
   dueDate: Date;
   invoiceDate: Date;
-  status: 'outstanding' | 'paid' | 'partially_paid' | 'overdue';
+  status: 'draft' | 'outstanding' | 'paid' | 'partially_paid' | 'overdue';
   notes: string;
   lineItemDetails?: string;
   shippingAddress?: InvoiceShippingAddress;
@@ -478,13 +478,18 @@ const docToServiceItem = (doc: any): ServiceItem => {
   } as ServiceItem;
 };
 
-export async function getInvoices(_userId: string): Promise<Invoice[]> {
+export async function getInvoices(
+  _userId: string,
+  opts: { includeDrafts?: boolean } = {}
+): Promise<Invoice[]> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
   const q = query(collection(db, INVOICES_COLLECTION), where('orgId', '==', orgId));
   try {
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToInvoice).sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+    const invoices = snapshot.docs.map(docToInvoice);
+    const visible = invoices.filter(function (inv) { return opts.includeDrafts || inv.status !== 'draft'; });
+    return visible.sort(function (a, b) { return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0); });
   } catch (error: any) {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({

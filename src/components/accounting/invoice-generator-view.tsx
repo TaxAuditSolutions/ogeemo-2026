@@ -201,6 +201,7 @@ export function InvoiceGeneratorView() {
     const [orgDetails, setOrgDetails] = useState<Awaited<ReturnType<typeof getOrganization>> | null>(null);
 
     const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
+    const [editingStatus, setEditingStatus] = useState<Invoice['status'] | null>(null);
     const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
     const [businessNumber, setBusinessNumber] = useState('');
     const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
@@ -251,6 +252,7 @@ export function InvoiceGeneratorView() {
             setSelectedContactId(invoiceData.contactId);
             setSelectedSupplierId(invoiceData.supplierId || null);
             setShippingAddress(invoiceData.shippingAddress || { mode: 'client' });
+            setEditingStatus(invoiceData.status);
 
             const mappedLineItems = lineItemsData.map((item: any) => ({
                 id: item.id || `item_${Math.random()}`,
@@ -495,7 +497,7 @@ export function InvoiceGeneratorView() {
         return { subtotal: sub, tax: taxAmount, total: sub + taxAmount };
     }, [lineItems]);
 
-    const handleSaveInvoice = async () => {
+    const handleSaveInvoice = async (intent: 'draft' | 'issue' = 'issue') => {
         if (!user) {
             toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to save.' });
             return;
@@ -509,6 +511,14 @@ export function InvoiceGeneratorView() {
 
         const selectedContact = contacts.find(c => c.id === selectedContactId);
         const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
+        let status: Invoice['status'];
+        if (intent === 'draft') {
+            status = (!editingStatus || editingStatus === 'draft') ? 'draft' : editingStatus;
+        } else if (editingStatus === 'paid' || editingStatus === 'partially_paid') {
+            status = editingStatus;
+        } else {
+            status = 'outstanding';
+        }
 
         const invoiceData = {
             invoiceNumber,
@@ -520,7 +530,7 @@ export function InvoiceGeneratorView() {
             amountPaid: invoiceToEditId ? (await getInvoiceById(invoiceToEditId))?.amountPaid || 0 : 0,
             dueDate: dueDate,
             invoiceDate: invoiceDate,
-            status: 'outstanding' as const,
+            status,
             notes,
             lineItemDetails,
             shippingAddress,
@@ -553,13 +563,24 @@ export function InvoiceGeneratorView() {
 
             if (invoiceToEditId) {
                 await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
-                toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
+                if (intent === 'draft') {
+                    toast({ title: 'Draft saved', description: `Draft ${invoiceNumber} has been updated.` });
+                } else {
+                    toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
+                }
             } else {
-                await addInvoiceWithLineItems(invoiceData, itemsToSave);
-                toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
+                const saved = await addInvoiceWithLineItems(invoiceData, itemsToSave);
+                setInvoiceToEditId(saved.id);
+                if (intent === 'draft') {
+                    toast({ title: 'Draft saved', description: `Draft ${invoiceNumber} saved - open it from Invoicing Report.` });
+                } else {
+                    toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
+                }
             }
             localStorage.removeItem(EDIT_INVOICE_ID_KEY);
-            window.location.href = '/accounting/accounts-receivable';
+            if (intent === 'issue') {
+                window.location.href = '/accounting/accounts-receivable';
+            }
 
         } catch (error: any) {
             console.error("Save Invoice Error:", error);
@@ -644,6 +665,7 @@ export function InvoiceGeneratorView() {
         setShippingAddress({ mode: 'client' });
         setLineItems([{ id: `item_${Date.now()}`, description: '', quantity: 1, price: 0, taxType: 'None', taxRate: 0 }]);
         setAttachReport(false);
+        setEditingStatus(null);
         if (!silent) toast({ title: "Form Cleared" });
     };
 
@@ -732,11 +754,14 @@ export function InvoiceGeneratorView() {
                 </p>
             </div>
             <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => handleSaveInvoice('draft')} disabled={isSaving}>
+                    <Save className="mr-2 h-4 w-4" /> Save Draft
+                </Button>
                 <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
                     <Printer className="mr-2 h-4 w-4" /> Print & Export
                 </Button>
-                <Button onClick={handleSaveInvoice} disabled={isSaving} className="font-bold">
+                <Button onClick={() => handleSaveInvoice('issue')} disabled={isSaving} className="font-bold">
                     {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                     Issue Invoice
                 </Button>

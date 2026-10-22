@@ -556,17 +556,17 @@ export function FilesView() {
 
   return (
     <>
-    <div className="p-4 sm:p-6 space-y-4">
-        <header className="text-center relative">
-            <div className="flex items-center justify-center gap-2">
+    <div className="p-4 sm:p-6 space-y-4 max-w-6xl mx-auto">
+        <header className="print:hidden">
+            <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold font-headline text-primary">Document Manager</h1>
-                 <Button asChild variant="ghost" size="icon">
+                <Button asChild variant="ghost" size="icon">
                     <Link href="/learn/guides/document-manager">
                         <Info className="h-5 w-5 text-muted-foreground" />
                     </Link>
-                 </Button>
+                </Button>
             </div>
-            <p className="text-muted-foreground max-w-2xl mx-auto">An integration hub to manage Google Drive Files &amp; Folders</p>
+            <p className="text-muted-foreground max-w-2xl">An integration hub to manage Google Drive Files &amp; Folders</p>
         </header>
 
         <Card>

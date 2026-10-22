@@ -366,7 +366,7 @@ function WorkerTimeLogReportContent() {
 
     return (
         <>
-            <div className="p-4 sm:p-6 space-y-6 text-black">
+            <div className="p-4 sm:p-6 space-y-6 text-black max-w-6xl mx-auto">
                 <ReportsPageHeader pageTitle="Time Log Report" hubPath="/hr-manager" hubLabel="HR Hub" />
                 <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b pb-4">
                     <div className="text-left flex-1">

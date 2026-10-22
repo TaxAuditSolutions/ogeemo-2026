@@ -260,8 +260,8 @@ export function BackupManagerView() {
     );
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center">
-            <header className="text-center">
+        <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center max-w-6xl mx-auto">
+            <header className="print:hidden">
                 <h1 className="text-3xl font-bold font-headline text-primary uppercase tracking-tight">Backup &amp; Portability</h1>
                 <p className="text-muted-foreground">Back up your data, restore from a backup, or export it for use anywhere.</p>
             </header>
@@ -278,8 +278,8 @@ export function BackupManagerView() {
 
                 {/* 1. BACK UP */}
                 <Card className="shadow-lg border-primary/10">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="bg-primary/5 border-b">
+                        <CardTitle className="text-base flex items-center gap-2">
                             <HardDrive className="h-5 w-5 text-primary" /> Backup
                         </CardTitle>
                         <CardDescription>
@@ -390,8 +390,8 @@ export function BackupManagerView() {
 
                 {/* 2. RESTORE */}
                 <Card className="shadow-lg border-destructive/20">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="bg-primary/5 border-b">
+                        <CardTitle className="text-base flex items-center gap-2">
                             <RotateCcw className="h-5 w-5 text-destructive" /> Restore
                         </CardTitle>
                         <CardDescription>
@@ -456,8 +456,8 @@ export function BackupManagerView() {
 
                 {/* 3. EXPORT */}
                 <Card className="shadow-lg border-primary/10">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="bg-primary/5 border-b">
+                        <CardTitle className="text-base flex items-center gap-2">
                             <FileDown className="h-5 w-5 text-primary" /> Export
                         </CardTitle>
                         <CardDescription>

@@ -414,29 +414,29 @@ export function CalendarView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col h-full bg-background">
-        <header className="relative text-center mb-6 print:hidden">
-          <div className="flex items-center justify-center gap-1">
-            <h1 className="text-3xl font-bold font-headline text-primary">
-              Calendar
-            </h1>
-            <HelpTip
-              title="Calendar"
-              learnHref="/learn/guides/calendar"
-              learnLabel="Learn about the calendar"
-            >
-              Your appointments, reminders, and planning routines in one place.
-            </HelpTip>
+      <div className="p-4 sm:p-6 flex flex-col h-full bg-background max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-1">
+              <h1 className="text-3xl font-bold font-headline text-primary">
+                Calendar
+              </h1>
+              <HelpTip
+                title="Calendar"
+                learnHref="/learn/guides/calendar"
+                learnLabel="Learn about the calendar"
+              >
+                Your appointments, reminders, and planning routines in one place.
+              </HelpTip>
+            </div>
+            <p className="text-muted-foreground">
+              Your Calendar for your actions and connection to the apps in Ogeemo
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Your Calendar for your actions and connection to the apps in Ogeemo
-          </p>
-          <div className="absolute top-0 right-0">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </Button>
         </header>
 
         <div className="flex flex-col space-y-4 pb-4">

@@ -205,39 +205,39 @@ export function IdeaListView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-        <header className="relative text-center mb-6 w-full max-w-2xl">
-          <h1 className="text-3xl font-bold font-headline text-primary">Idea Board</h1>
-          <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
-          <div className="mt-4 flex justify-center gap-2">
-              <Button asChild>
-                  <Link href="/idea-board/organize">
-                      Organize Ideas
-                  </Link>
-              </Button>
-              <Button asChild variant="outline">
-                  <Link href="/to-do">
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to To-Do List
-                  </Link>
-              </Button>
-              <Button asChild variant="outline">
-                  <Link href="/projects/all">
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
-                  </Link>
-              </Button>
+      <div className="p-4 sm:p-6 flex flex-col h-full items-center max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4 mb-6 w-full max-w-2xl">
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">Idea Board</h1>
+            <p className="text-muted-foreground">A simple place to quickly capture your ideas.</p>
           </div>
-           <div className="absolute top-0 right-0">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href="/action-manager" aria-label="Close Idea Board">
-                        <X className="h-5 w-5" />
-                    </Link>
-                </Button>
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild>
+              <Link href="/idea-board/organize">
+                Organize Ideas
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/to-do">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to To-Do List
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/projects/all">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/action-manager" aria-label="Close Idea Board">
+                <X className="h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
         </header>
 
         <Card className="w-full max-w-2xl">
-            <CardHeader>
-                <CardTitle>My Ideas</CardTitle>
+            <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-base">My Ideas</CardTitle>
                 {!showNewIdeaCard && (
                     <div className="pt-2">
                         <Button onClick={() => setShowNewIdeaCard(true)}>

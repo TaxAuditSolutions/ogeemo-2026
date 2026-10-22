@@ -45,9 +45,9 @@ export default function QuoteTemplatesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       <InvoicePageHeader pageTitle="Quote Templates" />
-      <header className="text-center">
+      <header className="print:hidden">
         <h1 className="text-2xl font-bold font-headline text-primary">Quote Templates</h1>
         <p className="text-muted-foreground">
           Create and manage reusable templates for your quotes.

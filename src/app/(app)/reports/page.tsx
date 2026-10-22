@@ -73,20 +73,20 @@ const Badge = ({ children, variant, className }: any) => (
 
 export default function ReportsHubPage() {
     return (
-        <div className="p-4 sm:p-6 space-y-8 flex flex-col items-center bg-muted/10 min-h-full">
-            <header className="text-center relative w-full max-w-5xl">
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <ClipboardList className="h-10 w-10 text-primary" />
+        <div className="p-4 sm:p-6 space-y-8 flex flex-col items-center bg-muted/10 min-h-full max-w-6xl mx-auto">
+            <header className="print:hidden flex flex-wrap items-start justify-between gap-4 w-full">
+                <div>
+                    <div className="bg-primary/10 p-4 rounded-full w-fit mb-4">
+                        <ClipboardList className="h-10 w-10 text-primary" />
+                    </div>
+                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Reports Hub</h1>
+                    <p className="text-xl text-muted-foreground max-w-2xl leading-relaxed">
+                        Unified business intelligence. Transform your operational signals into defensible professional evidence.
+                    </p>
                 </div>
-                <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Reports Hub</h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                    Unified business intelligence. Transform your operational signals into defensible professional evidence.
-                </p>
-                <div className="absolute top-0 right-0">
-                    <Button asChild variant="ghost" size="icon">
-                        <Link href="/action-manager"><X className="h-5 w-5" /></Link>
-                    </Button>
-                </div>
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/action-manager"><X className="h-5 w-5" /></Link>
+                </Button>
             </header>
 
             <div className="w-full max-w-6xl space-y-12 pb-20">

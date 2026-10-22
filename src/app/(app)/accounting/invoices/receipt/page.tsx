@@ -102,7 +102,7 @@ export default function ReceiptPage() {
     const dueDate = parseISO(invoice.dueDate);
 
     return (
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 max-w-6xl mx-auto">
             <div className="flex justify-between items-center max-w-4xl mx-auto">
                  <Button variant="outline" onClick={() => router.push('/accounting/accounts-receivable')}>
                     <ArrowLeft className="mr-2 h-4 w-4" />

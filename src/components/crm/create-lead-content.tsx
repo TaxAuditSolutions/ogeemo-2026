@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, LoaderCircle, X, Plus, ChevronsUpDown, Check, FolderPlus } from 'lucide-react';
+import { LoaderCircle, X, Plus, ChevronsUpDown, Check, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import ContactFormDialog from '@/components/contacts/contact-form-dialog';
@@ -206,32 +206,22 @@ export default function CreateLeadContent() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col items-center h-full text-black">
-        <header className="w-full max-w-2xl text-center relative mb-6">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-              <Button asChild variant="outline">
-                  <Link href="/crm/plan">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to CRM
-                  </Link>
-              </Button>
-          </div>
+      <div className="p-4 sm:p-6 flex flex-col items-center h-full text-black max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-center justify-between gap-4 w-full max-w-2xl mb-6">
           <h1 className="text-3xl font-bold font-headline text-primary">
             {isEditing ? 'Manage Prospect' : 'New CRM Prospect'}
           </h1>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-              <Button asChild variant="ghost" size="icon">
-                  <Link href="/crm/plan">
-                      <X className="h-5 w-5" />
-                      <span className="sr-only">Close</span>
-                  </Link>
-              </Button>
-          </div>
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/crm/plan">
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close</span>
+            </Link>
+          </Button>
         </header>
         <Card className="w-full max-w-2xl">
           <form onSubmit={handleSaveLead}>
-              <CardHeader>
-              <CardTitle>Prospect Information</CardTitle>
+              <CardHeader className="bg-primary/5 border-b">
+              <CardTitle className="text-base">Prospect Information</CardTitle>
               <CardDescription>
                   This record is managed as a Contact within your Prospects hierarchy.
               </CardDescription>

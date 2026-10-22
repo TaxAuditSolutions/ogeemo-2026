@@ -90,8 +90,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
   if (isLoading || !user) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>My Profile</CardTitle>
+        <CardHeader className="bg-primary/5 border-b">
+          <CardTitle className="text-base">My Profile</CardTitle>
           <CardDescription>Your user profile information.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,9 +109,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ form, isLoading, profi
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b">
         <div className="space-y-1">
-          <CardTitle>My Profile</CardTitle>
+          <CardTitle className="text-base">My Profile</CardTitle>
           <CardDescription>Update your secure operational details.</CardDescription>
         </div>
         <Badge variant="outline" className="flex items-center gap-1.5 py-1 px-3 bg-muted/50">

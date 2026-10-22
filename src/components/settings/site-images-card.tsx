@@ -9,8 +9,8 @@ import { ArrowRight, Image } from 'lucide-react';
 export function SiteImagesSettingsCard() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Image Manager</CardTitle>
+      <CardHeader className="bg-primary/5 border-b">
+        <CardTitle className="text-base">Image Manager</CardTitle>
         <CardDescription>
           Upload, manage, and replace the images used across your marketing
           website.

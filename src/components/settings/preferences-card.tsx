@@ -30,8 +30,8 @@ export function PreferencesCard() {
   if (isLoading) {
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Preferences</CardTitle>
+            <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-base">Preferences</CardTitle>
                 <CardDescription>Manage your application preferences.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -43,8 +43,8 @@ export function PreferencesCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Preferences & Defaults</CardTitle>
+      <CardHeader className="bg-primary/5 border-b">
+        <CardTitle className="text-base">Preferences & Defaults</CardTitle>
         <CardDescription>Customize how Ogeemo works for you.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

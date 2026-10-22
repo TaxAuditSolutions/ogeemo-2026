@@ -150,14 +150,14 @@ export default function SettingsPage() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-6">
-        <header className="flex justify-between items-center w-full max-w-4xl mx-auto mb-6 relative">
-          <div className="text-center flex-1">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
+        <header className="print:hidden flex justify-between items-center w-full max-w-4xl mx-auto mb-6">
+          <div className="flex-1">
             <h1 className="text-2xl font-bold font-headline text-primary">Settings</h1>
             {/* Echoes the welcome door: Make It Your Own lands here. */}
             <p className="text-muted-foreground">Make it your own.</p>
           </div>
-          <div className="flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2">
+          <div className="flex items-center gap-2">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               {isSubmitting ? 'Saving...' : 'Save Changes'}

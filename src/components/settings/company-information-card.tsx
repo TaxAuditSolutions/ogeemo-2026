@@ -94,10 +94,10 @@ export function CompanyInformationCard() {
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="bg-primary/5 border-b">
                 <div className="flex items-center gap-3">
                     <Building2 className="h-6 w-6 text-primary" />
-                    <CardTitle>Company Information</CardTitle>
+                    <CardTitle className="text-base">Company Information</CardTitle>
                 </div>
                 <CardDescription>
                     The address, phone, email and business number (HST #) shown as the issuing business on your

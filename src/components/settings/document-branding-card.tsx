@@ -85,10 +85,10 @@ export function DocumentBrandingCard() {
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="bg-primary/5 border-b">
                 <div className="flex items-center gap-3">
                     <ImageUp className="h-6 w-6 text-primary" />
-                    <CardTitle>Document Logo</CardTitle>
+                    <CardTitle className="text-base">Document Logo</CardTitle>
                 </div>
                 <CardDescription>
                     Brand your quotes, invoices and receipts. Your logo appears in the header of every printed document

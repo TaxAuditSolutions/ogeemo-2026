@@ -9,8 +9,8 @@ import { ArrowRight } from "lucide-react";
 export function PlanningRitualsCard() {
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Planning Rituals</CardTitle>
+            <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-base">Planning Rituals</CardTitle>
                 <CardDescription>Configure your automated daily and weekly planning sessions to build a routine of focus and clarity.</CardDescription>
             </CardHeader>
             <CardFooter>

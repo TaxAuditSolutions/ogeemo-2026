@@ -110,29 +110,29 @@ export default function InventoryTrackPage() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 h-full flex flex-col items-center">
-        <header className="w-full max-w-6xl text-center relative mb-6">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-              <Button asChild variant="outline">
-                  <Link href="/inventory-manager">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Inventory Hub
-                  </Link>
+      <div className="p-4 sm:p-6 h-full flex flex-col items-center max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4 w-full max-w-6xl mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold font-headline text-primary">
+                Inventory Central
+              </h1>
+              <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
+                  <Info className="h-5 w-5 text-muted-foreground" />
+                  <span className="sr-only">About Inventory Central</span>
               </Button>
+            </div>
+            <p className="text-muted-foreground">
+              Manage your items and view their complete transaction history.
+            </p>
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-3xl font-bold font-headline text-primary">
-              Inventory Central
-            </h1>
-            <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
-                <Info className="h-5 w-5 text-muted-foreground" />
-                <span className="sr-only">About Inventory Central</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild>
+                <Link href="/inventory-manager">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Inventory Hub
+                </Link>
             </Button>
-          </div>
-          <p className="text-muted-foreground">
-            Manage your items and view their complete transaction history.
-          </p>
-          <div className="absolute top-0 right-0 flex items-center gap-2">
             <Button asChild>
                 <Link href="/accounting/ledgers">
                     <Landmark className="mr-2 h-4 w-4" />
@@ -159,8 +159,8 @@ export default function InventoryTrackPage() {
                     onItemSelected={handleEditItem}
                 />
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Add New Item</CardTitle>
+                    <CardHeader className="bg-primary/5 border-b">
+                        <CardTitle className="text-base">Add New Item</CardTitle>
                         <CardDescription>Quickly add a new item name to your inventory list.</CardDescription>
                     </CardHeader>
                         <CardContent>

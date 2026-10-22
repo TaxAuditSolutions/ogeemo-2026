@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList, Inbox, Send, FileText, XCircle, Receipt, Plus, TrendingUp, Wrench, CheckCheck, DollarSign, LayoutGrid, Info } from 'lucide-react';
+import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList, Inbox, Send, FileText, XCircle, Receipt, TrendingUp, Wrench, CheckCheck, DollarSign, LayoutGrid, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -75,11 +75,6 @@ export function QuotesPageView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleCreateNewQuote = () => {
-    localStorage.removeItem('editQuoteId');
-    router.push('/accounting/quotes/create');
-  };
 
   const handleEditQuote = (quoteId: string) => {
     localStorage.setItem('editQuoteId', quoteId);
@@ -261,27 +256,20 @@ export function QuotesPageView() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting" hubLabel="Quotes" />
       
-      {/* Header with Action Buttons */}
-      <header className="flex flex-col items-center gap-4 text-center">
-        <div className="w-full">
-          <h1 className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
-            Quote Manager
-            <Link href="/learn/guides/quotes" className="inline-flex">
-              <Info className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-            </Link>
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Track proposals and convert accepted quotes into invoices with one click.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleCreateNewQuote} className="font-bold">
-            <Plus className="mr-2 h-4 w-4" /> Create Quote
-          </Button>
-        </div>
+      {/* Header */}
+      <header className="print:hidden">
+        <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-2">
+          Quote Manager
+          <Link href="/learn/guides/quotes" className="inline-flex">
+            <Info className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+          </Link>
+        </h1>
+        <p className="text-muted-foreground max-w-2xl">
+          Track proposals and convert accepted quotes into invoices with one click.
+        </p>
       </header>
 
       {/* Pipeline Value Summary */}

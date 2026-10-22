@@ -262,19 +262,19 @@ function ProjectCreateForm() {
 
   return (
     <>
-      <div className="p-6 h-full flex flex-col items-center">
-        <header className="relative text-center mb-4 w-full max-w-lg">
-          <h1 className="text-3xl font-bold font-headline text-primary">
-            {creationStep === 'choice' ? 'Create Your Project' : 'Project Details'}
-          </h1>
-          <div className="mt-4">
-            <ProjectManagementHeader />
-          </div>
-          <div className="absolute top-0 right-0">
+      <div className="p-6 h-full flex flex-col items-center max-w-6xl mx-auto">
+        <header className="print:hidden w-full max-w-lg mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-bold font-headline text-primary">
+              {creationStep === 'choice' ? 'Create Your Project' : 'Project Details'}
+            </h1>
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <X className="h-5 w-5" />
               <span className="sr-only">Close</span>
             </Button>
+          </div>
+          <div className="mt-4">
+            <ProjectManagementHeader />
           </div>
         </header>
 

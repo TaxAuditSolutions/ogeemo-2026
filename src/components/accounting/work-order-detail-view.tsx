@@ -216,7 +216,7 @@ export function WorkOrderDetailView() {
     }, 0);
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
             <AccountingPageHeader pageTitle={`Work Order ${workOrder.workOrderNumber}`} />
             <div className="flex items-center justify-between">
                 <Button variant="outline" size="sm" onClick={() => router.push('/accounting/work-orders')}>
@@ -325,8 +325,8 @@ export function WorkOrderDetailView() {
 
                 <div className="space-y-4">
                     <Card className="shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Actions</CardTitle>
+                        <CardHeader className="bg-primary/5 border-b">
+                            <CardTitle className="text-base">Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {workOrder.status === 'pending' && (
@@ -449,8 +449,8 @@ export function WorkOrderDetailView() {
 
                     {workOrder.quoteId && (
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm">Source Quote</CardTitle>
+                            <CardHeader className="bg-primary/5 border-b">
+                                <CardTitle className="text-base">Source Quote</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Button

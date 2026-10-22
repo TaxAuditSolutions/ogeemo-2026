@@ -291,17 +291,19 @@ export function ToDoListView() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 flex flex-col h-full items-center">
-        <header className="text-center mb-6 relative w-full max-w-7xl">
-          <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
-          <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
-          <div className="mt-4">
-            <ProjectManagementHeader />
-          </div>
-          <div className="absolute top-0 right-0">
+      <div className="p-4 sm:p-6 flex flex-col h-full items-center max-w-6xl mx-auto">
+        <header className="print:hidden w-full max-w-7xl mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold font-headline text-primary">To-Do List</h1>
+              <p className="text-muted-foreground">Your central place for all tasks. Drag and drop to change status.</p>
+            </div>
             <Button asChild variant="ghost" size="icon">
               <Link href="/welcome"><X className="h-5 w-5" /></Link>
             </Button>
+          </div>
+          <div className="mt-4">
+            <ProjectManagementHeader />
           </div>
         </header>
 

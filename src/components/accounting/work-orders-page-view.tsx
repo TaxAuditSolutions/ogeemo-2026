@@ -95,11 +95,11 @@ export function WorkOrdersPageView() {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
             <AccountingPageHeader pageTitle="Work Orders" />
-            <header className="text-center">
+            <header className="print:hidden">
                 <h1 className="text-3xl font-bold font-headline text-primary">Work Orders</h1>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-muted-foreground max-w-2xl">
                     Track work from quote approval through completion to invoicing. The bridge between quotes and invoices.
                 </p>
             </header>
@@ -124,9 +124,9 @@ export function WorkOrdersPageView() {
             </div>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b">
                     <div>
-                        <CardTitle>All Work Orders</CardTitle>
+                        <CardTitle className="text-base">All Work Orders</CardTitle>
                         <CardDescription>Manage work orders from quote to invoice.</CardDescription>
                     </div>
                 </CardHeader>

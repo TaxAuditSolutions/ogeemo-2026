@@ -8,9 +8,9 @@ import { LoaderCircle } from 'lucide-react';
 
 export default function ImageManagerPage() {
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       <SettingsPageHeader pageTitle="Image Manager" />
-      <header className="text-center">
+      <header className="print:hidden">
         <h1 className="text-3xl font-bold font-headline text-primary">Image Manager</h1>
         <p className="text-muted-foreground">Manage your site-wide images for heroes, logos, and more.</p>
       </header>

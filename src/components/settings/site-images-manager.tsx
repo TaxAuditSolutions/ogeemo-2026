@@ -144,8 +144,8 @@ export function SiteImagesManager() {
     <>
     <div className="space-y-6">
         <Card>
-            <CardHeader>
-                <CardTitle>Add New Site Image</CardTitle>
+            <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-base">Add New Site Image</CardTitle>
                 <CardDescription>Upload a new image to your library.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -173,8 +173,8 @@ export function SiteImagesManager() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Current Image Library</CardTitle>
+          <CardHeader className="bg-primary/5 border-b">
+            <CardTitle className="text-base">Current Image Library</CardTitle>
             <CardDescription>These are the images available for your site.</CardDescription>
           </CardHeader>
           <CardContent>

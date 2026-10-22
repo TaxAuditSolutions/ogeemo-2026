@@ -515,11 +515,13 @@ export function ContactsView() {
 
   return (
     <>
-      <div className="relative flex flex-col h-full text-black">
-        <header className="text-center py-4 sm:py-6 px-4 sm:px-6 relative">
-          <h1 className="text-3xl font-bold font-headline text-primary">Contacts Hub</h1>
-          <p className="text-muted-foreground">Manage your relationships and folders</p>
-          <div className="absolute top-4 right-4"><Button variant="ghost" size="icon" onClick={() => router.back()}><X className="h-5 w-5" /></Button></div>
+      <div className="relative flex flex-col h-full text-black max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-center justify-between gap-4 py-4 sm:py-6 px-4 sm:px-6">
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-primary">Contacts Hub</h1>
+            <p className="text-muted-foreground">Manage your relationships and folders</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => router.back()}><X className="h-5 w-5" /></Button>
         </header>
         <div className="flex-1 min-h-0 pb-4 sm:pb-6 px-4 sm:px-6">
           <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">

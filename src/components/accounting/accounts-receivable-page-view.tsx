@@ -37,7 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, FileDigit, PlusCircle } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -159,11 +159,6 @@ export function AccountsReceivablePageView() {
         }
     };
 
-    const handleCreateNewInvoice = () => {
-        localStorage.removeItem('editInvoiceId');
-        router.push('/accounting/invoices/create');
-    };
-
     const handleOpenInvoice = (inv: Invoice) => {
         localStorage.setItem('editInvoiceId', inv.id);
         router.push('/accounting/invoices/create');
@@ -174,13 +169,13 @@ export function AccountsReceivablePageView() {
     }, [invoices]);
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
             <AccountingPageHeader pageTitle="Accounts Receivable" />
-            <header className="text-center">
+            <header className="print:hidden">
                 <h1 className="text-3xl font-bold font-headline text-primary">
                     Accounts Receivable
                 </h1>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
+                <p className="text-muted-foreground max-w-2xl">
                     Registry of all outstanding client invoices. Post a payment to move the record to the General Ledger.
                 </p>
             </header>
@@ -204,17 +199,14 @@ export function AccountsReceivablePageView() {
             </div>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b">
                     <div>
-                        <CardTitle>Outstanding Invoices</CardTitle>
+                        <CardTitle className="text-base">Outstanding Invoices</CardTitle>
                         <CardDescription>Click an invoice row to open and edit it, or "Post Payment" once the money arrives in your bank.</CardDescription>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Quick Log Receivable
-                        </Button>
-                        <Button onClick={handleCreateNewInvoice}>
-                            <FileDigit className="mr-2 h-4 w-4" /> Create Invoice
                         </Button>
                     </div>
                 </CardHeader>

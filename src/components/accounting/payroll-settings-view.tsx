@@ -83,17 +83,17 @@ export function PayrollSettingsView() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       <AccountingPageHeader pageTitle="Payroll Settings" />
-      <header className="text-center">
+      <header className="print:hidden">
         <h1 className="text-3xl font-bold font-headline text-primary">Payroll Settings</h1>
         <p className="text-muted-foreground">Configure your company's payroll information and schedules.</p>
       </header>
 
       <div className="max-w-3xl mx-auto space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Company Information</CardTitle>
+          <CardHeader className="bg-primary/5 border-b">
+            <CardTitle className="text-base">Company Information</CardTitle>
             <CardDescription>Details used for payroll processing and tax forms.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -117,8 +117,8 @@ export function PayrollSettingsView() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Payroll Schedule & Accounts</CardTitle>
+          <CardHeader className="bg-primary/5 border-b">
+            <CardTitle className="text-base">Payroll Schedule & Accounts</CardTitle>
             <CardDescription>Define how and when you pay your employees.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -160,8 +160,8 @@ export function PayrollSettingsView() {
         </Card>
         
         <Card>
-          <CardHeader>
-            <CardTitle>Tax Information</CardTitle>
+          <CardHeader className="bg-primary/5 border-b">
+            <CardTitle className="text-base">Tax Information</CardTitle>
             <CardDescription>Your business tax identification numbers.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

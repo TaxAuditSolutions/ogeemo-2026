@@ -106,23 +106,23 @@ export default function InvoiceIntelligencePage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full bg-muted/10">
-            <header className="text-center relative">
-                <div className="flex items-center justify-center gap-3">
-                    <BrainCircuit className="h-10 w-10 text-primary" />
-                    <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Invoice Intelligence</h1>
+        <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full bg-muted/10 max-w-6xl mx-auto">
+            <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <BrainCircuit className="h-10 w-10 text-primary" />
+                        <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Invoice Intelligence</h1>
+                    </div>
+                    <p className="text-muted-foreground mt-2">Reads your document automatically to fill in the details.</p>
                 </div>
-                <p className="text-muted-foreground mt-2">Reads your document automatically to fill in the details.</p>
-                <div className="absolute top-0 right-0">
-                    <Button asChild variant="ghost" size="icon"><Link href="/accounting/invoices/create"><X className="h-5 w-5"/></Link></Button>
-                </div>
+                <Button asChild variant="ghost" size="icon"><Link href="/accounting/invoices/create"><X className="h-5 w-5"/></Link></Button>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto w-full flex-1">
                 <Card className="lg:col-span-1 flex flex-col border-primary/20">
                     <CardHeader className="bg-primary/5 border-b py-4">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-base flex items-center gap-2">
                                 <FolderSearch className="h-5 w-5" /> Document Archive
                             </CardTitle>
                             <Button variant="ghost" size="icon" onClick={syncGDrive} disabled={isSyncing}>
@@ -180,9 +180,9 @@ export default function InvoiceIntelligencePage() {
                 </Card>
 
                 <Card className="lg:col-span-2 flex flex-col shadow-xl">
-                    <CardHeader className="border-b">
+                    <CardHeader className="bg-primary/5 border-b">
                         <div className="flex items-center justify-between">
-                            <CardTitle>Extraction Workspace</CardTitle>
+                            <CardTitle className="text-base">Extraction Workspace</CardTitle>
                             {extractedData && <Badge className="bg-green-500">Analysis Successful</Badge>}
                         </div>
                     </CardHeader>

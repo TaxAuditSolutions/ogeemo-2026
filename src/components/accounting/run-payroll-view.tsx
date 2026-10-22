@@ -345,11 +345,13 @@ export function RunPayrollView() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full">
-      <header className="text-center relative w-full max-w-5xl">
-        <h1 className="text-3xl font-bold font-headline text-primary">Run Payroll</h1>
-        <p className="text-muted-foreground">Select a pay period and workers to begin.</p>
-        <div className="absolute top-0 right-0 flex items-center gap-2">
+    <div className="p-4 sm:p-6 space-y-6 flex flex-col items-center h-full max-w-6xl mx-auto">
+      <header className="print:hidden flex flex-wrap items-start justify-between gap-4 w-full max-w-5xl">
+        <div>
+          <h1 className="text-3xl font-bold font-headline text-primary">Run Payroll</h1>
+          <p className="text-muted-foreground">Select a pay period and workers to begin.</p>
+        </div>
+        <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={loadData} title="Refresh data">
                 <RefreshCw className={cn("h-5 w-5", isLoading && "animate-spin")} />
             </Button>
@@ -362,7 +364,7 @@ export function RunPayrollView() {
       <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
             <Card>
-                <CardHeader><CardTitle>1. Select Pay Period</CardTitle></CardHeader>
+                <CardHeader className="bg-primary/5 border-b"><CardTitle className="text-base">1. Select Pay Period</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label>Start of Payroll Period</Label>
@@ -407,7 +409,7 @@ export function RunPayrollView() {
             </Card>
             
             <Card className="overflow-hidden">
-                <CardHeader className="py-4 border-b">
+                <CardHeader className="py-4 bg-primary/5 border-b">
                     <div className="flex justify-between items-center w-full">
                         <CardTitle className="text-base flex items-center gap-2">
                             2. Select Workers
@@ -484,8 +486,8 @@ export function RunPayrollView() {
 
         <div className="lg:col-span-2">
             <Card className="h-full flex flex-col">
-                <CardHeader>
-                    <CardTitle>3. Review & Submit</CardTitle>
+                <CardHeader className="bg-primary/5 border-b">
+                    <CardTitle className="text-base">3. Review & Submit</CardTitle>
                     <CardDescription>
                         Calculated pay for selected workers. Deductions are estimated at 20% for taxes and benefits.
                     </CardDescription>

@@ -177,10 +177,10 @@ export function WorkActivityView() {
     const selectedContact = contacts.find(c => c.id === selectedContactId);
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 text-black bg-muted/10 min-h-full">
+        <div className="p-4 sm:p-6 space-y-6 text-black bg-muted/10 min-h-full max-w-6xl mx-auto">
             <ReportsPageHeader pageTitle="Work Activity Summary" />
             
-            <header className="text-center space-y-2 print:hidden">
+            <header className="space-y-2 print:hidden">
                 <h1 className="text-4xl font-bold font-headline text-primary tracking-tight">Work Activity Summary</h1>
                 <p className="text-muted-foreground text-lg">A consolidated record of work based on your time logs.</p>
             </header>
@@ -188,7 +188,7 @@ export function WorkActivityView() {
             <div className="max-w-6xl mx-auto space-y-6">
                 <Card className="print:hidden border-primary/20 shadow-lg">
                     <CardHeader className="bg-primary/5 border-b pb-4">
-                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Report Detail & Range</CardTitle>
+                        <CardTitle className="text-base font-bold uppercase tracking-widest text-primary">Report Detail & Range</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-3">
@@ -281,8 +281,8 @@ export function WorkActivityView() {
                         </div>
 
                         <Card className="shadow-2xl print:shadow-none print:border-none">
-                            <CardHeader className="bg-muted/30 border-b print:hidden">
-                                <CardTitle>Work Activity Log</CardTitle>
+                            <CardHeader className="bg-primary/5 border-b print:hidden">
+                                <CardTitle className="text-base">Work Activity Log</CardTitle>
                                 <CardDescription>Consolidated timeline of operational work sessions.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-0">

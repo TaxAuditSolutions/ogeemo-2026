@@ -68,41 +68,41 @@ export default function HrHubPage() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 space-y-6">
-        <header className="relative text-center mb-6">
-          <div className="flex justify-center items-center gap-2 mb-2">
-            <Users className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold font-headline text-primary">
-              Human Resources Hub
-            </h1>
-            <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
-              <Info className="h-5 w-5 text-muted-foreground" />
-              <span className="sr-only">About the HR Hub</span>
-            </Button>
+      <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
+        <header className="print:hidden flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-8 w-8 text-primary" />
+              <h1 className="text-2xl font-bold font-headline text-primary">
+                Human Resources Hub
+              </h1>
+              <Button variant="ghost" size="icon" onClick={() => setIsInfoOpen(true)}>
+                <Info className="h-5 w-5 text-muted-foreground" />
+                <span className="sr-only">About the HR Hub</span>
+              </Button>
+            </div>
+            <p className="text-muted-foreground max-w-2xl">
+              Your central command for managing your most valuable asset: your people.
+            </p>
           </div>
-          <div className="absolute top-0 right-0">
-             <Button asChild variant="ghost" size="icon">
-                <Link href="/action-manager" aria-label="Close">
-                    <X className="h-5 w-5" />
-                </Link>
-            </Button>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Your central command for managing your most valuable asset: your people.
-          </p>
-          <div className="mt-4">
+          <div className="flex items-center gap-2">
             <Button asChild variant="outline">
               <Link href="/hr-manager/manage-navigation">
                 <Settings className="mr-2 h-4 w-4"/>
                 Manage Quick Navigation
               </Link>
             </Button>
+            <Button asChild variant="ghost" size="icon">
+              <Link href="/action-manager" aria-label="Close">
+                <X className="h-5 w-5" />
+              </Link>
+            </Button>
           </div>
         </header>
         
         <Card className="max-w-6xl mx-auto">
-            <CardHeader className="text-center">
-                <CardTitle>Your Quick Navigation Actions</CardTitle>
+            <CardHeader className="text-center bg-primary/5 border-b">
+                <CardTitle className="text-base">Your Quick Navigation Actions</CardTitle>
                 <CardDescription>This is your personalized dashboard of HR tools.</CardDescription>
             </CardHeader>
             <CardContent>

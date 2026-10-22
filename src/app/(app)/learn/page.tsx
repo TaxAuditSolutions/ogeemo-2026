@@ -210,7 +210,7 @@ function LearnOgeemoContent() {
   const progressPct = Math.round((completedCount / LEARN_STEPS.length) * 100);
 
   return (
-    <div className="p-4 sm:p-6 h-full overflow-y-auto bg-muted/10">
+    <div className="p-4 sm:p-6 h-full overflow-y-auto bg-muted/10 max-w-6xl mx-auto">
       <div className="mx-auto max-w-3xl">
         <Button asChild variant="outline" size="sm">
           <Link href="/welcome">
@@ -218,8 +218,8 @@ function LearnOgeemoContent() {
           </Link>
         </Button>
 
-        <header className="text-center mb-8 mt-4">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <header className="print:hidden mb-8 mt-4">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <BookOpen className="h-6 w-6 text-primary" />
           </div>
           <h1 className="text-3xl font-bold font-headline text-primary">Learn Ogeemo</h1>

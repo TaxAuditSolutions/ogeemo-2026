@@ -10,7 +10,7 @@ import { PayrollEmployeesView } from '@/components/accounting/payroll-employees-
  */
 export default function WorkersPage() {
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
+        <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
             <PayrollEmployeesView />
         </div>
     );

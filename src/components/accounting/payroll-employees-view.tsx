@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge, Clock, PlayCircle, Contact, UserPlus } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalLink, GitMerge, PlayCircle, UserPlus } from "lucide-react";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
@@ -184,37 +184,29 @@ export function PayrollEmployeesView() {
 
     return (
         <>
-            <header className="text-center">
-                <div className="flex items-center justify-center gap-2">
-                    <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
-                    <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
-                        <Info className="h-5 w-5 text-muted-foreground" />
-                    </Button>
+            <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-3xl font-bold font-headline text-primary">Manage Workers</h1>
+                        <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)}>
+                            <Info className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                    </div>
+                    <p className="text-muted-foreground">Add, edit, and manage your employee and contractor records.</p>
                 </div>
-                <p className="text-muted-foreground">Add, edit, and manage your employee and contractor records.</p>
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                    <Button asChild variant="outline" size="sm">
-                        <Link href="/reports/time-log">
-                            <Clock className="mr-2 h-4 w-4" /> Time Log Report
-                        </Link>
-                    </Button>
+                <div className="flex flex-wrap items-center gap-2">
                     <Button asChild variant="outline" size="sm">
                         <Link href="/accounting/payroll/run">
                             <PlayCircle className="mr-2 h-4 w-4" /> Run Payroll
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline" size="sm">
-                        <Link href="/contacts">
-                            <Contact className="mr-2 h-4 w-4" /> Contacts Hub
                         </Link>
                     </Button>
                 </div>
             </header>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b">
                     <div>
-                        <CardTitle>Worker List</CardTitle>
+                        <CardTitle className="text-base">Worker List</CardTitle>
                         <CardDescription>All employees and contractors in your organization.</CardDescription>
                     </div>
                      <div className="flex items-center gap-2">

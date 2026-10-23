@@ -5,7 +5,7 @@ import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AccessLevel } from '@/core/user-profile-service';
 import { canManageTargetRole } from '@/core/rbac';
-import { buildRegistrationNotification, sendFormNotification } from '@/core/email-service';
+import { buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMessage, sendFormNotification } from '@/core/email-service';
 
 // Canonical tenant shape. isMasterTenant is true only for the single "Ogeemo"
 // organization whose super_admins manage tenant lifecycle (see createTenantWithSuperAdmin).
@@ -148,14 +148,23 @@ export async function registerOrganization(data: { orgName: string; email: strin
             isMasterTenant: false,
         });
 
-        // sendFormNotification never throws, so a mail outage cannot trigger the rollback below.
-        await sendFormNotification(buildRegistrationNotification({
-            orgName: data.orgName,
-            name: data.name,
-            email: data.email,
-            orgId,
-            uid: createdUid,
-        }));
+        // Both mail sends never throw, so a mail outage cannot trigger the rollback below.
+        await Promise.all([
+            // Team side: registration notice to info@ogeemo.com.
+            sendFormNotification(buildRegistrationNotification({
+                orgName: data.orgName,
+                name: data.name,
+                email: data.email,
+                orgId,
+                uid: createdUid,
+            })),
+            // Tenant side: welcome to the Ogeemo Community for the new Master Tenant.
+            sendEmailMessage(buildWelcomeToOgeemoEmail({
+                orgName: data.orgName,
+                name: data.name,
+                email: data.email,
+            })),
+        ]);
 
         return { success: true, orgId, uid: createdUid };
 

@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildFormNotificationEmail,
   buildRegistrationNotification,
+  buildWelcomeToOgeemoEmail,
   escapeHtml,
   NOTIFY_RECIPIENTS,
   resolveRecipients,
@@ -76,6 +77,39 @@ test('escapes HTML in field values so submissions cannot inject markup', () => {
 test('default recipients are the Ogeemo team mailboxes', () => {
   assert.ok(NOTIFY_RECIPIENTS.includes('notifications@ogeemo.com'));
   assert.ok(NOTIFY_RECIPIENTS.includes('dan@ogeemo.com'));
+});
+
+test('welcome email goes to the new Master Tenant with the community greeting', () => {
+  const message = buildWelcomeToOgeemoEmail({
+    orgName: 'Acme Inc.',
+    name: 'Jane Doe',
+    email: 'jane@acme.com',
+  });
+
+  assert.deepEqual(message.to, ['jane@acme.com']);
+  assert.equal(message.replyTo, 'info@ogeemo.com');
+  assert.equal(message.subject, 'Welcome to the Ogeemo Community, Jane Doe!');
+  assert.ok(message.text.includes('Acme Inc.'), 'missing org name in text');
+  assert.ok(message.html.includes('Acme Inc.'), 'missing org name in html');
+  assert.match(message.text, /https:\/\/ogeemo-firebase\.web\.app\/welcome/);
+  assert.match(message.text, /https:\/\/ogeemo-firebase\.web\.app\/learn/);
+  assert.doesNotMatch(message.text, /password/i);
+  assert.doesNotMatch(message.html, /password/i);
+});
+
+test('welcome email falls back to the organization name when no person name is given', () => {
+  const message = buildWelcomeToOgeemoEmail({ orgName: 'Acme Inc.', email: 'jane@acme.com' });
+  assert.equal(message.subject, 'Welcome to the Ogeemo Community, Acme Inc.!');
+});
+
+test('welcome email escapes HTML in the organization name', () => {
+  const message = buildWelcomeToOgeemoEmail({
+    orgName: '<script>alert("xss")</script>',
+    email: 'jane@acme.com',
+  });
+
+  assert.ok(!message.html.includes('<script>'));
+  assert.match(message.html, /&lt;script&gt;/);
 });
 
 test('escapeHtml neutralises quotes and angle brackets', () => {

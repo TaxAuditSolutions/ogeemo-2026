@@ -50,6 +50,12 @@ export const NOTIFY_RECIPIENTS = (
   .map((addr) => addr.trim())
   .filter(Boolean);
 
+// Public URL used for links inside outbound emails (e.g. the welcome email).
+// Overridable per environment; production points at the live hosting site.
+export const OGEEMO_APP_URL = (
+  process.env.OGEEMO_APP_URL || 'https://ogeemo-firebase.web.app'
+).replace(/\/+$/, '');
+
 export interface FormNotificationField {
   label: string;
   value: string;
@@ -186,38 +192,120 @@ export function buildRegistrationNotification(
   };
 }
 
+/**
+ * A complete, ready-to-send email message.
+ * `to` is the list of recipient addresses (the welcome email targets the
+ * new tenant's Master Tenant directly).
+ */
+export interface EmailMessage {
+  to: string[];
+  subject: string;
+  text: string;
+  html: string;
+  replyTo?: string;
+}
+
+/**
+ * Welcome email sent to the person who signs up a new tenant (its Master
+ * Tenant / super_admin) so joining the Ogeemo Community is acknowledged from
+ * both sides: they get this note, info@ogeemo.com gets the registration
+ * notice. Never include the password here; this payload is emailed in plain text.
+ */
+export function buildWelcomeToOgeemoEmail(input: {
+  orgName: string;
+  email: string;
+  name?: string;
+}): EmailMessage {
+  const greeting = input.name?.trim() || input.orgName;
+  const appUrl = escapeHtml(OGEEMO_APP_URL);
+  const heading = `Welcome to the Ogeemo Community, ${greeting}!`;
+
+  const textLines = [
+    heading,
+    '',
+    `Your Ogeemo workspace for ${input.orgName} is ready.`,
+    '',
+    'Getting started:',
+    `  1. Open your workspace: ${OGEEMO_APP_URL}/welcome`,
+    `  2. Take the guided tour: ${OGEEMO_APP_URL}/learn`,
+    '  3. Make it your own: Settings - profile, visual identity, and preferences',
+    '',
+    'Questions? Just reply to this email - we are happy to help.',
+    '',
+    '- The Ogeemo Team',
+    '',
+    'Sent automatically by Ogeemo.',
+  ];
+
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;">
+  <h2 style="color:#4f46e5;margin:0 0 12px 0;">${escapeHtml(heading)}</h2>
+  <p style="color:#0f172a;font-size:14px;margin:0 0 16px 0;">
+    Your Ogeemo workspace for <strong>${escapeHtml(input.orgName)}</strong> is ready.
+  </p>
+  <ol style="color:#334155;font-size:14px;line-height:1.7;margin:0 0 20px 0;padding-left:20px;">
+    <li>Open your workspace: <a href="${appUrl}/welcome" style="color:#4f46e5;">${appUrl}/welcome</a></li>
+    <li>Take the guided tour: <a href="${appUrl}/learn" style="color:#4f46e5;">${appUrl}/learn</a></li>
+    <li>Make it your own: Settings &rarr; profile, visual identity, and preferences</li>
+  </ol>
+  <p style="color:#0f172a;font-size:14px;margin:0 0 16px 0;">
+    Questions? Just reply to this email &mdash; we're happy to help.
+  </p>
+  <p style="color:#0f172a;font-size:14px;margin:0;">&mdash; The Ogeemo Team</p>
+  <p style="color:#94a3b8;font-size:11px;margin-top:20px;">Sent automatically by Ogeemo.</p>
+</div>`;
+
+  return {
+    to: [input.email],
+    subject: heading,
+    text: textLines.join('\n'),
+    html,
+    replyTo: REGISTRATION_NOTIFY_EMAIL,
+  };
+}
+
 export function resolveRecipients(payload: Pick<FormNotificationPayload, 'recipients'>): string[] {
   const custom = (payload.recipients || []).map((addr) => addr.trim()).filter(Boolean);
   return custom.length > 0 ? custom : NOTIFY_RECIPIENTS;
 }
 
-export async function sendFormNotification(
-  payload: FormNotificationPayload
-): Promise<EmailSendResult> {
+export async function sendEmailMessage(message: EmailMessage): Promise<EmailSendResult> {
   try {
     const client = getTransporter();
     if (!client) {
       return { sent: false, error: 'email_not_configured' };
     }
 
-    const { subject, text, html } = buildFormNotificationEmail(payload);
-    const recipients = resolveRecipients(payload);
+    const recipients = message.to.map((addr) => addr.trim()).filter(Boolean);
+    if (recipients.length === 0) {
+      return { sent: false, error: 'no_recipients' };
+    }
 
     await client.sendMail({
       from: `"Ogeemo Notifications" <${NOTIFICATIONS_EMAIL}>`,
       to: recipients.join(', '),
-      ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
-      subject,
-      text,
-      html,
+      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
     });
 
-    console.info(
-      `[Email Service] Notification sent for "${payload.formName}" -> ${recipients.join(', ')}`
-    );
+    console.info(`[Email Service] Mail sent -> ${recipients.join(', ')}`);
     return { sent: true };
   } catch (error: any) {
-    console.error('[Email Service] Failed to send notification:', error?.message || error);
+    console.error('[Email Service] Failed to send email:', error?.message || error);
     return { sent: false, error: error?.message || 'unknown_error' };
   }
+}
+
+export async function sendFormNotification(
+  payload: FormNotificationPayload
+): Promise<EmailSendResult> {
+  const { subject, text, html } = buildFormNotificationEmail(payload);
+  return sendEmailMessage({
+    to: resolveRecipients(payload),
+    subject,
+    text,
+    html,
+    replyTo: payload.replyTo,
+  });
 }

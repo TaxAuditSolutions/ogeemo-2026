@@ -18,6 +18,7 @@ import { Form } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, updateUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { getOrganization, updateOrganizationName } from '@/core/organization-service';
+import { resolveOrgId } from '@/services/branding-service';
 import { canAccessUserManager } from '@/core/rbac';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -72,14 +73,17 @@ export default function SettingsPage() {
         const userProfile = await getUserProfile(user.uid);
         setProfile(userProfile);
         if (userProfile) {
-          // Company name lives on the tenant, not the user profile.
+          // Company name lives on the tenant, not the user profile. Resolve it through
+          // the ACTIVE workspace (auth claim, falling back to profile org) so this field
+          // always matches what the Company Information card displays and saves.
           let orgName = '';
-          if (userProfile.orgId) {
-            try {
-              orgName = (await getOrganization(userProfile.orgId))?.name || '';
-            } catch (orgError) {
-              console.error('Failed to load organization name:', orgError);
+          try {
+            const activeOrgId = await resolveOrgId();
+            if (activeOrgId) {
+              orgName = (await getOrganization(activeOrgId))?.name || '';
             }
+          } catch (orgError) {
+            console.error('Failed to load organization name:', orgError);
           }
           form.reset({
             displayName: userProfile.displayName || user.displayName || '',
@@ -123,13 +127,16 @@ export default function SettingsPage() {
       await updateUserProfile(user.uid, values.email || user.email || '', profileValues);
 
       // Only tenant admins may rename the organization (enforced by firestore.rules).
-      // Kept in its own try/catch: the profile above is already saved at this point,
-      // so a denied org read/rename must be reported specifically, not as a total failure.
-      if (profile?.orgId && canAccessUserManager(accessLevel) && companyName !== undefined) {
+      // Target the ACTIVE workspace (auth claim) so the rename matches what this page
+      // displays and what isRightTenant() checks. Kept in its own try/catch: the profile
+      // above is already saved at this point, so a denied org read/rename must be
+      // reported specifically, not as a total failure.
+      const activeOrgId = await resolveOrgId();
+      if (activeOrgId && canAccessUserManager(accessLevel) && companyName !== undefined) {
         try {
-          const currentOrgName = (await getOrganization(profile.orgId))?.name || '';
+          const currentOrgName = (await getOrganization(activeOrgId))?.name || '';
           if (companyName !== currentOrgName) {
-            await updateOrganizationName(profile.orgId, companyName);
+            await updateOrganizationName(activeOrgId, companyName);
           }
         } catch (orgErr: any) {
           orgError = orgErr?.message || 'Missing or insufficient permissions.';

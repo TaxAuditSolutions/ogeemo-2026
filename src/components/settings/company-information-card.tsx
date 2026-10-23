@@ -78,7 +78,6 @@ export function CompanyInformationCard() {
         setIsBusy(true);
         try {
             await updateOrganizationDetails(orgId, {
-                name,
                 businessAddress: { street, city, state: provinceState, postalCode, country },
                 businessPhone,
                 email,
@@ -110,7 +109,10 @@ export function CompanyInformationCard() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="orgName">Company Name</Label>
-                    <Input id="orgName" value={name} onChange={(e) => setName(e.target.value)} disabled={!isAdmin} onKeyDown={stopEnter} />
+                    <Input id="orgName" value={name} readOnly className="bg-muted/50" />
+                    <p className="text-xs text-muted-foreground">
+                        Autofilled from the workspace name created at registration &mdash; edit it in My Profile.
+                    </p>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="orgStreet">Street</Label>

@@ -54,8 +54,7 @@ export async function updateOrganizationName(orgId: string, name: string): Promi
  */
 export async function updateOrganizationDetails(
     orgId: string,
-    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber'> &
-        Partial<Pick<Organization, 'name'>>
+    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber'>
 ): Promise<void> {
     const { db } = getFirebaseServices();
     const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };

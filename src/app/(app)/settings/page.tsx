@@ -117,15 +117,23 @@ export default function SettingsPage() {
       return;
     }
     setIsSubmitting(true);
+    let orgError: string | null = null;
     try {
       const { companyName, ...profileValues } = values;
       await updateUserProfile(user.uid, values.email || user.email || '', profileValues);
 
       // Only tenant admins may rename the organization (enforced by firestore.rules).
+      // Kept in its own try/catch: the profile above is already saved at this point,
+      // so a denied org read/rename must be reported specifically, not as a total failure.
       if (profile?.orgId && canAccessUserManager(accessLevel) && companyName !== undefined) {
-        const currentOrgName = (await getOrganization(profile.orgId))?.name || '';
-        if (companyName !== currentOrgName) {
-          await updateOrganizationName(profile.orgId, companyName);
+        try {
+          const currentOrgName = (await getOrganization(profile.orgId))?.name || '';
+          if (companyName !== currentOrgName) {
+            await updateOrganizationName(profile.orgId, companyName);
+          }
+        } catch (orgErr: any) {
+          orgError = orgErr?.message || 'Missing or insufficient permissions.';
+          console.error('Settings: company name could not be updated (profile was still saved):', orgErr);
         }
       }
 
@@ -133,10 +141,18 @@ export default function SettingsPage() {
       const updated = await getUserProfile(user.uid);
       if (updated) setProfile(updated);
 
-      toast({
-        title: "Settings Saved",
-        description: "Your profile information has been updated successfully.",
-      });
+      if (orgError) {
+        toast({
+          variant: "destructive",
+          title: "Profile Saved, Company Name Not Updated",
+          description: `Your profile settings were saved, but the company name could not be saved: ${orgError}`,
+        });
+      } else {
+        toast({
+          title: "Settings Saved",
+          description: "Your profile information has been updated successfully.",
+        });
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",

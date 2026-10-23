@@ -207,25 +207,33 @@ export async function updateUserProfile(
     // Only sync Contact Hub identity data when the update is actually changing a user identity field.
     // Preference-only updates (like sidebar ordering) should not require editor permissions on contacts.
     if (shouldSyncContactProfile) {
-        const allFolders = await ensureSystemFolders(userId);
-        const adminFolder = allFolders.find(f => f.name === 'Admin' && f.isSystem);
-        const contactId = docSnap.exists() ? docSnap.data().contactId : null;
+        try {
+            const allFolders = await ensureSystemFolders(userId);
+            const adminFolder = allFolders.find(f => f.name === 'Admin' && f.isSystem);
+            const contactId = docSnap.exists() ? docSnap.data().contactId : null;
 
-        if (contactId) {
-            await updateContact(contactId, {
-                name: data.displayName,
-                email: email,
-                employeeNumber: data.employeeNumber,
-            });
-        } else {
-            const newContact = await addContact({
-                name: data.displayName || email,
-                email: email,
-                employeeNumber: data.employeeNumber,
-                folderId: adminFolder?.id || 'all',
-                userId: userId,
-            } as any);
-            dataWithTimestamp.contactId = newContact.id;
+            if (contactId) {
+                await updateContact(contactId, {
+                    name: data.displayName,
+                    email: email,
+                    employeeNumber: data.employeeNumber,
+                });
+            } else {
+                const newContact = await addContact({
+                    name: data.displayName || email,
+                    email: email,
+                    employeeNumber: data.employeeNumber,
+                    folderId: adminFolder?.id || 'all',
+                    userId: userId,
+                } as any);
+                dataWithTimestamp.contactId = newContact.id;
+            }
+        } catch (syncError) {
+            // The Contact Hub mirror must never block the profile save itself:
+            // contact/folder docs can predate orgId (legacy) or sit in a different
+            // tenant, which their tenant-scoped rules then deny. Log loudly and
+            // continue so the profile registry still updates.
+            console.error('[User Profile] Contact Hub sync skipped - profile save continues:', syncError);
         }
     }
 

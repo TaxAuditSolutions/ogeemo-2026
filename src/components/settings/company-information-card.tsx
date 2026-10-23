@@ -13,7 +13,7 @@ import { resolveOrgId } from '@/services/branding-service';
 import { brandingErrorMessage } from '@/lib/branding-utils';
 
 /**
- * Settings card for the workspace's company identity: address, phone, email and
+ * Settings card for the workspace's company identity: name, address, phone, email and
  * business (HST) number shown as the issuing business on invoices and quotes.
  * Saved once per workspace; Firestore rules restrict saving to org admins.
  */
@@ -25,6 +25,7 @@ export function CompanyInformationCard() {
     const [orgId, setOrgId] = useState<string | null>(null);
     const [isBusy, setIsBusy] = useState(false);
     const [isHydrated, setIsHydrated] = useState(false);
+    const [name, setName] = useState('');
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
     const [provinceState, setProvinceState] = useState('');
@@ -50,6 +51,7 @@ export function CompanyInformationCard() {
         getOrganization(orgId)
             .then((org) => {
                 if (cancelled || !org) return;
+                setName(org.name || '');
                 setStreet(org.businessAddress?.street || '');
                 setCity(org.businessAddress?.city || '');
                 setProvinceState(org.businessAddress?.state || '');
@@ -76,6 +78,7 @@ export function CompanyInformationCard() {
         setIsBusy(true);
         try {
             await updateOrganizationDetails(orgId, {
+                name,
                 businessAddress: { street, city, state: provinceState, postalCode, country },
                 businessPhone,
                 email,
@@ -100,11 +103,15 @@ export function CompanyInformationCard() {
                     <CardTitle className="text-base">Company Information</CardTitle>
                 </div>
                 <CardDescription>
-                    The address, phone, email and business number (HST #) shown as the issuing business on your
+                    The name, address, phone, email and business number (HST #) shown as the issuing business on your
                     invoices and quotes. Saved once for this workspace.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="orgName">Company Name</Label>
+                    <Input id="orgName" value={name} onChange={(e) => setName(e.target.value)} disabled={!isAdmin} onKeyDown={stopEnter} />
+                </div>
                 <div className="space-y-2">
                     <Label htmlFor="orgStreet">Street</Label>
                     <Input id="orgStreet" value={street} onChange={(e) => setStreet(e.target.value)} disabled={!isAdmin} onKeyDown={stopEnter} />

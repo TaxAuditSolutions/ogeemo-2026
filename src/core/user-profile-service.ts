@@ -213,11 +213,26 @@ export async function updateUserProfile(
             const contactId = docSnap.exists() ? docSnap.data().contactId : null;
 
             if (contactId) {
-                await updateContact(contactId, {
-                    name: data.displayName,
-                    email: email,
-                    employeeNumber: data.employeeNumber,
-                });
+                // Mirror only into the ACTIVE workspace. The profile's linked contact can
+                // belong to the user's home tenant while the session is switched elsewhere;
+                // canUpdateOrgDoc() denies that cross-tenant write by design, so skip
+                // cleanly instead of surfacing a permission error on every profile save.
+                const activeOrgId = await getCurrentOrgId();
+                const contactSnap = await getDoc(doc(db, CONTACTS_COLLECTION, contactId));
+                const contactOrgId = contactSnap.exists() ? contactSnap.data()?.orgId ?? null : null;
+                if (!contactSnap.exists()) {
+                    console.info('[User Profile] Linked contact no longer exists; skipping Contact Hub mirror.');
+                } else if (contactOrgId !== activeOrgId) {
+                    console.info(
+                        `[User Profile] Linked contact lives in workspace "${contactOrgId ?? 'unset'}" (active: "${activeOrgId}"); skipping cross-tenant Contact Hub mirror.`
+                    );
+                } else {
+                    await updateContact(contactId, {
+                        name: data.displayName,
+                        email: email,
+                        employeeNumber: data.employeeNumber,
+                    });
+                }
             } else {
                 const newContact = await addContact({
                     name: data.displayName || email,

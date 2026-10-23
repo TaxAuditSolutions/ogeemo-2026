@@ -285,9 +285,9 @@ export default function SettingsPage() {
             <PreferencesCard />
           </div>
           <div className="space-y-6">
-            <VisualIdentityCard />
-            <DocumentBrandingCard />
             <CompanyInformationCard />
+            <DocumentBrandingCard />
+            <VisualIdentityCard />
             <PlanningRitualsCard />
             <SiteImagesSettingsCard />
           </div>

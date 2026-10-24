@@ -1104,6 +1104,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
 
   const incomeData = {
     userId,
+    orgId,
     date,
     company: invoiceData.companyName,
     description: `Payment for Invoice #${invoiceData.invoiceNumber ?? ''}`,
@@ -1177,8 +1178,10 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
 
   const incomeRef = doc(collection(db, INCOME_COLLECTION));
   const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+  const orgId = await getCurrentOrgId();
   batch.set(incomeRef, {
     userId,
+    orgId,
     date,
     company: data.companyName,
     description: `Reconciled payment for Invoice #${data.invoiceNumber}`,
@@ -1209,8 +1212,10 @@ export async function reconcileBillPayment(userId: string, billId: string, date:
   const batch = writeBatch(db);
 
   const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
+  const orgId = await getCurrentOrgId();
   batch.set(expenseRef, {
     userId,
+    orgId,
     date,
     company: data.vendor,
     description: `Reconciled payment for Bill #${data.invoiceNumber || 'N/A'}`,
@@ -1585,12 +1590,14 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
   if (!txSnap.exists()) throw new Error("Transaction not found.");
 
   const txData = docToPettyCash(txSnap);
+  const orgId = await getCurrentOrgId();
   const batch = writeBatch(db);
 
   if (txData.type === 'in') {
     const incomeRef = doc(collection(db, INCOME_COLLECTION));
     batch.set(incomeRef, {
       userId,
+      orgId,
       date: txData.date,
       company: txData.contact,
       description: txData.description,
@@ -1604,6 +1611,7 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
     const expenseRef = doc(collection(db, EXPENSE_COLLECTION));
     batch.set(expenseRef, {
       userId,
+      orgId,
       date: txData.date,
       company: txData.contact,
       description: txData.description,

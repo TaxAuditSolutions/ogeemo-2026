@@ -37,7 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle, ReceiptText } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -169,6 +169,29 @@ export function AccountsReceivablePageView() {
         router.push('/accounting/invoices/create');
     };
 
+    // Reconnects the receipt flow: serializes the minimal receipt payload the
+    // receipt page reads (sessionStorage key must match RECEIPT_DATA_KEY there).
+    const handleViewReceipt = (inv: Invoice) => {
+        const payload = {
+            invoice: {
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                companyName: inv.companyName,
+                originalAmount: inv.originalAmount,
+                amountPaid: inv.amountPaid,
+                dueDate: (inv.dueDate instanceof Date ? inv.dueDate : new Date(inv.dueDate)).toISOString(),
+                invoiceDate: (inv.invoiceDate instanceof Date ? inv.invoiceDate : new Date(inv.invoiceDate)).toISOString(),
+                createdAt: inv.createdAt
+                    ? (inv.createdAt instanceof Date ? inv.createdAt : new Date(inv.createdAt)).toISOString()
+                    : new Date().toISOString(),
+            },
+            carryForwardAmount: 0,
+            receiptNumber: inv.lastReceiptNumber || undefined,
+        };
+        sessionStorage.setItem('ogeemo-receipt-data', JSON.stringify(payload));
+        router.push('/accounting/invoices/receipt');
+    };
+
     const totalOutstanding = useMemo(() => {
         return invoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
     }, [invoices]);
@@ -257,6 +280,11 @@ export function AccountsReceivablePageView() {
                                                             <DropdownMenuItem onClick={() => handleOpenInvoice(inv)}>
                                                                 <Pencil className="mr-2 h-4 w-4" /> Edit Details
                                                             </DropdownMenuItem>
+                                                            {inv.amountPaid > 0 && (
+                                                                <DropdownMenuItem onClick={() => handleViewReceipt(inv)}>
+                                                                    <ReceiptText className="mr-2 h-4 w-4" /> View Receipt
+                                                                </DropdownMenuItem>
+                                                            )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </div>

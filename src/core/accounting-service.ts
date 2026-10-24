@@ -260,6 +260,8 @@ export interface Invoice {
   createdAt?: Date;
   updatedAt?: Date;
   invoiceNumber: string;
+  /** Latest payment receipt number (REC-...), stamped when a payment posts. */
+  lastReceiptNumber?: string;
   businessNumber?: string;
   companyName: string;
   contactId: string;
@@ -372,6 +374,7 @@ const docToInvoice = (doc: any): Invoice => {
     createdBy: data.createdBy,
     updatedBy: data.updatedBy,
     invoiceNumber: data.invoiceNumber,
+    lastReceiptNumber: data.lastReceiptNumber,
     businessNumber: data.businessNumber,
     companyName: data.companyName,
     contactId: data.contactId,
@@ -1086,17 +1089,18 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
   const invoiceData = docToInvoice(invoiceSnap);
   const newAmountPaid = (invoiceData.amountPaid || 0) + amount;
   const isFullyPaid = newAmountPaid >= invoiceData.originalAmount - 0.01;
+  const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
 
   batch.update(invoiceRef, {
     amountPaid: newAmountPaid,
-    status: isFullyPaid ? 'paid' : 'partially_paid'
+    status: isFullyPaid ? 'paid' : 'partially_paid',
+    ...(receiptNumber ? { lastReceiptNumber: receiptNumber } : {}),
   });
 
   const incomeRef = doc(collection(db, INCOME_COLLECTION));
   const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
-  const receiptNumber = await claimNextNumber('REC', null);
 
   const incomeData = {
     userId,
@@ -1162,16 +1166,17 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
   const data = invoiceSnap.data();
   const newPaid = (data.amountPaid || 0) + amount;
   const isPaid = newPaid >= data.originalAmount - 0.01;
+  const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
   batch.update(invoiceRef, {
     amountPaid: newPaid,
-    status: isPaid ? 'paid' : 'partially_paid'
+    status: isPaid ? 'paid' : 'partially_paid',
+    ...(receiptNumber ? { lastReceiptNumber: receiptNumber } : {}),
   });
 
   const incomeRef = doc(collection(db, INCOME_COLLECTION));
   const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
-  const receiptNumber = await claimNextNumber('REC', null);
   batch.set(incomeRef, {
     userId,
     date,

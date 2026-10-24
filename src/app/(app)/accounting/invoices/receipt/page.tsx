@@ -30,6 +30,8 @@ interface DeserializedInvoice {
 interface ReceiptData {
   invoice: DeserializedInvoice;
   carryForwardAmount: number;
+  /** Latest payment receipt number (REC-...); legacy receipts fall back to the invoice number. */
+  receiptNumber?: string;
 }
 
 const formatCurrency = (amount: number) => {
@@ -66,7 +68,7 @@ export default function ReceiptPage() {
         if (!receiptData) return;
         toast({
             title: "Email Sent (Simulation)",
-            description: `The receipt for invoice ${receiptData.invoice.invoiceNumber} has been sent to ${receiptData.invoice.companyName}.`,
+            description: `The receipt ${receiptData.receiptNumber ? `${receiptData.receiptNumber} ` : ''}for invoice ${receiptData.invoice.invoiceNumber} has been sent to ${receiptData.invoice.companyName}.`,
         });
     };
     
@@ -96,7 +98,7 @@ export default function ReceiptPage() {
         );
     }
     
-    const { invoice, carryForwardAmount } = receiptData;
+    const { invoice, carryForwardAmount, receiptNumber } = receiptData;
     const totalBalanceDue = (invoice.originalAmount - invoice.amountPaid) + carryForwardAmount;
     const isPaidInFull = totalBalanceDue <= 0.001;
     const dueDate = parseISO(invoice.dueDate);
@@ -129,7 +131,7 @@ export default function ReceiptPage() {
                         <DocumentBrandLogo/>
                         <div className="text-right">
                             <h1 className="text-4xl font-bold uppercase text-gray-700">Receipt</h1>
-                            <p className="text-gray-500">#{invoice.invoiceNumber}</p>
+                            <p className="text-gray-500">#{receiptNumber || invoice.invoiceNumber}</p>
                         </div>
                     </header>
                     <section className="flex justify-between mt-6">

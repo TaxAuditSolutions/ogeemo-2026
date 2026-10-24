@@ -9,7 +9,7 @@ import type { Organization } from '@/app/actions/org-actions';
 const ORGANIZATIONS_COLLECTION = 'organizations';
 
 /** Fetches a single organization's company-identity fields for display (issuer info on invoices). */
-export async function getOrganization(orgId: string): Promise<Pick<Organization, 'id' | 'name' | 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber'> | null> {
+export async function getOrganization(orgId: string): Promise<Pick<Organization, 'id' | 'name' | 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering'> | null> {
     const { db } = getFirebaseServices();
     const snap = await getDoc(doc(db, ORGANIZATIONS_COLLECTION, orgId));
     if (!snap.exists()) return null;
@@ -21,6 +21,7 @@ export async function getOrganization(orgId: string): Promise<Pick<Organization,
         businessPhone: data.businessPhone ?? undefined,
         email: data.email ?? undefined,
         businessNumber: data.businessNumber ?? undefined,
+        numbering: data.numbering ?? undefined,
     };
 }
 
@@ -54,7 +55,7 @@ export async function updateOrganizationName(orgId: string, name: string): Promi
  */
 export async function updateOrganizationDetails(
     orgId: string,
-    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber'>
+    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering'>
 ): Promise<void> {
     const { db } = getFirebaseServices();
     const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };

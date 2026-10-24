@@ -254,7 +254,7 @@ export function AccountsReceivablePageView() {
                 <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b">
                     <div>
                         <CardTitle className="text-base">Outstanding Invoices</CardTitle>
-                        <CardDescription>Click an invoice row to open and edit it, or "Post Payment" once the money arrives in your bank.</CardDescription>
+                        <CardDescription>Click an invoice row to open and edit it, or "Post Payment" once the money arrives in your bank - posting issues a REC receipt, and the "Receipt" button (after payment) opens it.</CardDescription>
                     </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => setIsTransactionDialogOpen(true)}>
@@ -294,6 +294,11 @@ export function AccountsReceivablePageView() {
                                                     <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/5" onClick={() => handleOpenPaymentDialog(inv)}>
                                                         <Landmark className="mr-2 h-4 w-4" /> Post Payment
                                                     </Button>
+                                                    {inv.amountPaid > 0 && (
+                                                        <Button size="sm" variant="outline" onClick={() => handleViewReceipt(inv)}>
+                                                            <ReceiptText className="mr-2 h-4 w-4" /> Receipt
+                                                        </Button>
+                                                    )}
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" size="icon" className="h-8 w-8">

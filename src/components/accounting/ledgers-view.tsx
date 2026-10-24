@@ -457,6 +457,7 @@ export function LedgersView() {
                             Category {sortConfig?.key === 'category' ? (sortConfig.direction === 'asc' ? <ArrowUpZA className="ml-2 h-4 w-4" /> : <ArrowDownAZ className="ml-2 h-4 w-4" />) : <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />}
                         </Button>
                     </TableHead>
+                    <TableHead className="text-xs font-semibold text-muted-foreground">Document</TableHead>
                     {type === 'all' && <TableHead className="text-center">Type</TableHead>}
                     <TableHead className="p-0 text-right">
                         <Button variant="ghost" onClick={() => setSortConfig({ key: 'totalAmount', direction: sortConfig?.direction === 'asc' ? 'desc' : 'asc' })} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
@@ -492,6 +493,7 @@ export function LedgersView() {
                             <TableCell className="text-xs text-muted-foreground">
                                 {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
                             </TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{item.documentNumber || '—'}</TableCell>
                             {type === 'all' && <TableCell className="text-center"><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'} className="text-[10px] h-4 uppercase">{item.transactionType}</Badge></TableCell>}
                             <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
                                 {formatCurrency(item.totalAmount)}
@@ -544,13 +546,13 @@ export function LedgersView() {
                 })}
                 {data.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={type === 'all' ? 8 : 7} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
+                        <TableCell colSpan={type === 'all' ? 9 : 8} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
                     </TableRow>
                 )}
             </TableBody>
             <TableFooter className="bg-muted/10 border-t border-black">
                 <TableRow>
-                    <TableCell colSpan={type === 'all' ? 5 : 4} className="text-right font-bold">Total</TableCell>
+                    <TableCell colSpan={type === 'all' ? 6 : 5} className="text-right font-bold">Total</TableCell>
                     <TableCell className={cn("text-right font-bold font-mono", type === 'expense' ? "text-red-600" : type === 'income' ? "text-green-600" : (netIncome >= 0 ? "text-green-600" : "text-red-600"))}>
                         {formatCurrency(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome)}
                     </TableCell>

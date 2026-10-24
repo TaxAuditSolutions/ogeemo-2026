@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, FilterX } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, FilterX, ReceiptText } from 'lucide-react';
 import { format, isWithinInterval } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -30,6 +30,7 @@ import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInvoices, deleteInvoice, type Invoice } from '@/core/accounting-service';
+import { openInvoiceReceipt } from '@/lib/receipt-handoff';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { cn } from '@/lib/utils';
@@ -125,6 +126,10 @@ function InvoicingReportContent() {
         router.push('/accounting/invoices/create');
     };
 
+    const handleViewReceipt = (invoice: Invoice) => {
+        openInvoiceReceipt(invoice, (href) => router.push(href));
+    };
+
     const handleConfirmDelete = async () => {
         if (!invoiceToDelete || !user) return;
         try {
@@ -207,15 +212,22 @@ function InvoicingReportContent() {
                                             <TableCell><Badge variant="outline">{invoice.status}</Badge></TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(invoice.originalAmount)}</TableCell>
                                             <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem onSelect={() => handleEdit(invoice.id)}><Edit className="mr-2 h-4 w-4"/>Edit Invoice</DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Invoice</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {invoice.amountPaid > 0 && (
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="View Receipt" onClick={() => handleViewReceipt(invoice)}>
+                                                            <ReceiptText className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuItem onSelect={() => handleEdit(invoice.id)}><Edit className="mr-2 h-4 w-4"/>Edit Invoice</DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => setInvoiceToDelete(invoice)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Invoice</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )) : (

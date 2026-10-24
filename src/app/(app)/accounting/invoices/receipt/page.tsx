@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Textarea } from '@/components/ui/textarea';
 
-const RECEIPT_DATA_KEY = 'ogeemo-receipt-data';
+import { RECEIPT_DATA_KEY } from '@/lib/receipt-handoff';
 
 interface DeserializedInvoice {
   id: string;

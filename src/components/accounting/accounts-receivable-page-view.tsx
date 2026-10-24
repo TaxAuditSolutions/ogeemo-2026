@@ -56,6 +56,7 @@ import {
     type TaxType
 } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
+import { openInvoiceReceipt } from '@/lib/receipt-handoff';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
@@ -170,27 +171,9 @@ export function AccountsReceivablePageView() {
         router.push('/accounting/invoices/create');
     };
 
-    // Reconnects the receipt flow: serializes the minimal receipt payload the
-    // receipt page reads (sessionStorage key must match RECEIPT_DATA_KEY there).
+    // Reconnects the receipt flow via the shared handoff (see lib/receipt-handoff).
     const handleViewReceipt = (inv: Invoice) => {
-        const payload = {
-            invoice: {
-                id: inv.id,
-                invoiceNumber: inv.invoiceNumber,
-                companyName: inv.companyName,
-                originalAmount: inv.originalAmount,
-                amountPaid: inv.amountPaid,
-                dueDate: (inv.dueDate instanceof Date ? inv.dueDate : new Date(inv.dueDate)).toISOString(),
-                invoiceDate: (inv.invoiceDate instanceof Date ? inv.invoiceDate : new Date(inv.invoiceDate)).toISOString(),
-                createdAt: inv.createdAt
-                    ? (inv.createdAt instanceof Date ? inv.createdAt : new Date(inv.createdAt)).toISOString()
-                    : new Date().toISOString(),
-            },
-            carryForwardAmount: 0,
-            receiptNumber: inv.lastReceiptNumber || undefined,
-        };
-        sessionStorage.setItem('ogeemo-receipt-data', JSON.stringify(payload));
-        router.push('/accounting/invoices/receipt');
+        openInvoiceReceipt(inv, (href) => router.push(href));
     };
 
     // Deletion policy: invoices with recorded payments are protected - their

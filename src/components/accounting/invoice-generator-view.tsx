@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,8 @@ const formatCurrency = (amount: number) => {
         currency: 'USD',
     }).format(amount);
 };
+
+import { claimDocumentNumber, getNextDocumentNumbers } from '@/app/actions/numbering-actions';
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
@@ -203,6 +205,20 @@ export function InvoiceGeneratorView() {
     const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
     const [editingStatus, setEditingStatus] = useState<Invoice['status'] | null>(null);
     const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+    const originalInvoiceNumberRef = useRef<string | null>(null);
+    const numberEditedRef = useRef(false);
+
+    // New documents preview today's next number; edits keep their stored number.
+    useEffect(() => {
+        if (localStorage.getItem(EDIT_INVOICE_ID_KEY)) return;
+        getNextDocumentNumbers()
+            .then((next) => {
+                if (!numberEditedRef.current && !localStorage.getItem(EDIT_INVOICE_ID_KEY)) {
+                    setInvoiceNumber(next.INV);
+                }
+            })
+            .catch(() => { /* keep the placeholder */ });
+    }, []);
     const [businessNumber, setBusinessNumber] = useState('');
     const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
     const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
@@ -244,6 +260,8 @@ export function InvoiceGeneratorView() {
             }
 
             setInvoiceNumber(invoiceData.invoiceNumber);
+            originalInvoiceNumberRef.current = invoiceData.invoiceNumber;
+            numberEditedRef.current = false;
             setBusinessNumber(invoiceData.businessNumber || '');
             setInvoiceDate(new Date(invoiceData.invoiceDate));
             setDueDate(new Date(invoiceData.dueDate));
@@ -520,8 +538,25 @@ export function InvoiceGeneratorView() {
             status = 'outstanding';
         }
 
+        let finalInvoiceNumber = invoiceNumber;
+        try {
+            if (invoiceToEditId) {
+                if (originalInvoiceNumberRef.current !== null && invoiceNumber !== originalInvoiceNumberRef.current) {
+                    finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber, excludeDocId: invoiceToEditId });
+                }
+            } else if (numberEditedRef.current) {
+                finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber });
+            } else {
+                finalInvoiceNumber = await claimDocumentNumber('INV');
+            }
+        } catch (claimError: any) {
+            toast({ variant: 'destructive', title: 'Invalid Invoice Number', description: claimError?.message || 'Could not claim an invoice number.' });
+            setIsSaving(false);
+            return;
+        }
+
         const invoiceData = {
-            invoiceNumber,
+            invoiceNumber: finalInvoiceNumber,
             businessNumber,
             companyName,
             contactId: selectedContactId,
@@ -564,17 +599,17 @@ export function InvoiceGeneratorView() {
             if (invoiceToEditId) {
                 await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
                 if (intent === 'draft') {
-                    toast({ title: 'Draft saved', description: `Draft ${invoiceNumber} has been updated.` });
+                    toast({ title: 'Draft saved', description: `Draft ${finalInvoiceNumber} has been updated.` });
                 } else {
-                    toast({ title: 'Invoice Updated', description: `Invoice ${invoiceNumber} has been saved.` });
+                    toast({ title: 'Invoice Updated', description: `Invoice ${finalInvoiceNumber} has been saved.` });
                 }
             } else {
                 const saved = await addInvoiceWithLineItems(invoiceData, itemsToSave);
                 setInvoiceToEditId(saved.id);
                 if (intent === 'draft') {
-                    toast({ title: 'Draft saved', description: `Draft ${invoiceNumber} saved - open it from Invoicing Report.` });
+                    toast({ title: 'Draft saved', description: `Draft ${finalInvoiceNumber} saved - open it from Invoicing Report.` });
                 } else {
-                    toast({ title: 'Invoice Saved', description: `Invoice ${invoiceNumber} has been created.` });
+                    toast({ title: 'Invoice Saved', description: `Invoice ${finalInvoiceNumber} has been created.` });
                 }
             }
             localStorage.removeItem(EDIT_INVOICE_ID_KEY);
@@ -653,7 +688,12 @@ export function InvoiceGeneratorView() {
     const handleClearInvoice = (silent: boolean = false) => {
         localStorage.removeItem(EDIT_INVOICE_ID_KEY);
         setInvoiceToEditId(null);
+        originalInvoiceNumberRef.current = null;
+        numberEditedRef.current = false;
         setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
+        getNextDocumentNumbers()
+            .then((next) => { if (!numberEditedRef.current) setInvoiceNumber(next.INV); })
+            .catch(() => { /* keep the placeholder */ });
         setBusinessNumber('');
         setInvoiceDate(new Date());
         setDueDate(addDays(new Date(), 14));
@@ -912,7 +952,7 @@ export function InvoiceGeneratorView() {
                                 <div className="space-y-2">
                                     <Label htmlFor="invoiceNumber">Invoice #</Label>
                                     <div className="relative">
-                                        <Input id="invoiceNumber" className="pr-24" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} />
+                                        <Input id="invoiceNumber" className="pr-24" value={invoiceNumber} onChange={e => { numberEditedRef.current = true; setInvoiceNumber(e.target.value); }} />
                                         <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Auto-generated</span>
                                     </div>
                                 </div>

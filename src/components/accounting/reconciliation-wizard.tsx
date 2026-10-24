@@ -346,13 +346,15 @@ export function ReconciliationWizard({
                 return;
             }
 
+            const issuedReceipts: string[] = [];
             for (const node of nodesToVerify) {
                 const match = node.matchedLedgerNode;
                 if (!match) continue;
                 if (match.matchType === 'ledger') {
                     await reconcileLedgerEntry(match.id, match.type, node.bank.id);
                 } else if (match.matchType === 'invoice') {
-                    await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), node.bank.date, node.bank.id, 'Bank Account');
+                    const receiptNumber = await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), node.bank.date, node.bank.id, 'Bank Account');
+                    if (receiptNumber) issuedReceipts.push(receiptNumber);
                 } else if (match.matchType === 'bill') {
                     await reconcileBillPayment(user.uid, match.id, node.bank.date, node.bank.id, 'Bank Account');
                 }
@@ -360,7 +362,10 @@ export function ReconciliationWizard({
 
             setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
             setSelectedIds([]);
-            toast({ title: 'Verification Complete', description: `${nodesToVerify.length} nodes achieved parity.` });
+            toast({
+                title: 'Verification Complete',
+                description: `${nodesToVerify.length} nodes achieved parity.${issuedReceipts.length ? ` Receipts issued: ${issuedReceipts.slice(0, 5).join(', ')}${issuedReceipts.length > 5 ? '…' : ''}` : ''}`,
+            });
             onSuccess();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Verification Failed', description: error.message });

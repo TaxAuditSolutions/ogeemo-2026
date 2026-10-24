@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,8 @@ const formatCurrency = (amount: number) => {
     currency: 'USD',
   }).format(amount);
 };
+
+import { claimDocumentNumber, getNextDocumentNumbers } from '@/app/actions/numbering-actions';
 
 const EDIT_QUOTE_ID_KEY = 'editQuoteId';
 
@@ -217,6 +219,20 @@ export function QuoteGeneratorView() {
 
   const [quoteToEditId, setQuoteToEditId] = useState<string | null>(null);
   const [quoteNumber, setQuoteNumber] = useState(`QTE-${Date.now().toString().slice(-6)}`);
+  const originalQuoteNumberRef = useRef<string | null>(null);
+  const numberEditedRef = useRef(false);
+
+  // New quotes preview today's next number; edits keep their stored number.
+  useEffect(() => {
+    if (localStorage.getItem(EDIT_QUOTE_ID_KEY)) return;
+    getNextDocumentNumbers()
+      .then((next) => {
+        if (!numberEditedRef.current && !localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
+          setQuoteNumber(next.QTE);
+        }
+      })
+      .catch(() => { /* keep the placeholder */ });
+  }, []);
   const [businessNumber, setBusinessNumber] = useState('');
   const [quoteDate, setQuoteDate] = useState<Date>(new Date());
   const [expirationDate, setExpirationDate] = useState<Date>(addDays(new Date(), 30));
@@ -256,6 +272,8 @@ export function QuoteGeneratorView() {
       }
 
       setQuoteNumber(quoteData.quoteNumber);
+      originalQuoteNumberRef.current = quoteData.quoteNumber;
+      numberEditedRef.current = false;
       setBusinessNumber(quoteData.businessNumber || '');
       setQuoteDate(new Date(quoteData.quoteDate));
       setExpirationDate(new Date(quoteData.expirationDate));
@@ -494,8 +512,25 @@ export function QuoteGeneratorView() {
     const selectedContact = contacts.find(c => c.id === selectedContactId);
     const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
 
+    let finalQuoteNumber = quoteNumber;
+    try {
+      if (quoteToEditId) {
+        if (originalQuoteNumberRef.current !== null && quoteNumber !== originalQuoteNumberRef.current) {
+          finalQuoteNumber = await claimDocumentNumber('QTE', { override: quoteNumber, excludeDocId: quoteToEditId });
+        }
+      } else if (numberEditedRef.current) {
+        finalQuoteNumber = await claimDocumentNumber('QTE', { override: quoteNumber });
+      } else {
+        finalQuoteNumber = await claimDocumentNumber('QTE');
+      }
+    } catch (claimError: any) {
+      toast({ variant: 'destructive', title: 'Invalid Quote Number', description: claimError?.message || 'Could not claim a quote number.' });
+      setIsSaving(false);
+      return;
+    }
+
     const quoteData = {
-      quoteNumber,
+      quoteNumber: finalQuoteNumber,
       businessNumber,
       companyName,
       contactId: selectedContactId,
@@ -537,10 +572,10 @@ export function QuoteGeneratorView() {
 
       if (quoteToEditId) {
         await updateQuoteWithLineItems(quoteToEditId, quoteData, itemsToSave, user.uid);
-        toast({ title: 'Quote Updated', description: `Quote ${quoteNumber} has been saved.` });
+        toast({ title: 'Quote Updated', description: `Quote ${finalQuoteNumber} has been saved.` });
       } else {
         await addQuoteWithLineItems(quoteData, itemsToSave);
-        toast({ title: 'Quote Saved', description: `Quote ${quoteNumber} has been created.` });
+        toast({ title: 'Quote Saved', description: `Quote ${finalQuoteNumber} has been created.` });
       }
       localStorage.removeItem(EDIT_QUOTE_ID_KEY);
       window.location.href = '/accounting/quotes';
@@ -615,7 +650,12 @@ export function QuoteGeneratorView() {
   const handleClearQuote = (silent: boolean = false) => {
     localStorage.removeItem(EDIT_QUOTE_ID_KEY);
     setQuoteToEditId(null);
+    originalQuoteNumberRef.current = null;
+    numberEditedRef.current = false;
     setQuoteNumber(`QTE-${Date.now().toString().slice(-6)}`);
+    getNextDocumentNumbers()
+      .then((next) => { if (!numberEditedRef.current) setQuoteNumber(next.QTE); })
+      .catch(() => { /* keep the placeholder */ });
     setBusinessNumber('');
     setQuoteDate(new Date());
     setExpirationDate(addDays(new Date(), 30));
@@ -874,7 +914,7 @@ export function QuoteGeneratorView() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="quoteNumber">Quote #</Label>
-                  <Input id="quoteNumber" value={quoteNumber} onChange={e => setQuoteNumber(e.target.value)} />
+                  <Input id="quoteNumber" value={quoteNumber} onChange={e => { numberEditedRef.current = true; setQuoteNumber(e.target.value); }} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="businessNumber">Business Number (BN)</Label>

@@ -89,6 +89,7 @@ import {
     type TaxType,
     type InternalAccount
 } from '@/core/accounting-service';
+import { claimDocumentNumber } from '@/app/actions/numbering-actions';
 import { type Contact } from '@/services/contact-service';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
@@ -441,8 +442,12 @@ export function TransactionDialog({
                     toast({ title: 'Payable Logged' });
                 } else if (transactionType === 'receivable') {
                     const contactMatch = contacts.find(c => c.name === values.company || (c.businessName && `${c.name} - ${c.businessName}` === values.company));
+                    const typedNumber = (values.documentNumber || '').trim();
+                    const invoiceNumberToSave = typedNumber
+                        ? await claimDocumentNumber('INV', { override: typedNumber })
+                        : await claimDocumentNumber('INV');
                     await addInvoiceWithLineItems({
-                        invoiceNumber: values.documentNumber || `INV-${Date.now().toString().slice(-6)}`,
+                        invoiceNumber: invoiceNumberToSave,
                         companyName: values.company,
                         contactId: contactMatch?.id || 'unknown',
                         originalAmount: totals.gross,

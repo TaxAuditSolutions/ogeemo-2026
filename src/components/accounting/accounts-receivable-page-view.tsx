@@ -148,8 +148,13 @@ export function AccountsReceivablePageView() {
 
         setIsSaving(true);
         try {
-            await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
-            toast({ title: 'Payment Posted', description: 'The payment has been recorded in the General Ledger.' });
+            const receiptNumber = await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
+            toast({
+                title: 'Payment Posted',
+                description: receiptNumber
+                    ? `Receipt ${receiptNumber} issued and recorded in the General Ledger.`
+                    : 'The payment has been recorded in the General Ledger.',
+            });
             setIsPaymentDialogOpen(false);
             loadData();
         } catch (error: any) {

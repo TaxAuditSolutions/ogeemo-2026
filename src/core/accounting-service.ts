@@ -17,6 +17,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { claimDocumentNumber } from '@/app/actions/numbering-actions';
 import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -764,6 +765,28 @@ export async function deleteQuote(userId: string, quoteId: string): Promise<void
   });
 }
 
+/**
+ * Claims the next save-time number from the numbering service
+ * ({PREFIX}-{YYYYMMDD}-{seq}, Settings > Document Numbering).
+ * fallbackPrefix: legacy timestamp fallback so a numbering-service outage never
+ * blocks a save; null means the caller should omit the number entirely.
+ */
+async function claimNextNumber(
+  type: 'INV' | 'QTE' | 'REC' | 'WO',
+  fallbackPrefix: string | null
+): Promise<string | null> {
+  try {
+    return await claimDocumentNumber(type);
+  } catch (error) {
+    if (fallbackPrefix === null) {
+      console.error(`[Numbering] Could not claim a ${type} number; omitting it:`, error);
+      return null;
+    }
+    console.error(`[Numbering] Could not claim a ${type} number; using legacy fallback:`, error);
+    return `${fallbackPrefix}-${Date.now().toString().slice(-6)}`;
+  }
+}
+
 export async function convertQuoteToInvoice(quoteId: string, userId: string): Promise<Invoice> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
@@ -775,7 +798,7 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
   const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
   const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
 
-  const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+  const invoiceNumber = (await claimNextNumber('INV', 'INV')) as string;
   const now = new Date();
   const dueDate = new Date(now);
   dueDate.setDate(dueDate.getDate() + 14);
@@ -1051,7 +1074,7 @@ export async function deleteInvoice(userId: string, invoiceId: string): Promise<
   });
 }
 
-export async function postInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, depositAccount: string): Promise<void> {
+export async function postInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, depositAccount: string): Promise<string | null> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
   const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
@@ -1073,6 +1096,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
 
   const incomeRef = doc(collection(db, INCOME_COLLECTION));
   const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+  const receiptNumber = await claimNextNumber('REC', null);
 
   const incomeData = {
     userId,
@@ -1084,6 +1108,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
     depositedTo: depositAccount,
     type: 'business',
     documentNumber: invoiceData.invoiceNumber ?? "",
+    ...(receiptNumber ? { receiptNumber } : {}),
     paymentMethod: 'Bank Transfer'
   };
   batch.set(incomeRef, incomeData);
@@ -1097,6 +1122,8 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
       }));
     }
   });
+
+  return receiptNumber;
 }
 
 // --- Reconciliation Orchestration ---
@@ -1126,11 +1153,11 @@ export async function reconcileLedgerEntry(entryId: string, type: 'income' | 'ex
 /**
  * High-fidelity sync: Posts a payment for an invoice AND reconciles it in one step.
  */
-export async function reconcileInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, bankReferenceId: string, account: string): Promise<void> {
+export async function reconcileInvoicePayment(userId: string, invoiceId: string, amount: number, date: string, bankReferenceId: string, account: string): Promise<string | null> {
   const db = getDb();
   const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
   const invoiceSnap = await getDoc(invoiceRef);
-  if (!invoiceSnap.exists()) return;
+  if (!invoiceSnap.exists()) return null;
 
   const data = invoiceSnap.data();
   const newPaid = (data.amountPaid || 0) + amount;
@@ -1144,6 +1171,7 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
 
   const incomeRef = doc(collection(db, INCOME_COLLECTION));
   const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+  const receiptNumber = await claimNextNumber('REC', null);
   batch.set(incomeRef, {
     userId,
     date,
@@ -1155,10 +1183,12 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
     type: 'business',
     isReconciled: true,
     bankReferenceId: bankReferenceId,
+    ...(receiptNumber ? { receiptNumber } : {}),
     paymentMethod: 'Bank Transfer'
   });
 
   await batch.commit();
+  return receiptNumber;
 }
 
 /**
@@ -2751,7 +2781,7 @@ export async function convertQuoteToWorkOrder(quoteId: string, userId: string): 
   const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
   const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
 
-  const workOrderNumber = `WO-${Date.now().toString().slice(-6)}`;
+  const workOrderNumber = (await claimNextNumber('WO', 'WO')) as string;
   const now = new Date();
 
   const workOrderData: Omit<WorkOrder, 'id' | 'createdAt'> = {
@@ -2816,7 +2846,7 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
   const lineItems = await getWorkOrderLineItems(userId, workOrderId);
   const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
 
-  const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+  const invoiceNumber = (await claimNextNumber('INV', 'INV')) as string;
   const now = new Date();
   const dueDate = new Date(now);
   dueDate.setDate(dueDate.getDate() + 14);

@@ -37,12 +37,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle, ReceiptText } from 'lucide-react';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle, ReceiptText, Trash2 } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import {
     getInvoices,
+    deleteInvoice,
     type Invoice,
     postInvoicePayment,
     getCompanies,
@@ -192,6 +193,29 @@ export function AccountsReceivablePageView() {
         router.push('/accounting/invoices/receipt');
     };
 
+    // Deletion policy: invoices with recorded payments are protected - their
+    // income ledger entries are real bookkeeping and must be removed from the
+    // General Ledger first (deleteInvoice cascades line items + time-entry stamps).
+    const handleDeleteInvoice = async (inv: Invoice) => {
+        if (!user) return;
+        if (inv.amountPaid > 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Invoice has recorded payments',
+                description: `Remove the ${inv.invoiceNumber} payment entries from the General Ledger before deleting this invoice.`,
+            });
+            return;
+        }
+        if (!window.confirm(`Delete ${inv.invoiceNumber} permanently? Its line items will be removed too. This cannot be undone.`)) return;
+        try {
+            await deleteInvoice(user.uid, inv.id);
+            toast({ title: 'Invoice Deleted', description: `${inv.invoiceNumber} has been permanently removed.` });
+            loadData();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+        }
+    };
+
     const totalOutstanding = useMemo(() => {
         return invoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
     }, [invoices]);
@@ -285,6 +309,9 @@ export function AccountsReceivablePageView() {
                                                                     <ReceiptText className="mr-2 h-4 w-4" /> View Receipt
                                                                 </DropdownMenuItem>
                                                             )}
+                                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteInvoice(inv)}>
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
+                                                            </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </div>

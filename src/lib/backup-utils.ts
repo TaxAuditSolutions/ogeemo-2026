@@ -99,3 +99,174 @@ export function formatBackupDate(iso: string | null | undefined): string {
 export function shortObjectPath(prefix: string, path: string): string {
     return path.startsWith(prefix) ? path.slice(prefix.length) || path : path;
 }
+
+export type BackupScopeLabel =
+    | 'full-database'
+    | 'employees'
+    | 'projects'
+    | 'crm-contacts'
+    | 'finance'
+    | 'documents-notes';
+
+export interface BackupScopeOption {
+    value: BackupScopeLabel;
+    title: string;
+    description: string;
+    collectionIds: readonly string[] | null;
+}
+
+export const BACKUP_SCOPE_OPTIONS: readonly BackupScopeOption[] = [
+    {
+        value: 'full-database',
+        title: 'Full database',
+        description: 'All namespaces and collection groups across the entire Firestore database.',
+        collectionIds: null,
+    },
+    {
+        value: 'employees',
+        title: 'Employees & Payroll',
+        description: 'Workers, payroll runs, remittances, leave requests, and time logs.',
+        collectionIds: [
+            'payrollWorkers',
+            'payrollRuns',
+            'details',
+            'payrollRemittances',
+            'leaveRequests',
+            'timeLogs',
+            'locations',
+        ],
+    },
+    {
+        value: 'projects',
+        title: 'Projects & Operations',
+        description: 'Projects, tasks, templates, work orders, service items, inventory, and suppliers.',
+        collectionIds: [
+            'projects',
+            'tasks',
+            'projectTemplates',
+            'workOrders',
+            'workOrderLineItems',
+            'serviceItems',
+            'inventoryItems',
+            'inventoryLogs',
+            'suppliers',
+        ],
+    },
+    {
+        value: 'crm-contacts',
+        title: 'CRM & Contacts',
+        description: 'Contacts, contact folders, leads, CRM actions, client accounts, companies, and industries.',
+        collectionIds: [
+            'contacts',
+            'contactFolders',
+            'leads',
+            'crmActions',
+            'clientAccounts',
+            'companies',
+            'industries',
+        ],
+    },
+    {
+        value: 'finance',
+        title: 'Finance & Accounting',
+        description: 'Invoices, quotes, income/expense transactions, bills, petty cash, assets, loans, and equity.',
+        collectionIds: [
+            'invoices',
+            'invoiceLineItems',
+            'quotes',
+            'quoteLineItems',
+            'incomeTransactions',
+            'expenseTransactions',
+            'payableBills',
+            'receiptStagingQueue',
+            'pettyCashTransactions',
+            'assets',
+            'loans',
+            'equityTransactions',
+            'expenseCategories',
+            'incomeCategories',
+            'internalAccounts',
+            'taxTypes',
+        ],
+    },
+    {
+        value: 'documents-notes',
+        title: 'Documents & Notes',
+        description: 'Files, folders, note sessions, meetings, and ideas.',
+        collectionIds: [
+            'files',
+            'fileManagerFolders',
+            'userNoteSessions',
+            'meetings',
+            'ideas',
+        ],
+    },
+] as const;
+
+/** Formats a backup scope folder label (`employees`, `full-database`, etc.) into a human-readable heading. */
+export function formatBackupScopeLabel(scopeLabel: string | undefined | null): string {
+    const normalized = (scopeLabel ?? '').trim();
+    if (!normalized) return 'Full database';
+    const match = BACKUP_SCOPE_OPTIONS.find((opt) => opt.value === normalized);
+    if (match) return match.title;
+    return normalized
+        .split('-')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+export interface BackupObjectDescription {
+    label: string;
+    description?: string;
+}
+
+/** Describes known Firestore-native export artifacts without changing their object paths. */
+export function describeBackupObject(relativePath: string): BackupObjectDescription {
+    const segments = relativePath.split('/');
+    const fileName = segments[segments.length - 1] ?? '';
+    const isFullCollectionExport = segments.includes('all_namespaces') && segments.includes('all_kinds');
+    const kindSegment = segments.find((segment) => segment.startsWith('kind_'));
+    const collectionId = kindSegment ? kindSegment.slice('kind_'.length) : null;
+
+    if (fileName.endsWith('.overall_export_metadata')) {
+        return {
+            label: 'Full database export manifest',
+            description: 'Import metadata for the complete database export.',
+        };
+    }
+
+    if (fileName.endsWith('.export_metadata')) {
+        if (collectionId) {
+            return {
+                label: `Collection metadata (${collectionId})`,
+                description: `Metadata for the "${collectionId}" collection group.`,
+            };
+        }
+        return {
+            label: 'Collection-group metadata',
+            description: isFullCollectionExport
+                ? 'Metadata for all namespaces and collection groups.'
+                : 'Firestore metadata for this export.',
+        };
+    }
+
+    const shardMatch = /^output-(\d+)$/.exec(fileName);
+    if (shardMatch) {
+        const shardNumber = Number(shardMatch[1]);
+        if (collectionId) {
+            return {
+                label: `${collectionId} — Data shard ${shardNumber}`,
+                description: `Exported documents from the "${collectionId}" collection group.`,
+            };
+        }
+        return {
+            label: `Data shard ${shardNumber}`,
+            ...(isFullCollectionExport
+                ? { description: 'Part of the all-namespaces, all-collection-groups export; contents are not labeled by collection.' }
+                : {}),
+        };
+    }
+
+    return { label: relativePath };
+}

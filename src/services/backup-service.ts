@@ -3,6 +3,7 @@
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseServices } from '@/firebase';
+import type { BackupScopeLabel } from '@/lib/backup-utils';
 
 async function getFunctionsService() {
     const { functions } = getFirebaseServices();
@@ -13,6 +14,7 @@ export interface FirestoreBackupResult {
     message: string;
     outputUriPrefix: string;
     operationName: string;
+    scopeLabel?: BackupScopeLabel;
     status: 'completed' | 'running';
 }
 
@@ -30,12 +32,12 @@ export interface AuthBackupResult {
     scope: 'all' | 'org';
 }
 
-/** Starts a full-database (Firestore) export into the backups bucket. */
-export async function startFirestoreBackup(): Promise<FirestoreBackupResult> {
+/** Starts a Firestore export (full database or scoped collection group set) into the backups bucket. */
+export async function startFirestoreBackup(scopeLabel: BackupScopeLabel = 'full-database'): Promise<FirestoreBackupResult> {
     const functions = await getFunctionsService();
-    const triggerFirestoreBackup = httpsCallable<void, FirestoreBackupResult>(functions, 'triggerFirestoreBackup');
+    const triggerFirestoreBackup = httpsCallable<{ scopeLabel: BackupScopeLabel }, FirestoreBackupResult>(functions, 'triggerFirestoreBackup');
 
-    const result = await triggerFirestoreBackup();
+    const result = await triggerFirestoreBackup({ scopeLabel });
     return result.data;
 }
 
@@ -59,6 +61,7 @@ export async function startAuthBackup(): Promise<AuthBackupResult> {
 
 export interface DatabaseBackupSummary {
     prefix: string;
+    scopeLabel?: string;
     fileCount: number;
     totalSize: number;
     updatedAt: string | null;

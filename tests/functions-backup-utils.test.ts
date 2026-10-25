@@ -2,10 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     AUTH_EXPORT_COLUMNS,
+    BACKUP_SCOPE_CONFIGS,
     authExportObjectName,
     authExportScope,
     authExportFileMatchesOrg,
     backupPrefixFromObjectName,
+    backupScopeFromPrefix,
     backupTimestamp,
     buildAuthExportCsv,
     escapeCsvValue,
@@ -18,6 +20,8 @@ import {
     isFullExportAuthorized,
     isRestorablePrefix,
     messageFromError,
+    normalizeRestorablePrefix,
+    resolveBackupScope,
 } from '../functions/src/backup-utils';
 
 test('full-database export is limited to platform admins and the master tenant', () => {
@@ -79,12 +83,22 @@ test('auth export CSV has the documented header and one row per user', () => {
     assert.ok(lines[2].startsWith('u2,b@example.com,false,,true'));
 });
 
-test('backup paths use filesystem-safe timestamps', () => {
+test('backup paths use filesystem-safe timestamps and scope labels', () => {
     const at = new Date('2026-10-18T12:34:56.789Z');
     assert.equal(backupTimestamp(at), '2026-10-18T12-34-56-789Z');
-    assert.equal(firestoreExportPrefix(at), 'firestore-exports/2026-10-18T12-34-56-789Z/');
+    assert.equal(firestoreExportPrefix(at), 'firestore-exports/full-database/2026-10-18T12-34-56-789Z/');
+    assert.equal(firestoreExportPrefix(at, 'employees'), 'firestore-exports/employees/2026-10-18T12-34-56-789Z/');
+    assert.equal(firestoreExportPrefix(at, 'projects'), 'firestore-exports/projects/2026-10-18T12-34-56-789Z/');
     assert.equal(authExportObjectName('all', null, at), 'auth-exports/users-2026-10-18T12-34-56-789Z.csv');
     assert.equal(authExportObjectName('org', 'org-1', at), 'auth-exports/users-org-1-2026-10-18T12-34-56-789Z.csv');
+});
+
+test('resolveBackupScope returns collectionIds for domain scopes and defaults to full-database', () => {
+    assert.equal(resolveBackupScope().label, 'full-database');
+    assert.equal(resolveBackupScope().collectionIds, null);
+    assert.deepEqual(resolveBackupScope('employees').collectionIds, BACKUP_SCOPE_CONFIGS.employees.collectionIds);
+    assert.deepEqual(resolveBackupScope('projects').collectionIds, BACKUP_SCOPE_CONFIGS.projects.collectionIds);
+    assert.throws(() => resolveBackupScope('unknown-scope'));
 });
 
 test('messageFromError always returns readable text', () => {
@@ -94,7 +108,15 @@ test('messageFromError always returns readable text', () => {
     assert.equal(messageFromError(undefined, 'fallback'), 'fallback');
 });
 
-test('backupPrefixFromObjectName extracts export folders and rejects strays', () => {
+test('backupPrefixFromObjectName extracts both scoped and legacy export folders and rejects strays', () => {
+    assert.equal(
+        backupPrefixFromObjectName('firestore-exports/employees/2026-10-18T12-00-00-000Z/all_namespaces/kind_payrollWorkers/output-0'),
+        'firestore-exports/employees/2026-10-18T12-00-00-000Z/'
+    );
+    assert.equal(
+        backupPrefixFromObjectName('firestore-exports/projects/2026-10-18T12-00-00-000Z/2026-10-18T12-00-00-000Z.overall_export_metadata'),
+        'firestore-exports/projects/2026-10-18T12-00-00-000Z/'
+    );
     assert.equal(
         backupPrefixFromObjectName('firestore-exports/2026-10-18T12-00-00-000Z/all_namespaces/output-0'),
         'firestore-exports/2026-10-18T12-00-00-000Z/'
@@ -104,24 +126,37 @@ test('backupPrefixFromObjectName extracts export folders and rejects strays', ()
     assert.equal(backupPrefixFromObjectName(''), null);
 });
 
-test('groupDatabaseExportFiles groups, totals and sorts newest first', () => {
+test('backupScopeFromPrefix extracts the scope label and defaults legacy prefixes to full-database', () => {
+    assert.equal(backupScopeFromPrefix('firestore-exports/employees/2026-10-18T12-00-00-000Z/'), 'employees');
+    assert.equal(backupScopeFromPrefix('gs://ogeemo-firebase-backups/firestore-exports/projects/2026-10-18T12-00-00-000Z/'), 'projects');
+    assert.equal(backupScopeFromPrefix('firestore-exports/2026-10-18T12-00-00-000Z/'), 'full-database');
+});
+
+test('groupDatabaseExportFiles keeps multiple runs under the same scope separate and populates scopeLabel', () => {
     const files = [
-        { path: 'firestore-exports/run-b/output-1', size: 100, updated: '2026-10-18T10:00:00Z' },
+        { path: 'firestore-exports/employees/2026-10-18T11-00-00-000Z/all_namespaces/kind_payrollWorkers/output-0', size: 120, updated: '2026-10-18T11:00:00Z' },
+        { path: 'firestore-exports/employees/2026-10-18T10-00-00-000Z/all_namespaces/kind_payrollWorkers/output-0', size: 100, updated: '2026-10-18T10:00:00Z' },
         { path: 'firestore-exports/run-a/output-0', size: 50, updated: '2026-10-18T09:00:00Z' },
         { path: 'firestore-exports/run-a/export_metadata', size: 25, updated: '2026-10-18T09:05:00Z' },
-        { path: 'auth-exports/users.csv', size: 999, updated: '2026-10-18T11:00:00Z' },
+        { path: 'auth-exports/users.csv', size: 999, updated: '2026-10-18T11:30:00Z' },
         { path: 'stray.txt', size: 1, updated: null },
     ];
     const grouped = groupDatabaseExportFiles(files);
-    assert.equal(grouped.length, 2);
-    assert.equal(grouped[0].prefix, 'firestore-exports/run-b/');
+    assert.equal(grouped.length, 3);
+    assert.equal(grouped[0].prefix, 'firestore-exports/employees/2026-10-18T11-00-00-000Z/');
+    assert.equal(grouped[0].scopeLabel, 'employees');
     assert.equal(grouped[0].fileCount, 1);
-    assert.equal(grouped[0].totalSize, 100);
-    assert.equal(grouped[1].prefix, 'firestore-exports/run-a/');
-    assert.equal(grouped[1].fileCount, 2);
-    assert.equal(grouped[1].totalSize, 75);
-    assert.equal(grouped[1].updatedAt, '2026-10-18T09:05:00Z');
-    assert.equal(grouped[1].files[0].path, 'firestore-exports/run-a/export_metadata');
+    assert.equal(grouped[0].totalSize, 120);
+    assert.equal(grouped[1].prefix, 'firestore-exports/employees/2026-10-18T10-00-00-000Z/');
+    assert.equal(grouped[1].scopeLabel, 'employees');
+    assert.equal(grouped[1].fileCount, 1);
+    assert.equal(grouped[1].totalSize, 100);
+    assert.equal(grouped[2].prefix, 'firestore-exports/run-a/');
+    assert.equal(grouped[2].scopeLabel, 'full-database');
+    assert.equal(grouped[2].fileCount, 2);
+    assert.equal(grouped[2].totalSize, 75);
+    assert.equal(grouped[2].updatedAt, '2026-10-18T09:05:00Z');
+    assert.equal(grouped[2].files[0].path, 'firestore-exports/run-a/export_metadata');
 });
 
 test('formatBytes renders human-readable sizes', () => {
@@ -135,6 +170,7 @@ test('formatBytes renders human-readable sizes', () => {
 
 test('isAllowedBackupObjectPath only allows files inside the backup folders', () => {
     assert.equal(isAllowedBackupObjectPath('firestore-exports/2026-run/output-0'), true);
+    assert.equal(isAllowedBackupObjectPath('firestore-exports/employees/2026-run/output-0'), true);
     assert.equal(isAllowedBackupObjectPath('auth-exports/users-1.csv'), true);
     assert.equal(isAllowedBackupObjectPath('../secret.txt'), false);
     assert.equal(isAllowedBackupObjectPath('/etc/passwd'), false);
@@ -150,12 +186,26 @@ test('authExportFileMatchesOrg matches only that workspace', () => {
     assert.equal(authExportFileMatchesOrg('auth-exports/users-org-1-2026.csv', ''), false);
 });
 
-test('isRestorablePrefix accepts only this bucket\'s export folders', () => {
+test('normalizeRestorablePrefix and isRestorablePrefix accept scoped and legacy export folders and reject parent-only folders', () => {
     const bucket = 'ogeemo-firebase-backups';
+    assert.equal(
+        normalizeRestorablePrefix('gs://ogeemo-firebase-backups/firestore-exports/employees/2026-10-18T12-00-00-000Z/', bucket),
+        'gs://ogeemo-firebase-backups/firestore-exports/employees/2026-10-18T12-00-00-000Z/'
+    );
+    assert.equal(
+        normalizeRestorablePrefix('firestore-exports/projects/2026-10-18T12-00-00-000Z/', bucket),
+        'gs://ogeemo-firebase-backups/firestore-exports/projects/2026-10-18T12-00-00-000Z/'
+    );
+    assert.equal(
+        normalizeRestorablePrefix('firestore-exports/2026-10-18T12-00-00-000Z/', bucket),
+        'gs://ogeemo-firebase-backups/firestore-exports/2026-10-18T12-00-00-000Z/'
+    );
     assert.equal(isRestorablePrefix('gs://ogeemo-firebase-backups/firestore-exports/2026-10-18T12-00-00-000Z/', bucket), true);
+    assert.equal(isRestorablePrefix('firestore-exports/employees/2026-10-18T12-00-00-000Z/', bucket), true);
+    assert.equal(isRestorablePrefix('firestore-exports/employees/', bucket), false);
+    assert.equal(isRestorablePrefix('gs://ogeemo-firebase-backups/firestore-exports/employees/', bucket), false);
     assert.equal(isRestorablePrefix('gs://evil-bucket/firestore-exports/2026-10-18T12-00-00-000Z/', bucket), false);
     assert.equal(isRestorablePrefix('gs://ogeemo-firebase-backups/firestore-exports/../../', bucket), false);
     assert.equal(isRestorablePrefix('gs://ogeemo-firebase-backups/auth-exports/users-1.csv', bucket), false);
-    assert.equal(isRestorablePrefix('firestore-exports/2026-10-18T12-00-00-000Z/', bucket), false);
 });
 

@@ -120,9 +120,129 @@ export function authExportObjectName(scope: 'all' | 'org', orgId: string | null 
   return `auth-exports/${scopePart}-${stamp}.csv`;
 }
 
+export type BackupScopeLabel =
+  | 'full-database'
+  | 'employees'
+  | 'projects'
+  | 'crm-contacts'
+  | 'finance'
+  | 'documents-notes';
+
+export interface BackupScopeConfig {
+  label: BackupScopeLabel;
+  title: string;
+  description: string;
+  collectionIds: readonly string[] | null;
+}
+
+export const BACKUP_SCOPE_CONFIGS: Record<BackupScopeLabel, BackupScopeConfig> = {
+  'full-database': {
+    label: 'full-database',
+    title: 'Full database',
+    description: 'All namespaces and collection groups across the entire Firestore database.',
+    collectionIds: null,
+  },
+  employees: {
+    label: 'employees',
+    title: 'Employees & Payroll',
+    description: 'Workers, payroll runs, remittances, leave requests, and time logs.',
+    collectionIds: [
+      'payrollWorkers',
+      'payrollRuns',
+      'details',
+      'payrollRemittances',
+      'leaveRequests',
+      'timeLogs',
+      'locations',
+    ],
+  },
+  projects: {
+    label: 'projects',
+    title: 'Projects & Operations',
+    description: 'Projects, tasks, templates, work orders, service items, inventory, and suppliers.',
+    collectionIds: [
+      'projects',
+      'tasks',
+      'projectTemplates',
+      'workOrders',
+      'workOrderLineItems',
+      'serviceItems',
+      'inventoryItems',
+      'inventoryLogs',
+      'suppliers',
+    ],
+  },
+  'crm-contacts': {
+    label: 'crm-contacts',
+    title: 'CRM & Contacts',
+    description: 'Contacts, contact folders, leads, CRM actions, client accounts, companies, and industries.',
+    collectionIds: [
+      'contacts',
+      'contactFolders',
+      'leads',
+      'crmActions',
+      'clientAccounts',
+      'companies',
+      'industries',
+    ],
+  },
+  finance: {
+    label: 'finance',
+    title: 'Finance & Accounting',
+    description: 'Invoices, quotes, income/expense transactions, bills, petty cash, assets, loans, and equity.',
+    collectionIds: [
+      'invoices',
+      'invoiceLineItems',
+      'quotes',
+      'quoteLineItems',
+      'incomeTransactions',
+      'expenseTransactions',
+      'payableBills',
+      'receiptStagingQueue',
+      'pettyCashTransactions',
+      'assets',
+      'loans',
+      'equityTransactions',
+      'expenseCategories',
+      'incomeCategories',
+      'internalAccounts',
+      'taxTypes',
+    ],
+  },
+  'documents-notes': {
+    label: 'documents-notes',
+    title: 'Documents & Notes',
+    description: 'Files, folders, note sessions, meetings, and ideas.',
+    collectionIds: [
+      'files',
+      'fileManagerFolders',
+      'userNoteSessions',
+      'meetings',
+      'ideas',
+    ],
+  },
+};
+
+export function isValidBackupScopeLabel(value: unknown): value is BackupScopeLabel {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(BACKUP_SCOPE_CONFIGS, value);
+}
+
+export function resolveBackupScope(label?: unknown): BackupScopeConfig {
+  if (label === undefined || label === null || label === '') {
+    return BACKUP_SCOPE_CONFIGS['full-database'];
+  }
+  if (!isValidBackupScopeLabel(label)) {
+    throw new Error(`Invalid backup scope label: ${String(label)}`);
+  }
+  return BACKUP_SCOPE_CONFIGS[label];
+}
+
 /** Folder prefix (inside the backups bucket) for a Firestore database export. */
-export function firestoreExportPrefix(at: Date = new Date()): string {
-  return `firestore-exports/${backupTimestamp(at)}/`;
+export function firestoreExportPrefix(
+  at: Date = new Date(),
+  scopeLabel: BackupScopeLabel = 'full-database'
+): string {
+  return `firestore-exports/${scopeLabel}/${backupTimestamp(at)}/`;
 }
 
 /** Maps a raw callable error into a safe message (never leaks internals to the UI). */
@@ -141,9 +261,10 @@ export interface BackupFileInput {
   updated: string | null;
 }
 
-/** A database export folder (firestore-exports/<timestamp>/) with its files. */
+/** A database export folder (firestore-exports/<label>/<timestamp>/ or legacy firestore-exports/<timestamp>/) with its files. */
 export interface DatabaseBackupSummary {
   prefix: string;
+  scopeLabel: string;
   fileCount: number;
   totalSize: number;
   updatedAt: string | null;
@@ -160,7 +281,7 @@ export interface AuthExportSummary {
 export const DATABASE_EXPORT_FOLDER_PREFIX = 'firestore-exports/';
 export const AUTH_EXPORT_FOLDER_PREFIX = 'auth-exports/';
 
-/** Groups bucket objects into database backups keyed by their export folder. */
+/** Groups bucket objects into database backups keyed by their exact export folder. */
 export function groupDatabaseExportFiles(files: BackupFileInput[]): DatabaseBackupSummary[] {
   const byPrefix = new Map<string, BackupFileInput[]>();
   for (const file of files) {
@@ -179,6 +300,7 @@ export function groupDatabaseExportFiles(files: BackupFileInput[]): DatabaseBack
     }, null);
     summaries.push({
       prefix,
+      scopeLabel: backupScopeFromPrefix(prefix),
       fileCount: prefixFiles.length,
       totalSize,
       updatedAt,
@@ -189,10 +311,56 @@ export function groupDatabaseExportFiles(files: BackupFileInput[]): DatabaseBack
   return summaries.sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
 }
 
-/** Extracts the export folder from an object path (firestore-exports/<stamp>/...). */
+const TIMESTAMP_SEGMENT_REGEX = /^\d{4}-\d{2}-\d{2}T[\d-]+Z$/;
+const SCOPE_SEGMENT_REGEX = /^[A-Za-z0-9-]+$/;
+
+/**
+ * Extracts the exact export folder from an object path:
+ * - Scoped: firestore-exports/<label>/<stamp>/...
+ * - Legacy flat: firestore-exports/<stamp>/...
+ */
 export function backupPrefixFromObjectName(name: string): string | null {
-  const match = new RegExp(`^${DATABASE_EXPORT_FOLDER_PREFIX}([^/]+)/`).exec(name ?? '');
-  return match ? `${DATABASE_EXPORT_FOLDER_PREFIX}${match[1]}/` : null;
+  if (typeof name !== 'string' || !name.startsWith(DATABASE_EXPORT_FOLDER_PREFIX)) {
+    return null;
+  }
+  const rest = name.slice(DATABASE_EXPORT_FOLDER_PREFIX.length);
+  const parts = rest.split('/');
+  if (parts.length < 2 || !parts[0] || !parts[1]) {
+    return null;
+  }
+
+  const first = parts[0];
+  const second = parts[1];
+
+  // Legacy flat export folder when first segment is a timestamp or second segment is a native export artifact.
+  if (
+    TIMESTAMP_SEGMENT_REGEX.test(first) ||
+    second === 'all_namespaces' ||
+    second.endsWith('.overall_export_metadata') ||
+    second === 'export_metadata' ||
+    second.startsWith('output-')
+  ) {
+    return SCOPE_SEGMENT_REGEX.test(first) ? `${DATABASE_EXPORT_FOLDER_PREFIX}${first}/` : null;
+  }
+
+  // Scoped export folder: firestore-exports/<label>/<run>/...
+  if (parts.length >= 3 && parts[2] && SCOPE_SEGMENT_REGEX.test(first) && SCOPE_SEGMENT_REGEX.test(second)) {
+    return `${DATABASE_EXPORT_FOLDER_PREFIX}${first}/${second}/`;
+  }
+
+  return null;
+}
+
+/** Extracts the scope label from a backup prefix, defaulting to 'full-database' for legacy flat prefixes. */
+export function backupScopeFromPrefix(prefix: string): string {
+  if (typeof prefix !== 'string') return 'full-database';
+  const normalized = prefix.replace(/^gs:\/\/[^/]+\//, '');
+  if (!normalized.startsWith(DATABASE_EXPORT_FOLDER_PREFIX)) return 'full-database';
+  const parts = normalized.slice(DATABASE_EXPORT_FOLDER_PREFIX.length).split('/').filter(Boolean);
+  if (parts.length >= 2) {
+    return parts[0];
+  }
+  return 'full-database';
 }
 
 /** Human-readable file size (0 B / 3.4 KB / 1.2 MB). */
@@ -221,10 +389,52 @@ export function authExportFileMatchesOrg(path: string, orgId: string): boolean {
   return path.startsWith(`${AUTH_EXPORT_FOLDER_PREFIX}users-${orgId}-`);
 }
 
-/** True for a well-formed, restorable gs:// prefix inside this project's backups bucket. */
+/**
+ * Normalizes a relative backup prefix or full gs:// URI to a validated gs://<bucket>/firestore-exports/.../ URI.
+ * Accepts both scoped (`firestore-exports/<label>/<timestamp>/`) and legacy (`firestore-exports/<timestamp>/`) exports,
+ * while rejecting parent-only folders like `firestore-exports/employees/`.
+ */
+export function normalizeRestorablePrefix(prefixOrUri: string, bucketName: string): string | null {
+  if (typeof prefixOrUri !== 'string' || typeof bucketName !== 'string' || !bucketName) return null;
+  const trimmed = prefixOrUri.trim();
+  if (!trimmed || trimmed.includes('..') || /[\u0000-\u001f]/.test(trimmed)) return null;
+
+  const bucketPrefix = `gs://${bucketName}/`;
+  let relative: string;
+  if (trimmed.startsWith('gs://')) {
+    if (!trimmed.startsWith(bucketPrefix)) return null;
+    relative = trimmed.slice(bucketPrefix.length);
+  } else {
+    relative = trimmed;
+  }
+
+  if (!relative.startsWith(DATABASE_EXPORT_FOLDER_PREFIX) || !relative.endsWith('/')) {
+    return null;
+  }
+
+  const subPath = relative.slice(DATABASE_EXPORT_FOLDER_PREFIX.length, -1);
+  if (!subPath) return null;
+  const segments = subPath.split('/');
+
+  if (segments.length === 1) {
+    const [only] = segments;
+    if (!SCOPE_SEGMENT_REGEX.test(only)) return null;
+    // Reject known scope parent folders without a timestamp/run subfolder.
+    if (isValidBackupScopeLabel(only)) return null;
+    return `${bucketPrefix}${DATABASE_EXPORT_FOLDER_PREFIX}${only}/`;
+  }
+
+  if (segments.length === 2) {
+    const [scopeSeg, runSeg] = segments;
+    if (!SCOPE_SEGMENT_REGEX.test(scopeSeg) || !SCOPE_SEGMENT_REGEX.test(runSeg)) return null;
+    return `${bucketPrefix}${DATABASE_EXPORT_FOLDER_PREFIX}${scopeSeg}/${runSeg}/`;
+  }
+
+  return null;
+}
+
+/** True for a well-formed, restorable gs:// prefix or relative export prefix inside this project's backups bucket. */
 export function isRestorablePrefix(prefix: string, bucketName: string): boolean {
-  if (typeof prefix !== 'string') return false;
-  const pattern = new RegExp(`^gs://${bucketName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/${DATABASE_EXPORT_FOLDER_PREFIX}[A-Za-z0-9-]+/$`);
-  return pattern.test(prefix);
+  return normalizeRestorablePrefix(prefix, bucketName) !== null;
 }
 

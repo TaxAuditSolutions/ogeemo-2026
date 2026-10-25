@@ -4,8 +4,10 @@ import {
     backupBucketName,
     backupBucketUri,
     bucketNameFromUri,
+    describeBackupObject,
     formatBackupDate,
     formatBackupError,
+    formatBackupScopeLabel,
     formatBytes,
     parseLastBackupRun,
     shortObjectPath,
@@ -79,5 +81,51 @@ test('shortObjectPath strips the backup prefix for compact display', () => {
     );
     assert.equal(shortObjectPath('firestore-exports/run-1/', 'firestore-exports/run-1/'), 'firestore-exports/run-1/');
     assert.equal(shortObjectPath('other/', 'unrelated/path.txt'), 'unrelated/path.txt');
+});
+
+test('describeBackupObject labels Firestore export metadata and data shards', () => {
+    assert.deepEqual(
+        describeBackupObject('2026-10-18T17-11-18-506Z.overall_export_metadata'),
+        {
+            label: 'Full database export manifest',
+            description: 'Import metadata for the complete database export.',
+        }
+    );
+    assert.deepEqual(
+        describeBackupObject('all_namespaces/all_kinds/all_namespaces_all_kinds.export_metadata'),
+        {
+            label: 'Collection-group metadata',
+            description: 'Metadata for all namespaces and collection groups.',
+        }
+    );
+    assert.deepEqual(describeBackupObject('all_namespaces/all_kinds/output-13'), {
+        label: 'Data shard 13',
+        description: 'Part of the all-namespaces, all-collection-groups export; contents are not labeled by collection.',
+    });
+    assert.deepEqual(
+        describeBackupObject('all_namespaces/kind_projects/all_namespaces_kind_projects.export_metadata'),
+        {
+            label: 'Collection metadata (projects)',
+            description: 'Metadata for the "projects" collection group.',
+        }
+    );
+    assert.deepEqual(describeBackupObject('all_namespaces/kind_projects/output-0'), {
+        label: 'projects — Data shard 0',
+        description: 'Exported documents from the "projects" collection group.',
+    });
+});
+
+test('formatBackupScopeLabel renders friendly titles for configured and custom labels', () => {
+    assert.equal(formatBackupScopeLabel('full-database'), 'Full database');
+    assert.equal(formatBackupScopeLabel('employees'), 'Employees & Payroll');
+    assert.equal(formatBackupScopeLabel('projects'), 'Projects & Operations');
+    assert.equal(formatBackupScopeLabel('custom-scope'), 'Custom Scope');
+    assert.equal(formatBackupScopeLabel(undefined), 'Full database');
+});
+
+test('describeBackupObject preserves unfamiliar paths as their display labels', () => {
+    assert.deepEqual(describeBackupObject('future-format/custom-output.bin'), {
+        label: 'future-format/custom-output.bin',
+    });
 });
 

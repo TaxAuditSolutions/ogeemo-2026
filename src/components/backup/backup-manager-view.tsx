@@ -32,11 +32,15 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import firebaseConfig from '@/lib/config';
 import {
+    BACKUP_SCOPE_OPTIONS,
+    type BackupScopeLabel,
     backupBucketName,
     formatBackupDate,
     formatBackupError,
+    formatBackupScopeLabel,
     formatBytes,
     shortObjectPath,
+    describeBackupObject,
     storageConsoleUrl,
 } from '@/lib/backup-utils';
 
@@ -65,6 +69,7 @@ export function BackupManagerView() {
     const [isLoadingList, setIsLoadingList] = useState(true);
 
     // Backup card.
+    const [selectedScope, setSelectedScope] = useState<BackupScopeLabel>('full-database');
     const [backupTask, setBackupTask] = useState<TaskState>({ status: 'idle', message: '' });
     const [isBackingUp, setIsBackingUp] = useState(false);
     const [expandedBackup, setExpandedBackup] = useState<string | null>(null);
@@ -82,6 +87,22 @@ export function BackupManagerView() {
     const { toast } = useToast();
     const bucketName = backupBucketName(firebaseConfig.projectId);
     const databaseBackups = backups?.databaseBackups ?? [];
+    const selectedScopeConfig =
+        BACKUP_SCOPE_OPTIONS.find((option) => option.value === selectedScope) ?? BACKUP_SCOPE_OPTIONS[0];
+    const groupedDatabaseBackups = React.useMemo(() => {
+        const groups = new Map<string, typeof databaseBackups>();
+        for (const backup of databaseBackups) {
+            const scopeKey = backup.scopeLabel || 'full-database';
+            const list = groups.get(scopeKey) ?? [];
+            list.push(backup);
+            groups.set(scopeKey, list);
+        }
+        return Array.from(groups.entries()).map(([scopeLabel, items]) => ({
+            scopeLabel,
+            title: formatBackupScopeLabel(scopeLabel),
+            items,
+        }));
+    }, [databaseBackups]);
 
     const refreshBackups = useCallback(async () => {
         try {
@@ -98,6 +119,7 @@ export function BackupManagerView() {
     useEffect(() => {
         refreshBackups();
     }, [refreshBackups]);
+
     /** Polls a running database job (backup or restore) until it settles. */
     const pollOperation = async (operationName: string, runningMessage: string, doneMessage: string): Promise<TaskState> => {
         for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
@@ -119,9 +141,12 @@ export function BackupManagerView() {
 
     const handleBackUpNow = async () => {
         setIsBackingUp(true);
-        setBackupTask({ status: 'running', message: 'Starting the backup...' });
+        setBackupTask({
+            status: 'running',
+            message: `Starting ${selectedScopeConfig.title.toLowerCase()} backup...`,
+        });
         try {
-            const result = await startFirestoreBackup();
+            const result = await startFirestoreBackup(selectedScope);
             if (result.status === 'completed') {
                 setBackupTask({
                     status: 'success',
@@ -224,6 +249,7 @@ export function BackupManagerView() {
             setIsExportingDirectory(false);
         }
     };
+
     const StatusIndicator = ({ task }: { task: TaskState }) => {
         switch (task.status) {
             case 'running':
@@ -284,17 +310,39 @@ export function BackupManagerView() {
                         </CardTitle>
                         <CardDescription>
                             Create a point-in-time copy of your business database in Ogeemo's secure backups bucket
-                            (<code>gs://{bucketName}/</code>).
+                            (<code>gs://{bucketName}/firestore-exports/{selectedScope}/</code>).
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="backup-scope">Backup scope</Label>
+                            <select
+                                id="backup-scope"
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                value={selectedScope}
+                                onChange={(event) => setSelectedScope(event.target.value as BackupScopeLabel)}
+                                disabled={isBackingUp}
+                            >
+                                {BACKUP_SCOPE_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.title} (firestore-exports/{option.value}/)
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                {selectedScopeConfig.description}
+                                {selectedScopeConfig.collectionIds
+                                    ? ` Collections: ${selectedScopeConfig.collectionIds.join(', ')}.`
+                                    : ''}
+                            </p>
+                        </div>
                         <Button onClick={handleBackUpNow} disabled={isBackingUp} className="w-full h-12 text-base font-bold shadow-lg">
                             {isBackingUp ? (
                                 <LoaderCircle className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
                                 <HardDrive className="mr-2 h-5 w-5" />
                             )}
-                            {isBackingUp ? 'Backing up...' : 'Back up now'}
+                            {isBackingUp ? 'Backing up...' : `Back up ${selectedScopeConfig.title.toLowerCase()} now`}
                         </Button>
                         {backupTask.status !== 'idle' && <TaskBlock task={backupTask} />}
 
@@ -314,75 +362,104 @@ export function BackupManagerView() {
                                     No backups yet. Press <strong>Back up now</strong> to create your first one.
                                 </p>
                             )}
-                            {!isLoadingList && !listError && databaseBackups.length > 0 && (
-                                <ul className="divide-y">
-                                    {databaseBackups.map((backup) => {
-                                        const isExpanded = expandedBackup === backup.prefix;
-                                        return (
-                                            <li key={backup.prefix} className="py-3 space-y-2">
-                                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-medium">{formatBackupDate(backup.updatedAt)}</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {backup.fileCount} file{backup.fileCount === 1 ? '' : 's'} &middot; {formatBytes(backup.totalSize)}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex gap-2 shrink-0">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-8 text-xs"
-                                                            onClick={() => setExpandedBackup(isExpanded ? null : backup.prefix)}
-                                                        >
-                                                            {isExpanded ? <ChevronDown className="h-3.5 w-3.5 mr-1" /> : <ChevronRight className="h-3.5 w-3.5 mr-1" />}
-                                                            Files
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="h-8 text-xs"
-                                                            onClick={() => {
-                                                                setRestoreTarget(backup.prefix);
-                                                                setRestoreConfirmText('');
-                                                                setRestoreTask({ status: 'idle', message: '' });
-                                                                document.getElementById('restore-target')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                            }}
-                                                        >
-                                                            <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore this
-                                                        </Button>
-                                                    </div>
+                            {!isLoadingList && !listError && groupedDatabaseBackups.length > 0 && (
+                                <div className="space-y-4 pt-2">
+                                    {groupedDatabaseBackups.map((group) => (
+                                        <div key={group.scopeLabel} className="rounded-lg border p-3 space-y-2">
+                                            <div className="flex items-center justify-between gap-2 border-b pb-2">
+                                                <div>
+                                                    <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                                                        {group.title}
+                                                    </p>
+                                                    <p className="text-[11px] font-mono text-muted-foreground">
+                                                        firestore-exports/{group.scopeLabel}/
+                                                    </p>
                                                 </div>
-                                                {isExpanded && (
-                                                    <ul className="pl-3 space-y-1 max-h-56 overflow-y-auto border-l-2 border-muted">
-                                                        {backup.files.map((file) => (
-                                                            <li key={file.path} className="flex items-center justify-between gap-2 text-xs">
-                                                                <span className="truncate font-mono" title={file.path}>
-                                                                    {shortObjectPath(backup.prefix, file.path)}
-                                                                </span>
-                                                                <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-                                                                    {formatBytes(file.size)}
-                                                                    <button
-                                                                        type="button"
-                                                                        aria-label={`Download ${shortObjectPath(backup.prefix, file.path)}`}
-                                                                        className="p-1 rounded hover:bg-muted text-primary disabled:opacity-50"
-                                                                        disabled={downloadingPath === file.path}
-                                                                        onClick={() => handleDownloadFile(file.path)}
+                                                <span className="text-xs text-muted-foreground">
+                                                    {group.items.length} backup{group.items.length === 1 ? '' : 's'}
+                                                </span>
+                                            </div>
+                                            <ul className="divide-y">
+                                                {group.items.map((backup) => {
+                                                    const isExpanded = expandedBackup === backup.prefix;
+                                                    return (
+                                                        <li key={backup.prefix} className="py-2.5 space-y-2">
+                                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-medium">{formatBackupDate(backup.updatedAt)}</p>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        {backup.fileCount} file{backup.fileCount === 1 ? '' : 's'} &middot; {formatBytes(backup.totalSize)}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex gap-2 shrink-0">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="h-8 text-xs"
+                                                                        onClick={() => setExpandedBackup(isExpanded ? null : backup.prefix)}
                                                                     >
-                                                                        {downloadingPath === file.path ? (
-                                                                            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-                                                                        ) : (
-                                                                            <Download className="h-3.5 w-3.5" />
-                                                                        )}
-                                                                    </button>
-                                                                </span>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
+                                                                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 mr-1" /> : <ChevronRight className="h-3.5 w-3.5 mr-1" />}
+                                                                        Files
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="h-8 text-xs"
+                                                                        onClick={() => {
+                                                                            setRestoreTarget(backup.prefix);
+                                                                            setRestoreConfirmText('');
+                                                                            setRestoreTask({ status: 'idle', message: '' });
+                                                                            document.getElementById('restore-target')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                        }}
+                                                                    >
+                                                                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore this
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                            {isExpanded && (
+                                                                <ul className="pl-3 space-y-1 max-h-56 overflow-y-auto border-l-2 border-muted">
+                                                                    {backup.files.map((file) => {
+                                                                        const relativePath = shortObjectPath(backup.prefix, file.path);
+                                                                        const description = describeBackupObject(relativePath);
+
+                                                                        return (
+                                                                            <li key={file.path} className="flex items-center justify-between gap-2 text-xs">
+                                                                                <span className="min-w-0 flex-1" title={file.path}>
+                                                                                    <span className="block truncate font-medium">{description.label}</span>
+                                                                                    {description.description && (
+                                                                                        <span className="block truncate text-muted-foreground">
+                                                                                            {description.description}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </span>
+                                                                                <span className="flex items-center gap-2 text-muted-foreground shrink-0">
+                                                                                    {formatBytes(file.size)}
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        aria-label={`Download ${description.label} (${relativePath})`}
+                                                                                        className="p-1 rounded hover:bg-muted text-primary disabled:opacity-50"
+                                                                                        disabled={downloadingPath === file.path}
+                                                                                        onClick={() => handleDownloadFile(file.path)}
+                                                                                    >
+                                                                                        {downloadingPath === file.path ? (
+                                                                                            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                                                                                        ) : (
+                                                                                            <Download className="h-3.5 w-3.5" />
+                                                                                        )}
+                                                                                    </button>
+                                                                                </span>
+                                                                            </li>
+                                                                        );
+                                                                    })}
+                                                                </ul>
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </CardContent>
@@ -419,10 +496,14 @@ export function BackupManagerView() {
                                 <option value="">
                                     {databaseBackups.length === 0 ? 'No backups available' : 'Choose a backup...'}
                                 </option>
-                                {databaseBackups.map((backup) => (
-                                    <option key={backup.prefix} value={backup.prefix}>
-                                        {formatBackupDate(backup.updatedAt)} - {backup.fileCount} files ({formatBytes(backup.totalSize)})
-                                    </option>
+                                {groupedDatabaseBackups.map((group) => (
+                                    <optgroup key={group.scopeLabel} label={group.title}>
+                                        {group.items.map((backup) => (
+                                            <option key={backup.prefix} value={backup.prefix}>
+                                                {group.title} — {formatBackupDate(backup.updatedAt)} - {backup.fileCount} files ({formatBytes(backup.totalSize)})
+                                            </option>
+                                        ))}
+                                    </optgroup>
                                 ))}
                             </select>
                         </div>
@@ -499,9 +580,9 @@ export function BackupManagerView() {
                             ready for spreadsheets and third-party tools.
                         </p>
                     </CardContent>
-                </Card>
-            </div>
-        </div>
+                </Card >
+            </div >
+        </div >
     );
 }
 

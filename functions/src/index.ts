@@ -22,6 +22,8 @@ import {
   isFullExportAuthorized,
   isRestorablePrefix,
   messageFromError,
+  normalizeRestorablePrefix,
+  resolveBackupScope,
 } from "./backup-utils";
 
 if (!getApps().length) {
@@ -170,19 +172,31 @@ function requireFullExportAccess(request: CallableRequest): CallerClaims {
 }
 
 /**
- * Starts a point-in-time export of the entire Firestore database into the
- * project's backups bucket. Returns quickly for small databases (completed)
- * or the operation name so the client can poll getBackupStatus.
+ * Starts a point-in-time export of the entire Firestore database (or a scoped
+ * set of collection groups) into the project's backups bucket under
+ * `firestore-exports/<label>/<timestamp>/`. Returns quickly for small databases
+ * (completed) or the operation name so the client can poll getBackupStatus.
  */
 export const triggerFirestoreBackup = onCall({ region: REGION, timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
   requireFullExportAccess(request);
 
-  const objectPrefix = firestoreExportPrefix();
+  let scopeConfig;
+  try {
+    scopeConfig = resolveBackupScope(request.data?.scopeLabel);
+  } catch {
+    throw new HttpsError("invalid-argument", "Invalid backup scope selected.");
+  }
+
+  const objectPrefix = firestoreExportPrefix(new Date(), scopeConfig.label);
   const outputUriPrefix = `gs://${BACKUP_BUCKET}/${objectPrefix}`;
+  const exportBody: { outputUriPrefix: string; collectionIds?: readonly string[] } = {
+    outputUriPrefix,
+    ...(scopeConfig.collectionIds ? { collectionIds: scopeConfig.collectionIds } : {}),
+  };
 
   const start = await firestoreRest(`projects/${PROJECT_ID}/databases/(default):exportDocuments`, {
     method: "POST",
-    body: JSON.stringify({ outputUriPrefix }),
+    body: JSON.stringify(exportBody),
   });
   if (!start.ok) {
     console.error("Firestore export start failed:", start.status, JSON.stringify(start.json).slice(0, 500));
@@ -209,6 +223,7 @@ export const triggerFirestoreBackup = onCall({ region: REGION, timeoutSeconds: 3
         message: "Database export completed. Your files are in the backups bucket.",
         outputUriPrefix: status.outputUriPrefix ?? outputUriPrefix,
         operationName,
+        scopeLabel: scopeConfig.label,
         status: "completed",
       };
     }
@@ -218,6 +233,7 @@ export const triggerFirestoreBackup = onCall({ region: REGION, timeoutSeconds: 3
     message: "Database export started. Large databases can take a few minutes to finish.",
     outputUriPrefix,
     operationName,
+    scopeLabel: scopeConfig.label,
     status: "running",
   };
 });
@@ -366,18 +382,19 @@ export const listBackups = onCall({ region: REGION, timeoutSeconds: 120, memory:
 export const restoreFirestoreBackup = onCall({ region: REGION, timeoutSeconds: 300, memory: "512MiB" }, async (request) => {
   requireFullExportAccess(request);
 
-  const prefix = typeof request.data?.prefix === "string" ? request.data.prefix : "";
+  const rawPrefix = typeof request.data?.prefix === "string" ? request.data.prefix : "";
   const confirmed = request.data?.confirm === true;
   if (!confirmed) {
     throw new HttpsError("invalid-argument", "Restoring a backup requires an explicit confirmation.");
   }
-  if (!isRestorablePrefix(prefix, BACKUP_BUCKET)) {
+  const normalizedUri = normalizeRestorablePrefix(rawPrefix, BACKUP_BUCKET);
+  if (!normalizedUri || !isRestorablePrefix(normalizedUri, BACKUP_BUCKET)) {
     throw new HttpsError("invalid-argument", "That backup location is not a valid Ogeemo backup.");
   }
 
   const start = await firestoreRest(`projects/${PROJECT_ID}/databases/(default):importDocuments`, {
     method: "POST",
-    body: JSON.stringify({ inputUriPrefix: prefix }),
+    body: JSON.stringify({ inputUriPrefix: normalizedUri }),
   });
   if (!start.ok) {
     console.error("Firestore import start failed:", start.status, JSON.stringify(start.json).slice(0, 500));

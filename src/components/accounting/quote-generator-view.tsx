@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
+import { Building2, Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
@@ -31,6 +31,8 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { TimeLogImportDialog } from './time-log-import-dialog';
 import { toInvoiceLineItem, type InvoiceableEntry } from '@/lib/billing-eligibility';
 import { DocumentBrandLogo } from '@/components/documents/document-brand-logo';
+import { resolveOrgId } from '@/services/branding-service';
+import { getOrganization } from '@/core/organization-service';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -249,7 +251,21 @@ export function QuoteGeneratorView() {
 
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
-  const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
+  const [issuerName, setIssuerName] = useState('');
+  // The issuer is the active workspace organization (Settings -> Company Info),
+  // shown read-only where the vestigial contact-based "Supplier" picker used to be.
+  useEffect(() => {
+    let cancelled = false;
+    resolveOrgId()
+      .then((id) => (id ? getOrganization(id) : null))
+      .then((org) => {
+        if (!cancelled && org) setIssuerName(org.name || '');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [isTimeLogDialogOpen, setIsTimeLogDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
@@ -697,7 +713,6 @@ export function QuoteGeneratorView() {
   };
 
   const selectedContact = contacts.find(c => c.id === selectedContactId);
-  const selectedSupplier = contacts.find(c => c.id === selectedSupplierId);
 
   const shipToLines = (() => {
     const mode = shippingAddress?.mode || 'client';
@@ -796,7 +811,7 @@ export function QuoteGeneratorView() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Client</Label>
+                  <Label>Contact</Label>
                   <div className="flex gap-2">
                     <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                       <PopoverTrigger asChild>
@@ -837,44 +852,10 @@ export function QuoteGeneratorView() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Supplier</Label>
-                  <div className="flex gap-2">
-                    <Popover open={isSupplierPopoverOpen} onOpenChange={setIsSupplierPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="w-full justify-between overflow-hidden">
-                          {selectedSupplier ? (
-                            <span className="truncate">{selectedSupplier.name} {selectedSupplier.businessName ? `(${selectedSupplier.businessName})` : ''}</span>
-                          ) : 'Select contact...'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search contacts..." />
-                          <CommandList>
-                            <CommandEmpty>No contact found.</CommandEmpty>
-                            <CommandGroup>
-                              {contacts.map(c => (
-                                <CommandItem
-                                  key={c.id}
-                                  value={c.name}
-                                  onSelect={() => {
-                                    setSelectedSupplierId(c.id);
-                                    setIsSupplierPopoverOpen(false);
-                                  }}
-                                >
-                                  <Check className={cn('mr-2 h-4 w-4', selectedSupplierId === c.id ? 'opacity-100' : 'opacity-0')} />
-                                  {c.name} {c.businessName ? `(${c.businessName})` : ''}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <Button variant="outline" size="icon" onClick={handleOpenNewContactDialog} title="Create New Contact">
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
+                  <Label>Issued by (your company)</Label>
+                  <div className="flex h-10 items-center gap-2 rounded-md border bg-muted/40 px-3">
+                    <Building2 className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="text-sm font-medium truncate">{issuerName || 'Your company'}</span>
                   </div>
                 </div>
               </div>
@@ -886,9 +867,9 @@ export function QuoteGeneratorView() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="client">Same as client address</SelectItem>
+                      <SelectItem value="client">Same as contact's address</SelectItem>
                       {selectedContact?.homeAddress && (
-                        <SelectItem value="home">Client's home address</SelectItem>
+                        <SelectItem value="home">Contact's home address</SelectItem>
                       )}
                       <SelectItem value="custom">Enter a different address...</SelectItem>
                     </SelectContent>

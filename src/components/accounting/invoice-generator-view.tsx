@@ -848,14 +848,14 @@ export function InvoiceGeneratorView() {
 
                 <Card className="print:hidden shadow-lg border-primary/10">
                     <CardHeader className="bg-primary/5 border-b">
-                        <CardTitle className="text-base">Client / Billing Details</CardTitle>
+                        <CardTitle className="text-base">Contact / Billing Details</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Client <span className="text-destructive">*</span></Label>
+                                    <Label>Contact <span className="text-destructive">*</span></Label>
                                     <div className="flex gap-2">
                                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                             <PopoverTrigger asChild>
@@ -912,7 +912,7 @@ export function InvoiceGeneratorView() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">Select a client to see their details here.</p>
+                                    <p className="text-sm text-muted-foreground">Select a contact to see their details here.</p>
                                 )}
                                     </div>
                                     <div className="space-y-4">
@@ -923,9 +923,9 @@ export function InvoiceGeneratorView() {
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="client">Same as client address</SelectItem>
+                                                    <SelectItem value="client">Same as contact's address</SelectItem>
                                                     {selectedContact?.homeAddress && (
-                                                        <SelectItem value="home">Client's home address</SelectItem>
+                                                        <SelectItem value="home">Contact's home address</SelectItem>
                                                     )}
                                                     <SelectItem value="custom">Enter a different address...</SelectItem>
                                                 </SelectContent>

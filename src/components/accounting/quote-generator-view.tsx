@@ -977,7 +977,7 @@ export function QuoteGeneratorView() {
                         <TableHead className="w-[40%]">Description</TableHead>
                         <TableHead className="w-[16%]">Category</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
-                        <TableHead className="w-[6%] text-center">Qty</TableHead>
+                        <TableHead className="w-24 text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
                       </TableRow>

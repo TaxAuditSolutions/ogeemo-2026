@@ -98,6 +98,9 @@ export function AccountsReceivablePageView() {
     // Receipt emailing: option inside the Post Payment dialog (prefilled per client).
     const [sendReceipt, setSendReceipt] = useState(false);
     const [receiptEmail, setReceiptEmail] = useState('');
+    // Row-menu Send Receipt dialog: pending invoice + in-flight flag.
+    const [sendInvoice, setSendInvoice] = useState<Invoice | null>(null);
+    const [isSendingReceipt, setIsSendingReceipt] = useState(false);
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -213,13 +216,21 @@ export function AccountsReceivablePageView() {
         openInvoiceReceipt(inv, (href) => router.push(href), { clientEmail: resolveClientEmail(inv, contacts) });
     };
 
-    // Row-menu "Send Receipt": emails the receipt directly, without visiting the receipt page.
-    const handleSendReceipt = async (inv: Invoice) => {
-        const recipient = resolveClientEmail(inv, contacts);
-        if (!recipient) {
-            toast({ variant: 'destructive', title: 'No Email on File', description: `Add an email address to the ${inv.companyName} contact, then try again.` });
+    // Row-menu "Send Receipt": opens an editable-recipient dialog (defaults to the contact email).
+    const handleSendReceipt = (inv: Invoice) => {
+        setReceiptEmail(resolveClientEmail(inv, contacts) || '');
+        setSendInvoice(inv);
+    };
+
+    const handleConfirmSendReceipt = async () => {
+        const inv = sendInvoice;
+        if (!inv || isSendingReceipt) return;
+        const recipient = receiptEmail.trim();
+        if (!EMAIL_PATTERN.test(recipient)) {
+            toast({ variant: 'destructive', title: 'Invalid Email', description: 'Enter a valid recipient email address.' });
             return;
         }
+        setIsSendingReceipt(true);
         try {
             const result = await sendReceiptEmail({
                 to: recipient,
@@ -231,12 +242,15 @@ export function AccountsReceivablePageView() {
                 amountPaid: inv.amountPaid,
             });
             if (result.sent) {
-                toast({ title: 'Receipt Sent', description: `${inv.lastReceiptNumber || inv.invoiceNumber} emailed to ${recipient}.` });
+                toast({ title: 'Receipt Sent', description: `Receipt ${inv.lastReceiptNumber || inv.invoiceNumber} emailed to ${recipient}.` });
+                setSendInvoice(null);
             } else {
                 toast({ variant: 'destructive', title: 'Receipt Email Failed', description: result.error });
             }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Receipt Email Failed', description: error.message });
+        } finally {
+            setIsSendingReceipt(false);
         }
     };
 
@@ -464,6 +478,39 @@ export function AccountsReceivablePageView() {
                         <Button onClick={handlePostPayment} disabled={isSaving}>
                             {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                             {sendReceipt && receiptEmail.trim() && EMAIL_PATTERN.test(receiptEmail.trim()) ? 'Post & Send Receipt' : 'Post to GL'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!sendInvoice} onOpenChange={(open) => { if (!open) setSendInvoice(null); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Send Receipt</DialogTitle>
+                        <DialogDescription>
+                            Email the receipt for invoice #{sendInvoice?.invoiceNumber}. The recipient defaults to the contact's email on file and can be changed here.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="menu-receipt-email">Recipient</Label>
+                        <Input
+                            id="menu-receipt-email"
+                            type="email"
+                            placeholder="client@example.com"
+                            value={receiptEmail}
+                            onChange={(e) => setReceiptEmail(e.target.value)}
+                        />
+                        {!receiptEmail.trim() && (
+                            <p className="text-xs text-muted-foreground">
+                                No email on file for this contact - enter an address to send the receipt.
+                            </p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setSendInvoice(null)}>Cancel</Button>
+                        <Button onClick={handleConfirmSendReceipt} disabled={isSendingReceipt}>
+                            {isSendingReceipt ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                            Send Receipt
                         </Button>
                     </DialogFooter>
                 </DialogContent>

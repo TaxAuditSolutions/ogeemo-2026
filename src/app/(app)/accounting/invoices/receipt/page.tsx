@@ -114,15 +114,10 @@ export default function ReceiptPage() {
         }
     };
 
-    // Sends directly when the handoff carried a client email; otherwise asks for the address.
+    // Opens the editable-recipient dialog, defaulted to the contact email the handoff carried.
     const handleSendEmail = () => {
         if (!receiptData) return;
-        const known = receiptData.clientEmail?.trim();
-        if (known) {
-            void sendReceiptTo(known);
-            return;
-        }
-        setRecipientEmail('');
+        setRecipientEmail(receiptData.clientEmail?.trim() || '');
         setIsEmailDialogOpen(true);
     };
     

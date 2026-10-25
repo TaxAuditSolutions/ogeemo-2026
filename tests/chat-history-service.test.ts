@@ -53,3 +53,16 @@ test('continues to normalize legacy messages without actions', () => {
         timestamp: '2026-09-13T12:00:00.000Z',
     }]);
 });
+
+test('keeps the latest 100 messages', () => {
+    const messages = Array.from({ length: 101 }, (_, index) => ({
+        role: 'user' as const,
+        content: `Message ${index + 1}`,
+    }));
+
+    const normalizedMessages = normalizeMessages(messages);
+
+    assert.equal(normalizedMessages.length, 100);
+    assert.equal(normalizedMessages[0]?.content, 'Message 2');
+    assert.equal(normalizedMessages.at(-1)?.content, 'Message 101');
+});

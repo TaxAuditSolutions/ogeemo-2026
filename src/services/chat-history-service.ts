@@ -37,7 +37,7 @@ export interface AssistantChatSession {
 }
 
 const ASSISTANT_CHAT_COLLECTION = 'userAssistantChatSessions';
-const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_MESSAGES = 100;
 
 function getDb() {
     return getFirebaseServices().db;

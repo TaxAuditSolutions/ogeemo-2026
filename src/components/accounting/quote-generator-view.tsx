@@ -303,7 +303,19 @@ export function QuoteGeneratorView() {
       });
 
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to load quote', description: error.message });
+      if (error?.code === 'permission-denied') {
+        // Stale one-shot edit pointer (deleted / other workspace / legacy orgless
+        // data) - clear it so the quote form stops retrying the denied read.
+        localStorage.removeItem(EDIT_QUOTE_ID_KEY);
+        setQuoteToEditId(null);
+        toast({
+          variant: 'destructive',
+          title: 'Quote no longer available',
+          description: 'That quote was deleted or belongs to a different workspace, so it cannot be opened here. The form is ready for a new quote.',
+        });
+      } else {
+        toast({ variant: 'destructive', title: 'Failed to load quote', description: error.message });
+      }
     } finally {
       setIsLoading(false);
     }

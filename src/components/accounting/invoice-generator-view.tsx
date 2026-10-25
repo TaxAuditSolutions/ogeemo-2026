@@ -290,7 +290,20 @@ export function InvoiceGeneratorView() {
             });
 
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to load invoice', description: error.message });
+            if (error?.code === 'permission-denied') {
+                // Stale one-shot edit pointer: the invoice was deleted, lives in
+                // another workspace, or is legacy data this org cannot read.
+                // Clear it so Create Invoice stops retrying the denied read.
+                localStorage.removeItem(EDIT_INVOICE_ID_KEY);
+                setInvoiceToEditId(null);
+                toast({
+                    variant: 'destructive',
+                    title: 'Invoice no longer available',
+                    description: 'That invoice was deleted or belongs to a different workspace, so it cannot be opened here. The form is ready for a new invoice.',
+                });
+            } else {
+                toast({ variant: 'destructive', title: 'Failed to load invoice', description: error.message });
+            }
         } finally {
             setIsLoading(false);
         }

@@ -256,6 +256,8 @@ export function AccountsReceivablePageView() {
         if (!window.confirm(`Delete ${inv.invoiceNumber} permanently? Its line items will be removed too. This cannot be undone.`)) return;
         try {
             await deleteInvoice(user.uid, inv.id);
+            // If this invoice is the pending edit target, drop the pointer too.
+            if (localStorage.getItem('editInvoiceId') === inv.id) localStorage.removeItem('editInvoiceId');
             toast({ title: 'Invoice Deleted', description: `${inv.invoiceNumber} has been permanently removed.` });
             loadData();
         } catch (error: any) {

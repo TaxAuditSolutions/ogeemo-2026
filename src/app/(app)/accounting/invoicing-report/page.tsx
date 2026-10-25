@@ -134,6 +134,8 @@ function InvoicingReportContent() {
         if (!invoiceToDelete || !user) return;
         try {
             await deleteInvoice(user.uid, invoiceToDelete.id);
+            // If this invoice is the pending edit target, drop the pointer too.
+            if (localStorage.getItem(EDIT_INVOICE_ID_KEY) === invoiceToDelete.id) localStorage.removeItem(EDIT_INVOICE_ID_KEY);
             setInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete.id));
             toast({ title: 'Invoice Deleted' });
         } catch (error: any) {

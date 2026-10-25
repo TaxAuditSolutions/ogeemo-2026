@@ -13,8 +13,21 @@ import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { sendReceiptEmail } from '@/app/actions/receipt-actions';
 
 import { RECEIPT_DATA_KEY } from '@/lib/receipt-handoff';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface DeserializedInvoice {
   id: string;
@@ -32,6 +45,8 @@ interface ReceiptData {
   carryForwardAmount: number;
   /** Latest payment receipt number (REC-...); legacy receipts fall back to the invoice number. */
   receiptNumber?: string;
+  /** Client contact email resolved by the originating list (skips the address prompt). */
+  clientEmail?: string;
 }
 
 const formatCurrency = (amount: number) => {
@@ -43,6 +58,10 @@ export default function ReceiptPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [notes, setNotes] = useState("");
+    // Real receipt emailing (server action); dialog only appears when the handoff carried no address.
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+    const [recipientEmail, setRecipientEmail] = useState("");
     const { toast } = useToast();
     const router = useRouter();
     const { handlePrint, contentRef } = useReactToPrint();
@@ -64,12 +83,47 @@ export default function ReceiptPage() {
         }
     }, []);
     
+    const sendReceiptTo = async (recipient: string) => {
+        if (!receiptData || isSendingEmail) return;
+        if (!EMAIL_PATTERN.test(recipient)) {
+            toast({ variant: 'destructive', title: 'Invalid Email', description: 'Enter a valid recipient email address.' });
+            return;
+        }
+        setIsSendingEmail(true);
+        try {
+            const { invoice } = receiptData;
+            const result = await sendReceiptEmail({
+                to: recipient,
+                companyName: invoice.companyName,
+                invoiceNumber: invoice.invoiceNumber,
+                receiptNumber: receiptData.receiptNumber,
+                amount: invoice.amountPaid,
+                originalAmount: invoice.originalAmount,
+                amountPaid: invoice.amountPaid,
+            });
+            if (result.sent) {
+                toast({ title: 'Receipt Sent', description: `Receipt ${receiptData.receiptNumber || invoice.invoiceNumber} emailed to ${recipient}.` });
+                setIsEmailDialogOpen(false);
+            } else {
+                toast({ variant: 'destructive', title: 'Receipt Email Failed', description: result.error });
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Receipt Email Failed', description: error.message });
+        } finally {
+            setIsSendingEmail(false);
+        }
+    };
+
+    // Sends directly when the handoff carried a client email; otherwise asks for the address.
     const handleSendEmail = () => {
         if (!receiptData) return;
-        toast({
-            title: "Email Sent (Simulation)",
-            description: `The receipt ${receiptData.receiptNumber ? `${receiptData.receiptNumber} ` : ''}for invoice ${receiptData.invoice.invoiceNumber} has been sent to ${receiptData.invoice.companyName}.`,
-        });
+        const known = receiptData.clientEmail?.trim();
+        if (known) {
+            void sendReceiptTo(known);
+            return;
+        }
+        setRecipientEmail('');
+        setIsEmailDialogOpen(true);
     };
     
     if (isLoading) {
@@ -112,7 +166,10 @@ export default function ReceiptPage() {
                 </Button>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Print Receipt</Button>
-                    <Button onClick={handleSendEmail}><Mail className="mr-2 h-4 w-4"/> Email Receipt</Button>
+                    <Button onClick={handleSendEmail} disabled={isSendingEmail}>
+                        {isSendingEmail ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4"/>}
+                        Email Receipt
+                    </Button>
                 </div>
             </div>
              <Card id="invoice-preview" ref={contentRef} className="max-w-4xl mx-auto">
@@ -196,6 +253,34 @@ export default function ReceiptPage() {
                     </footer>
                 </CardContent>
              </Card>
+
+            <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Email Receipt</DialogTitle>
+                        <DialogDescription>
+                            Send{receiptData?.receiptNumber ? ` receipt ${receiptData.receiptNumber}` : ' this receipt'} for invoice {receiptData?.invoice.invoiceNumber} to the client.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label htmlFor="receipt-to">Recipient</Label>
+                        <Input
+                            id="receipt-to"
+                            type="email"
+                            placeholder="client@example.com"
+                            value={recipientEmail}
+                            onChange={(e) => setRecipientEmail(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsEmailDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={() => sendReceiptTo(recipientEmail.trim())} disabled={isSendingEmail}>
+                            {isSendingEmail ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                            Send Receipt
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

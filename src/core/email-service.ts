@@ -263,6 +263,93 @@ export function buildWelcomeToOgeemoEmail(input: {
   };
 }
 
+export interface ReceiptEmailInput {
+  /** Client recipient address (validated by the caller). */
+  to: string;
+  companyName: string;
+  invoiceNumber: string;
+  /** Payment receipt number (REC-...); legacy invoices may omit it. */
+  receiptNumber?: string;
+  /** Payment amount this receipt acknowledges. */
+  amount: number;
+  /** Invoice total, when known - enables the balance line. */
+  originalAmount?: number;
+  /** Cumulative amount received to date, when known. */
+  amountPaid?: number;
+  /** Payment date (ISO or yyyy-MM-dd); defaults to today. */
+  paymentDate?: string;
+}
+
+const formatUsd = (value: number) =>
+  value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+const formatReceiptDate = (iso?: string): string => {
+  // Date-only values (yyyy-MM-dd) are parsed as LOCAL dates so a payment
+  // dated Oct 24 never renders Oct 23 just because of the server timezone.
+  const source = iso && iso.length === 10 ? `${iso}T00:00:00` : iso;
+  const parsed = source ? new Date(source) : new Date();
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+/**
+ * Client-facing payment receipt email (pure builder - unit tested).
+ * Leads with the REC number so clients can quote it; legacy receipts fall
+ * back to an invoice-only subject line.
+ */
+export function buildReceiptEmail(input: ReceiptEmailInput): EmailMessage {
+  const subject = input.receiptNumber
+    ? `Receipt ${input.receiptNumber} for Invoice ${input.invoiceNumber}`
+    : `Receipt for Invoice ${input.invoiceNumber}`;
+  const received = formatUsd(input.amount);
+  const paidDate = formatReceiptDate(input.paymentDate);
+  const balanceDue =
+    typeof input.originalAmount === 'number' && typeof input.amountPaid === 'number'
+      ? input.originalAmount - input.amountPaid
+      : undefined;
+  const paidInFull = balanceDue !== undefined && balanceDue <= 0.01;
+
+  const textLines = [
+    `Receipt for ${input.companyName}`,
+    '',
+    input.receiptNumber ? `Receipt #: ${input.receiptNumber}` : 'Receipt #: see invoice record',
+    `Invoice #: ${input.invoiceNumber}`,
+    `Amount received: ${received}`,
+    `Date received: ${paidDate}`,
+    ...(typeof input.originalAmount === 'number' ? [`Invoice total: ${formatUsd(input.originalAmount)}`] : []),
+    ...(balanceDue !== undefined
+      ? [paidInFull ? 'Balance due: Paid in full' : `Balance due: ${formatUsd(balanceDue)}`]
+      : []),
+    '',
+    'View your invoices any time in Ogeemo:',
+    `${OGEEMO_APP_URL}/accounting/accounts-receivable`,
+    '',
+    'Thank you for your business!',
+    '- Sent automatically by Ogeemo',
+  ];
+
+  const moneyCell = (label: string, value: string, opts?: { green?: boolean }) => `
+    <tr>
+      <td style="padding:4px 16px 4px 0;color:#64748b;">${escapeHtml(label)}</td>
+      <td style="padding:4px 0;${opts?.green ? 'color:#16a34a;font-weight:bold;' : ''}">${escapeHtml(value)}</td>
+    </tr>`;
+
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;">
+  <h2 style="color:#4f46e5;margin:0 0 4px 0;">Receipt${input.receiptNumber ? ` ${escapeHtml(input.receiptNumber)}` : ''}</h2>
+  <p style="color:#94a3b8;font-size:12px;margin:0 0 16px 0;">For Invoice ${escapeHtml(input.invoiceNumber)} &middot; ${escapeHtml(input.companyName)}</p>
+  <table style="border-collapse:collapse;font-size:14px;color:#0f172a;margin:0 0 16px 0;">
+    ${moneyCell('Amount received', received)}
+    ${moneyCell('Date received', paidDate)}
+    ${typeof input.originalAmount === 'number' ? moneyCell('Invoice total', formatUsd(input.originalAmount)) : ''}
+    ${balanceDue !== undefined ? moneyCell('Balance due', paidInFull ? 'Paid in full' : formatUsd(balanceDue), { green: paidInFull }) : ''}
+  </table>
+  <p style="color:#0f172a;font-size:14px;margin:0 0 16px 0;">Thank you for your business!</p>
+  <p style="color:#94a3b8;font-size:11px;margin:0;">Sent automatically by Ogeemo.</p>
+</div>`;
+
+  return { to: [input.to], subject, text: textLines.join('\n'), html };
+}
+
 export function resolveRecipients(payload: Pick<FormNotificationPayload, 'recipients'>): string[] {
   const custom = (payload.recipients || []).map((addr) => addr.trim()).filter(Boolean);
   return custom.length > 0 ? custom : NOTIFY_RECIPIENTS;

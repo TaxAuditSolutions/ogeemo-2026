@@ -37,7 +37,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle, ReceiptText, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { LoaderCircle, Landmark, CheckCircle, MoreVertical, Pencil, PlusCircle, ReceiptText, Trash2, Mail } from 'lucide-react';
 import { format } from "date-fns";
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -56,7 +57,8 @@ import {
     type TaxType
 } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
-import { openInvoiceReceipt } from '@/lib/receipt-handoff';
+import { openInvoiceReceipt, resolveClientEmail } from '@/lib/receipt-handoff';
+import { sendReceiptEmail } from '@/app/actions/receipt-actions';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
@@ -68,6 +70,7 @@ const formatCurrency = (amount: number) => {
 };
 
 const defaultDepositAccounts = ["Bank Account #1", "Credit Card #1", "Cash Account"];
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AccountsReceivablePageView() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -91,6 +94,10 @@ export function AccountsReceivablePageView() {
     const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [depositAccount, setDepositAccount] = useState('Bank Account #1');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Receipt emailing: option inside the Post Payment dialog (prefilled per client).
+    const [sendReceipt, setSendReceipt] = useState(false);
+    const [receiptEmail, setReceiptEmail] = useState('');
 
     const { user } = useAuth();
     const { toast } = useToast();
@@ -136,6 +143,9 @@ export function AccountsReceivablePageView() {
         setSelectedInvoice(invoice);
         setPaymentAmount(String(invoice.originalAmount - invoice.amountPaid));
         setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
+        const clientEmail = resolveClientEmail(invoice, contacts) || '';
+        setReceiptEmail(clientEmail);
+        setSendReceipt(Boolean(clientEmail));
         setIsPaymentDialogOpen(true);
     };
 
@@ -148,15 +158,42 @@ export function AccountsReceivablePageView() {
             return;
         }
 
+        const recipient = receiptEmail.trim();
+        if (sendReceipt && recipient && !EMAIL_PATTERN.test(recipient)) {
+            toast({ variant: 'destructive', title: 'Invalid Receipt Email', description: 'Enter a valid recipient email address, or uncheck "Send receipt to client".' });
+            return;
+        }
+
         setIsSaving(true);
         try {
             const receiptNumber = await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
-            toast({
-                title: 'Payment Posted',
-                description: receiptNumber
-                    ? `Receipt ${receiptNumber} issued and recorded in the General Ledger.`
-                    : 'The payment has been recorded in the General Ledger.',
-            });
+
+            // Optional receipt email: the payment is already on the books, so an
+            // SMTP failure must never undo it - it only adjusts the toast below.
+            const willSend = sendReceipt && recipient.length > 0;
+            let emailError: string | undefined;
+            if (willSend) {
+                const result = await sendReceiptEmail({
+                    to: recipient,
+                    companyName: selectedInvoice.companyName,
+                    invoiceNumber: selectedInvoice.invoiceNumber,
+                    receiptNumber: receiptNumber || undefined,
+                    amount,
+                    originalAmount: selectedInvoice.originalAmount,
+                    amountPaid: selectedInvoice.amountPaid + amount,
+                    paymentDate,
+                }).catch((e: any) => ({ sent: false, error: e?.message || 'Unknown error' }));
+                if (!result.sent) emailError = result.error;
+            }
+
+            const receiptLabel = receiptNumber
+                ? `Receipt ${receiptNumber} issued and recorded in the General Ledger.`
+                : 'The payment has been recorded in the General Ledger.';
+            const emailLabel = willSend && !emailError ? ` Receipt emailed to ${recipient}.` : '';
+            toast({ title: 'Payment Posted', description: receiptLabel + emailLabel });
+            if (willSend && emailError) {
+                toast({ variant: 'destructive', title: 'Receipt Email Failed', description: `${emailError} The receipt is still available from the invoice's menu.` });
+            }
             setIsPaymentDialogOpen(false);
             loadData();
         } catch (error: any) {
@@ -173,7 +210,34 @@ export function AccountsReceivablePageView() {
 
     // Reconnects the receipt flow via the shared handoff (see lib/receipt-handoff).
     const handleViewReceipt = (inv: Invoice) => {
-        openInvoiceReceipt(inv, (href) => router.push(href));
+        openInvoiceReceipt(inv, (href) => router.push(href), { clientEmail: resolveClientEmail(inv, contacts) });
+    };
+
+    // Row-menu "Send Receipt": emails the receipt directly, without visiting the receipt page.
+    const handleSendReceipt = async (inv: Invoice) => {
+        const recipient = resolveClientEmail(inv, contacts);
+        if (!recipient) {
+            toast({ variant: 'destructive', title: 'No Email on File', description: `Add an email address to the ${inv.companyName} contact, then try again.` });
+            return;
+        }
+        try {
+            const result = await sendReceiptEmail({
+                to: recipient,
+                companyName: inv.companyName,
+                invoiceNumber: inv.invoiceNumber,
+                receiptNumber: inv.lastReceiptNumber || undefined,
+                amount: inv.amountPaid,
+                originalAmount: inv.originalAmount,
+                amountPaid: inv.amountPaid,
+            });
+            if (result.sent) {
+                toast({ title: 'Receipt Sent', description: `${inv.lastReceiptNumber || inv.invoiceNumber} emailed to ${recipient}.` });
+            } else {
+                toast({ variant: 'destructive', title: 'Receipt Email Failed', description: result.error });
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Receipt Email Failed', description: error.message });
+        }
     };
 
     // Deletion policy: invoices with recorded payments are protected - their
@@ -297,6 +361,11 @@ export function AccountsReceivablePageView() {
                                                                     <ReceiptText className="mr-2 h-4 w-4" /> View Receipt
                                                                 </DropdownMenuItem>
                                                             )}
+                                                            {inv.amountPaid > 0 && (
+                                                                <DropdownMenuItem onClick={() => handleSendReceipt(inv)}>
+                                                                    <Mail className="mr-2 h-4 w-4" /> Send Receipt
+                                                                </DropdownMenuItem>
+                                                            )}
                                                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteInvoice(inv)}>
                                                                 <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
                                                             </DropdownMenuItem>
@@ -363,12 +432,36 @@ export function AccountsReceivablePageView() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="space-y-2 border-t pt-3">
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="p-send-receipt"
+                                    checked={sendReceipt}
+                                    onCheckedChange={(checked) => setSendReceipt(checked === true)}
+                                    disabled={!receiptEmail.trim()}
+                                />
+                                <Label htmlFor="p-send-receipt" className="cursor-pointer">Send receipt to client</Label>
+                            </div>
+                            <Input
+                                id="p-receipt-email"
+                                type="email"
+                                placeholder="client@example.com"
+                                value={receiptEmail}
+                                onChange={(e) => setReceiptEmail(e.target.value)}
+                                aria-label="Receipt recipient email"
+                            />
+                            {!receiptEmail.trim() && (
+                                <p className="text-xs text-muted-foreground">
+                                    No email on file for this client - add one to email the receipt.
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handlePostPayment} disabled={isSaving}>
                             {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Post to GL
+                            {sendReceipt && receiptEmail.trim() && EMAIL_PATTERN.test(receiptEmail.trim()) ? 'Post & Send Receipt' : 'Post to GL'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

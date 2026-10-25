@@ -22,6 +22,8 @@ export interface ReceiptHandoffPayload {
   carryForwardAmount: number;
   /** Latest payment receipt number (REC-...); legacy payments fall back to the invoice number. */
   receiptNumber?: string;
+  /** Resolved client contact email, when one is on file (powers the receipt page's Email button). */
+  clientEmail?: string;
 }
 
 export function buildReceiptHandoff(inv: Invoice): ReceiptHandoffPayload {
@@ -44,7 +46,39 @@ export function buildReceiptHandoff(inv: Invoice): ReceiptHandoffPayload {
 }
 
 /** Serializes the receipt payload and navigates to the receipt page. */
-export function openInvoiceReceipt(inv: Invoice, push: (href: string) => void): void {
-  sessionStorage.setItem(RECEIPT_DATA_KEY, JSON.stringify(buildReceiptHandoff(inv)));
+export function openInvoiceReceipt(
+  inv: Invoice,
+  push: (href: string) => void,
+  opts?: { clientEmail?: string }
+): void {
+  const payload = buildReceiptHandoff(inv);
+  if (opts?.clientEmail) payload.clientEmail = opts.clientEmail;
+  sessionStorage.setItem(RECEIPT_DATA_KEY, JSON.stringify(payload));
   push('/accounting/invoices/receipt');
+}
+
+/**
+ * Resolves a client's email from the loaded contacts: first the invoice's
+ * contact (by id), then a name/businessName match against the invoice's
+ * company. Returns undefined when nothing usable is on file.
+ */
+export function resolveClientEmail(
+  inv: { contactId: string; companyName: string },
+  contacts: ReadonlyArray<{ id: string; name: string; businessName?: string; email?: string }>
+): string | undefined {
+  const clean = (value?: string) => {
+    const trimmed = (value || '').trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const direct = contacts.find((contact) => contact.id === inv.contactId);
+  const directEmail = direct ? clean(direct.email) : undefined;
+  if (directEmail) return directEmail;
+
+  const byCompany = contacts.find(
+    (contact) =>
+      (contact.name === inv.companyName || contact.businessName === inv.companyName) &&
+      clean(contact.email)
+  );
+  return byCompany ? clean(byCompany.email) : undefined;
 }

@@ -30,7 +30,7 @@ import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getInvoices, deleteInvoice, type Invoice } from '@/core/accounting-service';
-import { openInvoiceReceipt } from '@/lib/receipt-handoff';
+import { openInvoiceReceipt, resolveClientEmail } from '@/lib/receipt-handoff';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { cn } from '@/lib/utils';
@@ -127,7 +127,7 @@ function InvoicingReportContent() {
     };
 
     const handleViewReceipt = (invoice: Invoice) => {
-        openInvoiceReceipt(invoice, (href) => router.push(href));
+        openInvoiceReceipt(invoice, (href) => router.push(href), { clientEmail: resolveClientEmail(invoice, contacts) });
     };
 
     const handleConfirmDelete = async () => {

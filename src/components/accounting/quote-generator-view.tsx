@@ -261,7 +261,7 @@ export function QuoteGeneratorView() {
     setIsLoading(true);
     try {
       const [quoteData, lineItemsData] = await Promise.all([
-        getQuoteById(quoteId),
+        getQuoteById(quoteId, { quiet: true }),
         getQuoteLineItemsForQuote(user.uid, quoteId),
       ]);
 

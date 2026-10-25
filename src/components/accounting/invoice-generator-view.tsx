@@ -249,7 +249,7 @@ export function InvoiceGeneratorView() {
         setIsLoading(true);
         try {
             const [invoiceData, lineItemsData] = await Promise.all([
-                getInvoiceById(invoiceId),
+                getInvoiceById(invoiceId, { quiet: true }),
                 getLineItemsForInvoice(user.uid, invoiceId),
             ]);
 
@@ -575,7 +575,7 @@ export function InvoiceGeneratorView() {
             contactId: selectedContactId,
             supplierId: selectedSupplierId,
             originalAmount: total,
-            amountPaid: invoiceToEditId ? (await getInvoiceById(invoiceToEditId))?.amountPaid || 0 : 0,
+            amountPaid: invoiceToEditId ? (await getInvoiceById(invoiceToEditId, { quiet: true }))?.amountPaid || 0 : 0,
             dueDate: dueDate,
             invoiceDate: invoiceDate,
             status,

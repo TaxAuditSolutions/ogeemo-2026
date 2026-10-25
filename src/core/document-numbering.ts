@@ -49,6 +49,24 @@ export const NUMBERING_COLLECTIONS: Record<DocumentNumberType, string> = {
 
 const PREFIX_RE = /^[A-Za-z0-9][A-Za-z0-9-]{0,15}$/;
 
+/** Bounds for a user-entered "next number" (Settings counter steering). */
+export const MIN_COUNTER_NEXT = 1;
+export const MAX_COUNTER_NEXT = 999999;
+
+/** A counter's "next number" must be a whole number within bounds. */
+export function isValidCounterNext(value: number): boolean {
+  return Number.isInteger(value) && value >= MIN_COUNTER_NEXT && value <= MAX_COUNTER_NEXT;
+}
+
+/**
+ * Counter doc value that makes `nextValue` the next claimed number.
+ * claimDocumentNumber increments before formatting, so the stored value is
+ * nextValue - 1 (clamped at 0, which is what "restart at 001" writes).
+ */
+export function counterValueForNext(nextValue: number): number {
+  return Math.max(0, Math.trunc(nextValue) - 1);
+}
+
 export function isDocumentNumberType(value: string): value is DocumentNumberType {
   return (DOCUMENT_NUMBER_TYPES as readonly string[]).includes(value);
 }

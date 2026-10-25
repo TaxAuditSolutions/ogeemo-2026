@@ -3,11 +3,15 @@ import test from 'node:test';
 
 import {
   counterDocId,
+  counterValueForNext,
   DEFAULT_NUMBERING,
   formatBusinessDate,
   formatDocumentNumber,
   isDocumentNumberType,
   isValidBusinessDate,
+  isValidCounterNext,
+  MAX_COUNTER_NEXT,
+  MIN_COUNTER_NEXT,
   normalizeRule,
   validateOverrideNumber,
 } from '../src/core/document-numbering';
@@ -65,4 +69,19 @@ test('document type guard accepts only the four registered types', () => {
   assert.ok(isDocumentNumberType('REC'));
   assert.ok(!isDocumentNumberType('BILL'));
   assert.ok(!isDocumentNumberType('inv'));
+});
+test('counterValueForNext stores nextValue minus one (the claim increments first)', () => {
+  assert.equal(counterValueForNext(1), 0); // restart at 001 zeroes the counter
+  assert.equal(counterValueForNext(57), 56);
+  assert.equal(counterValueForNext(0), 0); // clamps instead of going negative
+  assert.equal(counterValueForNext(3.9), 2); // truncs first, then subtracts
+});
+
+test('isValidCounterNext enforces whole numbers within bounds', () => {
+  assert.equal(isValidCounterNext(MIN_COUNTER_NEXT), true);
+  assert.equal(isValidCounterNext(MAX_COUNTER_NEXT), true);
+  assert.equal(isValidCounterNext(0), false);
+  assert.equal(isValidCounterNext(-3), false);
+  assert.equal(isValidCounterNext(1.5), false);
+  assert.equal(isValidCounterNext(NaN), false);
 });

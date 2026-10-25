@@ -505,7 +505,10 @@ export async function getInvoices(
   }
 }
 
-export async function getInvoiceById(invoiceId: string): Promise<Invoice | null> {
+export async function getInvoiceById(
+  invoiceId: string,
+  opts: { quiet?: boolean } = {}
+): Promise<Invoice | null> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
   const docRef = doc(db, INVOICES_COLLECTION, invoiceId);
@@ -517,7 +520,9 @@ export async function getInvoiceById(invoiceId: string): Promise<Invoice | null>
     }
     return null;
   } catch (error: any) {
-    if (error.code === 'permission-denied') {
+    // quiet: the caller owns the failure (the edit-load path clears its stale
+    // pointer and shows a friendly toast) - skip the dev-overlay event.
+    if (error.code === 'permission-denied' && !opts.quiet) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'get',
@@ -589,7 +594,10 @@ export async function getQuotes(_userId: string): Promise<Quote[]> {
   }
 }
 
-export async function getQuoteById(quoteId: string): Promise<Quote | null> {
+export async function getQuoteById(
+  quoteId: string,
+  opts: { quiet?: boolean } = {}
+): Promise<Quote | null> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
   const docRef = doc(db, QUOTES_COLLECTION, quoteId);
@@ -601,7 +609,8 @@ export async function getQuoteById(quoteId: string): Promise<Quote | null> {
     }
     return null;
   } catch (error: any) {
-    if (error.code === 'permission-denied') {
+    // quiet: caller handles the failure itself (see getInvoiceById).
+    if (error.code === 'permission-denied' && !opts.quiet) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'get',

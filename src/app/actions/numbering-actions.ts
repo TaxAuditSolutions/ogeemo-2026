@@ -6,14 +6,18 @@ import { FieldValue } from 'firebase-admin/firestore';
 import {
     DEFAULT_NUMBERING,
     DOCUMENT_NUMBER_TYPES,
+    MAX_COUNTER_NEXT,
+    MIN_COUNTER_NEXT,
     NUMBERING_COLLECTIONS,
     NUMBERING_DOC_FIELDS,
     counterDocId,
+    counterValueForNext,
     formatBusinessDate,
     formatDocumentNumber,
     isDocumentNumberType,
     normalizeRule,
     isValidBusinessDate,
+    isValidCounterNext,
     validateOverrideNumber,
     type DocumentNumberType,
     type NumberingConfig,
@@ -183,4 +187,46 @@ export async function claimDocumentNumber(
         }
     }
     throw new Error('Could not reserve a free document number. Please try again.');
+}
+
+/**
+ * Steers today's counter for a type so the NEXT auto-claimed number is
+ * `nextValue` (1 -> PREFIX-YYYYMMDD-001, or to restart a drifted sequence).
+ * Admin-only. Numbers already issued today are still skipped by the
+ * uniqueness guard in claimDocumentNumber - this steers future claims;
+ * it never reuses a taken number.
+ */
+export async function setDocumentCounter(
+    type: DocumentNumberType,
+    nextValue: number,
+    opts?: { businessDate?: string }
+): Promise<void> {
+    if (!isDocumentNumberType(type)) throw new Error(`Unknown document type "${type}".`);
+    if (!isValidCounterNext(nextValue)) {
+        throw new Error(
+            `Next number must be a whole number between ${MIN_COUNTER_NEXT} and ${MAX_COUNTER_NEXT}.`
+        );
+    }
+    const { orgId, accessLevel } = await requireActiveOrg();
+    if (accessLevel !== 'org_admin' && accessLevel !== 'super_admin') {
+        throw new Error('Only workspace administrators can change document counters.');
+    }
+
+    const adminDb = getAdminDb();
+    if (!adminDb) throw new Error('Firebase Admin SDK is not initialized.');
+    const date = opts?.businessDate && isValidBusinessDate(opts.businessDate) ? opts.businessDate : formatBusinessDate();
+    const counterRef = adminDb
+        .collection('organizations')
+        .doc(orgId)
+        .collection('counters')
+        .doc(counterDocId(type, date));
+
+    const value = counterValueForNext(nextValue);
+    await adminDb.runTransaction(async (tx) => {
+        tx.set(
+            counterRef,
+            { value, type, businessDate: date, orgId, updatedAt: FieldValue.serverTimestamp() },
+            { merge: true }
+        );
+    });
 }

@@ -9,16 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Building2, Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings } from 'lucide-react';
+import { Building2, Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, ChevronDown, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, getIncomeCategories, type IncomeCategory, type QuoteLineItem, type QuoteStatus, type InvoiceShippingAddress, getCompanies, type Company } from '@/core/accounting-service';
+import { getQuotes, type Quote, getQuoteById, getQuoteLineItemsForQuote, getServiceItems, type ServiceItem, addQuoteWithLineItems, updateQuoteWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, getIncomeCategories, type IncomeCategory, type QuoteLineItem, type QuoteStatus, type InvoiceShippingAddress, getCompanies, type Company } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -220,21 +221,42 @@ export function QuoteGeneratorView() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const [quoteToEditId, setQuoteToEditId] = useState<string | null>(null);
-  const [quoteNumber, setQuoteNumber] = useState(`QTE-${Date.now().toString().slice(-6)}`);
+  // Empty until the next-number preview lands. Never a fake timestamp number -
+  // those looked like real quote numbers (e.g. QTE-483001).
+  const [quoteNumber, setQuoteNumber] = useState('');
   const originalQuoteNumberRef = useRef<string | null>(null);
-  const numberEditedRef = useRef(false);
+  const businessNumberEditedRef = useRef(false);
 
   // New quotes preview today's next number; edits keep their stored number.
-  useEffect(() => {
-    if (localStorage.getItem(EDIT_QUOTE_ID_KEY)) return;
-    getNextDocumentNumbers()
-      .then((next) => {
-        if (!numberEditedRef.current && !localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
+  // The preview is non-fatal - retry once, then notify (the real number is
+  // still claimed at save).
+  const previewFailedRef = useRef(false);
+  const previewNextQuoteNumber = useCallback(async () => {
+    try {
+      const next = await getNextDocumentNumbers();
+      if (!localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
+        setQuoteNumber(next.QTE);
+      }
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      try {
+        const next = await getNextDocumentNumbers();
+        if (!localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
           setQuoteNumber(next.QTE);
         }
-      })
-      .catch(() => { /* keep the placeholder */ });
-  }, []);
+      } catch {
+        if (!previewFailedRef.current) {
+          previewFailedRef.current = true;
+          toast({ title: 'Number preview unavailable', description: 'The quote number will be assigned automatically when you save.' });
+        }
+      }
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (localStorage.getItem(EDIT_QUOTE_ID_KEY)) return;
+    previewNextQuoteNumber();
+  }, [previewNextQuoteNumber]);
   const [businessNumber, setBusinessNumber] = useState('');
   const [quoteDate, setQuoteDate] = useState<Date>(new Date());
   const [expirationDate, setExpirationDate] = useState<Date>(addDays(new Date(), 30));
@@ -242,7 +264,11 @@ export function QuoteGeneratorView() {
   const [notes, setNotes] = useState('Thank you for your interest in our services.');
   const [lineItemDetails, setLineItemDetails] = useState('');
   const [attachReport, setAttachReport] = useState(false);
+  // User-assigned free-text reference (Custom ID). Carries forward to linked
+  // documents at conversion; editable any time without touching Quote #.
+  const [customId, setCustomId] = useState('');
   const [shippingAddress, setShippingAddress] = useState<InvoiceShippingAddress>({ mode: 'client' });
+  const [isCustomAddressOpen, setIsCustomAddressOpen] = useState(false);
 
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -271,6 +297,27 @@ export function QuoteGeneratorView() {
   const [isAddLineItemDialogOpen, setIsAddLineItemDialogOpen] = useState(false);
   const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
+  const [outstandingQuotes, setOutstandingQuotes] = useState<Quote[]>([]);
+
+  // Unsaved-changes guard. Quote # is read-only (excluded); the business
+  // number only counts as an edit when the user changed it, so background
+  // refreshes never mark the form dirty.
+  const buildSnapshot = () =>
+    JSON.stringify({
+      customId,
+      bn: businessNumberEditedRef.current ? businessNumber : null,
+      contact: selectedContactId,
+      supplier: selectedSupplierId,
+      quoteDate: quoteDate.toISOString(),
+      expiration: expirationDate.toISOString(),
+      status,
+      notes,
+      details: lineItemDetails,
+      shipping: shippingAddress,
+      attachReport,
+      lineItems,
+    });
+  const { markClean, markCleanNow, confirmLeave } = useUnsavedChangesGuard(buildSnapshot);
 
   const loadQuoteForEditing = useCallback(async (quoteId: string) => {
     if (!user) return;
@@ -289,7 +336,8 @@ export function QuoteGeneratorView() {
 
       setQuoteNumber(quoteData.quoteNumber);
       originalQuoteNumberRef.current = quoteData.quoteNumber;
-      numberEditedRef.current = false;
+      businessNumberEditedRef.current = false;
+      setCustomId(quoteData.customId || '');
       setBusinessNumber(quoteData.businessNumber || '');
       setQuoteDate(new Date(quoteData.quoteDate));
       setExpirationDate(new Date(quoteData.expirationDate));
@@ -313,6 +361,7 @@ export function QuoteGeneratorView() {
         serviceItemId: item.serviceItemId,
       }));
       setLineItems(mappedLineItems);
+      markClean();
       toast({
         title: 'Editing Existing Quote',
         description: `Quote ${quoteData.quoteNumber} loaded. Use "Clear Form" to start a brand new quote.`,
@@ -336,6 +385,25 @@ export function QuoteGeneratorView() {
       setIsLoading(false);
     }
   }, [user, toast]);
+
+  // Quotes still "in flight" (not declined/invoiced/paid) - powers the
+  // Outstanding Quotes dropdown on this page.
+  const refreshOutstandingQuotes = useCallback(async () => {
+    if (!user) return;
+    try {
+      const all = await getQuotes(user.uid);
+      setOutstandingQuotes(all.filter(q => !['declined', 'invoiced', 'paid'].includes(q.status)));
+    } catch {
+      // The outstanding list is non-critical; the form works without it.
+    }
+  }, [user]);
+
+  const handleOpenOutstandingQuote = async (quote: Quote) => {
+    if (!confirmLeave()) return;
+    setQuoteToEditId(quote.id);
+    await loadQuoteForEditing(quote.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     async function initializeView() {
@@ -377,6 +445,8 @@ export function QuoteGeneratorView() {
           await loadQuoteForEditing(quoteId);
         }
 
+        refreshOutstandingQuotes();
+
         const contactIdParam = searchParams.get('contactId');
         if (contactIdParam) {
           setSelectedContactId(contactIdParam);
@@ -400,10 +470,11 @@ export function QuoteGeneratorView() {
         toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
       } finally {
         setIsLoading(false);
+        markClean();
       }
     }
     initializeView();
-  }, [user, toast, loadQuoteForEditing, searchParams]);
+  }, [user, toast, loadQuoteForEditing, refreshOutstandingQuotes, searchParams]);
 
   useEffect(() => {
     const contact = contacts.find(c => c.id === selectedContactId);
@@ -503,6 +574,10 @@ export function QuoteGeneratorView() {
 
   const handleSaveRepeatableItem = async (item: Omit<ServiceItem, 'id' | 'userId'>, lineItemId?: string) => {
     if (!user) return;
+    if (!item.description?.trim()) {
+      toast({ variant: 'destructive', title: 'Nothing to save', description: 'Enter a description for the item first.' });
+      return;
+    }
     try {
       const newServiceItem = await addServiceItem({ ...item, userId: user.uid });
       setServiceItems(prev => [newServiceItem, ...prev]);
@@ -539,26 +614,26 @@ export function QuoteGeneratorView() {
 
     const selectedContact = contacts.find(c => c.id === selectedContactId);
     const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
+    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
 
+    // Quote numbers are always system-assigned: edits keep the stored number,
+    // new quotes claim the next one. Custom references belong in Custom ID.
     let finalQuoteNumber = quoteNumber;
     try {
-      if (quoteToEditId) {
-        if (originalQuoteNumberRef.current !== null && quoteNumber !== originalQuoteNumberRef.current) {
-          finalQuoteNumber = await claimDocumentNumber('QTE', { override: quoteNumber, excludeDocId: quoteToEditId });
-        }
-      } else if (numberEditedRef.current) {
-        finalQuoteNumber = await claimDocumentNumber('QTE', { override: quoteNumber });
+      if (quoteToEditId && originalQuoteNumberRef.current) {
+        finalQuoteNumber = originalQuoteNumberRef.current;
       } else {
         finalQuoteNumber = await claimDocumentNumber('QTE');
       }
     } catch (claimError: any) {
-      toast({ variant: 'destructive', title: 'Invalid Quote Number', description: claimError?.message || 'Could not claim a quote number.' });
+      toast({ variant: 'destructive', title: 'Quote Number Error', description: claimError?.message || 'Could not claim a quote number.' });
       setIsSaving(false);
       return;
     }
 
     const quoteData = {
       quoteNumber: finalQuoteNumber,
+      customId: customId.trim(),
       businessNumber,
       companyName,
       contactId: selectedContactId,
@@ -600,12 +675,13 @@ export function QuoteGeneratorView() {
 
       if (quoteToEditId) {
         await updateQuoteWithLineItems(quoteToEditId, quoteData, itemsToSave, user.uid);
-        toast({ title: 'Quote Updated', description: `Quote ${finalQuoteNumber} has been saved.` });
+        toast({ title: 'Quote Updated', description: `Quote ${finalQuoteNumber} updated - status: ${statusLabel}.` });
       } else {
         await addQuoteWithLineItems(quoteData, itemsToSave);
-        toast({ title: 'Quote Saved', description: `Quote ${finalQuoteNumber} has been created.` });
+        toast({ title: 'Quote Saved', description: `Quote ${finalQuoteNumber} saved - status: ${statusLabel}.` });
       }
       localStorage.removeItem(EDIT_QUOTE_ID_KEY);
+      markCleanNow();
       window.location.href = '/accounting/quotes';
     } catch (error: any) {
       console.error('Save Quote Error:', error);
@@ -649,6 +725,7 @@ export function QuoteGeneratorView() {
     setLineItems(items.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
     if (template.notes) setNotes(template.notes);
     toast({ title: 'Template Applied', description: `"${template.name}" - started a new quote.` });
+    markClean();
   };
 
   const loadTemplateMenu = (
@@ -679,11 +756,10 @@ export function QuoteGeneratorView() {
     localStorage.removeItem(EDIT_QUOTE_ID_KEY);
     setQuoteToEditId(null);
     originalQuoteNumberRef.current = null;
-    numberEditedRef.current = false;
-    setQuoteNumber(`QTE-${Date.now().toString().slice(-6)}`);
-    getNextDocumentNumbers()
-      .then((next) => { if (!numberEditedRef.current) setQuoteNumber(next.QTE); })
-      .catch(() => { /* keep the placeholder */ });
+    businessNumberEditedRef.current = false;
+    setQuoteNumber('');
+    previewNextQuoteNumber();
+    setCustomId('');
     setBusinessNumber('');
     setQuoteDate(new Date());
     setExpirationDate(addDays(new Date(), 30));
@@ -696,6 +772,7 @@ export function QuoteGeneratorView() {
     setLineItems([]);
     setAttachReport(false);
     if (!silent) toast({ title: 'Form Cleared' });
+    markClean();
   };
 
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -734,6 +811,37 @@ export function QuoteGeneratorView() {
     return [];
   })();
 
+  // Form-only resolved shipping address for all modes, including the default
+  // "client" mode. Kept separate from shipToLines, which feeds the printed
+  // document and intentionally skips "Ship To" when it would only duplicate
+  // "Bill To".
+  const resolvedShippingLines = (() => {
+    const mode = shippingAddress?.mode || 'client';
+    if (mode === 'custom') {
+      return [
+        shippingAddress.street,
+        [shippingAddress.city, shippingAddress.provinceState, shippingAddress.postalCode].filter(Boolean).join(', '),
+        shippingAddress.country,
+      ].filter(Boolean);
+    }
+    if (mode === 'home' && selectedContact?.homeAddress) {
+      const h = selectedContact.homeAddress;
+      return [
+        h.street,
+        [h.city, h.provinceState, h.postalCode].filter(Boolean).join(', '),
+        h.country,
+      ].filter(Boolean);
+    }
+    if (selectedContact) {
+      return [
+        selectedContact.streetAddress,
+        [selectedContact.city, selectedContact.provinceState, selectedContact.postalCode].filter(Boolean).join(', '),
+        selectedContact.country,
+      ].filter(Boolean);
+    }
+    return [];
+  })();
+
   const documentProps = {
     quoteNumber,
     businessNumber,
@@ -765,15 +873,36 @@ export function QuoteGeneratorView() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => { if (confirmLeave()) router.push('/accounting/quotes'); }}>
+              <FileText className="mr-2 h-4 w-4" /> Quote Manager
+            </Button>
+            {outstandingQuotes.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <ClipboardList className="mr-2 h-4 w-4" /> Outstanding Quotes ({outstandingQuotes.length})
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-80">
+                  {outstandingQuotes.map(q => (
+                    <DropdownMenuItem key={q.id} onSelect={() => handleOpenOutstandingQuote(q)}>
+                      <span className="flex-1 min-w-0 truncate">{q.quoteNumber} — {q.companyName}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground capitalize">{q.status.replace(/_/g, ' ')}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
             <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
               <Printer className="mr-2 h-4 w-4" /> Print Quote & Report
             </Button>
-            <Button onClick={handleSaveQuote} disabled={isSaving} className="font-bold">
+            <Button onClick={() => handleSaveQuote()} disabled={isSaving} className="font-bold">
               {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Quote
             </Button>
-            <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button asChild variant="ghost" size="icon" onClick={() => { if (confirmLeave()) router.back(); }}>
               <a className="cursor-pointer">
                 <X className="h-5 w-5" />
                 <span className="sr-only">Close</span>
@@ -862,7 +991,7 @@ export function QuoteGeneratorView() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="shippingAddress">Shipping / Service Address <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                  <Select value={shippingAddress.mode} onValueChange={(v) => setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] }))}>
+                  <Select value={shippingAddress.mode} onValueChange={(v) => { setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] })); if (v === 'custom') setIsCustomAddressOpen(true); }}>
                     <SelectTrigger id="shippingAddress" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -874,8 +1003,35 @@ export function QuoteGeneratorView() {
                       <SelectItem value="custom">Enter a different address...</SelectItem>
                     </SelectContent>
                   </Select>
-                  {shippingAddress.mode === 'custom' && (
-                    <div className="space-y-3 rounded-md border p-3">
+                  {resolvedShippingLines.length > 0 && (
+                    <div className="rounded-md border bg-muted/30 p-3 text-sm flex flex-col gap-1">
+                      {(selectedContact?.businessName || selectedContact?.name) && (
+                        <span className="font-bold text-lg text-primary">
+                          {selectedContact?.businessName || selectedContact?.name}
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">{resolvedShippingLines.join(', ')}</span>
+                    </div>
+                  )}
+                  {shippingAddress.mode === 'custom' && !isCustomAddressOpen && (
+                    <button
+                      type="button"
+                      className="text-sm text-primary hover:underline"
+                      onClick={() => setIsCustomAddressOpen(true)}
+                    >
+                      Edit shipping address
+                    </button>
+                  )}
+                  {shippingAddress.mode === 'custom' && isCustomAddressOpen && (
+                    <div
+                      className="space-y-3 rounded-md border p-3"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          setIsCustomAddressOpen(false);
+                        }
+                      }}
+                    >
                       <div className="space-y-2">
                         <Label htmlFor="shipStreet">Street</Label>
                         <Input id="shipStreet" value={shippingAddress.street || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))} />
@@ -906,12 +1062,12 @@ export function QuoteGeneratorView() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quoteNumber">Quote #</Label>
-                  <Input id="quoteNumber" value={quoteNumber} onChange={e => { numberEditedRef.current = true; setQuoteNumber(e.target.value); }} />
+                  <Label htmlFor="quoteNumber">Quote # <span className="text-muted-foreground font-normal">(automatic)</span></Label>
+                  <Input id="quoteNumber" value={quoteNumber} readOnly tabIndex={-1} className="bg-muted text-muted-foreground font-mono" title="Assigned automatically when you save" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="businessNumber">Business Number (BN)</Label>
-                  <Input id="businessNumber" value={businessNumber} onChange={e => setBusinessNumber(e.target.value)} />
+                  <Input id="businessNumber" value={businessNumber} onChange={e => { businessNumberEditedRef.current = true; setBusinessNumber(e.target.value); }} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="quoteStatus">Status</Label>
@@ -931,6 +1087,10 @@ export function QuoteGeneratorView() {
                       <SelectItem value="declined">Declined</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customId">Custom ID <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input id="customId" value={customId} onChange={e => setCustomId(e.target.value)} placeholder="Your own reference number" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -974,10 +1134,10 @@ export function QuoteGeneratorView() {
                   <Table className="min-w-[950px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[40%]">Description</TableHead>
+                        <TableHead className="w-[40%]">Select or Add an Item</TableHead>
                         <TableHead className="w-[16%]">Category</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
-                        <TableHead className="w-24 text-center">Qty</TableHead>
+                        <TableHead className="w-32 text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
                       </TableRow>
@@ -988,8 +1148,7 @@ export function QuoteGeneratorView() {
                           <TableCell className="p-2 align-top">
                             <div className="relative flex items-center">
                               <Input 
-                                className="w-full text-sm h-9 pr-16 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
-                                placeholder="Type or select from Products & Services..." 
+                                className="w-full text-sm h-9 pr-24 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
                                 value={item.description}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -1007,6 +1166,25 @@ export function QuoteGeneratorView() {
                                 }}
                               />
                               <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-1">
+                                {item.description?.trim() && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                    title="Save to Products & Services library"
+                                    aria-label="Save to Products & Services library"
+                                    onClick={() => handleSaveRepeatableItem({
+                                      description: item.description,
+                                      price: item.price,
+                                      taxType: item.taxType || '',
+                                      taxRate: item.taxRate || 0,
+                                      itemType: item.itemType || 'service',
+                                    }, item.id)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <LibraryPickerPopover
                                   serviceItems={serviceItems}
                                   onSelect={(service) => {
@@ -1121,7 +1299,7 @@ export function QuoteGeneratorView() {
                           <TableCell className="p-2 align-top">
                             <Input 
                               type="number" 
-                              className="text-center h-9" 
+                              className="text-center h-9 min-w-28"
                               value={item.quantity} 
                               onChange={(e) => handleUpdateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)} 
                             />

@@ -7,18 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList, Inbox, Send, FileText, XCircle, Receipt, TrendingUp, Wrench, CheckCheck, DollarSign, LayoutGrid, Info } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
+import { LoaderCircle, CheckCircle, MoreVertical, Pencil, FileDigit, Trash2, ArrowUpDown, ClipboardList, Inbox, Send, FileText, XCircle, Receipt, TrendingUp, Wrench, CheckCheck, DollarSign, LayoutGrid, Info, Route, Plus, ChevronDown, RefreshCw, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { getQuotes, type Quote, type QuoteStatus, convertQuoteToInvoice, convertQuoteToWorkOrder, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
+import { getQuotes, getInvoices, type Quote, type QuoteStatus, convertQuoteToInvoice, convertQuoteToWorkOrder, updateQuoteStatus, deleteQuote } from '@/core/accounting-service';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { Badge } from '@/components/ui/badge';
 
 const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
+
+// One-shot pointer consumed by the Create Invoice editor (same key the
+// Invoicing Report uses to hand an invoice off for editing).
+const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
 const statusBadgeConfig: Record<QuoteStatus, { label: string; className: string; icon: React.ElementType }> = {
   requested: { label: 'Requested', className: 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100', icon: Inbox },
@@ -142,9 +146,12 @@ export function QuotesPageView() {
     setIsSaving(true);
     setActiveQuoteId(quoteId);
     try {
-      await convertQuoteToInvoice(quoteId, user.uid);
-      toast({ title: 'Quote Converted', description: 'The accepted quote has been converted into an invoice.' });
-      router.push('/accounting/accounts-receivable');
+      const invoice = await convertQuoteToInvoice(quoteId, user.uid);
+      toast({ title: 'Quote Converted', description: `Invoice ${invoice.invoiceNumber} created - opening it for review.` });
+      // Open the new invoice straight in the editor so it can be viewed or
+      // edited right away (the editor consumes this pointer once on load).
+      localStorage.setItem(EDIT_INVOICE_ID_KEY, invoice.id);
+      router.push('/accounting/invoices/create');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Conversion Failed', description: error.message });
     } finally {
@@ -153,19 +160,28 @@ export function QuotesPageView() {
     }
   };
 
-  const handleAcceptAndConvertQuote = async (quoteId: string) => {
+  // Opens the quote's existing invoice in the editor. Falls back to the A/R
+  // list when the invoice cannot be linked (legacy conversions predate the
+  // sourceQuoteId fields, or the quote was only manually marked invoiced).
+  const openInvoiceForQuote = async (quote: Quote) => {
     if (!user) return;
-    setIsSaving(true);
-    setActiveQuoteId(quoteId);
     try {
-      await updateQuoteStatus(quoteId, 'approved', user.uid);
-      await convertQuoteToInvoice(quoteId, user.uid);
-      toast({ title: 'Quote Approved & Converted', description: 'The quote was approved and converted into an invoice.' });
+      const invoices = await getInvoices(user.uid, { includeDrafts: true });
+      const invoice =
+        invoices.find(i => i.sourceQuoteId === quote.id) ||
+        invoices.find(i => quote.quoteNumber && (i.notes || '').includes(quote.quoteNumber));
+      if (invoice) {
+        localStorage.setItem(EDIT_INVOICE_ID_KEY, invoice.id);
+        router.push('/accounting/invoices/create');
+        return;
+      }
+      toast({
+        title: 'No linked invoice found',
+        description: 'This quote has no linked invoice (it may have been marked Invoiced manually). Opening Accounts Receivable instead.',
+      });
       router.push('/accounting/accounts-receivable');
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
-      setIsSaving(false);
-      setActiveQuoteId(null);
+    } catch {
+      router.push('/accounting/accounts-receivable');
     }
   };
 
@@ -197,6 +213,31 @@ export function QuotesPageView() {
     return counts;
   }, [quotes]);
 
+  // "Needs attention" heuristics: quotes sitting in Sent with no update for
+  // 14+ days (updatedAt stands in until stage timestamps exist), approved but
+  // not yet converted, or expiring within the next 7 days.
+  const attention = useMemo(() => {
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const weekOut = todayStart.getTime() + 7 * 86400000;
+    let sentStale = 0;
+    let approvedWaiting = 0;
+    let expiringSoon = 0;
+    quotes.forEach(q => {
+      if (q.status === 'sent') {
+        const updated = q.updatedAt ? new Date(q.updatedAt).getTime() : 0;
+        if (updated && now - updated >= 14 * 86400000) sentStale += 1;
+      }
+      if (q.status === 'approved') approvedWaiting += 1;
+      if (q.status === 'requested' || q.status === 'draft' || q.status === 'sent') {
+        const exp = new Date(q.expirationDate).getTime();
+        if (!isNaN(exp) && exp >= todayStart.getTime() && exp <= weekOut) expiringSoon += 1;
+      }
+    });
+    return { sentStale, approvedWaiting, expiringSoon };
+  }, [quotes]);
+
   const filteredQuotes = useMemo(() => {
     let result = quotes;
     if (statusFilter !== 'all') {
@@ -206,6 +247,7 @@ export function QuotesPageView() {
     const lowerQuery = searchQuery.toLowerCase();
     return result.filter(q => 
       q.quoteNumber.toLowerCase().includes(lowerQuery) ||
+      (q.customId?.toLowerCase().includes(lowerQuery) ?? false) ||
       q.companyName.toLowerCase().includes(lowerQuery) ||
       q.status.toLowerCase().includes(lowerQuery) ||
       (q.workOrderNumber?.toLowerCase().includes(lowerQuery) ?? false)
@@ -260,16 +302,41 @@ export function QuotesPageView() {
       <InvoicePageHeader pageTitle="Quote Manager" hubPath="/accounting" hubLabel="Quotes" />
       
       {/* Header */}
-      <header className="print:hidden">
-        <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-2">
-          Quote Manager
-          <Link href="/learn/guides/quotes" className="inline-flex">
-            <Info className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
-          </Link>
-        </h1>
-        <p className="text-muted-foreground max-w-2xl">
-          Track proposals and convert accepted quotes into invoices with one click.
-        </p>
+      <header className="print:hidden flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold font-headline text-primary flex items-center gap-2">
+            Quote Manager
+            <Link href="/learn/guides/quotes" className="inline-flex">
+              <Info className="h-6 w-6 text-muted-foreground hover:text-primary transition-colors" />
+            </Link>
+          </h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Track proposals and convert accepted quotes into invoices with one click.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => router.push('/accounting/quotes/create')}>
+            <Plus className="mr-2 h-4 w-4" /> Create Quote
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Actions <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push('/accounting/quotes/create')}>
+                <Plus className="mr-2 h-4 w-4" /> Create a Quote
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => loadData()}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/learn/guides/quotes')}>
+                <Info className="mr-2 h-4 w-4" /> Quote Guide
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       {/* Pipeline Value Summary */}
@@ -283,7 +350,7 @@ export function QuotesPageView() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">{formatCurrency(totalPipelineValue)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Active quotes (Requested → Approved)</p>
+            <p className="text-xs text-muted-foreground mt-1">Active quotes (Requested → Completed)</p>
           </CardContent>
         </Card>
         <Card className="md:col-span-1 border-primary/20">
@@ -295,15 +362,44 @@ export function QuotesPageView() {
             <p className="text-xs text-muted-foreground mt-1">{filteredQuotes.length} quotes in view</p>
           </CardContent>
         </Card>
-        <Card className="md:col-span-1 flex flex-col justify-center px-6 bg-muted/30">
-          <p className="text-sm text-muted-foreground italic">
-            Keep prospects moving through the pipeline. Accepted quotes may be converted into invoices to preserve your accounting history.
-          </p>
+        <Card className="md:col-span-1 border-amber-200 bg-amber-50/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Needs Attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1.5 text-sm">
+            {attention.sentStale > 0 && (
+              <button
+                className="block w-full text-left text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+                onClick={() => setStatusFilter('sent')}
+              >
+                {attention.sentStale} sent quote{attention.sentStale === 1 ? '' : 's'} with no update in 14+ days
+              </button>
+            )}
+            {attention.approvedWaiting > 0 && (
+              <button
+                className="block w-full text-left text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+                onClick={() => setStatusFilter('approved')}
+              >
+                {attention.approvedWaiting} approved, awaiting conversion
+              </button>
+            )}
+            {attention.expiringSoon > 0 && (
+              <p className="text-muted-foreground">
+                {attention.expiringSoon} expiring in the next 7 days
+              </p>
+            )}
+            {attention.sentStale === 0 && attention.approvedWaiting === 0 && attention.expiringSoon === 0 && (
+              <p className="text-muted-foreground">Nothing needs attention right now.</p>
+            )}
+          </CardContent>
         </Card>
       </div>
 
       {/* Status Summary Cards - Clickable for filtering */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card 
           key="all"
           className={`cursor-pointer transition-all hover:shadow-md border-primary/30 bg-primary/5 ${statusFilter === 'all' ? 'ring-2 ring-primary ring-offset-1' : ''}`}
@@ -378,6 +474,7 @@ export function QuotesPageView() {
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('quoteNumber')}>
                     Quote # <ArrowUpDown className="ml-1 h-3 w-3 inline" />
                   </TableHead>
+                  <TableHead>Custom ID</TableHead>
                   <TableHead>Work Order #</TableHead>
                   <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('companyName')}>
                     Client <ArrowUpDown className="ml-1 h-3 w-3 inline" />
@@ -398,6 +495,7 @@ export function QuotesPageView() {
                 {sortedQuotes.length > 0 ? sortedQuotes.map((quote) => (
                   <TableRow key={quote.id} className="group">
                     <TableCell className="font-medium">{quote.quoteNumber}</TableCell>
+                    <TableCell className="text-muted-foreground">{quote.customId || '—'}</TableCell>
                     <TableCell className="text-muted-foreground">{quote.workOrderNumber || '—'}</TableCell>
                     <TableCell>{quote.companyName}</TableCell>
                     <TableCell>{format(quote.quoteDate, 'PP')}</TableCell>
@@ -405,40 +503,74 @@ export function QuotesPageView() {
                     <TableCell className="text-right font-mono text-primary">{formatCurrency(quote.totalAmount)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end items-center gap-1">
-                        {/* Quick Action Buttons - visible on hover */}
-                        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {quote.status !== 'approved' && quote.status !== 'invoiced' && (
+                        {(quote.status === 'requested' || quote.status === 'draft' || quote.status === 'sent') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => handleAcceptQuote(quote.id)}
+                            disabled={isSaving || !!isConverting}
+                            title="Mark Approved"
+                          >
+                            <CheckCircle className="mr-1 h-4 w-4" /> Approve
+                          </Button>
+                        )}
+                        {quote.status === 'approved' && (
+                          <>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleAcceptQuote(quote.id)}
-                              title="Mark Approved"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {quote.status === 'approved' && (
-                            <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               className="h-8 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                               onClick={() => handleConvertQuote(quote.id)}
+                              disabled={isSaving || !!isConverting}
                               title="Convert to Invoice"
                             >
-                              <Receipt className="h-4 w-4" />
+                              <Receipt className="mr-1 h-4 w-4" /> Invoice
                             </Button>
-                          )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                              onClick={() => handleConvertToWorkOrder(quote.id)}
+                              disabled={isSaving || !!isConverting}
+                              title="Convert to Work Order"
+                            >
+                              <Wrench className="mr-1 h-4 w-4" /> Work Order
+                            </Button>
+                          </>
+                        )}
+                        {(quote.status === 'in_progress' || quote.status === 'completed') && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            onClick={() => handleConvertQuote(quote.id)}
+                            disabled={isSaving || !!isConverting}
+                            title="Create Invoice"
+                          >
+                            <Receipt className="mr-1 h-4 w-4" /> Invoice
+                          </Button>
+                        )}
+                        {quote.status === 'invoiced' && (
+                          <Button
+                            variant="outline"
                             size="sm"
                             className="h-8 px-2"
-                            onClick={() => handleEditQuote(quote.id)}
-                            title="Edit Quote"
+                            onClick={() => openInvoiceForQuote(quote)}
+                            title="Open the invoice to view or edit"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <FileDigit className="mr-1 h-4 w-4" /> Open Invoice
                           </Button>
-                        </div>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 text-xs font-medium"
+                          onClick={() => router.push(`/accounting/quotes/${quote.id}/tracking`)}
+                          title="From Quote to Receipt Tracking"
+                        >
+                          <Route className="mr-1 h-3.5 w-3.5" /> Tracking
+                        </Button>
                         
                         {/* Full Dropdown Menu */}
                         <DropdownMenu>
@@ -451,42 +583,44 @@ export function QuotesPageView() {
                             <DropdownMenuItem onClick={() => handleEditQuote(quote.id)}>
                               <Pencil className="mr-2 h-4 w-4" /> Edit Quote
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleAcceptQuote(quote.id)}>
-                              <CheckCircle className="mr-2 h-4 w-4" /> Mark Approved
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleConvertQuote(quote.id)}>
-                              <FileDigit className="mr-2 h-4 w-4" /> Convert to Invoice</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleConvertToWorkOrder(quote.id)}>
-                              <ClipboardList className="mr-2 h-4 w-4" /> Convert to Work Order
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleAcceptAndConvertQuote(quote.id)}>
-                              <CheckCircle className="mr-2 h-4 w-4" /> Approve and Create an Invoice
+                            <DropdownMenuItem onClick={() => router.push(`/accounting/quotes/${quote.id}/tracking`)}>
+                              <Route className="mr-2 h-4 w-4" /> Quote → Receipt Tracking
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'requested')}>
-                              <Inbox className="mr-2 h-4 w-4" /> Mark as Requested
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'draft')}>
-                              <FileText className="mr-2 h-4 w-4" /> Mark as Draft
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'sent')}>
-                              <Send className="mr-2 h-4 w-4" /> Mark as Sent
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'in_progress')}>
-                              <Wrench className="mr-2 h-4 w-4" /> Mark as Work in Progress
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'completed')}>
-                              <CheckCheck className="mr-2 h-4 w-4" /> Mark as Completed
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'invoiced')}>
-                              <Receipt className="mr-2 h-4 w-4" /> Mark as Invoiced
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'paid')}>
-                              <DollarSign className="mr-2 h-4 w-4" /> Mark as Paid
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'declined')}>
-                              <XCircle className="mr-2 h-4 w-4" /> Mark as Declined
-                            </DropdownMenuItem>
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Send className="mr-2 h-4 w-4" /> Change status
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'requested')}>
+                                  <Inbox className="mr-2 h-4 w-4" /> Requested
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'draft')}>
+                                  <FileText className="mr-2 h-4 w-4" /> Draft
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'sent')}>
+                                  <Send className="mr-2 h-4 w-4" /> Sent
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'approved')}>
+                                  <CheckCircle className="mr-2 h-4 w-4" /> Approved
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'in_progress')}>
+                                  <Wrench className="mr-2 h-4 w-4" /> Work in Progress
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'completed')}>
+                                  <CheckCheck className="mr-2 h-4 w-4" /> Completed
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'invoiced')}>
+                                  <Receipt className="mr-2 h-4 w-4" /> Invoiced
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'paid')}>
+                                  <DollarSign className="mr-2 h-4 w-4" /> Paid
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(quote.id, 'declined')}>
+                                  <XCircle className="mr-2 h-4 w-4" /> Declined
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteQuote(quote.id)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Delete Quote
@@ -498,10 +632,17 @@ export function QuotesPageView() {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24 text-muted-foreground italic">
-                      {statusFilter !== 'all' 
-                        ? `No ${statusFilter} quotes found. Try clearing the filter or create a new quote.`
-                        : 'No quotes found. Create a new quote to get started.'}
+                    <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                      <span className="italic">
+                        {statusFilter !== 'all'
+                          ? `No ${statusFilter} quotes found. Try clearing the filter or create a new quote.`
+                          : 'No quotes found. Create a new quote to get started.'}
+                      </span>
+                      <div className="mt-3">
+                        <Button onClick={() => router.push('/accounting/quotes/create')}>
+                          <Plus className="mr-2 h-4 w-4" /> Create a Quote
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

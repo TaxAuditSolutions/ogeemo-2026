@@ -227,6 +227,8 @@ export interface Quote {
   createdAt?: Date;
   updatedAt?: Date;
   quoteNumber: string;
+  /** User-assigned reference (Custom ID) - free text, editable, carries forward to linked documents. */
+  customId?: string;
   businessNumber?: string;
   companyName: string;
   contactId: string;
@@ -239,6 +241,7 @@ export interface Quote {
   lineItemDetails?: string;
   shippingAddress?: InvoiceShippingAddress;
   workOrderNumber?: string;
+  workOrderId?: string | null;
   taxType: string;
   userId: string;
 }
@@ -260,6 +263,8 @@ export interface Invoice {
   createdAt?: Date;
   updatedAt?: Date;
   invoiceNumber: string;
+  /** User-assigned reference (Custom ID) - carries forward from the source quote; editable. */
+  customId?: string;
   /** Latest payment receipt number (REC-...), stamped when a payment posts. */
   lastReceiptNumber?: string;
   businessNumber?: string;
@@ -274,6 +279,11 @@ export interface Invoice {
   notes: string;
   lineItemDetails?: string;
   shippingAddress?: InvoiceShippingAddress;
+  /** Tracking links - which documents this invoice was converted from (Quote -> Receipt tracking). */
+  sourceQuoteId?: string | null;
+  sourceQuoteNumber?: string | null;
+  sourceWorkOrderId?: string | null;
+  sourceWorkOrderNumber?: string | null;
   taxType: string;
   userId: string;
 }
@@ -328,6 +338,10 @@ export interface WorkOrder {
   updatedAt?: Date;
   workOrderNumber: string;
   quoteId?: string | null;
+  /** Source quote reference - stamped at conversion so it survives quote deletion. */
+  sourceQuoteNumber?: string | null;
+  /** Custom ID carried forward from the source quote. */
+  customId?: string;
   businessNumber?: string;
   companyName: string;
   contactId: string;
@@ -390,6 +404,11 @@ const docToInvoice = (doc: any): Invoice => {
     createdAt: toClientDate(data.createdAt),
     updatedAt: toClientDate(data.updatedAt),
     shippingAddress: data.shippingAddress || null,
+    sourceQuoteId: data.sourceQuoteId || null,
+    sourceQuoteNumber: data.sourceQuoteNumber || null,
+    customId: data.customId || '',
+    sourceWorkOrderId: data.sourceWorkOrderId || null,
+    sourceWorkOrderNumber: data.sourceWorkOrderNumber || null,
   } as Invoice;
 };
 
@@ -454,6 +473,7 @@ const docToQuote = (doc: any): Quote => {
     createdBy: data.createdBy,
     updatedBy: data.updatedBy,
     quoteNumber: data.quoteNumber,
+    customId: data.customId || '',
     businessNumber: data.businessNumber,
     companyName: data.companyName,
     contactId: data.contactId,
@@ -465,6 +485,7 @@ const docToQuote = (doc: any): Quote => {
     notes: data.notes,
     taxType: data.taxType,
     workOrderNumber: data.workOrderNumber,
+    workOrderId: data.workOrderId || null,
     userId: data.userId,
     createdAt: toClientDate(data.createdAt),
     updatedAt: toClientDate(data.updatedAt),
@@ -827,6 +848,9 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
     invoiceDate: now,
     status: 'outstanding' as const,
     notes: quote.notes || `Converted from quote ${quote.quoteNumber}`,
+    sourceQuoteId: quote.id,
+    sourceQuoteNumber: quote.quoteNumber,
+    customId: quote.customId,
     lineItemDetails: quote.lineItemDetails,
     taxType: quote.taxType,
     userId,
@@ -2518,6 +2542,8 @@ const docToWorkOrder = (doc: any): WorkOrder => {
     updatedBy: data.updatedBy,
     workOrderNumber: data.workOrderNumber,
     quoteId: data.quoteId || null,
+    sourceQuoteNumber: data.sourceQuoteNumber || null,
+    customId: data.customId || '',
     businessNumber: data.businessNumber,
     companyName: data.companyName,
     contactId: data.contactId,
@@ -2645,6 +2671,12 @@ export async function addWorkOrderWithLineItems(
     scheduledDate: toFirestoreDateValue(workOrderData.scheduledDate),
     completedDate: toFirestoreDateValue(workOrderData.completedDate),
   };
+  // Firestore rejects undefined field values. Optional source fields (e.g.
+  // lineItemDetails when converting a quote that never set it) can arrive as
+  // undefined, so strip them the same way the invoice/quote converters do.
+  Object.keys(workOrderPayload).forEach((key) => {
+    if ((workOrderPayload as any)[key] === undefined) delete (workOrderPayload as any)[key];
+  });
   batch.set(workOrderRef, workOrderPayload);
 
   lineItems.forEach(item => {
@@ -2809,6 +2841,8 @@ export async function convertQuoteToWorkOrder(quoteId: string, userId: string): 
   const workOrderData: Omit<WorkOrder, 'id' | 'createdAt'> = {
     workOrderNumber,
     quoteId: quoteId,
+    sourceQuoteNumber: quote.quoteNumber,
+    customId: quote.customId,
     businessNumber: quote.businessNumber,
     companyName: quote.companyName,
     contactId: quote.contactId,
@@ -2850,6 +2884,7 @@ export async function convertQuoteToWorkOrder(quoteId: string, userId: string): 
   await updateDoc(quoteRef, {
     status: 'in_progress',
     workOrderNumber: workOrder.workOrderNumber,
+    workOrderId: workOrder.id,
     updatedBy: currentUser.uid,
     updatedAt: new Date(),
   });
@@ -2867,6 +2902,7 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
 
   const lineItems = await getWorkOrderLineItems(userId, workOrderId);
   const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
+  const sourceQuote = workOrder.quoteId ? await getQuoteById(workOrder.quoteId, { quiet: true }) : null;
 
   const invoiceNumber = (await claimNextNumber('INV', 'INV')) as string;
   const now = new Date();
@@ -2885,6 +2921,11 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
     invoiceDate: now,
     status: 'outstanding' as const,
     notes: workOrder.notes || `Converted from work order ${workOrder.workOrderNumber}`,
+    sourceWorkOrderId: workOrder.id,
+    sourceWorkOrderNumber: workOrder.workOrderNumber,
+    sourceQuoteId: workOrder.quoteId || null,
+    sourceQuoteNumber: sourceQuote?.quoteNumber || workOrder.sourceQuoteNumber || null,
+    customId: sourceQuote?.customId || workOrder.customId || '',
     lineItemDetails: workOrder.lineItemDetails,
     taxType: workOrder.taxType,
     userId,

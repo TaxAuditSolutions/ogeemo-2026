@@ -171,34 +171,33 @@ export function AccountsReceivablePageView() {
         try {
             const receiptNumber = await postInvoicePayment(user.uid, selectedInvoice.id, amount, paymentDate, depositAccount);
 
-            // Optional receipt email: the payment is already on the books, so an
-            // SMTP failure must never undo it - it only adjusts the toast below.
-            const willSend = sendReceipt && recipient.length > 0;
-            let emailError: string | undefined;
-            if (willSend) {
-                const result = await sendReceiptEmail({
-                    to: recipient,
-                    companyName: selectedInvoice.companyName,
-                    invoiceNumber: selectedInvoice.invoiceNumber,
-                    receiptNumber: receiptNumber || undefined,
-                    amount,
-                    originalAmount: selectedInvoice.originalAmount,
-                    amountPaid: selectedInvoice.amountPaid + amount,
-                    paymentDate,
-                }).catch((e: any) => ({ sent: false, error: e?.message || 'Unknown error' }));
-                if (!result.sent) emailError = result.error;
-            }
-
+            const identityLabel = `Payment of ${formatCurrency(amount)} for ${selectedInvoice.companyName} — Invoice #${selectedInvoice.invoiceNumber}.`;
             const receiptLabel = receiptNumber
-                ? `Receipt ${receiptNumber} issued and recorded in the General Ledger.`
-                : 'The payment has been recorded in the General Ledger.';
-            const emailLabel = willSend && !emailError ? ` Receipt emailed to ${recipient}.` : '';
-            toast({ title: 'Payment Posted', description: receiptLabel + emailLabel });
-            if (willSend && emailError) {
-                toast({ variant: 'destructive', title: 'Receipt Email Failed', description: `${emailError} The receipt is still available from the invoice's menu.` });
-            }
+                ? ` Receipt ${receiptNumber} issued and recorded in the General Ledger.`
+                : ' Recorded in the General Ledger.';
+            const wantsReceipt = sendReceipt && recipient.length > 0;
+
             setIsPaymentDialogOpen(false);
             loadData();
+
+            if (wantsReceipt) {
+                // "Post & Send Receipt" hands the refreshed receipt to the receipt
+                // page instead of auto-emailing: the user confirms the details and
+                // clicks Email Receipt there (recipient pre-filled from this dialog).
+                const receiptInvoice: Invoice = {
+                    ...selectedInvoice,
+                    amountPaid: selectedInvoice.amountPaid + amount,
+                    lastReceiptNumber: receiptNumber || selectedInvoice.lastReceiptNumber,
+                };
+                toast({
+                    title: 'Payment Posted',
+                    description: `${identityLabel}${receiptLabel} Review the receipt and click Email Receipt to send it.`,
+                });
+                openInvoiceReceipt(receiptInvoice, (href) => router.push(href), { clientEmail: recipient });
+                return;
+            }
+
+            toast({ title: 'Payment Posted', description: identityLabel + receiptLabel });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
         } finally {
@@ -422,7 +421,7 @@ export function AccountsReceivablePageView() {
                     <DialogHeader>
                         <DialogTitle>Post Client Payment</DialogTitle>
                         <DialogDescription>
-                            Confirm funds received for Invoice #{selectedInvoice?.invoiceNumber}. This will move the record to your BKS General Ledger.
+                            Confirm funds received for ${selectedInvoice?.companyName} — Invoice #${selectedInvoice?.invoiceNumber}. This will move the record to your BKS General Ledger.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">

@@ -25,7 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 import {
     LoaderCircle, ArrowLeft, Calendar, User, CheckCircle, FileDigit, Clock,
-    PlayCircle, XCircle, Briefcase
+    PlayCircle, XCircle, Briefcase, FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
@@ -219,9 +219,14 @@ export function WorkOrderDetailView() {
         <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
             <AccountingPageHeader pageTitle={`Work Order ${workOrder.workOrderNumber}`} />
             <div className="flex items-center justify-between">
-                <Button variant="outline" size="sm" onClick={() => router.push('/accounting/work-orders')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/accounting/work-orders')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Work Orders
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => router.push('/accounting/quotes')}>
+                        <FileText className="mr-2 h-4 w-4" /> Quote Manager
+                    </Button>
+                </div>
                 <Badge variant="outline" className={cn(config.color, 'text-sm px-3 py-1')}>
                     <StatusIcon className="h-4 w-4 mr-2" />
                     {config.label}
@@ -452,7 +457,17 @@ export function WorkOrderDetailView() {
                             <CardHeader className="bg-primary/5 border-b">
                                 <CardTitle className="text-base">Source Quote</CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="space-y-3">
+                                {(workOrder.sourceQuoteNumber || workOrder.customId) && (
+                                    <div className="space-y-1 text-sm">
+                                        {workOrder.sourceQuoteNumber && (
+                                            <p><span className="font-medium text-muted-foreground">Quote #:</span> {workOrder.sourceQuoteNumber}</p>
+                                        )}
+                                        {workOrder.customId && (
+                                            <p><span className="font-medium text-muted-foreground">Custom ID:</span> {workOrder.customId}</p>
+                                        )}
+                                    </div>
+                                )}
                                 <Button
                                     variant="outline"
                                     size="sm"

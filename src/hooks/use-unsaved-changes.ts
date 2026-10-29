@@ -31,6 +31,14 @@ export function useUnsavedChangesGuard(snapshot: () => string) {
   const baselineRef = useRef<string | null>(null);
   const cleanPendingRef = useRef(false);
   const isDirtyRef = useRef<() => boolean>(() => false);
+  // beforeunload is attached ONLY while the form is dirty (synced below). A
+  // page that merely has the listener is denied back/forward-cache restores in
+  // some browsers, which forced a full reload + the auth splash on every Back.
+  const beforeUnloadActiveRef = useRef(false);
+  const handleBeforeUnload = useCallback((e: BeforeUnloadEvent) => {
+    e.preventDefault();
+    e.returnValue = '';
+  }, []);
 
   // Recomputed every render so listeners always read the freshest values.
   isDirtyRef.current = () =>
@@ -50,25 +58,32 @@ export function useUnsavedChangesGuard(snapshot: () => string) {
     []
   );
 
-  // Capture the baseline after the next commit - the setters behind the
-  // preceding markClean() call (load / clear / template) have landed by then.
+  // Runs after every commit: capture the baseline once the setters behind the
+  // preceding markClean() call (load / clear / template) have landed, and keep
+  // beforeunload in step with dirtiness (dirtiness only ever changes via a
+  // commit, so this cadence is sufficient).
   useEffect(() => {
     if (cleanPendingRef.current) {
       cleanPendingRef.current = false;
       baselineRef.current = snapshotRef.current();
     }
+    const dirty = isDirtyRef.current();
+    if (dirty && !beforeUnloadActiveRef.current) {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      beforeUnloadActiveRef.current = true;
+    } else if (!dirty && beforeUnloadActiveRef.current) {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      beforeUnloadActiveRef.current = false;
+    }
   });
 
-  // Tab close, refresh, external navigation.
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!isDirtyRef.current()) return;
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  // Detach on unmount so a clean page never keeps the listener around.
+  useEffect(() => () => {
+    if (beforeUnloadActiveRef.current) {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      beforeUnloadActiveRef.current = false;
+    }
+  }, [handleBeforeUnload]);
 
   // Internal link clicks anywhere on the page (sidebar, breadcrumbs, header).
   useEffect(() => {

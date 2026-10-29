@@ -90,7 +90,7 @@ export function QuotesPageView() {
     setIsSaving(true);
     try {
       await updateQuoteStatus(quoteId, 'approved', user.uid);
-      toast({ title: 'Quote Approved', description: 'The quote is now marked as approved and ready to invoice.' });
+      toast({ title: 'Quote Approved', description: 'Approved - create an invoice or a work order from this row.' });
       loadData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Approve Failed', description: error.message });
@@ -496,7 +496,15 @@ export function QuotesPageView() {
                   <TableRow key={quote.id} className="group">
                     <TableCell className="font-medium">{quote.quoteNumber}</TableCell>
                     <TableCell className="text-muted-foreground">{quote.customId || '—'}</TableCell>
-                    <TableCell className="text-muted-foreground">{quote.workOrderNumber || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {quote.workOrderId && quote.workOrderNumber ? (
+                        <Link href={`/accounting/work-orders/${quote.workOrderId}`} className="font-medium text-primary hover:underline">
+                          {quote.workOrderNumber}
+                        </Link>
+                      ) : (
+                        quote.workOrderNumber || '—'
+                      )}
+                    </TableCell>
                     <TableCell>{quote.companyName}</TableCell>
                     <TableCell>{format(quote.quoteDate, 'PP')}</TableCell>
                     <TableCell><StatusBadge status={quote.status} /></TableCell>

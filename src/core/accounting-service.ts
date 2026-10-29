@@ -2792,6 +2792,26 @@ export async function updateWorkOrderStatus(workOrderId: string, status: WorkOrd
   }
 
   await updateDoc(workOrderRef, updateData);
+
+  // Carry completion forward to the linked quote so the Quote Manager shows
+  // Completed instead of stalling at Work in Progress. Guarded: an already
+  // invoiced/paid quote is never downgraded.
+  const quoteId = workOrderSnap.data().quoteId as string | undefined;
+  if (status === 'completed' && quoteId) {
+    const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
+    const quoteSnap = await getDoc(quoteRef);
+    if (
+      quoteSnap.exists() &&
+      quoteSnap.data().orgId === orgId &&
+      quoteSnap.data().status === 'in_progress'
+    ) {
+      await updateDoc(quoteRef, {
+        status: 'completed',
+        updatedBy: currentUser.uid,
+        updatedAt: new Date(),
+      });
+    }
+  }
 }
 
 export async function deleteWorkOrder(userId: string, workOrderId: string): Promise<void> {
@@ -2960,6 +2980,27 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
     updatedBy: currentUser.uid,
     updatedAt: now,
   });
+
+  // The invoice exists now - flip the linked quote to Invoiced (same as the
+  // quote->invoice converter) so the Quote Manager shows Open Invoice instead
+  // of offering a second conversion.
+  if (workOrder.quoteId) {
+    const quoteRef = doc(db, QUOTES_COLLECTION, workOrder.quoteId);
+    const quoteSnap = await getDoc(quoteRef);
+    const quoteStatus = quoteSnap.exists() ? quoteSnap.data().status : null;
+    if (
+      quoteSnap.exists() &&
+      quoteSnap.data().orgId === orgId &&
+      quoteStatus !== 'invoiced' &&
+      quoteStatus !== 'paid'
+    ) {
+      await updateDoc(quoteRef, {
+        status: 'invoiced',
+        updatedBy: currentUser.uid,
+        updatedAt: new Date(),
+      });
+    }
+  }
 
   return invoice;
 }

@@ -376,6 +376,17 @@ export function LedgersView() {
       return { kind: 'manual' };
   };
 
+  // Custom ID reference for ledger rows - matched through the source invoice's
+  // document number (same join as resolveSource above).
+  const customIdByDocumentNumber = React.useMemo(() => {
+      const map = new Map<string, string>();
+      invoices.forEach(i => {
+          const num = (i.invoiceNumber || '').trim().toLowerCase();
+          if (num && i.customId) map.set(num, i.customId);
+      });
+      return map;
+  }, [invoices]);
+
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
@@ -391,7 +402,7 @@ export function LedgersView() {
       return;
     }
 
-    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Rationale", "Document Link", "Reconciled"];
+    const headers = ["Date", "Contact", "Category", "Category #", "Type", "Amount", "Rationale", "Document Link", "Custom ID", "Reconciled"];
     const csvRows = dataToExport.map(item => {
       const catNum = item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category;
       const catName = getCategoryName(catNum, item.transactionType);
@@ -406,6 +417,7 @@ export function LedgersView() {
         item.totalAmount.toFixed(2),
         `"${combinedRationale.replace(/"/g, '""')}"`,
         item.documentUrl || "",
+        (item.documentNumber && customIdByDocumentNumber.get(item.documentNumber.trim().toLowerCase())) || "",
         item.isReconciled ? "YES" : "NO"
       ];
     });
@@ -458,6 +470,7 @@ export function LedgersView() {
                         </Button>
                     </TableHead>
                     <TableHead className="text-xs font-semibold text-muted-foreground">Document</TableHead>
+                    <TableHead className="text-xs font-semibold text-muted-foreground">Custom ID</TableHead>
                     {type === 'all' && <TableHead className="text-center">Type</TableHead>}
                     <TableHead className="p-0 text-right">
                         <Button variant="ghost" onClick={() => setSortConfig({ key: 'totalAmount', direction: sortConfig?.direction === 'asc' ? 'desc' : 'asc' })} className="h-full w-full justify-end px-4 font-bold hover:bg-muted/50 rounded-none">
@@ -494,6 +507,7 @@ export function LedgersView() {
                                 {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
                             </TableCell>
                             <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{item.documentNumber || '—'}</TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{(item.documentNumber && customIdByDocumentNumber.get(item.documentNumber.trim().toLowerCase())) || '—'}</TableCell>
                             {type === 'all' && <TableCell className="text-center"><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'} className="text-[10px] h-4 uppercase">{item.transactionType}</Badge></TableCell>}
                             <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
                                 {formatCurrency(item.totalAmount)}
@@ -546,13 +560,13 @@ export function LedgersView() {
                 })}
                 {data.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={type === 'all' ? 9 : 8} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
+                        <TableCell colSpan={type === 'all' ? 10 : 9} className="h-32 text-center text-muted-foreground italic">No transactions found for the selected criteria.</TableCell>
                     </TableRow>
                 )}
             </TableBody>
             <TableFooter className="bg-muted/10 border-t border-black">
                 <TableRow>
-                    <TableCell colSpan={type === 'all' ? 6 : 5} className="text-right font-bold">Total</TableCell>
+                    <TableCell colSpan={type === 'all' ? 7 : 6} className="text-right font-bold">Total</TableCell>
                     <TableCell className={cn("text-right font-bold font-mono", type === 'expense' ? "text-red-600" : type === 'income' ? "text-green-600" : (netIncome >= 0 ? "text-green-600" : "text-red-600"))}>
                         {formatCurrency(type === 'income' ? incomeTotal : type === 'expense' ? expenseTotal : netIncome)}
                     </TableCell>

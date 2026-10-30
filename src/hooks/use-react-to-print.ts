@@ -14,7 +14,7 @@ const cloneWithStyles = (node: HTMLElement, ownerDocument: Document): HTMLElemen
         clone.style.setProperty(prop, computedStyle.getPropertyValue(prop), computedStyle.getPropertyPriority(prop));
     }
     // The popup window has no print stylesheet, so screen-only affordances
-    // (e.g. the document logo's "Select logo" button) must opt out explicitly.
+    // must opt out explicitly via a data-no-print attribute.
     if (node.hasAttribute('data-no-print')) {
         clone.setAttribute('data-no-print', '');
     }

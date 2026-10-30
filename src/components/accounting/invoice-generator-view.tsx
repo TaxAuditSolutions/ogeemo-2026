@@ -11,16 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { format, addDays } from 'date-fns';
-import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, Send } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, ChevronsUpDown, Check, LoaderCircle, X, Calendar as CalendarIcon, MoreVertical, Edit, Info, Printer, Clock, UserPlus, ClipboardList, ListPlus, Settings, ChevronDown } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { InvoicePageHeader } from '@/components/accounting/invoice-page-header';
 import { useAuth } from '@/context/auth-context';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceShippingAddress, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
+import { getInvoices, getInvoiceById, getLineItemsForInvoice, getServiceItems, type ServiceItem, addInvoiceWithLineItems, updateInvoiceWithLineItems, addServiceItem, updateServiceItem, getTaxTypes, type TaxType, type Invoice, type InvoiceShippingAddress, type InvoiceLineItem, getIncomeCategories, type IncomeCategory } from '@/core/accounting-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -75,6 +76,7 @@ const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
 const InvoiceDocument = ({
     invoiceNumber,
+    sourceQuoteNumber,
     businessNumber,
     selectedContact,
     invoiceDate,
@@ -96,6 +98,7 @@ const InvoiceDocument = ({
             <div className="text-right">
                 <h1 className="text-4xl font-bold uppercase text-gray-700">Invoice</h1>
                 <p className="text-gray-500">#{invoiceNumber}</p>
+                {sourceQuoteNumber && <p className="text-sm text-gray-500 mt-1">Quote: {sourceQuoteNumber}</p>}
                 {businessNumber && <p className="text-sm text-gray-500 mt-1">BN: {businessNumber}</p>}
             </div>
         </header>
@@ -119,7 +122,7 @@ const InvoiceDocument = ({
         {shipToLines && shipToLines.length > 0 && (
             <section className="mt-6">
                 <h2 className="font-bold text-gray-500 uppercase mb-2 text-xs tracking-widest">Ship To</h2>
-                <p className="font-bold">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
+                <p className="font-bold text-lg">{selectedContact?.businessName || selectedContact?.name || 'N/A'}</p>
                 <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
                     {shipToLines.join('\n')}
                 </p>
@@ -204,22 +207,47 @@ export function InvoiceGeneratorView() {
 
     const [invoiceToEditId, setInvoiceToEditId] = useState<string | null>(null);
     const [editingStatus, setEditingStatus] = useState<Invoice['status'] | null>(null);
-    const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now().toString().slice(-6)}`);
+    const [invoiceNumber, setInvoiceNumber] = useState('');
+    // User-assigned reference (Custom ID) - carried forward from the source
+    // quote at conversion; editable here.
+    const [customId, setCustomId] = useState('');
     const originalInvoiceNumberRef = useRef<string | null>(null);
     const numberEditedRef = useRef(false);
 
     // New documents preview today's next number; edits keep their stored number.
-    useEffect(() => {
-        if (localStorage.getItem(EDIT_INVOICE_ID_KEY)) return;
-        getNextDocumentNumbers()
-            .then((next) => {
+    // The preview is non-fatal - retry once, then notify (the real number is
+    // still claimed at save). Never a fake timestamp number in the field.
+    const previewFailedRef = useRef(false);
+    const previewNextInvoiceNumber = useCallback(async () => {
+        try {
+            const next = await getNextDocumentNumbers();
+            if (!numberEditedRef.current && !localStorage.getItem(EDIT_INVOICE_ID_KEY)) {
+                setInvoiceNumber(next.INV);
+            }
+        } catch {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            try {
+                const next = await getNextDocumentNumbers();
                 if (!numberEditedRef.current && !localStorage.getItem(EDIT_INVOICE_ID_KEY)) {
                     setInvoiceNumber(next.INV);
                 }
-            })
-            .catch(() => { /* keep the placeholder */ });
-    }, []);
+            } catch {
+                if (!previewFailedRef.current) {
+                    previewFailedRef.current = true;
+                    toast({ title: 'Number preview unavailable', description: 'The invoice number will be assigned automatically when you save.' });
+                }
+            }
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        if (localStorage.getItem(EDIT_INVOICE_ID_KEY)) return;
+        previewNextInvoiceNumber();
+    }, [previewNextInvoiceNumber]);
     const [businessNumber, setBusinessNumber] = useState('');
+    // Quote this invoice was converted from - shown on the document itself so
+    // the link is visible; invoices keep their own independent number sequence.
+    const [sourceQuoteNumber, setSourceQuoteNumber] = useState<string | null>(null);
     const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
     const [dueDate, setDueDate] = useState<Date>(addDays(new Date(), 14));
     const [paymentTermsDays, setPaymentTermsDays] = useState('14');
@@ -227,6 +255,8 @@ export function InvoiceGeneratorView() {
     const [lineItemDetails, setLineItemDetails] = useState('');
     const [attachReport, setAttachReport] = useState(false);
     const [shippingAddress, setShippingAddress] = useState<InvoiceShippingAddress>({ mode: 'client' });
+    const [isCustomAddressOpen, setIsCustomAddressOpen] = useState(false);
+    const [draftInvoices, setDraftInvoices] = useState<Invoice[]>([]);
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
@@ -244,6 +274,26 @@ export function InvoiceGeneratorView() {
     const [isManageTaxDialogOpen, setIsManageTaxDialogOpen] = useState(false);
     const [itemToEdit, setItemToEdit] = useState<LocalLineItem | null>(null);
 
+    // Unsaved-changes guard. The auto-claimed invoice number and the derived
+    // business number (org-doc only, no input) never count as user edits.
+    const buildSnapshot = () =>
+        JSON.stringify({
+            qn: numberEditedRef.current ? invoiceNumber : null,
+            contact: selectedContactId,
+            supplier: selectedSupplierId,
+            invoiceDate: invoiceDate.toISOString(),
+            dueDate: dueDate.toISOString(),
+            status: editingStatus,
+            notes,
+            details: lineItemDetails,
+            shipping: shippingAddress,
+            attachReport,
+            customId,
+            paymentTermsDays,
+            lineItems,
+        });
+    const { markClean, markCleanNow, confirmLeave } = useUnsavedChangesGuard(buildSnapshot);
+
     const loadInvoiceForEditing = useCallback(async (invoiceId: string) => {
         if (!user) return;
         setIsLoading(true);
@@ -260,13 +310,15 @@ export function InvoiceGeneratorView() {
             }
 
             setInvoiceNumber(invoiceData.invoiceNumber);
+            setSourceQuoteNumber(invoiceData.sourceQuoteNumber || null);
+            setCustomId(invoiceData.customId || '');
             originalInvoiceNumberRef.current = invoiceData.invoiceNumber;
             numberEditedRef.current = false;
             setBusinessNumber(invoiceData.businessNumber || '');
             setInvoiceDate(new Date(invoiceData.invoiceDate));
             setDueDate(new Date(invoiceData.dueDate));
             setNotes(invoiceData.notes);
-            if (invoiceData.lineItemDetails) setLineItemDetails(invoiceData.lineItemDetails);
+            setLineItemDetails(invoiceData.lineItemDetails || '');
             setSelectedContactId(invoiceData.contactId);
             setSelectedSupplierId(invoiceData.supplierId || null);
             setShippingAddress(invoiceData.shippingAddress || { mode: 'client' });
@@ -284,6 +336,7 @@ export function InvoiceGeneratorView() {
                 serviceItemId: item.serviceItemId,
             }));
             setLineItems(mappedLineItems);
+            markClean();
             toast({
                 title: 'Editing Existing Invoice',
                 description: `Invoice ${invoiceData.invoiceNumber} loaded. Use "Clear Form" to start a brand new invoice.`,
@@ -309,6 +362,22 @@ export function InvoiceGeneratorView() {
         }
     }, [user, toast]);
 
+    const handleOpenDraft = async (invoice: Invoice) => {
+        if (!confirmLeave()) return;
+        setInvoiceToEditId(invoice.id);
+        await loadInvoiceForEditing(invoice.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const refreshDrafts = useCallback(async () => {
+        if (!user) return;
+        try {
+            const all = await getInvoices(user.uid, { includeDrafts: true });
+            setDraftInvoices(all.filter(inv => inv.status === 'draft'));
+        } catch {
+            // The drafts list is non-critical; the form works without it.
+        }
+    }, [user]);
 
     useEffect(() => {
         async function initializeView() {
@@ -346,9 +415,15 @@ export function InvoiceGeneratorView() {
 
                 const invoiceId = localStorage.getItem(EDIT_INVOICE_ID_KEY);
                 if (invoiceId) {
+                    // One-shot edit pointer: consume it so a refresh always
+                    // starts with a blank invoice. The loaded invoice can be
+                    // reopened from the Drafts menu or Invoicing Report.
+                    localStorage.removeItem(EDIT_INVOICE_ID_KEY);
                     setInvoiceToEditId(invoiceId);
                     await loadInvoiceForEditing(invoiceId);
                 }
+
+                await refreshDrafts();
 
                 const contactIdParam = searchParams.get('contactId');
                 if (contactIdParam) {
@@ -397,10 +472,11 @@ export function InvoiceGeneratorView() {
                 toast({ variant: 'destructive', title: 'Failed to load data', description: error.message });
             } finally {
                 setIsLoading(false);
+                markClean();
             }
         }
         initializeView();
-    }, [user, toast, loadInvoiceForEditing, searchParams]);
+    }, [user, toast, loadInvoiceForEditing, refreshDrafts, searchParams]);
 
     useEffect(() => {
         const orgId = userProfile?.orgId;
@@ -412,15 +488,12 @@ export function InvoiceGeneratorView() {
         return function () { cancelled = true; };
     }, [userProfile?.orgId]);
 
+    // The issuer's HST # comes from the workspace org doc (Settings > Company
+    // Information) - never the selected contact's BN field. That is client data
+    // and can contain a company name or other junk instead of a tax number.
     useEffect(() => {
-        const contact = contacts.find(function (c) { return c.id === selectedContactId; });
-        const orgBiz = orgDetails?.businessNumber || '';
-        if (contact) {
-            setBusinessNumber(contact.craProgramAccountNumber || orgBiz || userProfile?.businessNumber || '');
-        } else {
-            setBusinessNumber(orgBiz || userProfile?.businessNumber || '');
-        }
-    }, [selectedContactId, contacts, userProfile, orgDetails]);
+        setBusinessNumber(orgDetails?.businessNumber || userProfile?.businessNumber || '');
+    }, [userProfile, orgDetails]);
 
     // Sync draft line items with library
     useEffect(() => {
@@ -506,6 +579,10 @@ export function InvoiceGeneratorView() {
 
     const handleSaveRepeatableItem = async (item: Omit<ServiceItem, 'id' | 'userId'>, lineItemId?: string) => {
         if (!user) return;
+        if (!item.description?.trim()) {
+            toast({ variant: 'destructive', title: 'Nothing to save', description: 'Enter a description for the item first.' });
+            return;
+        }
         try {
             const newServiceItem = await addServiceItem({ ...item, userId: user.uid });
             setServiceItems(prev => [newServiceItem, ...prev]);
@@ -528,7 +605,7 @@ export function InvoiceGeneratorView() {
         return { subtotal: sub, tax: taxAmount, total: sub + taxAmount };
     }, [lineItems]);
 
-    const handleSaveInvoice = async (intent: 'draft' | 'issue' = 'issue') => {
+    const handleSaveInvoice = async () => {
         if (!user) {
             toast({ variant: 'destructive', title: 'Not Authenticated', description: 'You must be logged in to save.' });
             return;
@@ -542,14 +619,10 @@ export function InvoiceGeneratorView() {
 
         const selectedContact = contacts.find(c => c.id === selectedContactId);
         const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
-        let status: Invoice['status'];
-        if (intent === 'draft') {
-            status = (!editingStatus || editingStatus === 'draft') ? 'draft' : editingStatus;
-        } else if (editingStatus === 'paid' || editingStatus === 'partially_paid') {
-            status = editingStatus;
-        } else {
-            status = 'outstanding';
-        }
+        // A saved invoice is always a real receivable: outstanding, unless the
+        // one being edited has already been (partially) paid.
+        let status: Invoice['status'] =
+            editingStatus === 'paid' || editingStatus === 'partially_paid' ? editingStatus : 'outstanding';
 
         let finalInvoiceNumber = invoiceNumber;
         try {
@@ -570,6 +643,7 @@ export function InvoiceGeneratorView() {
 
         const invoiceData = {
             invoiceNumber: finalInvoiceNumber,
+            customId: customId.trim(),
             businessNumber,
             companyName,
             contactId: selectedContactId,
@@ -611,24 +685,14 @@ export function InvoiceGeneratorView() {
 
             if (invoiceToEditId) {
                 await updateInvoiceWithLineItems(invoiceToEditId, invoiceData, itemsToSave, user.uid);
-                if (intent === 'draft') {
-                    toast({ title: 'Draft saved', description: `Draft ${finalInvoiceNumber} has been updated.` });
-                } else {
-                    toast({ title: 'Invoice Updated', description: `Invoice ${finalInvoiceNumber} has been saved.` });
-                }
+                toast({ title: 'Invoice Updated', description: `Invoice ${finalInvoiceNumber} has been saved.` });
             } else {
-                const saved = await addInvoiceWithLineItems(invoiceData, itemsToSave);
-                setInvoiceToEditId(saved.id);
-                if (intent === 'draft') {
-                    toast({ title: 'Draft saved', description: `Draft ${finalInvoiceNumber} saved - open it from Invoicing Report.` });
-                } else {
-                    toast({ title: 'Invoice Saved', description: `Invoice ${finalInvoiceNumber} has been created.` });
-                }
+                await addInvoiceWithLineItems(invoiceData, itemsToSave);
+                toast({ title: 'Invoice Saved', description: `Invoice ${finalInvoiceNumber} has been created.` });
             }
             localStorage.removeItem(EDIT_INVOICE_ID_KEY);
-            if (intent === 'issue') {
-                window.location.href = '/accounting/accounts-receivable';
-            }
+            markCleanNow();
+            window.location.href = '/accounting/accounts-receivable';
 
         } catch (error: any) {
             console.error("Save Invoice Error:", error);
@@ -672,6 +736,7 @@ export function InvoiceGeneratorView() {
         setLineItems(items.map((i: any, idx: number) => ({ ...i, id: `item_${Date.now()}_${idx}` })));
         if (template.notes) setNotes(template.notes);
         toast({ title: 'Template Applied', description: `"${template.name}" - started a new invoice.` });
+        markClean();
     };
 
     const loadTemplateMenu = (
@@ -703,10 +768,10 @@ export function InvoiceGeneratorView() {
         setInvoiceToEditId(null);
         originalInvoiceNumberRef.current = null;
         numberEditedRef.current = false;
-        setInvoiceNumber(`INV-${Date.now().toString().slice(-6)}`);
-        getNextDocumentNumbers()
-            .then((next) => { if (!numberEditedRef.current) setInvoiceNumber(next.INV); })
-            .catch(() => { /* keep the placeholder */ });
+        setInvoiceNumber('');
+        setSourceQuoteNumber(null);
+        setCustomId('');
+        previewNextInvoiceNumber();
         setBusinessNumber('');
         setInvoiceDate(new Date());
         setDueDate(addDays(new Date(), 14));
@@ -720,6 +785,7 @@ export function InvoiceGeneratorView() {
         setAttachReport(false);
         setEditingStatus(null);
         if (!silent) toast({ title: "Form Cleared" });
+        markClean();
     };
 
     const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
@@ -772,6 +838,37 @@ export function InvoiceGeneratorView() {
         return [];
     })();
 
+    // Form-only resolved shipping address for all modes, including the default
+    // "client" mode. Kept separate from shipToLines, which feeds the printed
+    // document and intentionally skips "Ship To" when it would only duplicate
+    // "Bill To".
+    const resolvedShippingLines = (() => {
+        const mode = shippingAddress?.mode || 'client';
+        if (mode === 'custom') {
+            return [
+                shippingAddress.street,
+                [shippingAddress.city, shippingAddress.provinceState, shippingAddress.postalCode].filter(Boolean).join(', '),
+                shippingAddress.country,
+            ].filter(Boolean);
+        }
+        if (mode === 'home' && selectedContact?.homeAddress) {
+            const h = selectedContact.homeAddress;
+            return [
+                h.street,
+                [h.city, h.provinceState, h.postalCode].filter(Boolean).join(', '),
+                h.country,
+            ].filter(Boolean);
+        }
+        if (selectedContact) {
+            return [
+                selectedContact.streetAddress,
+                [selectedContact.city, selectedContact.provinceState, selectedContact.postalCode].filter(Boolean).join(', '),
+                selectedContact.country,
+            ].filter(Boolean);
+        }
+        return [];
+    })();
+
     const documentProps = {
         invoiceNumber,
         businessNumber,
@@ -787,7 +884,8 @@ export function InvoiceGeneratorView() {
         total,
         attachReport,
         shipToLines,
-        senderName
+        senderName,
+        sourceQuoteNumber
     };
 
   return (
@@ -807,18 +905,33 @@ export function InvoiceGeneratorView() {
                 </p>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => handleSaveInvoice('draft')} disabled={isSaving}>
-                    <Save className="mr-2 h-4 w-4" /> Save Draft
-                </Button>
+                {draftInvoices.length > 0 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <ClipboardList className="mr-2 h-4 w-4" /> Drafts ({draftInvoices.length})
+                                <ChevronDown className="ml-1 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-80">
+                            {draftInvoices.map(draft => (
+                                <DropdownMenuItem key={draft.id} onSelect={() => handleOpenDraft(draft)}>
+                                    <span className="flex-1 min-w-0 truncate">{draft.invoiceNumber} — {draft.companyName}</span>
+                                    <span className="shrink-0 text-xs text-muted-foreground">{format(draft.invoiceDate, 'PP')}</span>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
                 <Button variant="outline" onClick={() => setIsPreviewDialogOpen(true)}><Eye className="mr-2 h-4 w-4" /> Preview</Button>
                 <Button variant="secondary" onClick={() => handlePrint()} className="font-bold shadow-sm border-2">
                     <Printer className="mr-2 h-4 w-4" /> Print & Export
                 </Button>
-                <Button onClick={() => handleSaveInvoice('issue')} disabled={isSaving} className="font-bold">
-                    {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Issue Invoice
+                <Button onClick={() => handleSaveInvoice()} disabled={isSaving} className="font-bold">
+                    {isSaving ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Invoice
                 </Button>
-                <Button asChild variant="ghost" size="icon" onClick={() => router.back()}>
+                <Button asChild variant="ghost" size="icon" onClick={() => { if (confirmLeave()) router.back(); }}>
                     <a className="cursor-pointer">
                         <X className="h-5 w-5" />
                         <span className="sr-only">Close</span>
@@ -848,14 +961,14 @@ export function InvoiceGeneratorView() {
 
                 <Card className="print:hidden shadow-lg border-primary/10">
                     <CardHeader className="bg-primary/5 border-b">
-                        <CardTitle className="text-base">Client / Billing Details</CardTitle>
+                        <CardTitle className="text-base">Contact / Billing Details</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Client <span className="text-destructive">*</span></Label>
+                                    <Label>Contact <span className="text-destructive">*</span></Label>
                                     <div className="flex gap-2">
                                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                                             <PopoverTrigger asChild>
@@ -897,7 +1010,7 @@ export function InvoiceGeneratorView() {
                                 </div>
                                 {selectedContact ? (
                                     <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
-                                        <p className="font-semibold">{selectedContact.businessName || selectedContact.name}</p>
+                                        <p className="font-bold text-lg">{selectedContact.businessName || selectedContact.name}</p>
                                         {selectedContact.businessName && selectedContact.name && selectedContact.name !== selectedContact.businessName && (
                                             <p className="text-muted-foreground">{selectedContact.name}</p>
                                         )}
@@ -912,27 +1025,54 @@ export function InvoiceGeneratorView() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">Select a client to see their details here.</p>
+                                    <p className="text-sm text-muted-foreground">Select a contact to see their details here.</p>
                                 )}
                                     </div>
                                     <div className="space-y-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="shippingAddress">Shipping / Service Address <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                                            <Select value={shippingAddress.mode} onValueChange={(v) => setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] }))}>
+                                            <Select value={shippingAddress.mode} onValueChange={(v) => { setShippingAddress(prev => ({ ...prev, mode: v as InvoiceShippingAddress['mode'] })); if (v === 'custom') setIsCustomAddressOpen(true); }}>
                                                 <SelectTrigger id="shippingAddress" className="w-full">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="client">Same as client address</SelectItem>
+                                                    <SelectItem value="client">Same as contact's address</SelectItem>
                                                     {selectedContact?.homeAddress && (
-                                                        <SelectItem value="home">Client's home address</SelectItem>
+                                                        <SelectItem value="home">Contact's home address</SelectItem>
                                                     )}
                                                     <SelectItem value="custom">Enter a different address...</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        {shippingAddress.mode === 'custom' && (
-                                            <div className="space-y-3 rounded-md border p-3">
+                                        {resolvedShippingLines.length > 0 && (
+                                            <div className="rounded-md border bg-muted/30 p-3 text-sm flex flex-col gap-1">
+                                                {(selectedContact?.businessName || selectedContact?.name) && (
+                                                    <span className="font-bold text-lg text-primary">
+                                                        {selectedContact?.businessName || selectedContact?.name}
+                                                    </span>
+                                                )}
+                                                <span className="text-muted-foreground">{resolvedShippingLines.join(', ')}</span>
+                                            </div>
+                                        )}
+                                        {shippingAddress.mode === 'custom' && !isCustomAddressOpen && (
+                                            <button
+                                                type="button"
+                                                className="text-sm text-primary hover:underline"
+                                                onClick={() => setIsCustomAddressOpen(true)}
+                                            >
+                                                Edit shipping address
+                                            </button>
+                                        )}
+                                        {shippingAddress.mode === 'custom' && isCustomAddressOpen && (
+                                            <div
+                                                className="space-y-3 rounded-md border p-3"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        setIsCustomAddressOpen(false);
+                                                    }
+                                                }}
+                                            >
                                                 <div className="space-y-2">
                                                     <Label htmlFor="shipStreet">Street</Label>
                                                     <Input id="shipStreet" value={shippingAddress.street || ''} onChange={(e) => setShippingAddress(prev => ({ ...prev, street: e.target.value }))} />
@@ -964,10 +1104,7 @@ export function InvoiceGeneratorView() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_3fr_3fr_3fr] gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="invoiceNumber">Invoice #</Label>
-                                    <div className="relative">
-                                        <Input id="invoiceNumber" className="pr-24" value={invoiceNumber} onChange={e => { numberEditedRef.current = true; setInvoiceNumber(e.target.value); }} />
-                                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Auto-generated</span>
-                                    </div>
+                                    <Input id="invoiceNumber" value={invoiceNumber} onChange={e => { numberEditedRef.current = true; setInvoiceNumber(e.target.value); }} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="invoiceDate">Invoice Date</Label>
@@ -1015,6 +1152,10 @@ export function InvoiceGeneratorView() {
                                         Based on {paymentTermsDays === '0' ? 'Due on receipt' : `Net ${paymentTermsDays}`}. You can edit the due date.
                                     </p>
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="customId">Custom ID</Label>
+                                    <Input id="customId" value={customId} onChange={e => setCustomId(e.target.value)} placeholder="Your own reference number" />
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -1047,10 +1188,10 @@ export function InvoiceGeneratorView() {
                   <Table className="min-w-[950px]">
                                         <TableHeader>
                                             <TableRow>
-                        <TableHead className="w-[40%]">Description</TableHead>
+                        <TableHead className="w-[40%]">Select or Add an Item</TableHead>
                         <TableHead className="w-[16%]">Category</TableHead>
                         <TableHead className="w-[14%]">Tax</TableHead>
-                        <TableHead className="w-[6%] text-center">Qty</TableHead>
+                        <TableHead className="w-32 text-center">Qty</TableHead>
                         <TableHead className="w-[12%] text-right">Price</TableHead>
                         <TableHead className="w-[12%] text-right">Total</TableHead>
                       </TableRow>
@@ -1061,8 +1202,7 @@ export function InvoiceGeneratorView() {
                           <TableCell className="p-2 align-top">
                             <div className="relative flex items-center">
                               <Input 
-                                className="w-full text-sm h-9 pr-16 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
-                                placeholder="Type or select from Products & Services..." 
+                                className="w-full text-sm h-9 pr-24 [&::-webkit-calendar-picker-indicator]:!opacity-100 [&::-webkit-calendar-picker-indicator]:!cursor-pointer [&::-webkit-calendar-picker-indicator]:!block" 
                                 value={item.description}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -1080,6 +1220,25 @@ export function InvoiceGeneratorView() {
                                 }}
                               />
                               <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-1">
+                                {item.description?.trim() && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                    title="Save to Products & Services library"
+                                    aria-label="Save to Products & Services library"
+                                    onClick={() => handleSaveRepeatableItem({
+                                      description: item.description,
+                                      price: item.price,
+                                      taxType: item.taxType || '',
+                                      taxRate: item.taxRate || 0,
+                                      itemType: 'service',
+                                    }, item.id)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <LibraryPickerPopover
                                   serviceItems={serviceItems}
                                   onSelect={(service) => {
@@ -1194,7 +1353,7 @@ export function InvoiceGeneratorView() {
                                                     <TableCell className="p-2 align-top">
                                                         <Input 
                                                             type="number" 
-                                                            className="text-center h-9" 
+                                                            className="text-center h-9 min-w-28" 
                                                             value={item.quantity} 
                                                             onChange={(e) => handleUpdateLineItem(item.id, 'quantity', parseFloat(e.target.value) || 0)} 
                                                         />

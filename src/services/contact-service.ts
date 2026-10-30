@@ -24,6 +24,7 @@ import { isBlankRequiredContactField } from '@/lib/contact-update';
 export type { Contact };
 
 const CONTACTS_COLLECTION = 'contacts';
+const CONTACT_FOLDERS_COLLECTION = 'contactFolders';
 const CONTACT_DATE_FIELDS = ['birthDate', 'hireDate', 'startDate'] as const;
 const CONTACT_METADATA_DATE_FIELDS = ['createdAt', 'updatedAt'] as const;
 
@@ -62,6 +63,20 @@ async function getCurrentOrgId(): Promise<string> {
     }
 
     throw new Error('Authenticated user is missing an orgId claim and profile orgId.');
+}
+
+async function requireContactFolderId(folderId: unknown, orgId: string): Promise<string> {
+    const normalizedFolderId = typeof folderId === 'string' ? folderId.trim() : '';
+    if (!normalizedFolderId) {
+        throw new Error('Role Assignment (Folder) is required.');
+    }
+
+    const folderSnapshot = await getDoc(doc(getDb(), CONTACT_FOLDERS_COLLECTION, normalizedFolderId));
+    if (!folderSnapshot.exists() || folderSnapshot.data().orgId !== orgId) {
+        throw new Error('Role Assignment must be a valid folder in the active organization.');
+    }
+
+    return normalizedFolderId;
 }
 
 function cloneDateWithToDate(value: Date): Date {
@@ -220,9 +235,11 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
     const docRef = doc(collection(db, CONTACTS_COLLECTION));
     const currentUser = getCurrentAuthContext();
     const orgId = await getCurrentOrgId();
+    const folderId = await requireContactFolderId(contactData.folderId, orgId);
 
     const dataToSave = prepareContactDataForWrite({
         ...contactData,
+        folderId,
         orgId,
         createdBy: currentUser.uid,
         updatedBy: currentUser.uid,
@@ -262,11 +279,14 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     const contactRef = doc(db, CONTACTS_COLLECTION, contactId);
     const currentUser = getCurrentAuthContext();
     const orgId = await getCurrentOrgId();
+    const folderId = contactData.folderId === undefined
+        ? undefined
+        : await requireContactFolderId(contactData.folderId, orgId);
 
     // Data Cleaning: Strip undefined and ensure restricted identifiers aren't in the payload
     const cleanedData: Record<string, any> = {};
     Object.keys(contactData).forEach(key => {
-        const val = (contactData as any)[key];
+        const val = key === 'folderId' ? folderId : (contactData as any)[key];
         if (val !== undefined && key !== 'id' && key !== 'userId' && key !== 'createdAt' && key !== 'createdBy' && !isBlankRequiredContactField(key, val)) {
             cleanedData[key] = val;
         }

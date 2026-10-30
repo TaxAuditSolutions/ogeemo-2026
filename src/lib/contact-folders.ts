@@ -80,3 +80,11 @@ export function resolveContactFolderId(
     const matched = findMatchingContactFolder(trimmed, folders);
     return matched ? matched.id : trimmed;
 }
+
+/** Resolves a known folder reference, or uses the tenant default for a required assignment. */
+export function resolveContactFolderIdOrDefault(
+    wanted: unknown,
+    folders: ReadonlyArray<ContactFolderOption>,
+): string | undefined {
+    return findMatchingContactFolder(wanted, folders)?.id ?? resolveDefaultContactFolderId(folders);
+}

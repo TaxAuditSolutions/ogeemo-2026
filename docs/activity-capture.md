@@ -54,6 +54,22 @@ The interim capture surface above was replaced by the single-card
 - New events default to **unscheduled** (Schedule toggle off); the interim
   behaviour of implicitly scheduling every new event at "now" is gone.
 
+## Calendar "Add +" dialog
+
+`/calendar` has an **Add +** button that opens the same activity form as a modal
+(`ActivityFormDialog`). The form itself is shared, not copied: field state lives
+in `useActivityForm`, picker data in `useActivityReferenceData`, and the fields
+in `ActivityFormFields`, all used by `/event-manager` as well, so both save the
+same record shape (including the start/end rules in `resolveScheduledWindow`).
+
+- Opens **scheduled for now**: Appointment tile selected, Schedule switch on,
+  Start = today at the current hour and 5-minute slot, End date = today. (A
+  calendar entry has to be scheduled to appear on the calendar, so this is the
+  one place a new activity defaults to scheduled.)
+- Footer is **Cancel / Create Activity**. Save & New, the Time Sessions card and
+  the *More tools* menu are Activity Manager only.
+- After saving, the calendar reloads so the entry shows in its slot.
+
 ## Still deferred
 
 - Single-screen quick-log flow and field-reordering studies

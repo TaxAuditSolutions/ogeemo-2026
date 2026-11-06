@@ -83,6 +83,7 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 import { CalendarEvent, ItemTypes } from './CalendarEvent';
+import { ActivityFormDialog } from './activity-form-dialog';
 import { useDrop } from 'react-dnd';
 import {
   DropdownMenu,
@@ -207,6 +208,7 @@ export function CalendarView() {
   const [filteredProject, setFilteredProject] = React.useState<Project | null>(null);
   const [eventToDelete, setEventToDelete] = React.useState<Event | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = React.useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
   const [slotsConfig, setSlotsConfig] = React.useState<Record<number, number>>({});
 
   const { user } = useAuth();
@@ -548,6 +550,9 @@ export function CalendarView() {
               </Select>
             </div>
             <div className="flex justify-end items-center gap-2">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                Add +
+              </Button>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -755,6 +760,12 @@ export function CalendarView() {
           </ScrollArea>
         </div>
       </div>
+
+      <ActivityFormDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSaved={loadEvents}
+      />
 
       <AlertDialog open={!!eventToDelete} onOpenChange={(open) => { if (!open) setEventToDelete(null); }} >
         <AlertDialogContent>

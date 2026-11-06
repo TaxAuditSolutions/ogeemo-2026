@@ -7,19 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
     LoaderCircle, 
     Save, 
-    Check, 
     Plus, 
-    X, 
     Info, 
     Clock, 
     Play, 
     Pause, 
     Trash2, 
-    MoreVertical, 
     Pencil, 
     MessageSquare, 
     RefreshCw, 
@@ -28,31 +24,19 @@ import {
     Inbox,
     User, 
     Square,
-    Circle,
-    Search,
-    CheckCircle2,
-    Folder,
-    FileText,
-    Calendar as CalendarIcon,
     ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { type Project, type Event as TaskEvent, type TimeSession, type StoredTimerState, type TaskStatus, type ActivityType } from '@/types/calendar-types';
-import { type Contact } from '@/services/contact-service';
-import { addTask, getProjects, addProject, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
-import { getContacts } from '@/services/contact-service';
-import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
-import { getCompanies, type Company } from '@/core/accounting-service';
-import { getWorkers, type Worker } from '@/services/payroll-service';
+import { type Event as TaskEvent, type TimeSession, type StoredTimerState } from '@/types/calendar-types';
+import { addTask, updateProject, getTaskById, updateTask, deleteTask } from '@/services/project-service';
+import { getFolders as getContactFolders } from '@/services/contact-folder-service';
 import { Textarea } from '../ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, formatTime } from '@/lib/utils';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { buildProjectGroups, statusLabel, PROJECT_SORT_MODES, type ProjectSortMode } from '@/lib/project-picker';
-import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock } from '@/lib/schedule-dates';
 import { computeDurationAndSource, type DurationSource } from '@/lib/duration-source';
-import ContactFormDialog from '@/components/contacts/contact-form-dialog';
+import { useActivityForm } from '@/hooks/use-activity-form';
+import { useActivityReferenceData } from '@/hooks/use-activity-reference-data';
+import { ActivityFormFields } from '@/components/time/activity-form-fields';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '../ui/scroll-area';
@@ -74,39 +58,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { getIndustries, type Industry } from '@/services/industry-service';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
-import { format as formatDate, set, addMinutes, parseISO, startOfDay, endOfDay, isValid } from 'date-fns';
-import { CustomCalendar } from '../ui/custom-calendar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
+import { parseISO, isValid } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { AgendaForm } from '@/components/meetings/agenda-form';
-import { Users as UsersIcon, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const TIMER_STORAGE_KEY = 'activeTimeManagerEntry';
-
-// Julie's Activity Manager redo: the four capture types shown as tiles at the
-// top of the form. A tile sets Event.activityType and nudges defaults
-// (Appointment opens the Schedule toggle); every field stays available.
-const ACTIVITY_TYPES: { value: ActivityType; label: string; caption: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-    { value: 'task', label: 'Task', caption: 'Something to do', Icon: CheckCircle2 },
-    { value: 'appointment', label: 'Appointment', caption: 'Scheduled activity', Icon: CalendarIcon },
-    { value: 'project', label: 'Project', caption: 'Larger piece of work', Icon: Folder },
-    { value: 'note', label: 'Note', caption: 'Conversation or record', Icon: FileText },
-];
-
-const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-    { value: 'todo', label: 'To Do' },
-    { value: 'inProgress', label: 'In Progress' },
-    { value: 'done', label: 'Done' },
-];
 
 type TimerWindow = Window & {
     __ogeemoTimerState?: StoredTimerState | null;
@@ -132,83 +90,33 @@ export function TimeManagerView() {
     const { user } = useAuth();
     const { toast } = useToast();
 
-    const [projects, setProjects] = React.useState<Project[]>([]);
-    const [contacts, setContacts] = React.useState<Contact[]>([]);
-    const [contactFolders, setContactFolders] = React.useState<FolderData[]>([]);
-    const [companies, setCompanies] = React.useState<Company[]>([]);
-    const [workers, setWorkers] = React.useState<Worker[]>([]);
+    const refData = useActivityReferenceData();
+    const form = useActivityForm();
+    const {
+        subject, setSubject,
+        notes, setNotes,
+        activityType, setActivityType,
+        status, setStatus,
+        selectedProjectId, setSelectedProjectId,
+        selectedContactId, setSelectedContactId,
+        selectedWorkerId, setSelectedWorkerId,
+        isBillable, setIsBillable,
+        billableRate, setBillableRate,
+        setIsScheduleEnabled,
+        setStartDate,
+        setStartHour,
+        setStartMinute,
+        setEndDate,
+        setEndHour,
+        setEndMinute,
+        startDateTouchedRef,
+        startTimeTouchedRef,
+        scheduledSpanSeconds,
+        buildEventData,
+        resetForm,
+    } = form;
     const [isLoadingData, setIsLoadingData] = React.useState(true);
-    const [customIndustries, setCustomIndustries] = React.useState<Industry[]>([]);
 
-    // Form state
-    const [subject, setSubject] = React.useState("");
-    const [notes, setNotes] = React.useState("");
-    const [activityType, setActivityType] = React.useState<ActivityType>('task');
-    const [status, setStatus] = React.useState<TaskStatus>('todo');
-    const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
-    const [selectedContactId, setSelectedContactId] = React.useState<string | null>(null);
-    const [selectedWorkerId, setSelectedWorkerId] = React.useState<string | null>(null);
-    const [isBillable, setIsBillable] = React.useState(false);
-    const [billableRate, setBillableRate] = React.useState<number | ''>(100);
-    
-    // Scheduling state. isScheduleEnabled is the Schedule toggle from the
-    // redo: OFF means the activity is unsaved-as-unscheduled (no start/end,
-    // isScheduled false). Dates below stay warm while toggled off so
-    // re-enabling restores what the user picked.
-    const [isScheduleEnabled, setIsScheduleEnabled] = React.useState(false);
-    const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
-    const [startHour, setStartHour] = React.useState<string | undefined>(undefined);
-    const [startMinute, setStartMinute] = React.useState<string | undefined>(undefined);
-    const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
-    const [endHour, setEndHour] = React.useState<string | undefined>(undefined);
-    const [endMinute, setEndMinute] = React.useState<string | undefined>(undefined);
-    const [isAllDay, setIsAllDay] = React.useState(false);
-    
-    const [isStartPickerOpen, setIsStartPickerOpen] = React.useState(false);
-    const [isEndPickerOpen, setIsEndPickerOpen] = React.useState(false);
-
-    // Dialog state
-    const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
-    const [isContactPopoverOpen, setIsContactPopoverOpen] = React.useState(false);
-    const [isProjectPopoverOpen, setIsProjectPopoverOpen] = React.useState(false);
-    // Project picker ordering (beta feedback: selection must stay simple as
-    // project counts grow). Session-local for now; promote to a saved
-    // preference only if the Projects/Activity Manager audit asks for it.
-    const [projectSortMode, setProjectSortMode] = React.useState<ProjectSortMode>('active');
-    // Low-friction capture (docs/activity-capture.md): scheduling/billing are
-    // advanced details - the redo exposes them as Schedule/Billable toggles
-    // instead of the interim "Add scheduling & billing details" bar.
-    const contactNameById = React.useMemo(() => new Map(contacts.map((c) => [c.id, c.name])), [contacts]);
-    const projectGroups = React.useMemo(
-        () =>
-            buildProjectGroups(
-                projects,
-                contactNameById,
-                projectSortMode,
-                contacts.find((c) => c.id === selectedContactId)?.name ?? null,
-            ),
-        [projects, contactNameById, projectSortMode, contacts, selectedContactId],
-    );
-
-    // Opening "Add scheduling & billing details" pre-fills the schedule with
-    // *now*: Start and End on the current day, Start's clock time to the
-    // current time. The mount-time preset freezes Start at page-load hour
-    // (a tab opened at 9 AM stays 9 AM), so untouched values are REFRESHED
-    // here - anything the user chose, or that was loaded from an existing
-    // event, is never overwritten.
-    const applyScheduleDefaults = () => {
-        const now = new Date();
-        const startFinal = startDateTouchedRef.current ? (startDate ?? now) : now;
-        if (!startDateTouchedRef.current) setStartDate(now);
-        if (!endDate) setEndDate(startFinal);
-        if (!startTimeTouchedRef.current) {
-            setStartHour(presetHourValue(now));
-            setStartMinute(presetMinuteValue(now));
-        }
-    };
-    const [newProjectName, setNewProjectName] = React.useState('');
-    const [isWorkerPopoverOpen, setIsWorkerPopoverOpen] = React.useState(false);
-    
     const [eventToEdit, setEventToEdit] = React.useState<TaskEvent | null>(null);
     
     // Timer state
@@ -230,39 +138,6 @@ export function TimeManagerView() {
 
     const hasStartedTimerRef = useRef(false);
     const subjectInputRef = useRef<HTMLInputElement>(null);
-    // Has the user chosen Start themselves? Untouched Start still carries the
-    // mount-time preset (page-load hour), which must refresh to *now* when the
-    // scheduling section opens or a save happens - touched Start (or a Start
-    // loaded from an existing event) is never overwritten.
-    const startDateTouchedRef = useRef(false);
-    const startTimeTouchedRef = useRef(false);
-
-    // Initial client-side setup
-    useEffect(() => {
-        const now = new Date();
-        setStartDate(now);
-        setStartHour(formatDate(now, 'HH'));
-        setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
-        
-        // End time is left empty by default as requested
-        setEndDate(undefined);
-        setEndHour(undefined);
-        setEndMinute(undefined);
-    }, []);
-
-    const hourOptions = useMemo(() => Array.from({ length: 24 }, (_, i) => ({ value: String(i).padStart(2, '0'), label: formatDate(set(new Date(), { hours: i }), 'h a') })), []);
-    const minuteOptions = useMemo(() => Array.from({ length: 12 }, (_, i) => { const minutes = i * 5; return { value: String(minutes).padStart(2, '0'), label: `:${String(minutes).padStart(2, '0')}` }; }), []);
-    
-    // Planned start/end span in seconds (0 when unavailable or all-day). This
-    // is a calendar/planning value only - it is never billed on its own.
-    const scheduledSpanSeconds = useMemo(() => {
-        if (isScheduleEnabled && startDate && startHour && startMinute && endDate && endHour && endMinute && !isAllDay) {
-            const s = set(startDate, { hours: parseInt(startHour), minutes: parseInt(startMinute), seconds: 0, milliseconds: 0 });
-            const e = set(endDate, { hours: parseInt(endHour), minutes: parseInt(endMinute), seconds: 0, milliseconds: 0 });
-            if (e > s) return (e.getTime() - s.getTime()) / 1000;
-        }
-        return 0;
-    }, [isScheduleEnabled, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay]);
 
     // Displayed duration + provenance. Actual sessions/timer always win; the
     // scheduled span is a labelled non-billable placeholder until work exists
@@ -349,53 +224,16 @@ export function TimeManagerView() {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a subject for the event.' });
             return;
         }
-        let start: Date | undefined = undefined;
-        let end: Date | undefined = undefined;
-        let isScheduled = false;
-        if (isScheduleEnabled && startDate) {
-            if (isAllDay) {
-                start = startOfDay(startDate);
-                end = endOfDay(endDate || startDate);
-            } else {
-                // Untouched Start means *now* - the mount preset freezes the
-                // hour at page load, which is stale for later saves.
-                const clock = resolveStartClock(new Date(), startTimeTouchedRef.current, startHour, startMinute);
-                const hour = clock.hour;
-                const minute = clock.minute;
-                start = set(startDate, { hours: hour, minutes: minute });
-                const finalEndDate = endDate || startDate;
-                const finalEndHour = endHour ? parseInt(endHour) : hour;
-                const finalEndMinute = endMinute ? parseInt(endMinute) : minute;
-                end = set(finalEndDate, { hours: finalEndHour, minutes: finalEndMinute });
-                if (end <= start) end = addMinutes(start, 30);
-            }
-            isScheduled = true;
-        }
         // When logging a session, the caller passes the just-logged sessions
         // array explicitly: React state has not flushed yet at this point, so
         // reading `sessions` from this closure would silently drop the new
         // session (stale state -> session never persisted -> duration
         // recalculated from the schedule on reopen).
-        const sessionsToSave = sessionOverride?.sessions ?? sessions;
-        const durationToSave = sessionOverride?.durationSeconds ?? calculatedDuration;
-        const durationSourceToSave = sessionOverride?.durationSource ?? durationSource;
-        const eventData: Partial<Omit<TaskEvent, 'id' | 'userId'>> = {
-            title: subject,
-            description: notes,
-            start,
-            end,
-            isScheduled,
-            status,
-            projectId: selectedProjectId === 'inbox' ? null : selectedProjectId,
-            contactId: selectedContactId,
-            workerId: selectedWorkerId || user.uid,
-            duration: durationToSave,
-            durationSource: durationSourceToSave,
-            sessions: sessionsToSave,
-            isBillable: isBillable,
-            billableRate: isBillable ? (Number(billableRate) || 0) : 0,
-            activityType,
-        };
+        const eventData = buildEventData({
+            duration: sessionOverride?.durationSeconds ?? calculatedDuration,
+            durationSource: sessionOverride?.durationSource ?? durationSource,
+            sessions: sessionOverride?.sessions ?? sessions,
+        });
         try {
             if (eventToEdit) {
                 await updateTask(eventToEdit.id, eventData);
@@ -409,19 +247,11 @@ export function TimeManagerView() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
         }
-    }, [user, subject, notes, isScheduleEnabled, startDate, startHour, startMinute, endDate, endHour, endMinute, isAllDay, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, status, activityType, sessions, eventToEdit, toast, router, calculatedDuration, durationSource]);
+    }, [user, subject, buildEventData, sessions, eventToEdit, toast, router, calculatedDuration, durationSource]);
 
     const handleSaveAndNew = async () => {
         await handleSaveEvent(false);
-        const now = new Date();
-        setSubject(""); setNotes(""); setSelectedProjectId(null); setSelectedContactId(null);
-        setActivityType('task'); setStatus('todo'); setIsScheduleEnabled(false);
-        setIsBillable(false); setBillableRate(100); setStartDate(now);
-        setStartHour(formatDate(now, 'HH')); setStartMinute(String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0'));
-        startDateTouchedRef.current = false; startTimeTouchedRef.current = false;
-        
-        setEndDate(undefined); setEndHour(undefined); setEndMinute(undefined);
-        setIsAllDay(false);
+        resetForm();
         setSessions([]); setEventToEdit(null);
         broadcastTimerState(null);
         router.replace('/event-manager');
@@ -479,7 +309,7 @@ export function TimeManagerView() {
     };
 
     const handleOpenGmail = () => {
-        const selectedContact = contacts.find(c => c.id === selectedContactId);
+        const selectedContact = refData.contacts.find(c => c.id === selectedContactId);
         const recipient = selectedContact?.email || "";
         window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${recipient}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(notes)}`, '_blank', 'noopener,noreferrer');
     };
@@ -488,10 +318,6 @@ export function TimeManagerView() {
         if (!user) { setIsLoadingData(false); return; }
         setIsLoadingData(true);
         try {
-            const [proj, cont, fold, comp, ind, wrks] = await Promise.all([
-                getProjects(user.uid), getContacts(), ensureSystemFolders(user.uid), getCompanies(user.uid), getIndustries(user.uid), getWorkers(user.uid)
-            ]);
-            setProjects(proj); setContacts(cont); setContactFolders(fold); setCompanies(comp); setCustomIndustries(ind); setWorkers(wrks);
             setSelectedWorkerId(user.uid);
             const eventIdParam = searchParams.get('eventId');
             if (eventIdParam) {
@@ -573,40 +399,8 @@ export function TimeManagerView() {
         const interval = setInterval(syncWithGlobalTimer, 1000);
         return () => { window.removeEventListener('storage', syncWithGlobalTimer); clearInterval(interval); };
     }, [syncWithGlobalTimer]);
-    
-    const handleCreateProject = async () => {
-        if (!user || !newProjectName.trim()) return;
-        try {
-            const newProject = await addProject({ name: newProjectName, userId: user.uid, status: 'planning', createdAt: new Date() });
-            setProjects(prev => [newProject, ...prev]); setSelectedProjectId(newProject.id);
-            setNewProjectName(''); setIsProjectPopoverOpen(false); toast({ title: 'Project Created' });
-        } catch (error: any) { toast({ variant: "destructive", title: "Error", description: error.message }); }
-    };
 
-    const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
-        if (isEditing) {
-            setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));
-        } else {
-            setContacts(prev => [...prev, savedContact]);
-        }
-        setSelectedContactId(savedContact.id);
-        setIsContactFormOpen(false);
-    };
-
-    // A tile sets the activity type; Appointment also flips the Schedule
-    // switch on (a scheduled activity needs a date). The type is persisted
-    // on the event so lists/reports can label it later.
-    const handleActivityTypeSelect = (value: ActivityType) => {
-        setActivityType(value);
-        if (value === 'appointment' && !isScheduleEnabled) {
-            setIsScheduleEnabled(true);
-            applyScheduleDefaults();
-        }
-    };
-
-    const selectedWorker = workers.find(w => w.id === selectedWorkerId) || workers.find(w => w.id === user?.uid);
-
-    if (isLoadingData) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
+    if (isLoadingData || refData.isLoading) return <div className="flex h-full w-full items-center justify-center"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
 
     if (isAgendaFormOpen) {
         return (
@@ -670,276 +464,8 @@ export function TimeManagerView() {
 
                 <div className="w-full max-w-4xl space-y-6">
                     <Card className="shadow-md border-black/5">
-                        <CardContent className="pt-6 space-y-6">
-                            {/* Activity type tiles (Julie's redo): Task / Appointment / Project / Note */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                {ACTIVITY_TYPES.map(({ value, label, caption, Icon }) => {
-                                    const isSelected = activityType === value;
-                                    return (
-                                        <button
-                                            key={value}
-                                            type="button"
-                                            onClick={() => handleActivityTypeSelect(value)}
-                                            aria-pressed={isSelected}
-                                            className={cn(
-                                                'flex items-center gap-3 rounded-lg border p-4 text-left transition-colors',
-                                                isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:bg-muted/50'
-                                            )}
-                                        >
-                                            <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
-                                                <Icon className="h-5 w-5" />
-                                            </span>
-                                            <span className="min-w-0">
-                                                <span className="block text-sm font-semibold">{label}</span>
-                                                <span className="block text-xs text-muted-foreground">{caption}</span>
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="subject">Title <span className="text-destructive">*</span></Label>
-                                <Input id="subject" placeholder="e.g. Prepare design concept" value={subject} onChange={(e) => setSubject(e.target.value)} ref={subjectInputRef} />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-sm">Client <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                                    <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start gap-2 font-normal h-10">
-                                                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                                <span className={cn('truncate', selectedContactId ? 'text-foreground' : 'text-muted-foreground')}>
-                                                    {contacts.find(c => c.id === selectedContactId)?.name || 'Search by client name or company...'}
-                                                </span>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-full p-0" align="start">
-                                            <Command>
-                                                <CommandInput placeholder="Search clients..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No results.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {contacts.map(c => (
-                                                            <CommandItem key={c.id} value={`${c.name} ${c.id}`} onSelect={() => { setSelectedContactId(c.id); setIsContactPopoverOpen(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", selectedContactId === c.id ? "opacity-100" : "opacity-0")} />{c.name}
-                                                            </CommandItem>
-                                                        ))}
-                                                        {selectedContactId && (
-                                                            <CommandItem onSelect={() => { setSelectedContactId(null); setIsContactPopoverOpen(false); }}>
-                                                                <X className="mr-2 h-4 w-4" /> Clear client
-                                                            </CommandItem>
-                                                        )}
-                                                        <CommandItem onSelect={() => { setIsContactPopoverOpen(false); setIsContactFormOpen(true); }}>
-                                                            <Plus className="mr-2 h-4 w-4" /> Add new contact…
-                                                        </CommandItem>
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm">Project <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                                    <Popover open={isProjectPopoverOpen} onOpenChange={setIsProjectPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start gap-2 font-normal h-10">
-                                                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                                <span className={cn('truncate', selectedProjectId ? 'text-foreground' : 'text-muted-foreground')}>
-                                                    {projects.find(p => p.id === selectedProjectId)?.name || 'Search by project...'}
-                                                </span>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-full p-0" align="start">
-                                            <div className="flex items-center gap-1 border-b p-2">
-                                                {PROJECT_SORT_MODES.map((mode) => (
-                                                    <Button key={mode.value} type="button" variant={projectSortMode === mode.value ? 'secondary' : 'ghost'} size="sm" className="h-7 flex-1 px-2 text-xs" onClick={() => setProjectSortMode(mode.value)}>
-                                                        {mode.label}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                            <Command>
-                                                        <CommandInput placeholder="Search projects or clients..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>No results.</CommandEmpty>
-                                                            {projectGroups.map((group) => (
-                                                                <CommandGroup key={group.key} heading={group.label}>
-                                                                    {group.items.map(({ project: p, contactName, status }) => (
-                                                                        <CommandItem
-                                                                            key={p.id}
-                                                                            value={`${p.name} ${contactName} ${statusLabel(status)} ${p.id}`}
-                                                                            onSelect={() => { setSelectedProjectId(p.id); setIsProjectPopoverOpen(false); }}
-                                                                            className={group.subdued ? 'opacity-60' : undefined}
-                                                                        >
-                                                                            <Check className={cn("mr-2 h-4 w-4", selectedProjectId === p.id ? "opacity-100" : "opacity-0")} />
-                                                                            <span className="flex min-w-0 flex-col">
-                                                                                <span className="truncate">{p.name}</span>
-                                                                                {(contactName || statusLabel(status)) && (
-                                                                                    <span className="truncate text-[10px] text-muted-foreground">
-                                                                                        {[contactName, statusLabel(status)].filter(Boolean).join(' · ')}
-                                                                                    </span>
-                                                                                )}
-                                                                            </span>
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            ))}
-                                                            {selectedProjectId && (
-                                                                <CommandGroup>
-                                                                    <CommandItem onSelect={() => { setSelectedProjectId(null); setIsProjectPopoverOpen(false); }}>
-                                                                        <X className="mr-2 h-4 w-4" /> Clear project
-                                                                    </CommandItem>
-                                                                </CommandGroup>
-                                                            )}
-                                                        </CommandList>
-                                                    </Command>
-                                                    <div className="flex gap-1 border-t p-2">
-                                                        <Input placeholder="New project name…" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} className="h-8 text-xs" />
-                                                        <Button onClick={handleCreateProject} size="sm" className="h-8" disabled={!newProjectName.trim()}>Create</Button>
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm">Assign to <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                                    <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start gap-2 font-normal h-10">
-                                                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                                <span className={cn('truncate', selectedWorkerId ? 'text-foreground' : 'text-muted-foreground')}>
-                                                    {selectedWorker?.name || 'Search by worker...'}
-                                                </span>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-full p-0" align="start">
-                                            <Command>
-                                                <CommandInput placeholder="Search workers..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No worker found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        <CommandItem onSelect={() => { setSelectedWorkerId(user?.uid || null); setIsWorkerPopoverOpen(false); }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === user?.uid ? "opacity-100" : "opacity-0")}/>
-                                                            Me (Admin)
-                                                        </CommandItem>
-                                                        {workers.map(w => (
-                                                            <CommandItem key={w.id} value={`${w.name} ${w.jobRole || ''} ${w.workerType || ''} ${w.id}`} onSelect={() => { setSelectedWorkerId(w.id); setIsWorkerPopoverOpen(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", selectedWorkerId === w.id ? "opacity-100" : "opacity-0")}/>
-                                                                <span className="flex min-w-0 flex-col">
-                                                                    <span className="truncate">{w.name}</span>
-                                                                    {(w.jobRole || w.workerType) && (
-                                                                        <span className="truncate text-[10px] text-muted-foreground">
-                                                                            {[w.jobRole, w.workerType].filter(Boolean).join(' · ')}
-                                                                        </span>
-                                                                    )}
-                                                                </span>
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <Label htmlFor="notes">Details <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                                    <div className="flex items-center gap-1">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs text-muted-foreground">
-                                                    <MoreVertical className="h-3.5 w-3.5" /> More tools
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => setIsAgendaFormOpen(true)}>
-                                                    <UsersIcon className="mr-2 h-4 w-4" /> Meeting Agenda
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href="/calendar">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" /> Plan tasks &amp; events
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
-                                <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add notes, instructions or other details..." />
-                            </div>
-                            {/* Controls row (Julie's redo): Schedule / Billable / Status */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <Label className="text-sm">Schedule this activity <span className="font-normal text-muted-foreground">(optional)</span></Label>
-                                            <p className="text-xs text-muted-foreground">Add date, time and duration</p>
-                                        </div>
-                                        <Switch checked={isScheduleEnabled} onCheckedChange={(v) => { setIsScheduleEnabled(v); if (v) applyScheduleDefaults(); }} aria-label="Schedule this activity" />
-                                    </div>
-                                    {isScheduleEnabled && (
-                                    <div className="space-y-3 rounded-md border p-3 animate-in fade-in-50">
-                                        <div className="flex items-center space-x-2"><Checkbox id="all-day" checked={isAllDay} onCheckedChange={(v) => setIsAllDay(!!v)} /><Label htmlFor="all-day" className="text-xs">All-day</Label></div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Start</Label>
-                                            <Popover open={isStartPickerOpen} onOpenChange={setIsStartPickerOpen}>
-                                                <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{startDate ? formatDate(startDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={startDate} onSelect={d => { startDateTouchedRef.current = true; const follow = endFollowsStart(startDate, endDate); setStartDate(d); if (follow) setEndDate(d); setIsStartPickerOpen(false); }} initialFocus /></PopoverContent>
-                                            </Popover>
-                                            <div className="flex gap-1"><Select value={startHour} onValueChange={(v) => { startTimeTouchedRef.current = true; setStartHour(v); }} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select><Select value={startMinute} onValueChange={(v) => { startTimeTouchedRef.current = true; setStartMinute(v); }} disabled={isAllDay}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">End</Label>
-                                            <Popover open={isEndPickerOpen} onOpenChange={setIsEndPickerOpen}>
-                                                <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start text-xs font-normal">{endDate ? formatDate(endDate, "PP") : "Date"}</Button></PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0"><CustomCalendar mode="single" selected={endDate} onSelect={d => { setEndDate(d); setIsEndPickerOpen(false); }} initialFocus /></PopoverContent>
-                                            </Popover>
-                                            <div className="flex gap-1">
-                                                <Select value={endHour || ""} onValueChange={setEndHour} disabled={isAllDay}>
-                                                    <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="Hr" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>{hourOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <Select value={endMinute || ""} onValueChange={setEndMinute} disabled={isAllDay}>
-                                                    <SelectTrigger className="h-8 text-xs">
-                                                        <SelectValue placeholder="Min" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>{minuteOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    )}
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <Label className="text-sm">Mark as billable</Label>
-                                            <p className="text-xs text-muted-foreground">This can be included on an invoice</p>
-                                        </div>
-                                        <Switch checked={isBillable} onCheckedChange={setIsBillable} aria-label="Mark as billable" />
-                                    </div>
-                                    {isBillable && (
-                                        <div className="space-y-2 max-w-[10rem] animate-in fade-in-50">
-                                            <Label htmlFor="rate" className="text-xs">Hourly Rate ($/hr)</Label>
-                                            <Input id="rate" type="number" value={billableRate} onChange={(e) => setBillableRate(e.target.value === '' ? '' : Number(e.target.value))} placeholder="100.00" className="h-9" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm">Status</Label>
-                                    <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
-                                        <SelectTrigger className="h-10">
-                                            <span className="flex items-center gap-2">
-                                                <Circle className="h-3.5 w-3.5 text-muted-foreground" />
-                                                <SelectValue />
-                                            </span>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
+                        <CardContent className="pt-6">
+                            <ActivityFormFields form={form} data={refData} subjectInputRef={subjectInputRef} onOpenAgenda={() => setIsAgendaFormOpen(true)} />
                         </CardContent>
                         <CardFooter className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -1063,7 +589,6 @@ export function TimeManagerView() {
                     </Card>
                 </div>
             </div>
-            <ContactFormDialog isOpen={isContactFormOpen} onOpenChange={setIsContactFormOpen} contactToEdit={null} folders={contactFolders} onFoldersChange={setContactFolders} onSave={handleContactSave} companies={companies} onCompaniesChange={setCompanies} customIndustries={customIndustries} onCustomIndustriesChange={setCustomIndustries} />
             <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>Edit Recorded Session</DialogTitle></DialogHeader>

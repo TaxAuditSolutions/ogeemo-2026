@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock, oneHourLaterValue } from '../src/lib/schedule-dates';
+import { endFollowsStart, presetHourValue, presetMinuteValue, resolveStartClock, oneHourLaterValue, resolveScheduledWindow, type ScheduleWindowInput } from '../src/lib/schedule-dates';
 
 const day = (iso: string) => new Date(iso);
 
@@ -57,4 +57,65 @@ test('oneHourLaterValue: one hour after now with the minute floored to 5', () =>
 
 test('oneHourLaterValue: clamps to 23:55 so End stays inside the same day', () => {
     assert.deepEqual(oneHourLaterValue(new Date('2026-10-05T23:30:00')), { hour: '23', minute: '55' });
+});
+
+const scheduleInput = (overrides: Partial<ScheduleWindowInput> = {}): ScheduleWindowInput => ({
+    enabled: true,
+    startDate: new Date('2026-11-06T00:00:00'),
+    endDate: undefined,
+    isAllDay: false,
+    startTimeTouched: false,
+    startHour: '09',
+    startMinute: '00',
+    endHour: undefined,
+    endMinute: undefined,
+    now: new Date('2026-11-06T12:49:30'),
+    ...overrides,
+});
+
+test('resolveScheduledWindow: Schedule switch off saves unscheduled (no start/end)', () => {
+    assert.deepEqual(resolveScheduledWindow(scheduleInput({ enabled: false })), { isScheduled: false });
+    assert.deepEqual(resolveScheduledWindow(scheduleInput({ startDate: undefined })), { isScheduled: false });
+});
+
+test('resolveScheduledWindow: untouched Start lands on now\'s clock time, End defaults to Start + 30 min', () => {
+    const { start, end, isScheduled } = resolveScheduledWindow(scheduleInput());
+    assert.equal(isScheduled, true);
+    assert.equal(start?.getTime(), new Date('2026-11-06T12:49:00').getTime());
+    assert.equal(end?.getTime(), new Date('2026-11-06T13:19:00').getTime());
+});
+
+test('resolveScheduledWindow: a chosen Start and End clock are honored', () => {
+    const { start, end } = resolveScheduledWindow(scheduleInput({
+        startTimeTouched: true, startHour: '08', startMinute: '30', endHour: '10', endMinute: '15',
+    }));
+    assert.equal(start?.getTime(), new Date('2026-11-06T08:30:00').getTime());
+    assert.equal(end?.getTime(), new Date('2026-11-06T10:15:00').getTime());
+});
+
+test('resolveScheduledWindow: End on a later date is kept', () => {
+    const { end } = resolveScheduledWindow(scheduleInput({
+        startTimeTouched: true, startHour: '08', startMinute: '30',
+        endDate: new Date('2026-11-07T00:00:00'), endHour: '09', endMinute: '00',
+    }));
+    assert.equal(end?.getTime(), new Date('2026-11-07T09:00:00').getTime());
+});
+
+test('resolveScheduledWindow: End at or before Start becomes Start + 30 minutes', () => {
+    const { start, end } = resolveScheduledWindow(scheduleInput({
+        startTimeTouched: true, startHour: '08', startMinute: '30', endHour: '08', endMinute: '00',
+    }));
+    assert.equal(end?.getTime(), (start?.getTime() ?? 0) + 30 * 60 * 1000);
+});
+
+test('resolveScheduledWindow: all-day spans the whole Start day by default', () => {
+    const { start, end, isScheduled } = resolveScheduledWindow(scheduleInput({ isAllDay: true }));
+    assert.equal(isScheduled, true);
+    assert.equal(start?.getTime(), new Date('2026-11-06T00:00:00').getTime());
+    assert.equal(end?.getTime(), new Date('2026-11-06T23:59:59.999').getTime());
+});
+
+test('resolveScheduledWindow: all-day honors a later End date', () => {
+    const { end } = resolveScheduledWindow(scheduleInput({ isAllDay: true, endDate: new Date('2026-11-08T10:00:00') }));
+    assert.equal(end?.getTime(), new Date('2026-11-08T23:59:59.999').getTime());
 });

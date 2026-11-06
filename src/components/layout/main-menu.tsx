@@ -40,7 +40,7 @@ export const groupedMenuItems: Record<string, { icon: any; items: string[]; mast
     Operations: { icon: Bot, items: ['/projects/all', '/project-status', '/accounting'] },
     Accounting: { icon: Landmark, items: ['/accounting', '/accounting/invoices/create', '/accounting/quotes/create', '/accounting/quotes', '/accounting/accounts-receivable', '/accounting/service-items'] },
     Reports: { icon: ClipboardList, items: ['/reports', '/reports/work-activity', '/reports/client-statement', '/reports/time-log', '/reports/client-time-log', '/reports/search'] },
-    Growth: { icon: BarChart3, items: ['/marketing-manager', '/idea-board', '/feedback'] },
+    Growth: { icon: BarChart3, items: ['/', '/marketing-manager', '/idea-board', '/feedback'] },
     Administration: { icon: Settings, items: ['/image-manager', '/backup', '/tools/image-generator', '/user-manager'] },
     'Google Apps': { icon: Chrome, items: ['/google'] },
 };
@@ -121,7 +121,7 @@ const GroupedMenuView = memo(({ pathname, isAdmin, isMasterTenant, accessLevel, 
                                     key={item.href}
                                     item={item}
                                     index={-1}
-                                    isActive={pathname === item.href || (item.href !== '/action-manager' && pathname.startsWith(item.href))}
+                                    isActive={pathname === item.href || (item.href !== '/' && item.href !== '/action-manager' && pathname.startsWith(item.href))}
                                     moveMenuItem={() => { }}
                                     isDraggable={false}
                                     isCompact={true}
@@ -412,7 +412,7 @@ export function MainMenu() {
                             key={item.href}
                             item={item}
                             index={index}
-                            isActive={(pathname || '') === item.href || (item.href !== '/action-manager' && (pathname || '').startsWith(item.href))}
+                            isActive={(pathname || '') === item.href || (item.href !== '/' && item.href !== '/action-manager' && (pathname || '').startsWith(item.href))}
                             moveMenuItem={moveMenuItem}
                             isDraggable={false}
                             isCompact={true}

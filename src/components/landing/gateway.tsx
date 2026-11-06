@@ -256,7 +256,7 @@ export function Gateway() {
                                 </div>
                                 <h3 className="font-bold text-lg">Stop paying the growth tax</h3>
                                 <p className="text-sm text-muted-foreground leading-relaxed">
-                                    Per-seat SaaS fees punish you for hiring. Ogeemo is one flat price — $30/month for
+                                    Per-seat SaaS fees punish you for hiring. Ogeemo is one flat price — $35/month for
                                     up to 5 users, $5 per additional user — with the full suite unlocked for every
                                     member. Your price never changes for life.
                                 </p>

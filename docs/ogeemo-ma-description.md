@@ -107,7 +107,7 @@ The platform's **"Scale, Not Features"** pricing model means a solo consultant a
 ## 5. Business Model & Pricing
 
 ### Current Pricing Structure
-- **Circle Membership:** $25.00/month (total)
+- **Circle Membership:** $35.00/month (total)
 - **Includes:** 5 users
 - **Additional users:** $5.00 each
 - **Free trial:** 30 days

@@ -1,100 +1,81 @@
-# Receipt Processor — Working Notes and Handoff
+# Receipt Processor — Working Notes
 
-Last updated: 2026-10-30
+Last updated: 2026-10-31
 
-## Purpose
+## Current state
 
-Preserve the receipt-processing review before the computer restart. Read this note before resuming this work.
+The Receipt Processor is a normal (non-demo) workflow at `http://localhost:9002/accounting/receipt-processor`.
 
-## Agreed direction
+1. **Open File** adds a PDF, PNG, JPEG, or WebP receipt to the queue. The file's content type is checked from its bytes, a SHA-256 hash blocks duplicates, the next `REC-YYYYMMDD-###` number is **claimed from the shared REC counter** (same counter as income receipts, so numbers cannot collide), and the file is uploaded to private storage. No OCR runs unless the workspace rule "run OCR automatically" is on.
+2. The user checks receipts and chooses **OCR Selected** or **OCR All**. Each file is sent sequentially to `POST /api/receipts/extract`, which reads the workspace's OCR rules and returns cleaned fields.
+3. The user verifies the fields against the source preview. Review flags (from the rules) are shown on the receipt. The user can add an expense category with **Add category**, enters a business reason, saves the review, and posts.
+4. **Post to ledger** is blocked unless the file is stored and (when the rule is on) there are no blocking errors. Routing: `expense` -> `expenseTransactions`, `payable_bill` -> `payableBills`, `income` -> `incomeTransactions`. The ledger entry stores `documentNumber` (the REC number), `receiptId`, `receiptStoragePath`, and a stable `documentUrl`.
+5. In the ledger (`/accounting/ledgers`) the document number is a link that opens the stored receipt; the "original item" dialog also has **View receipt**.
+6. **Receipt Archive** (`/accounting/receipt-archive`) lists every receipt, including posted and removed ones, with search and status filters.
 
-- Mark the current page clearly as **Demo**. Agreed, but **not yet implemented**.
-- Proposed production direction: a verified digital document is the authoritative source evidence. OCR output, corrections, approvals, and ledger entries are derived records linked to it.
-- “One source of truth” means one authoritative document record, not one physical copy; backups/replicas remain necessary.
-- No receipt-processor implementation changes were made during the review.
+## Record-keeping mode (Settings > Receipt OCR Rules > Record keeping)
 
-## Current page and key files
+Nothing here is a legal or CRA certification; the modes only choose which controls Ogeemo enforces. Logic: `src/lib/receipt-record-keeping.ts`.
 
-- URL: `http://localhost:9002/accounting/receipt-processor`
-- Before restart, the route compiled and returned HTTP 200.
-- After reboot, run `npm run dev:win` from the project root.
-- UI: `src/components/accounting/receipt-processor-view.tsx`
-- Intake/posting: `src/services/receipt-staging-service.ts`
-- OCR: `src/app/actions/ocr-actions.ts`
-- Drive: `src/services/google-service.ts`
-- Guide: `src/app/(app)/learn/guides/receipt-intake/page.tsx`
+| | Simple (default) | Audit-ready | Custom |
+|---|---|---|---|
+| Scan stored | yes | yes | switch |
+| Scan required to post | no | yes | switch |
+| Errors block posting | no (warnings only) | yes | switch |
 
-## Current-state findings
+- The GL link always works when a scan exists: the ledger entry gets `receiptId`, `receiptStoragePath` and a stable `documentUrl`, and its document number opens the scan. Scans are on by default in every mode because the REC number must open the scan.
+- With no scan, the ledger entry still carries the REC number; the screen tells the user to write it on the paper receipt, and an optional `paperLocation` (for example "Box 3, 2026") is saved on the receipt and copied to the ledger as `paperReceiptLocation`.
+- Each receipt is stamped with the mode in force when it was added (`recordKeepingMode`) and is never rewritten.
+- Mode changes are appended to `receiptRecordKeepingLog` on the organization document (who, when, what changed) and shown as Change history in Settings. Changing the mode never deletes scans or alters posted entries.
+- The Receipt Archive has a **Paper filing list (CSV)** export, sorted by document number with where each paper receipt is filed.
+- The approval step discussed earlier was set aside at the owner's request and is not built.
+## Settings > Receipt OCR Rules (administrators only)
 
-1. **OCR confidence: 92%** is hard-coded demo data. Drive-synced items receive a hard-coded 85%. Neither is measured OCR confidence nor used to control posting.
-2. Drive intake returns fixed sample files, not real Drive contents. External/Drive OCR returns simulated values rather than reading the PDF.
-3. Upload stores a temporary browser `blob:` URL; it does not durably upload the file, OCR it, or create persistent audit evidence.
-4. Review is not enforced. “Save review” changes status without recording reviewer/time. A prefilled business reason can enable posting without meaningful review.
-5. Posting calls real Firestore expense/payable functions. Demo or failed-OCR data must not reach live books.
-6. Selecting “Income” currently falls through to expense creation.
-7. The queue-loading effect likely reloads repeatedly because its dependencies change after each fetch.
-8. No receipt-processor-specific automated tests were found. Full TypeScript checking was blocked by an unrelated existing error at `scratch/inspect-firebase-structure.ts:31`.
-9. No live posting was performed during the review.
+Stored on the organization document as `receiptOcrSettings`; validated by `normalizeReceiptOcrSettings()`.
 
-## Working design from the discussion
+- Reading: model (Flash / Flash-Lite / Pro), language, date format, tax mode, default currency, extra instructions, auto-run on upload, max file size (hard cap 10 MB).
+- Defaults: ledger type and category for new receipts.
+- Vendor rules: when the OCR vendor contains text X, rename the vendor and/or fill the category and ledger type (category only fills while empty).
+- Validation: required fields, amount tolerance (net + tax vs total), expected tax rates, future/old date limits, review amount limit, duplicate detection, and whether errors block posting.
 
-### Capture and preserve
+## Storage and security
 
-- User selects one or more scanned PDFs; upload the actual bytes to durable protected storage.
-- Ogeemo—not OCR—assigns a permanent internal document number. Use new `DOC` or `SRC` series because `REC` already identifies payment receipts.
-- Record SHA-256 hash, org, uploader, server timestamp, original filename, size, MIME type, and storage path. Detect exact duplicates by hash.
-- Initial scope recommendation: one receipt per PDF, with multiple pages for that receipt allowed.
-- Keep the source PDF immutable. Show the internal number in metadata/viewer; any stamped copy is a derivative. Replacement scans create linked, audited versions.
-- OCR reads the vendor's invoice/receipt number separately from Ogeemo's document number.
+- Files live at `receipts/{orgId}/{receiptId}/{file}` in the default Storage bucket.
+- `storage.rules` deny all direct client access to `receipts/**`. Reads and writes go only through `/api/receipts/files` (Admin SDK), which takes the workspace from the verified session cookie and checks it against the receipt's `orgId`.
+- **`storage.rules` must be deployed** for the new rule to take effect: `npx firebase-tools deploy --only storage`. Until then the existing rules apply (no `receipts/` match means access is denied by default, so nothing is exposed either way).
+- Verified: an Admin SDK write/read/delete round trip against the real bucket works.
 
-### Verify, extract, and review
+## Key files
 
-- Reviewer separately confirms all pages are present, nothing material is cropped/obscured, and the image accurately reproduces the paper. Record **Scan verified**, user, and timestamp.
-- OCR success does not establish scan quality. Paper becomes eligible for destruction only after verification and under an approved retention procedure.
-- Suggested flow: `Received → OCR processing → Needs review → Approved → Posted`, plus `OCR failed`, `Rejected`, and `Posting failed`.
-- Store raw extraction, fields, engine/model and extraction version, processing time, and errors. Use only genuine confidence data; never invent a score.
-- Failed OCR stays visible for manual entry. Never silently substitute today's date, zero amounts, or fake confidence.
-- Review screen: PDF beside editable fields, with separate **Save draft**, **Verify scan**, **Approve for posting**, and **Post to ledger** actions.
+- UI: `src/components/accounting/receipt-processor-view.tsx`, `receipt-viewer-dialog.tsx`, `receipt-archive-view.tsx`, `receipt-archive-table.tsx`
+- Intake, OCR saving, storing, posting: `src/services/receipt-staging-service.ts`
+- Rules and OCR: `src/lib/receipt-ocr-options.ts`, `receipt-ocr-settings.ts`, `receipt-ocr-rules.ts`, `receipt-ocr.ts` (server-only)
+- Review checks: `src/lib/receipt-review-checks.ts`, `receipt-review-types.ts`
+- Storage helpers: `src/lib/receipt-storage-utils.ts`, `receipt-server-storage.ts`, `receipt-server-auth.ts`
+- API: `src/app/api/receipts/extract/route.ts`, `src/app/api/receipts/files/route.ts`
+- Settings: `src/components/settings/receipt-ocr-rules-card.tsx` (+ `-state`, `-reading-fields`, `-validation-fields`, `-rules-common`, `receipt-vendor-rules-editor`), `src/services/receipt-ocr-settings-service.ts`
+- Numbering: `src/app/actions/numbering-actions.ts` (REC uniqueness now also checks the receipt queue)
+- After a reboot, run `npm run dev:win` from the project root.
 
-### Approve and post
+## Known limitations (not yet built)
 
-- Require durable source, scan verification, valid fields, amount arithmetic, category/type, and genuine business reason.
-- Log old/new values, editor, and time. Editing an approved extraction revokes approval and requires reapproval.
-- Only approved documents can post. Server-side posting rechecks permission, approval, and integrity.
-- Posting must be idempotent so retries cannot duplicate ledger entries.
-- Link ledger entries to permanent document ID, number, version/hash, and audit trail—not temporary URLs. Correct expense/payable/income routing.
-
-## Suggested delivery order
-
-1. **Demo safety:** Demo title/banner, mark samples, remove/qualify simulated confidence, and preferably prevent simulated items from live posting.
-2. **Real intake:** durable batch upload, numbering, hashes, metadata, duplicate handling, protected preview, and queue linkage.
-3. **OCR/review:** real OCR, extraction versions, failure handling, manual entry, scan verification, validation, and approval history.
-4. **Controlled posting:** server authorization, approval enforcement, idempotency, correct ledger type, and source/audit links.
-5. **Retention/operations:** retention, legal holds, backup/restore tests, readable export, storage-location review, and approved paper-destruction procedure.
-6. **Real Drive integration:** after durable upload and controls work.
+- **No approval step.** Review flags and the posting gate exist, but there is no recorded approver/time or snapshot of approved values. The owner chose not to build it.
+- **Posting runs from the browser** and is not idempotent. It refuses an already-posted receipt, but a double-click race or network retry could still duplicate a ledger entry. A server-side posting action would fix this and also let Firestore rules enforce approval.
+- **Receipts added before storage existed** have no stored file. Reopening the same file with **Open File** stores it. They cannot be posted until then.
+- **OCR needs the file in the browser session.** After a refresh, reopen the file with Open File before running OCR on a receipt.
+- **Old ledger entries** posted before this change carry no `receiptId`, so their document number is not a link.
+- **Retention, backup and a paper-destruction procedure are undefined.** Stored receipts should be backed up and kept for the required period; confirm with the accountant.
+- Legacy sample records are hidden by `isVisibleReceiptQueueItem()`; they still exist in Firestore.
 
 ## CRA / retention references
 
-Design inputs only; final procedure needs review by the organization's accountant/legal adviser.
+Design inputs only; the final procedure needs review by the organization's accountant or legal adviser.
 
 - Imaging: https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/keeping-records/acceptable-format-imaging-paper-documents-backing-electronic-files.html
-  - Properly imaged documents can become permanent records under applicable CGSB standards; otherwise paper must be kept. Images must be accurate, complete, and legible.
 - Audit trails: https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/keeping-records/review-business-systems-keeping-audit-trails-business-transactions.html
-  - Electronic records must connect supporting documents to summarized financial accounts.
 - Retention: https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/keeping-records/where-keep-your-records-long-request-permission-destroy-them-early.html
-  - Generally six years from the end of the last relevant tax year, with exceptions. Early destruction of required records generally needs written CRA permission.
-- Check the final procedure against the latest **CAN/CGSB 72.34, Electronic Records as Documentary Evidence**.
+- Check the final procedure against the latest CAN/CGSB 72.34, Electronic Records as Documentary Evidence.
 
-## Resume point
+## Working-tree note
 
-Start with **Phase 1: Demo safety**, unless the user directs otherwise. Build the real document-intake foundation before enabling production posting.
-
-## Working-tree caution
-
-These files already had uncommitted changes when this note was created; do not discard them:
-
-- `src/components/accounting/receipt-processor-view.tsx`
-- `src/services/receipt-staging-service.ts`
-
-Observed changes concern queue deletion/rejection, Drive deduplication, and explanatory UI. They were not made by the assistant during this review.
-
+No commit has been created. The tree holds a mix of staged and unstaged changes; do not discard them.

@@ -109,6 +109,7 @@ import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
 import { TransactionDialog } from "./transaction-dialog";
 import { ReconciliationWizard } from "./reconciliation-wizard";
+import { ReceiptViewerDialog } from "./receipt-viewer-dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -143,6 +144,8 @@ export function LedgersView() {
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
   const [isPhilosophyDialogOpen, setIsPhilosophyDialogOpen] = React.useState(false);
   const [transactionToInspect, setTransactionToInspect] = React.useState<GeneralTransaction | null>(null);
+  // Scanned receipt opened from a ledger document number.
+  const [receiptToView, setReceiptToView] = React.useState<{ receiptId: string; documentNumber?: string } | null>(null);
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
@@ -506,7 +509,18 @@ export function LedgersView() {
                             <TableCell className="text-xs text-muted-foreground">
                                 {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
                             </TableCell>
-                            <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{item.documentNumber || '—'}</TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">
+                                {item.receiptId && item.documentNumber ? (
+                                    <button
+                                        type="button"
+                                        className="font-mono text-primary underline-offset-2 hover:underline"
+                                        title="Open the scanned receipt"
+                                        onClick={(e) => { e.stopPropagation(); setReceiptToView({ receiptId: item.receiptId as string, documentNumber: item.documentNumber }); }}
+                                    >
+                                        {item.documentNumber}
+                                    </button>
+                                ) : (item.documentNumber || '—')}
+                            </TableCell>
                             <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{(item.documentNumber && customIdByDocumentNumber.get(item.documentNumber.trim().toLowerCase())) || '—'}</TableCell>
                             {type === 'all' && <TableCell className="text-center"><Badge variant={item.transactionType === 'income' ? 'default' : 'destructive'} className="text-[10px] h-4 uppercase">{item.transactionType}</Badge></TableCell>}
                             <TableCell className={cn("text-right font-mono font-semibold", item.transactionType === 'income' ? "text-green-600" : "text-red-600")}>
@@ -989,7 +1003,20 @@ export function LedgersView() {
                                 </div>
                             )}
 
-                            {transactionToInspect.documentUrl && (
+                            {transactionToInspect.receiptId && (
+                                <div className="rounded-md border border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 text-sm">
+                                    <span className="flex items-center gap-2"><ScanSearch className="h-4 w-4 text-primary" /> Scanned receipt on file</span>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setReceiptToView({ receiptId: transactionToInspect.receiptId as string, documentNumber: transactionToInspect.documentNumber })}
+                                    >
+                                        View receipt
+                                    </Button>
+                                </div>
+                            )}
+
+                            {transactionToInspect.documentUrl && !transactionToInspect.receiptId && (
                                 <div className="rounded-md border p-4 flex items-center justify-between gap-3 text-sm">
                                     <span className="flex items-center gap-2"><LinkIcon className="h-4 w-4 text-primary" /> Attached document</span>
                                     <Button asChild size="sm" variant="outline">
@@ -1043,6 +1070,12 @@ export function LedgersView() {
                 );
             })()}
         </Dialog>
+
+        <ReceiptViewerDialog
+            receiptId={receiptToView?.receiptId ?? null}
+            documentNumber={receiptToView?.documentNumber}
+            onClose={() => setReceiptToView(null)}
+        />
 
         <ContactFormDialog
             isOpen={isContactFormOpen}

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileText, ScanSearch, ShieldCheck, Bot, CheckCircle2, ReceiptText } from 'lucide-react';
+import { ArrowLeft, Bot, FileText, ReceiptText, ScanSearch, ShieldCheck } from 'lucide-react';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 
 export default function ReceiptProcessorInstructionsPage() {
@@ -17,8 +17,8 @@ export default function ReceiptProcessorInstructionsPage() {
             <div className="flex items-center gap-3">
               <ReceiptText className="h-6 w-6 text-primary" />
               <div>
-                <CardTitle>How Receipt Intake works</CardTitle>
-                <CardDescription>Turn a scanned receipt or invoice into a reviewed, audit-ready ledger entry.</CardDescription>
+                <CardTitle>Receipt intake workflow</CardTitle>
+                <CardDescription>Add receipts, run OCR on the ones you choose, review the fields, and post to the ledger.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -27,63 +27,49 @@ export default function ReceiptProcessorInstructionsPage() {
               <div className="rounded-lg border bg-muted/20 p-4">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-foreground">
                   <ScanSearch className="h-4 w-4 text-primary" />
-                  1. Capture
+                  1. Open a receipt file
                 </div>
-                <p>Scan or upload a receipt from a phone, desktop scanner, or Google Drive intake folder.</p>
+                <p>Click Open File and choose a PDF, PNG, JPEG, or WebP receipt. It enters the receipts queue before any OCR is run.</p>
               </div>
               <div className="rounded-lg border bg-muted/20 p-4">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-foreground">
                   <Bot className="h-4 w-4 text-primary" />
-                  2. Extract
+                  2. Choose receipts for OCR
                 </div>
-                <p>OCR reads the merchant, date, tax, and totals and pre-fills the review form.</p>
+                <p>Check one or more receipts and choose OCR Selected, or choose OCR All. Compare the results with the source document and correct any fields. The OCR engine does not report a confidence score, so every extraction must be verified.</p>
               </div>
               <div className="rounded-lg border bg-muted/20 p-4">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-foreground">
                   <ShieldCheck className="h-4 w-4 text-primary" />
-                  3. Post
+                  3. Review and post
                 </div>
-                <p>Review the extract, add the business reason, and post it to the BKS ledger with document linkage.</p>
+                <p>Choose the category and ledger type, enter the business reason, save the review, and post. The receipt is then removed from the queue and recorded in the ledger.</p>
               </div>
             </div>
 
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Things to know</h3>
+              <ul className="list-disc space-y-2 pl-5">
+                <li>Every receipt you add with Open File is stored permanently in your private workspace storage. Only signed-in members of your workspace can open it. After a refresh the preview needs the original again for OCR, so choose the same file with Open File; it is matched to its queue entry without creating a duplicate.</li>`r`n                <li>Each receipt gets an Ogeemo document number (REC-YYYYMMDD-###). When you post it, that number is recorded in the general ledger. Click the number in the ledger to open the stored receipt, or find any receipt in the Receipt Archive.</li>`r`n                <li>Administrators choose a record-keeping mode in Settings under Receipt OCR Rules. Simple keeps your paper receipts as the record: each scan gets a document number to write on the paper, and check results are warnings only. Audit-ready requires a stored scan before posting and blocks receipts with errors. Custom lets you choose each control. These are not a legal or CRA certification; keep paper originals unless your accountant says otherwise.</li>`r`n                <li>Administrators set how receipts are read and checked in Settings under Receipt OCR Rules: the OCR model, language, date and tax conventions, required fields, amount tolerance, expected tax rates, vendor rules and more.</li>
+                <li>The same file cannot be added twice. Duplicates are detected by file content.</li>
+                <li>If OCR fails, the fields are left blank for manual entry. A failed retry never overwrites values you have already entered.</li>
+                <li>Use Add category beside the Category field to add a new expense category.</li>
+              </ul>
+            </div>
+
             <div className="rounded-lg border bg-primary/5 p-4">
-              <p className="font-semibold text-foreground">Important rule</p>
-              <p className="mt-2">Every ledger entry must be tied to a source document. This keeps Ogeemo audit-ready and gives you a defensible chain of evidence for every expense.</p>
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                <FileText className="h-4 w-4 text-primary" />
+                Keep your records
+              </div>
+              <p className="mt-2">Ogeemo keeps a stored copy of each scanned receipt, but you remain responsible for your records. Destroying original paper receipts requires a records-retention procedure approved by your accountant or legal adviser, and the stored copy should be backed up and kept for the required retention period.</p>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">What happens in this process</h3>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>Google Drive receipts are synced into the queue for review.</li>
-                <li>OCR extracts the likely vendor, transaction date, net amount, tax, and total amount.</li>
-                <li>The expense reviewer can correct any field before posting.</li>
-                <li>A business reason is required before the record becomes a ledger entry.</li>
-                <li>The item is posted into the existing expense or payable ledger flow.</li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">Best use cases</h3>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>Business expense receipts from suppliers and vendors</li>
-                <li>Invoices arriving by email or scan</li>
-                <li>Fast intake from mobile or desktop scanning workflows</li>
-                <li>Audit preparation and source-document linkage</li>
-              </ul>
-            </div>
-
-            <div className="flex justify-between gap-3 pt-2">
+            <div className="flex pt-2">
               <Button asChild variant="outline">
                 <Link href="/accounting/receipt-processor">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Receipt Intake
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link href="/accounting/ledgers">
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Open BKS ledger
+                  Back to Receipt Processor
                 </Link>
               </Button>
             </div>

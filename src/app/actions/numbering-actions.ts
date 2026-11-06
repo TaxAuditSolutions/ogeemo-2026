@@ -102,12 +102,22 @@ async function isNumberTaken(
         .limit(10)
         .get();
 
-    return snap.docs.some((doc) => {
+    const takenInPrimary = snap.docs.some((doc) => {
         if (doc.id === excludeDocId) return false;
         const docOrg = doc.data()?.orgId;
         // Legacy docs without an orgId are treated as same-tenant (payment ledger).
         return docOrg === undefined || docOrg === orgId;
     });
+    if (takenInPrimary || type !== 'REC') return takenInPrimary;
+
+    // REC numbers are shared by income receipts and scanned expense receipts, which
+    // keep theirs in the receipt queue (auditReferenceId), so check there as well.
+    const queueSnap = await adminDb
+        .collection('receiptStagingQueue')
+        .where('auditReferenceId', '==', value)
+        .limit(10)
+        .get();
+    return queueSnap.docs.some((doc) => doc.id !== excludeDocId && doc.data()?.orgId === orgId);
 }
 
 /**

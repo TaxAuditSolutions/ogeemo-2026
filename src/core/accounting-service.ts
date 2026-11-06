@@ -94,6 +94,11 @@ export interface BaseTransaction {
   explanation?: string;
   documentNumber?: string;
   documentUrl?: string;
+  /** Set when the entry was posted from a scanned receipt (Receipt Processor). */
+  receiptId?: string;
+  receiptStoragePath?: string;
+  /** Where the paper original is filed when no scan was kept. */
+  paperReceiptLocation?: string;
   type: 'business' | 'personal';
   paymentMethod?: string;
   userId: string;
@@ -126,6 +131,8 @@ export interface PayableBill {
   category: string;
   description?: string;
   documentUrl?: string;
+  receiptId?: string;
+  receiptStoragePath?: string;
   userId: string;
 }
 

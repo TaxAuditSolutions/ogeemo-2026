@@ -1,28 +1,21 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
-import { gemini15Pro } from '@genkit-ai/googleai';
-import { z } from 'zod';
 import { getCurrentUserId } from '@/app/actions';
 import { getAdminStorage, getAdminDb } from '@/core/firebase-admin';
+import { extractReceiptFromBytes, type ExtractedInvoice, type ExtractionResult } from '@/lib/receipt-ocr';
 
 /**
  * @fileOverview Server actions for High-Fidelity OCR and Data Extraction.
- * Uses Gemini 1.5 Pro to reason over PDF binaries and extract structured financial data.
+ * The extraction itself lives in '@/lib/receipt-ocr' so the file-import route
+ * (src/app/api/receipts/extract/route.ts) shares the same prompt and model.
  */
 
-const ExtractionOutputSchema = z.object({
-  vendor_name: z.string().describe('The legal name of the business issuing the invoice.'),
-  invoice_number: z.string().describe('The unique reference number for the document.'),
-  date: z.string().describe('The date of the invoice in YYYY-MM-DD format.'),
-  subtotal: z.number().describe('The amount before taxes.'),
-  tax: z.number().describe('The total tax amount.'),
-  total_amount: z.number().describe('The final amount due.'),
-  currency: z.string().default('USD').describe('The currency code.'),
-});
+export type { ExtractedInvoice, ExtractionResult };
 
-export type ExtractedInvoice = z.infer<typeof ExtractionOutputSchema>;
+async function extractPdfData(base64Pdf: string): Promise<ExtractionResult> {
+  return extractReceiptFromBytes(new Uint8Array(Buffer.from(base64Pdf, 'base64')), 'application/pdf');
+}
 
 /**
  * Extracts structured data from a PDF. 
@@ -73,25 +66,7 @@ export async function extractInvoiceData(fileId: string, isExternal: boolean = f
     const [fileBuffer] = await bucket.file(storagePath).download();
     base64Pdf = fileBuffer.toString('base64');
 
-    // Process with Gemini 1.5 Pro (Neural Reasoning)
-    const response = await ai.generate({
-      model: gemini15Pro,
-      prompt: [
-        {
-          media: {
-            url: `data:application/pdf;base64,${base64Pdf}`,
-            contentType: 'application/pdf',
-          },
-        },
-        { text: 'Extract the following fields from this invoice: vendor_name, invoice_number, date, subtotal, tax, and total_amount.' },
-      ],
-      output: { schema: ExtractionOutputSchema },
-    });
-
-    const output = response.output;
-    if (!output) throw new Error('Neural node failed to generate structured data.');
-
-    return { data: output };
+    return await extractPdfData(base64Pdf);
 
   } catch (error: any) {
     console.error('[Neural Extraction Error]', error);

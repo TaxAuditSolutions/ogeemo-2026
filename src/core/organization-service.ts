@@ -1,3 +1,5 @@
+import { MEMBERSHIP_FEE } from '@/lib/constants';
+
 // Canonical Organization (tenant) shape and creation logic now live in org-actions.ts
 // to avoid two divergent org-creation code paths (see org-actions.ts registerOrganization).
 export type { Organization } from '@/app/actions/org-actions';
@@ -9,7 +11,7 @@ import type { Organization } from '@/app/actions/org-actions';
 const ORGANIZATIONS_COLLECTION = 'organizations';
 
 /** Fetches a single organization's company-identity fields for display (issuer info on invoices). */
-export async function getOrganization(orgId: string): Promise<Pick<Organization, 'id' | 'name' | 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering'> | null> {
+export async function getOrganization(orgId: string): Promise<Pick<Organization, 'id' | 'name' | 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering' | 'receiptOcrSettings'> | null> {
     const { db } = getFirebaseServices();
     const snap = await getDoc(doc(db, ORGANIZATIONS_COLLECTION, orgId));
     if (!snap.exists()) return null;
@@ -22,6 +24,7 @@ export async function getOrganization(orgId: string): Promise<Pick<Organization,
         email: data.email ?? undefined,
         businessNumber: data.businessNumber ?? undefined,
         numbering: data.numbering ?? undefined,
+        receiptOcrSettings: data.receiptOcrSettings ?? undefined,
     };
 }
 
@@ -55,7 +58,7 @@ export async function updateOrganizationName(orgId: string, name: string): Promi
  */
 export async function updateOrganizationDetails(
     orgId: string,
-    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering'>
+    details: Pick<Organization, 'businessAddress' | 'businessPhone' | 'email' | 'businessNumber' | 'numbering' | 'receiptOcrSettings'>
 ): Promise<void> {
     const { db } = getFirebaseServices();
     const payload: Record<string, unknown> = { updatedAt: serverTimestamp() };
@@ -68,10 +71,10 @@ export async function updateOrganizationDetails(
 
 /**
  * Calculates the monthly membership price based on seat count.
- * Logic: $30 for the first 5 seats, $5 for each additional seat.
+ * Logic: $35 for the first 5 seats, $5 for each additional seat.
  */
 export function calculateMembershipPrice(seatCount: number): number {
-    const basePrice = 30;
+    const basePrice = MEMBERSHIP_FEE;
     const includedSeats = 5;
     const extraSeatPrice = 5;
 

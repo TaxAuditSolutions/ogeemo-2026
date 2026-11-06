@@ -24,6 +24,7 @@ import {
     Settings,
     History,
     Users,
+    Archive,
 } from 'lucide-react';
 import type { MenuItem } from '@/lib/menu-items';
 
@@ -38,6 +39,7 @@ export const accountingMenuItems: MenuItem[] = [
     { href: "/accounting/ledgers?tab=income", icon: TrendingUp, label: "Manage Income" },
     { href: "/accounting/ledgers?tab=expenses", icon: TrendingDown, label: "Manage Expenses" },
     { href: "/accounting/receipt-processor", icon: FileText, label: "Receipt Intake" },
+    { href: "/accounting/receipt-archive", icon: Archive, label: "Receipt Archive" },
     { href: "/accounting/ledgers", icon: BookOpen, label: "BKS Ledger" },
     { href: "/accounting/petty-cash", icon: DollarSign, label: "Petty Cash" },
     { href: "/accounting/accrual-accounting", icon: BookOpen, label: "Accrual Accounting" },

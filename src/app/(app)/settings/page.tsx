@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { SiteImagesSettingsCard } from "@/components/settings/site-images-card";
 import { DocumentNumberingCard } from "@/components/settings/document-numbering-card";
+import { ReceiptOcrRulesCard } from "@/components/settings/receipt-ocr-rules-card";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from "@/components/ui/card";
 
 const profileSchema = z.object({
@@ -315,6 +316,7 @@ export default function SettingsPage() {
             <PlanningRitualsCard />
             <SiteImagesSettingsCard />
             <DocumentNumberingCard />
+            <ReceiptOcrRulesCard />
           </div>
         </div>
       </form>

@@ -7,6 +7,7 @@ import type { AccessLevel } from '@/core/user-profile-service';
 import { canManageTargetRole } from '@/core/rbac';
 import { buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMessage, sendFormNotification } from '@/core/email-service';
 import type { NumberingConfig } from '@/core/document-numbering';
+import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 
 // Canonical tenant shape. isMasterTenant is true only for the single "Ogeemo"
 // organization whose super_admins manage tenant lifecycle (see createTenantWithSuperAdmin).
@@ -29,6 +30,8 @@ export interface Organization {
     businessNumber?: string;
     /** Per-document-type numbering rules (prefix/padding) written by Settings. */
     numbering?: NumberingConfig;
+    /** Receipt OCR rules (Settings > Receipt OCR Rules); validated by normalizeReceiptOcrSettings. */
+    receiptOcrSettings?: ReceiptOcrSettings;
 }
 
 async function requireMasterTenantSuperAdmin() {

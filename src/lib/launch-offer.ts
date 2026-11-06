@@ -18,7 +18,7 @@ export const FOUNDING_OFFER = {
     /** Short offer terms, exactly as promised on the homepage. */
     terms: '6 months free + 50% off for life',
     /** Plain-English price math for the pricing page. */
-    lifetimePrice: '$15 per month for life',
+    lifetimePrice: '$17.50 per month for life',
     /** Total founding spots. */
     totalSpots: 100,
     /**

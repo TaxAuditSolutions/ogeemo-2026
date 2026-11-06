@@ -13,9 +13,10 @@ import { allMenuItems, type MenuItem } from '../src/lib/menu-items';
  *  2. Sidebar groups only reference destinations that exist in the map.
  *     (groupedMenuItems is source-parsed from main-menu.tsx because that
  *     module pulls in React/Firebase, which must not load under node:test.)
- *  3. Retired entries stay retired: Logout lives in the account menu, the
- *     logo replaces Ogeemo Web, AI Co-Pilot's one global entry is the header
- *     pill, and Trash / A-Z Sort belong to Customize My Shortcuts.
+ *  3. Retired entries stay retired: Logout lives in the account menu,
+ *     AI Co-Pilot's one global entry is the header pill, and Trash /
+ *     A-Z Sort belong to Customize My Shortcuts. Ogeemo Web is intentionally
+ *     restored at / and is also available in the Growth group.
  *  4. Guidance is Help-only: no instruction pages in the sidebar menu.
  *  5. Every menu destination resolves to a real page file.
  *
@@ -27,7 +28,6 @@ const REPO_ROOT = path.join(import.meta.dirname, '..');
 
 const FORBIDDEN_HREFS = [
   '/logout',
-  '/',
   '/co-pilot',
   '/action-chips-info',
   '/a-z-sort',
@@ -59,8 +59,17 @@ test('retired entries are not in the sidebar menu', () => {
   for (const retired of FORBIDDEN_HREFS) {
     assert.ok(!hrefs.includes(retired), `${retired} must not be in the sidebar menu`);
   }
-  const labels = allMenuItems.map((item) => item.label);
-  assert.ok(!labels.includes('Ogeemo Web'), 'Ogeemo Web label must not be in the sidebar menu');
+});
+
+test('Ogeemo Web is available once from the sidebar and Growth group', () => {
+  const webItems = allMenuItems.filter((item) => item.label === 'Ogeemo Web');
+  assert.equal(webItems.length, 1);
+  assert.equal(webItems[0].href, '/');
+
+  const source = readFileSync(path.join(REPO_ROOT, 'src', 'components', 'layout', 'main-menu.tsx'), 'utf8');
+  const growth = source.match(/Growth:\s*\{[^}]+\}/)?.[0] ?? '';
+  assert.ok(growth.includes("'/'"), 'Ogeemo Web must be listed in the Growth group');
+  assert.ok(source.includes("item.href !== '/'"), 'the root link must not be active on every page');
 });
 
 test('guidance pages are reachable only through Help', () => {

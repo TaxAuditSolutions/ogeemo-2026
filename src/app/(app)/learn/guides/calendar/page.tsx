@@ -79,6 +79,22 @@ export default function CalendarInstructionsPage() {
                                 <p className="text-sm text-muted-foreground">Capture the "invisible work." Use our unique 5-minute slots to record rapid client consults and administrative tasks that typically fall through the cracks.</p>
                             </div>
                         </div>
+                        <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                            <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider">
+                                <Zap className="h-5 w-5" />
+                                Plan your day by typing into it
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Click any time slot and type a one-line note, such as &quot;Call Dave re MTG&quot;, then press Enter. It appears in the slot and the box stays open for your next one, so you can list your day in the time slots where it belongs. Each hour can be split into up to 12 slots, from 60 minutes down to 5, and a note fills the slot it is typed in. Appointments are entered the same way.
+                            </p>
+                            <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                                <li>Click the all-day row to add a note for the whole day. Press Esc to close the box.</li>
+                                <li>Drag any note to a new time or day to rearrange your plan. Notes that were not finished on time turn amber so you can drag them forward.</li>
+                                <li>Tick the box on a note to mark it done.</li>
+                                <li>Click the expand icon in the entry box, or click a note and choose Open / Edit, to add detail in the Activity Manager. The note keeps its time.</li>
+                                <li>A note is planned time only. It does not count as worked or billable time until you log time on it.</li>
+                            </ul>
+                        </div>
                     </CardContent>
                 </Card>
 

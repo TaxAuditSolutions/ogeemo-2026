@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { type Event } from '@/types/calendar-types';
 import { cn } from '@/lib/utils';
+import { isOverdue } from '@/lib/calendar-quick-entry';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,18 +70,31 @@ export function CalendarEvent({
     router.push('/projects/all');
   };
 
+  const overdue = isOverdue(event, new Date());
+
   return (
     <div
       ref={drag as unknown as React.Ref<HTMLDivElement>}
+      data-calendar-event
+      title={overdue ? 'Not completed - drag it to a new time, or open it for more detail' : undefined}
       className={cn(
         'relative rounded-md p-1 group flex items-center justify-between border w-full my-0.5',
         isCompleted && !isAllDay
           ? 'bg-muted text-muted-foreground border-gray-300'
-          : 'bg-primary/20 text-black border-tan',
+          : overdue
+            ? 'bg-amber-100 text-black border-amber-400'
+            : 'bg-primary/20 text-black border-tan',
         isDragging && 'opacity-50 cursor-grabbing',
         !isDragging && 'cursor-grab'
       )}
     >
+      <Checkbox
+        checked={isCompleted}
+        aria-label={isCompleted ? 'Mark as not completed' : 'Mark as completed'}
+        className="ml-1 h-3.5 w-3.5 flex-shrink-0"
+        onClick={(e) => e.stopPropagation()}
+        onCheckedChange={() => onToggleComplete(event)}
+      />
       <div
         className="flex-1 overflow-hidden px-2 py-1"
         onClick={() => onEdit(event)}

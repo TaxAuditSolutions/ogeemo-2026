@@ -26,10 +26,10 @@ import {
   BookOpen,
   BellRing,
   BrainCircuit,
-  Plus,
   ChevronDown,
   ArrowRight,
   ListTodo,
+  PlayCircle,
   Briefcase,
   Lightbulb,
 } from 'lucide-react';
@@ -56,6 +56,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import {
+  addTask,
   getTasksForUser,
   getProjectById,
   updateTask,
@@ -83,6 +84,8 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 import { CalendarEvent, ItemTypes } from './CalendarEvent';
+import { QuickEntryInput } from './quick-entry-input';
+import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
 import { useDrop } from 'react-dnd';
 import {
   DropdownMenu,
@@ -104,7 +107,19 @@ const isAllDayEvent = (event: Event): boolean => {
   return differenceInMinutes(new Date(event.end), new Date(event.start)) >= 24 * 60 - 1;
 };
 
-const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDrop: (item: Event, date: Date) => void, children: React.ReactNode, onClick: () => void }) => {
+/** True when a click landed on an event or the entry box, which handle their own clicks. */
+const clickedOnItem = (target: EventTarget | null): boolean =>
+    target instanceof HTMLElement && Boolean(target.closest('[data-calendar-event],[data-quick-entry]'));
+
+interface QuickEntryHandlers {
+    /** Saves a one-line entry for the given time span. Resolves true when saved. */
+    onQuickAdd: (title: string, start: Date, end: Date) => Promise<boolean>;
+    /** Opens the Activity Manager for the span, saving typed text first. */
+    onQuickExpand: (title: string, start: Date, end: Date, isAllDay: boolean) => Promise<void>;
+}
+
+const AllDayDropZone = ({ date, onDrop, children, onQuickAdd, onQuickExpand }: { date: Date, onDrop: (item: Event, date: Date) => void, children: React.ReactNode } & QuickEntryHandlers) => {
+    const [isEntering, setIsEntering] = React.useState(false);
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.EVENT,
         drop: (item: Event) => onDrop(item, date),
@@ -114,23 +129,32 @@ const AllDayDropZone = ({ date, onDrop, children, onClick }: { date: Date, onDro
         }),
     }), [date, onDrop]);
 
+    const dayStart = startOfDay(date);
+    const dayEnd = endOfDay(date);
+
     return (
         <div 
             ref={(node) => { drop(node); }} 
-            onClick={onClick}
-            className={cn("relative h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-pointer hover:bg-accent transition-colors group", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
+            onClick={(e) => { if (!clickedOnItem(e.target)) setIsEntering(true); }}
+            title={isEntering ? undefined : 'Click to add an all-day note'}
+            className={cn("relative h-auto p-1 border-t mt-2 space-y-1 min-h-[3.5rem] cursor-text hover:bg-accent transition-colors group", isOver && canDrop && "bg-primary/20 ring-1 ring-primary")}
         >
-            <Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 h-7 whitespace-nowrap bg-white px-2.5 text-xs shadow-md opacity-0 transition-opacity group-hover:opacity-100">
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Activity Manager
-            </Button>
             <div className="relative z-10 flex flex-col gap-1">
                 {children}
+                {isEntering && (
+                    <QuickEntryInput
+                        placeholder="All-day note, press Enter"
+                        onSave={(title) => onQuickAdd(title, dayStart, dayEnd)}
+                        onExpand={(title) => onQuickExpand(title, dayStart, dayEnd, true)}
+                        onClose={() => setIsEntering(false)}
+                    />
+                )}
             </div>
         </div>
     );
 };
 
-interface TimeSlotProps {
+interface TimeSlotProps extends QuickEntryHandlers {
   date: Date;
   hour: number;
   slot: number;
@@ -140,10 +164,10 @@ interface TimeSlotProps {
   onEdit: (event: Event) => void;
   onDelete: (event: Event) => void;
   onToggleComplete: (event: Event) => void;
-  router: any;
 }
 
-const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, onDelete, onToggleComplete, router }: TimeSlotProps) => {
+const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, onDelete, onToggleComplete, onQuickAdd, onQuickExpand }: TimeSlotProps) => {
+  const [isEntering, setIsEntering] = React.useState(false);
   const slotDuration = 60 / slotsPerHour;
   const slotStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
   const slotEndTime = addMinutes(slotStartTime, slotDuration - 1);
@@ -161,25 +185,20 @@ const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, o
       }),
   }), [date, hour, slot, slotsPerHour, onDrop]);
   
-  const handleSlotClick = () => {
-      const calculatedEndTime = addMinutes(slotStartTime, slotDuration);
-      const startTimeString = slotStartTime.toISOString();
-      const endTimeString = calculatedEndTime.toISOString();
-      router.push(`/event-manager?start=${startTimeString}&end=${endTimeString}`);
-  };
+  // A quick entry fills the slot it is typed in (5 to 60 minutes, whatever the slot is set to).
+  const quickEnd = addMinutes(slotStartTime, slotDuration);
 
   return (
     <div
       ref={(node) => { drop(node); }}
+      onClick={(e) => { if (!clickedOnItem(e.target)) setIsEntering(true); }}
+      title={isEntering ? undefined : `Click to add a note at ${format(slotStartTime, 'h:mm a')}`}
       className={cn(
-          "relative h-full flex items-start p-1 gap-1 group", 
+          "relative h-full flex items-start p-1 gap-1 group cursor-text hover:bg-accent/40 transition-colors",
           isOver && canDrop && "bg-primary/20",
           slot < slotsPerHour - 1 && "border-b border-b-gray-200"
       )}
     >
-      <Button variant="outline" size="sm" aria-label="Open Activity Manager for this time" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 h-7 whitespace-nowrap bg-white px-2.5 text-xs shadow-md opacity-0 transition-opacity group-hover:opacity-100" onClick={handleSlotClick}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> Activity Manager
-      </Button>
       <div className="flex-1 flex flex-col gap-1 w-full h-full">
         {slotEvents.map(event => (
           <CalendarEvent
@@ -190,6 +209,13 @@ const TimeSlot = ({ date, hour, slot, slotsPerHour, allEvents, onDrop, onEdit, o
             onToggleComplete={onToggleComplete}
           />
         ))}
+        {isEntering && (
+          <QuickEntryInput
+            onSave={(title) => onQuickAdd(title, slotStartTime, quickEnd)}
+            onExpand={(title) => onQuickExpand(title, slotStartTime, quickEnd, false)}
+            onClose={() => setIsEntering(false)}
+          />
+        )}
       </div>
     </div>
   );
@@ -218,12 +244,14 @@ export function CalendarView() {
     setIsClient(true);
   }, []);
 
-  const loadEvents = React.useCallback(async () => {
+  // `silent` refreshes the items in place (after a drag or a quick entry) without swapping the
+  // whole calendar for the loading skeleton, which would flash and close the entry box.
+  const loadEvents = React.useCallback(async (silent: boolean = false) => {
     if (!user) {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     try {
       const fetchedTasks = await getTasksForUser(user.uid);
       setAllEvents(fetchedTasks);
@@ -247,7 +275,7 @@ export function CalendarView() {
   }, [user, toast, searchParams]);
 
   React.useEffect(() => {
-    loadEvents();
+    loadEvents(false);
   }, [loadEvents]);
 
   React.useEffect(() => {
@@ -330,7 +358,7 @@ export function CalendarView() {
     try {
       await deleteTask(eventToDelete.id);
       toast({ title: 'Event Deleted' });
-      loadEvents();
+      loadEvents(true);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -347,7 +375,7 @@ export function CalendarView() {
     try {
       await updateTask(event.id, { status: newStatus });
       toast({ title: `Task ${newStatus === 'done' ? 'completed' : 'reopened'}` });
-      loadEvents();
+      loadEvents(true);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to update task status' });
     }
@@ -358,14 +386,14 @@ export function CalendarView() {
   const handleDrop = useCallback(async (item: Event, date: Date, hour: number, slot: number) => {
       const slotsPerHour = slotsConfig[hour] || 1;
       const slotDuration = 60 / slotsPerHour;
-      const newStartTime = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
-      const originalDuration = item.end && item.start ? differenceInMinutes(item.end, item.start) : 30;
-      const newEndTime = addMinutes(newStartTime, originalDuration);
+      const slotStart = set(date, { hours: hour, minutes: slot * slotDuration, seconds: 0, milliseconds: 0 });
+      // A timed item keeps its length; an all-day item takes the length of the slot it lands in.
+      const { start: newStartTime, end: newEndTime } = droppedTimes(item, slotStart, slotDuration);
       
       try {
-          await updateTask(item.id, { start: newStartTime, end: newEndTime });
+          await updateTask(item.id, { start: newStartTime, end: newEndTime, isScheduled: true });
           toast({ title: "Event Rescheduled", description: `"${item.title}" moved to ${format(newStartTime, 'PPP p')}.`});
-          await loadEvents();
+          await loadEvents(true);
       } catch (error: any) {
           console.error("Failed to update event time:", error);
           toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save the new time.'});
@@ -385,12 +413,50 @@ export function CalendarView() {
         };
         await updateTask(item.id, updatePayload);
         toast({ title: "Event Updated", description: `"${item.title}" is now an all-day event for ${format(newStart, 'PPP')}.`});
-        await loadEvents();
+        await loadEvents(true);
     } catch (error: any) {
         console.error("Failed to update event to all-day:", error);
         toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not make the event all-day.' });
     }
   }, [loadEvents, toast]);
+
+  // Saves a one-line entry as a scheduled to-do and shows it straight away.
+  const handleQuickAdd = useCallback(async (title: string, start: Date, end: Date): Promise<boolean> => {
+    if (!user) return false;
+    const entry = buildQuickEntry({ title, start, end, userId: user.uid });
+    if (!entry) return false;
+    try {
+      const created = await addTask(entry);
+      setAllEvents((current) => [...current, created]);
+      return true;
+    } catch (error: any) {
+      console.error('Failed to save quick entry:', error);
+      toast({ variant: 'destructive', title: 'Could not save the note', description: error?.message || 'Please try again.' });
+      return false;
+    }
+  }, [user, toast]);
+
+  // Opens the Activity Manager for a slot. Typed text is saved first, so nothing is lost and
+  // the Activity Manager opens that saved item with the slot's time intact.
+  const handleQuickExpand = useCallback(async (title: string, start: Date, end: Date, isAllDay: boolean) => {
+    if (title.trim()) {
+      const entry = user ? buildQuickEntry({ title, start, end, userId: user.uid }) : null;
+      if (entry) {
+        try {
+          const created = await addTask(entry);
+          router.push(`/event-manager?eventId=${created.id}`);
+          return;
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Could not save the note', description: error?.message || 'Please try again.' });
+          return;
+        }
+      }
+    }
+    const params = new URLSearchParams({ start: start.toISOString() });
+    if (isAllDay) params.set('isAllDay', 'true');
+    else params.set('end', end.toISOString());
+    router.push(`/event-manager?${params.toString()}`);
+  }, [user, router, toast]);
   
   const getEventsForDay = (date: Date) => {
     const dayStart = startOfDay(date);
@@ -401,11 +467,6 @@ export function CalendarView() {
       event.end &&
       isWithinInterval(dayStart, { start: new Date(event.start), end: new Date(event.end) })
     );
-  };
-
-  const handleAllDayClick = (date: Date) => {
-      const startTimeString = date.toISOString();
-      router.push(`/event-manager?start=${startTimeString}&isAllDay=true`);
   };
 
   if (isLoading) {
@@ -452,6 +513,16 @@ export function CalendarView() {
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>View your unassigned tasks</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" asChild size="sm">
+                            <Link href="/event-manager">
+                                <PlayCircle className="mr-2 h-4 w-4" /> Activity Manager
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Log time and add detail to your activities</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -682,7 +753,7 @@ export function CalendarView() {
                 return (
                     <div key={index} className={cn("text-center py-2 border-b border-b-black flex flex-col", index < visibleDates.length - 1 && "border-r border-r-black")}>
                         <p className={cn('font-semibold', dayCount > 14 ? 'text-xs' : 'text-base')}>{format(date, 'EEE d')}</p>
-                        <AllDayDropZone date={date} onDrop={handleAllDayDrop} onClick={() => handleAllDayClick(date)}>
+                        <AllDayDropZone date={date} onDrop={handleAllDayDrop} onQuickAdd={handleQuickAdd} onQuickExpand={handleQuickExpand}>
                             {allDayEvents.map(event => (
                                 <CalendarEvent
                                     key={event.id}
@@ -743,7 +814,8 @@ export function CalendarView() {
                                           onEdit={handleEditEvent}
                                           onDelete={setEventToDelete}
                                           onToggleComplete={handleToggleComplete}
-                                          router={router}
+                                          onQuickAdd={handleQuickAdd}
+                                          onQuickExpand={handleQuickExpand}
                                         />
                                     ))}
                                 </div>

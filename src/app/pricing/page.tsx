@@ -75,7 +75,7 @@ export default function PricingPage() {
               <p className="text-2xl font-bold font-headline">{FOUNDING_OFFER.terms}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 The first {FOUNDING_OFFER.totalSpots} members — the Founders — join for 6 months free, then pay {FOUNDING_OFFER.lifetimePrice} (50% off ${MEMBERSHIP_FEE}).
-                After the founding spots close, membership opens with a {STANDARD_TRIAL_DAYS}-day free trial at ${MEMBERSHIP_FEE}/mo for up to 5 users.
+                After the founding spots close, new membership opens with a {STANDARD_TRIAL_DAYS}-day free trial at ${MEMBERSHIP_FEE}/mo for up to 5 users.
               </p>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary/80">
                 {[foundingClaimLabel(), foundingCloseLabel() ? `Closes ${foundingCloseLabel()}` : null].filter(Boolean).join(' • ')}

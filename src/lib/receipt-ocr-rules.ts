@@ -24,6 +24,9 @@ export function buildExtractionPrompt(settings: ReceiptOcrSettings): string {
   } else if (settings.dateFormat === 'ymd') {
     lines.push('Read numeric dates as year-month-day.');
   }
+  if (settings.taxCalculation === 'from_total') {
+    lines.push('Be especially careful to read total_amount exactly as printed: it is the amount paid. Also read the tax shown on the document into tax when one is printed, but never work it out yourself.');
+  }
   if (settings.taxMode === 'included') {
     lines.push('Prices on this document already include tax: total_amount is the amount paid, tax is the tax portion contained in it, and subtotal is total_amount minus tax.');
   } else if (settings.taxMode === 'excluded') {
@@ -59,6 +62,8 @@ export interface RuledReceiptExtraction {
 export interface ReceiptSuggestions {
   category?: string;
   ledgerType?: ReceiptLedgerType;
+  /** Id of the tax choice from the matching vendor rule. */
+  taxChoice?: string;
 }
 
 export function isValidIsoDate(value: string): boolean {
@@ -114,6 +119,7 @@ export function applyOcrRules(
     suggested: {
       ...(rule?.category ? { category: rule.category } : {}),
       ...(rule?.ledgerType ? { ledgerType: rule.ledgerType } : {}),
+      ...(rule?.taxChoice ? { taxChoice: rule.taxChoice } : {}),
     },
   };
 }

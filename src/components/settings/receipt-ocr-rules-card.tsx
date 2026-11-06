@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { ReadingFields } from './receipt-ocr-reading-fields';
 import { DefaultsFields, ValidationFields } from './receipt-ocr-validation-fields';
 import { ReceiptVendorRulesEditor } from './receipt-vendor-rules-editor';
+import { TaxFields } from './receipt-tax-fields';
 import { RecordKeepingFields } from './receipt-record-keeping-fields';
 import { useReceiptOcrRules } from './receipt-ocr-rules-state';
 
@@ -59,6 +60,10 @@ export function ReceiptOcrRulesCard() {
           <ReadingFields {...fieldProps} />
         </Section>
         <Separator />
+        <Section title="Tax" description="How the tax on a receipt is worked out, and the tax types you can choose from.">
+          <TaxFields {...fieldProps} />
+        </Section>
+        <Separator />
         <Section title="Defaults for new receipts" description="Applied when a receipt is added.">
           <DefaultsFields {...fieldProps} />
         </Section>
@@ -66,6 +71,7 @@ export function ReceiptOcrRulesCard() {
         <Section title="Vendor rules" description="Clean up vendor names and pre-fill the category and ledger type for vendors you buy from often.">
           <ReceiptVendorRulesEditor
             rules={rules.value.vendorRules}
+            taxChoices={rules.value.taxCalculation === 'from_total' ? rules.value.taxChoices : []}
             onChange={(vendorRules) => rules.patch({ vendorRules })}
             disabled={rules.disabled}
           />

@@ -8,9 +8,13 @@
  */
 import {
   DEFAULT_RECEIPT_OCR_SETTINGS,
+  DEFAULT_TAX_CHOICES,
   HARD_MAX_FILE_MB,
   MAX_CUSTOM_INSTRUCTIONS,
+  MAX_TAX_CHOICES,
   MAX_VENDOR_RULES,
+  TAX_CALCULATION_OPTIONS,
+  type ReceiptTaxChoice,
   OCR_DATE_FORMATS,
   OCR_DUPLICATE_MODES,
   OCR_LANGUAGES,
@@ -43,7 +47,26 @@ function cleanText(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maxLength) : '';
 }
 
-function normalizeVendorRules(input: unknown): ReceiptVendorRule[] {
+/** Keeps well-formed tax choices with unique ids; a missing list means "use the starting list". */
+export function normalizeTaxChoices(input: unknown): ReceiptTaxChoice[] {
+  if (!Array.isArray(input)) return DEFAULT_TAX_CHOICES.map((choice) => ({ ...choice }));
+  const seen = new Set<string>();
+  const choices: ReceiptTaxChoice[] = [];
+  for (const item of input) {
+    if (!item || typeof item !== 'object') continue;
+    const raw = item as Record<string, unknown>;
+    const id = cleanText(raw.id, 40).replace(/[^A-Za-z0-9_-]/g, '');
+    const name = cleanText(raw.name, 40);
+    const rate = clampNumber(raw.rate, 0, 100, NaN, 3);
+    if (!id || !name || !Number.isFinite(rate) || seen.has(id)) continue;
+    seen.add(id);
+    choices.push({ id, name, rate });
+    if (choices.length >= MAX_TAX_CHOICES) break;
+  }
+  return choices;
+}
+
+function normalizeVendorRules(input: unknown, taxChoices: readonly ReceiptTaxChoice[]): ReceiptVendorRule[] {
   const rules: ReceiptVendorRule[] = [];
   for (const item of Array.isArray(input) ? input : []) {
     if (!item || typeof item !== 'object') continue;
@@ -55,11 +78,15 @@ function normalizeVendorRules(input: unknown): ReceiptVendorRule[] {
     const ledgerType = RECEIPT_LEDGER_TYPES.includes(rule.ledgerType as ReceiptLedgerType)
       ? (rule.ledgerType as ReceiptLedgerType)
       : undefined;
+    const taxChoice = typeof rule.taxChoice === 'string' && taxChoices.some((choice) => choice.id === rule.taxChoice)
+      ? (rule.taxChoice as string)
+      : undefined;
     rules.push({
       contains,
       ...(vendorName ? { vendorName } : {}),
       ...(category ? { category } : {}),
       ...(ledgerType ? { ledgerType } : {}),
+      ...(taxChoice ? { taxChoice } : {}),
     });
     if (rules.length >= MAX_VENDOR_RULES) break;
   }
@@ -79,6 +106,10 @@ export function normalizeReceiptOcrSettings(input: unknown): ReceiptOcrSettings 
   const defaults = DEFAULT_RECEIPT_OCR_SETTINGS;
 
   const currency = cleanText(raw.defaultCurrency, 3).toUpperCase();
+  const taxChoices = normalizeTaxChoices(raw.taxChoices);
+  const defaultTaxChoice = typeof raw.defaultTaxChoice === 'string' && taxChoices.some((choice) => choice.id === raw.defaultTaxChoice)
+    ? raw.defaultTaxChoice
+    : '';
   const requiredRaw = Array.isArray(raw.requiredFields) ? raw.requiredFields : defaults.requiredFields;
   const requiredFields = RECEIPT_FIELD_OPTIONS.map((o) => o.value).filter((field) =>
     requiredRaw.includes(field)
@@ -96,9 +127,12 @@ export function normalizeReceiptOcrSettings(input: unknown): ReceiptOcrSettings 
     customInstructions: cleanText(raw.customInstructions, MAX_CUSTOM_INSTRUCTIONS),
     autoRunOcrOnUpload: raw.autoRunOcrOnUpload === true,
     maxFileSizeMB: Math.round(clampNumber(raw.maxFileSizeMB, 1, HARD_MAX_FILE_MB, defaults.maxFileSizeMB, 0)),
+    taxCalculation: oneOf(raw.taxCalculation, TAX_CALCULATION_OPTIONS.map((o) => o.value), defaults.taxCalculation),
+    taxChoices,
+    defaultTaxChoice,
     defaultLedgerType: oneOf(raw.defaultLedgerType, RECEIPT_LEDGER_TYPES, defaults.defaultLedgerType),
     defaultCategory: cleanText(raw.defaultCategory, 120),
-    vendorRules: normalizeVendorRules(raw.vendorRules),
+    vendorRules: normalizeVendorRules(raw.vendorRules, taxChoices),
     requiredFields,
     amountTolerance: clampNumber(raw.amountTolerance, 0, 10, defaults.amountTolerance, 2),
     expectedTaxRates: normalizeTaxRates(raw.expectedTaxRates),

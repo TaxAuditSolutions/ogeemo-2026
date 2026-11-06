@@ -62,7 +62,7 @@ Stored on the organization document as `receiptOcrSettings`; validated by `norma
 - **No approval step.** Review flags and the posting gate exist, but there is no recorded approver/time or snapshot of approved values. The owner chose not to build it.
 - **Posting runs from the browser** and is not idempotent. It refuses an already-posted receipt, but a double-click race or network retry could still duplicate a ledger entry. A server-side posting action would fix this and also let Firestore rules enforce approval.
 - **Receipts added before storage existed** have no stored file. Reopening the same file with **Open File** stores it. They cannot be posted until then.
-- **OCR needs the file in the browser session.** After a refresh, reopen the file with Open File before running OCR on a receipt.
+- **OCR and the preview read the stored copy.** After a refresh nothing needs reopening. Only receipts with no stored file (added before storage existed, or while scans were off) need Open File once.
 - **Old ledger entries** posted before this change carry no `receiptId`, so their document number is not a link.
 - **Retention, backup and a paper-destruction procedure are undefined.** Stored receipts should be backed up and kept for the required period; confirm with the accountant.
 - Legacy sample records are hidden by `isVisibleReceiptQueueItem()`; they still exist in Firestore.
@@ -79,3 +79,12 @@ Design inputs only; the final procedure needs review by the organization's accou
 ## Working-tree note
 
 No commit has been created. The tree holds a mix of staged and unstaged changes; do not discard them.
+
+## Tax (calculate from the total)
+
+- Default setting: OCR keeps only the **total**. The reviewer chooses a **tax type** (HST/GST/PST/combined rates, editable in Settings) and src/lib/receipt-tax.ts calculates tax = total x rate / (100 + rate), rounded to the cent, with net = total - tax. Net + tax always equals the total.
+- The tax OCR read is stored as `printedTaxAmount` for comparison only. A warning flags a difference of more than 2 cents; no tax type chosen is a blocking error.
+- Tax type precedence after OCR: the reviewer's earlier choice, the vendor rule, the workspace default.
+- The alternative setting, 'Use the tax printed on the receipt', restores the old behaviour.
+- Rates are treated as a percentage of the pre-tax amount on a tax-included total. Mixed receipts (taxable and exempt items) need 'Enter tax by hand'. The starting list of rates is a convenience, not tax advice.
+- Ledger entries now carry the chosen tax type and rate (payable bills previously always said GST).

@@ -5,10 +5,14 @@
 
 export type ReceiptLedgerType = 'expense' | 'payable_bill' | 'income';
 
+// Google retires models over time (2.5 Pro and 2.5 Flash-Lite already return 404 for accounts that
+// did not use them before, and 2.5 Flash is deprecated). A saved model that is no longer listed here
+// falls back to the default in normalizeReceiptOcrSettings, so an old setting never breaks OCR.
 export const OCR_MODELS = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash - balanced (recommended)' },
-  { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite - fastest, lowest cost' },
-  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro - most accurate, slowest' },
+  { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite - fast, lowest cost (recommended)' },
+  { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash - more accurate' },
+  { value: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash - accurate' },
+  { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (preview) - most accurate, slowest' },
 ] as const;
 export type OcrModelName = (typeof OCR_MODELS)[number]['value'];
 
@@ -45,6 +49,46 @@ export const OCR_TAX_MODES = [
 ] as const;
 export type OcrTaxMode = (typeof OCR_TAX_MODES)[number]['value'];
 
+/**
+ * How tax is worked out for a receipt.
+ *  from_total   - OCR reads only the total; the reviewer picks a tax type and the tax is calculated
+ *                 from it. Net + tax always equals the total, and the tax printed on the receipt
+ *                 is kept only as a reference for comparison.
+ *  from_receipt - the net and tax printed on the receipt are used as OCR read them.
+ */
+export const TAX_CALCULATION_OPTIONS = [
+  { value: 'from_total', label: 'Calculate from the total (recommended)' },
+  { value: 'from_receipt', label: 'Use the tax printed on the receipt' },
+] as const;
+export type TaxCalculation = (typeof TAX_CALCULATION_OPTIONS)[number]['value'];
+
+/** A tax the reviewer can choose for a receipt, such as "HST 13%". The rate is a percentage of the pre-tax amount. */
+export interface ReceiptTaxChoice {
+  id: string;
+  name: string;
+  rate: number;
+}
+
+/** Special choice on a receipt: the reviewer enters the tax amount by hand (mixed or exempt items). */
+export const RECEIPT_TAX_MANUAL = '__manual__';
+export const MAX_TAX_CHOICES = 20;
+
+/**
+ * Starting list for a new workspace. Rates change and differ by province, so the list is
+ * editable in Settings; check each rate before relying on it.
+ */
+export const DEFAULT_TAX_CHOICES: readonly ReceiptTaxChoice[] = [
+  { id: 'none', name: 'No tax', rate: 0 },
+  { id: 'gst-5', name: 'GST 5%', rate: 5 },
+  { id: 'hst-13', name: 'HST 13%', rate: 13 },
+  { id: 'hst-14', name: 'HST 14%', rate: 14 },
+  { id: 'hst-15', name: 'HST 15%', rate: 15 },
+  { id: 'pst-6', name: 'PST 6%', rate: 6 },
+  { id: 'pst-7', name: 'PST 7%', rate: 7 },
+  { id: 'gst-pst-11', name: 'GST + PST 11%', rate: 11 },
+  { id: 'gst-pst-12', name: 'GST + PST 12%', rate: 12 },
+];
+
 export const OCR_DUPLICATE_MODES = [
   { value: 'file', label: 'Identical file only' },
   { value: 'file_and_fields', label: 'Identical file, and flag same vendor + date + total' },
@@ -80,6 +124,8 @@ export interface ReceiptVendorRule {
   category?: string;
   /** Default ledger type for this vendor. */
   ledgerType?: ReceiptLedgerType;
+  /** Id of the tax choice this vendor's receipts use (see ReceiptTaxChoice). */
+  taxChoice?: string;
 }
 
 /** simple = paper receipts are the record; audit = digital controls; custom = choose each control. */
@@ -102,6 +148,11 @@ export interface ReceiptOcrSettings {
   customInstructions: string;
   autoRunOcrOnUpload: boolean;
   maxFileSizeMB: number;
+  // Tax
+  taxCalculation: TaxCalculation;
+  taxChoices: ReceiptTaxChoice[];
+  /** Id of the tax choice new receipts start with; empty means the reviewer chooses each time. */
+  defaultTaxChoice: string;
   // Defaults for new receipts
   defaultLedgerType: ReceiptLedgerType;
   defaultCategory: string;
@@ -121,7 +172,7 @@ export const DEFAULT_RECEIPT_OCR_SETTINGS: ReceiptOcrSettings = {
   recordKeepingMode: 'simple',
   keepScan: true,
   requireScanToPost: false,
-  model: 'gemini-2.5-flash',
+  model: 'gemini-3.5-flash-lite',
   language: 'auto',
   dateFormat: 'auto',
   taxMode: 'auto',
@@ -129,6 +180,9 @@ export const DEFAULT_RECEIPT_OCR_SETTINGS: ReceiptOcrSettings = {
   customInstructions: '',
   autoRunOcrOnUpload: false,
   maxFileSizeMB: 10,
+  taxCalculation: 'from_total',
+  taxChoices: DEFAULT_TAX_CHOICES.map((choice) => ({ ...choice })),
+  defaultTaxChoice: '',
   defaultLedgerType: 'expense',
   defaultCategory: '',
   vendorRules: [],

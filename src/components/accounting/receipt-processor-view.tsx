@@ -22,12 +22,17 @@ import type { ExtractionResult } from '@/lib/receipt-ocr';
 import { dedupeById, getOcrEligibleItems, isReceiptEligibleForOcr, mergeQueueItems } from '@/lib/receipt-queue-utils';
 import { DEFAULT_RECEIPT_OCR_SETTINGS, maxReceiptFileBytes, type ReceiptOcrSettings } from '@/lib/receipt-ocr-settings';
 import { blockingFlags, findPossibleDuplicates, reviewReceipt, type ReceiptFlag } from '@/lib/receipt-review-checks';
+import { fetchWithSession } from '@/lib/server-session';
+import { isTaxCalculated, taxFieldsForChoice, taxFieldsForTotal } from '@/lib/receipt-tax';
+import { RECEIPT_TAX_MANUAL } from '@/lib/receipt-ocr-options';
 import { postingBlockReason, resolveRecordKeeping } from '@/lib/receipt-record-keeping';
 import { receiptFileUrl } from '@/lib/receipt-storage-utils';
 import { resolveOrgId } from '@/services/branding-service';
 import { loadReceiptOcrSettingsForOrg } from '@/services/receipt-ocr-settings-service';
+import { ReceiptPreview } from './receipt-viewer-dialog';
 import {
   deleteReceiptQueueItem,
+  fetchStoredReceiptFile,
   getReceiptQueueItems,
   importLocalReceiptToQueue,
   postReceiptToLedger,
@@ -59,7 +64,9 @@ export function ReceiptProcessorView() {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [ocrSettings, setOcrSettings] = React.useState<ReceiptOcrSettings>(DEFAULT_RECEIPT_OCR_SETTINGS);
   // Set after Open File when the workspace runs OCR automatically on upload.
-  const [autoOcrId, setAutoOcrId] = React.useState<string | null>(null);
+  const [autoOcrIds, setAutoOcrIds] = React.useState<string[]>([]);
+  // Progress while several files are being added: how many are finished out of the total.
+  const [addProgress, setAddProgress] = React.useState<{ done: number; total: number } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const selected = React.useMemo(
@@ -206,6 +213,8 @@ export function ReceiptProcessorView() {
         netAmount: selected.netAmount,
         totalAmount: selected.totalAmount,
         taxAmount: selected.taxAmount,
+        taxType: selected.taxType,
+        taxRate: selected.taxRate,
         proposedCompany: selected.proposedCompany,
         proposedCategory: selected.proposedCategory,
         proposedDescription: selected.proposedDescription,
@@ -253,12 +262,12 @@ export function ReceiptProcessorView() {
     });
   }, []);
 
-  const handleOpenFile = React.useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
+  type AddFileOutcome =
+    | { kind: 'added' | 'existing'; fileName: string; item: ReceiptStagingItem; storeError: string }
+    | { kind: 'failed'; fileName: string; error: string };
 
-    setAddingLocalFile(true);
+  // Adds one chosen file to the queue and stores its scan. It never throws: the outcome says what happened.
+  const addOneFile = React.useCallback(async (file: File): Promise<AddFileOutcome> => {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const sizeError = validateReceiptFileSize(bytes.byteLength);
@@ -294,38 +303,91 @@ export function ReceiptProcessorView() {
 
       // The preview and OCR bytes stay in this browser session as well.
       rememberLocalPreview(queuedItem.id, bytes, mimeType);
-      setSelectedId(queuedItem.id);
-      setItems((current) => mergeQueueItems(current, [queuedItem]));
-      if (isReceiptEligibleForOcr(queuedItem)) {
-        setSelectedForOcrIds((current) => current.includes(queuedItem.id) ? current : [...current, queuedItem.id]);
+      const added = queuedItem;
+      setItems((current) => mergeQueueItems(current, [added]));
+      if (isReceiptEligibleForOcr(added)) {
+        setSelectedForOcrIds((current) => current.includes(added.id) ? current : [...current, added.id]);
       }
+      return { kind: result.status === 'created' ? 'added' : 'existing', fileName: file.name, item: added, storeError };
+    } catch (error: any) {
+      console.error('Failed to add local receipt', error);
+      return { kind: 'failed', fileName: file.name, error: error?.message || 'Unable to add the receipt to the queue.' };
+    }
+  }, [controls, ocrSettings, rememberLocalPreview]);
 
-      if (storeError) {
+  const handleOpenFile = React.useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    setAddingLocalFile(true);
+    const outcomes: AddFileOutcome[] = [];
+    try {
+      // One at a time, so document numbers are claimed in order and can never collide.
+      for (let index = 0; index < files.length; index += 1) {
+        setAddProgress({ done: index, total: files.length });
+        outcomes.push(await addOneFile(files[index]));
+      }
+    } finally {
+      setAddProgress(null);
+      setAddingLocalFile(false);
+    }
+
+    const added = outcomes.filter((outcome): outcome is Extract<AddFileOutcome, { item: ReceiptStagingItem }> => outcome.kind !== 'failed');
+    const lastAdded = added[added.length - 1];
+    if (lastAdded) setSelectedId(lastAdded.item.id);
+
+    // Run OCR for the new receipts when the workspace rule "run OCR automatically" is on.
+    if (ocrSettings.autoRunOcrOnUpload) {
+      const autoIds = added
+        .filter((outcome) => !outcome.storeError && isReceiptEligibleForOcr(outcome.item))
+        .map((outcome) => outcome.item.id);
+      if (autoIds.length > 0) setAutoOcrIds(autoIds);
+    }
+
+    if (files.length === 1) {
+      const outcome = outcomes[0];
+      if (outcome.kind === 'failed') {
+        toast({ variant: 'destructive', title: 'Could not add file', description: outcome.error });
+      } else if (outcome.storeError) {
         toast({
           variant: 'destructive',
           title: 'Added, but the scan was not stored',
           description: controls.requireScanToPost
-            ? `${storeError} The receipt cannot be posted until its scan is stored. Use Open File to try again.`
-            : `${storeError} Its document number will not open a scan in the ledger. Use Open File to try again.`,
+            ? `${outcome.storeError} The receipt cannot be posted until its scan is stored. Use Open File to try again.`
+            : `${outcome.storeError} Its document number will not open a scan in the ledger. Use Open File to try again.`,
         });
       } else {
         toast({
-          title: result.status === 'created' ? 'Added to receipts queue' : controls.keepScan ? 'Receipt scan stored' : 'Already in the queue',
-          description: result.status === 'created'
-            ? `${file.name} was saved as ${queuedItem.auditReferenceId}${controls.keepScan ? '' : '. Write this number on the paper receipt'} and is ready for OCR.`
-            : `${file.name} matches ${queuedItem.auditReferenceId ?? 'an existing receipt'}.`,
+          title: outcome.kind === 'added' ? 'Added to receipts queue' : controls.keepScan ? 'Receipt scan stored' : 'Already in the queue',
+          description: outcome.kind === 'added'
+            ? `${outcome.fileName} was saved as ${outcome.item.auditReferenceId}${controls.keepScan ? '' : '. Write this number on the paper receipt'} and is ready for OCR.`
+            : `${outcome.fileName} matches ${outcome.item.auditReferenceId ?? 'an existing receipt'}.`,
         });
-        if (ocrSettings.autoRunOcrOnUpload && isReceiptEligibleForOcr(queuedItem)) {
-          setAutoOcrId(queuedItem.id);
-        }
       }
-    } catch (error: any) {
-      console.error('Failed to add local receipt', error);
-      toast({ variant: 'destructive', title: 'Could not add file', description: error?.message || 'Unable to add the receipt to the queue.' });
-    } finally {
-      setAddingLocalFile(false);
+      return;
     }
-  }, [controls, ocrSettings, rememberLocalPreview, toast]);
+
+    const newCount = outcomes.filter((outcome) => outcome.kind === 'added').length;
+    const existingCount = outcomes.filter((outcome) => outcome.kind === 'existing').length;
+    const failures = outcomes.filter((outcome): outcome is Extract<AddFileOutcome, { kind: 'failed' }> => outcome.kind === 'failed');
+    const notStored = added.filter((outcome) => outcome.storeError);
+    const parts = [
+      `${newCount} added`,
+      existingCount > 0 ? `${existingCount} already in the queue` : '',
+      failures.length > 0 ? `${failures.length} could not be added` : '',
+      notStored.length > 0 ? `${notStored.length} added without a stored scan` : '',
+    ].filter(Boolean);
+    const problems = [
+      ...failures.map((outcome) => `${outcome.fileName}: ${outcome.error}`),
+      ...notStored.map((outcome) => `${outcome.fileName}: ${outcome.storeError}`),
+    ];
+    toast({
+      variant: problems.length > 0 ? 'destructive' : undefined,
+      title: `${files.length} files processed`,
+      description: `${parts.join(', ')}.${problems.length > 0 ? ` ${problems.slice(0, 2).join(' ')}${problems.length > 2 ? ` (and ${problems.length - 2} more)` : ''} Use Open File to retry those.` : ''}`,
+    });
+  }, [addOneFile, controls, ocrSettings, toast]);
 
   const runOcrForReceipts = React.useCallback(async (requestedIds: string[]) => {
     if (ocrRunning) return;
@@ -346,9 +408,19 @@ export function ReceiptProcessorView() {
 
       try {
         let extraction: ExtractionResult;
-        const preview = localPreviews[itemId];
+        // Use the copy in this browser session if there is one; otherwise read the permanent
+        // stored copy, so the original never has to be chosen again after a refresh.
+        let preview: { mimeType: string; bytes: Uint8Array } | undefined = localPreviews[itemId];
+        let loadError = '';
+        if (!preview && item.storagePath) {
+          try {
+            preview = await fetchStoredReceiptFile(itemId);
+          } catch (error: any) {
+            loadError = error?.message || 'The stored receipt could not be loaded.';
+          }
+        }
         if (preview) {
-          const response = await fetch('/api/receipts/extract', {
+          const response = await fetchWithSession('/api/receipts/extract', {
             method: 'POST',
             headers: { 'Content-Type': preview.mimeType },
             body: new Uint8Array(preview.bytes).buffer,
@@ -358,11 +430,13 @@ export function ReceiptProcessorView() {
           extraction = response.ok ? result : { error: result.error || `OCR request failed (${response.status}).` };
         } else {
           extraction = {
-            error: 'The source file is not available in this browser session. Use Open File to choose the original file again, then retry OCR.',
+            error: loadError
+              ? `${loadError} Use Open File to choose the original file again, then retry OCR.`
+              : 'No stored copy of this receipt exists yet. Use Open File to choose the original file once; it will then be stored and read.',
           };
         }
 
-        const updates = await saveReceiptOcrResult(itemId, extraction, item);
+        const updates = await saveReceiptOcrResult(itemId, extraction, item, ocrSettings);
         setItems((current) => current.map((candidate) => candidate.id === itemId ? { ...candidate, ...updates } : candidate));
         if (extraction.data) completedCount += 1;
         else {
@@ -384,15 +458,16 @@ export function ReceiptProcessorView() {
       title: 'OCR run finished',
       description: `${completedCount} completed; ${failedCount} failed.${lastError && failedCount > 0 ? ` Last error: ${lastError}` : ''}`,
     });
-  }, [items, localPreviews, ocrEligibleItems, ocrRunning, toast]);
+  }, [items, localPreviews, ocrEligibleItems, ocrRunning, ocrSettings, toast]);
 
   // Run OCR for a receipt just added, when the workspace rule "run OCR automatically" is on.
   React.useEffect(() => {
-    if (!autoOcrId) return;
-    if (!items.some((item) => item.id === autoOcrId) || !localPreviews[autoOcrId]) return;
-    setAutoOcrId(null);
-    void runOcrForReceipts([autoOcrId]);
-  }, [autoOcrId, items, localPreviews, runOcrForReceipts]);
+    if (autoOcrIds.length === 0) return;
+    const ready = autoOcrIds.every((id) => items.some((item) => item.id === id) && (localPreviews[id] || items.find((item) => item.id === id)?.storagePath));
+    if (!ready) return;
+    setAutoOcrIds([]);
+    void runOcrForReceipts(autoOcrIds);
+  }, [autoOcrIds, items, localPreviews, runOcrForReceipts]);
 
   const handleDeleteSelected = React.useCallback(async () => {
     if (!selected) return;
@@ -488,11 +563,14 @@ export function ReceiptProcessorView() {
             disabled={addingLocalFile || ocrRunning}
           >
             {addingLocalFile ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-            {addingLocalFile ? 'Adding to queue...' : 'Open File'}
+            {addingLocalFile
+              ? (addProgress && addProgress.total > 1 ? `Adding ${Math.min(addProgress.done + 1, addProgress.total)} of ${addProgress.total}...` : 'Adding to queue...')
+              : 'Open File'}
           </Button>
           <input
             ref={fileInputRef}
             type="file"
+            multiple
             accept={RECEIPT_MIME_TYPES_CSV}
             className="hidden"
             onChange={handleOpenFile}
@@ -508,7 +586,7 @@ export function ReceiptProcessorView() {
           <ol className="grid gap-3 sm:grid-cols-3">
             <li className="rounded-lg border bg-background p-3 text-sm">
               <span className="font-semibold">1. Add a receipt</span>
-              <p className="mt-1 text-muted-foreground">Click <span className="font-medium text-foreground">Open File</span> and choose a PDF or image. The file enters the queue without running OCR.</p>
+              <p className="mt-1 text-muted-foreground">Click <span className="font-medium text-foreground">Open File</span> and choose one or more PDFs or images (hold Ctrl or Shift to select several). They enter the queue without running OCR.</p>
             </li>
             <li className="rounded-lg border bg-background p-3 text-sm">
               <span className="font-semibold">2. Choose one or all for OCR</span>
@@ -695,14 +773,28 @@ export function ReceiptProcessorView() {
                       )}
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t p-3 text-xs text-muted-foreground">
                         <span>
-                          {selected.importedFrom === 'google_drive'
-                            ? 'Temporary preview from Google Drive — it is not stored by Ogeemo and disappears on refresh.'
-                            : 'Temporary local preview — it is not stored by Ogeemo and disappears on refresh.'}
+                          {selected.storagePath
+                            ? 'Original scan, stored permanently in your private workspace storage.'
+                            : selected.importedFrom === 'google_drive'
+                              ? 'Temporary preview from Google Drive — it is not stored by Ogeemo and disappears on refresh.'
+                              : 'Temporary local preview — this receipt has no stored copy yet.'}
                         </span>
                         <Button variant="link" className="h-auto p-0 text-sm text-primary" onClick={handleOpenSourceFile}>
                           Open full-size file
                         </Button>
                       </div>
+                    </div>
+                  ) : selected.storagePath ? (
+                    <div className="overflow-hidden rounded-md border bg-background p-2">
+                      <ReceiptPreview
+                        key={selected.id}
+                        receiptId={selected.id}
+                        title={`Receipt ${selected.auditReferenceId || ''}`.trim()}
+                        className="h-[680px]"
+                      />
+                      <p className="px-1 pt-2 text-xs text-muted-foreground">
+                        Original scan, stored permanently in your private workspace storage.
+                      </p>
                     </div>
                   ) : (
                     <div className="flex min-h-[260px] items-center justify-center rounded-md border border-dashed bg-background p-6 text-center">
@@ -759,8 +851,23 @@ export function ReceiptProcessorView() {
                   ) : isReceiptEligibleForOcr(selected) ? (
                     <div className="flex gap-2 rounded-md border bg-muted/30 p-3 text-sm">
                       <ScanText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      <p><span className="font-medium">Ready for OCR.</span> Check this receipt in the queue and choose OCR Selected, or choose OCR All.</p>
+                      <p><span className="font-medium">Ready for OCR.</span> Use the button below to read this receipt, or check receipts in the queue and choose OCR Selected or OCR All.</p>
                     </div>
+                  ) : null}
+
+                  {isReceiptEligibleForOcr(selected) ? (
+                    <Button
+                      className="w-full"
+                      onClick={() => runOcrForReceipts([selected.id])}
+                      disabled={ocrRunning}
+                    >
+                      {ocrProcessingIds.includes(selected.id)
+                        ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        : <ScanText className="mr-2 h-4 w-4" />}
+                      {ocrProcessingIds.includes(selected.id)
+                        ? 'Reading receipt...'
+                        : selected.ocrStatus === 'failed' ? 'Retry OCR on this receipt' : 'Run OCR on this receipt'}
+                    </Button>
                   ) : null}
 
                   {selectedFlags.length > 0 ? (
@@ -841,17 +948,68 @@ export function ReceiptProcessorView() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Total amount</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={selected.totalAmount ?? ''}
+                        onChange={(e) => {
+                          const totalAmount = Number(e.target.value);
+                          updateSelected({ totalAmount, ...taxFieldsForTotal(ocrSettings, selected, totalAmount) });
+                        }}
+                      />
+                    </div>
+                    {ocrSettings.taxCalculation === 'from_total' ? (
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Tax type</Label>
+                        <Select
+                          value={selected.taxChoiceId ?? ''}
+                          onValueChange={(choiceId) => updateSelected(taxFieldsForChoice(ocrSettings.taxChoices, choiceId, selected.totalAmount))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose the tax type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ocrSettings.taxChoices.map((choice) => (
+                              <SelectItem key={choice.id} value={choice.id}>{choice.name}</SelectItem>
+                            ))}
+                            <SelectItem value={RECEIPT_TAX_MANUAL}>Enter tax by hand</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          {isTaxCalculated(ocrSettings, selected)
+                            ? `Tax is calculated from the total at ${selected.taxRate ?? 0}% (tax included in the total).`
+                            : selected.taxChoiceId === RECEIPT_TAX_MANUAL
+                              ? 'Enter the net and tax amounts yourself.'
+                              : 'Choose a tax type and the tax is worked out from the total.'}
+                          {typeof selected.printedTaxAmount === 'number' && selected.printedTaxAmount > 0
+                            ? ` Printed on the receipt: ${selected.printedTaxAmount.toFixed(2)}.`
+                            : ''}
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="space-y-2">
                       <Label>Net amount</Label>
-                      <Input type="number" step="0.01" value={selected.netAmount ?? ''} onChange={(e) => updateSelected({ netAmount: Number(e.target.value) })} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={selected.netAmount ?? ''}
+                        readOnly={isTaxCalculated(ocrSettings, selected)}
+                        className={isTaxCalculated(ocrSettings, selected) ? 'bg-muted' : undefined}
+                        onChange={(e) => updateSelected({ netAmount: Number(e.target.value) })}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Tax amount</Label>
-                      <Input type="number" step="0.01" value={selected.taxAmount ?? ''} onChange={(e) => updateSelected({ taxAmount: Number(e.target.value) })} />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>Total amount</Label>
-                      <Input type="number" step="0.01" value={selected.totalAmount ?? ''} onChange={(e) => updateSelected({ totalAmount: Number(e.target.value) })} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={selected.taxAmount ?? ''}
+                        readOnly={isTaxCalculated(ocrSettings, selected)}
+                        className={isTaxCalculated(ocrSettings, selected) ? 'bg-muted' : undefined}
+                        onChange={(e) => updateSelected({ taxAmount: Number(e.target.value) })}
+                      />
                     </div>
                     <div className="space-y-2 sm:col-span-2">
                       <Label>Paper receipt filed at (optional)</Label>

@@ -6,7 +6,7 @@
 export const MAX_RECEIPT_FILE_BYTES = 10 * 1024 * 1024;
 
 /** Model that reads receipt files (the server prefixes it with `googleai/`). */
-export const RECEIPT_OCR_MODEL_NAME = 'gemini-2.5-flash';
+export const RECEIPT_OCR_MODEL_NAME = 'gemini-3.5-flash-lite';
 
 export const RECEIPT_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'] as const;
 export type ReceiptMimeType = (typeof RECEIPT_MIME_TYPES)[number];

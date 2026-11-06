@@ -39,6 +39,8 @@ export interface ExtractedInvoice {
 export interface ExtractionSuggestions {
   category?: string;
   ledgerType?: ReceiptLedgerType;
+  /** Id of the tax choice from the matching vendor rule. */
+  taxChoice?: string;
 }
 
 export type ExtractionResult = { data?: ExtractedInvoice; suggested?: ExtractionSuggestions; model?: string; error?: string };

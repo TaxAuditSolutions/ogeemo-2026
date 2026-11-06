@@ -15,6 +15,10 @@ export interface ReceiptReviewable {
   netAmount?: number;
   taxAmount?: number;
   totalAmount?: number;
+  /** Tax type chosen for the receipt, and the tax exactly as printed on it (for comparison only). */
+  taxChoiceId?: string;
+  taxType?: string;
+  printedTaxAmount?: number;
   proposedCategory?: string;
   businessReason?: string;
   ocrStatus?: 'completed' | 'failed';

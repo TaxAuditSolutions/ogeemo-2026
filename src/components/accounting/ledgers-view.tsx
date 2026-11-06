@@ -109,7 +109,8 @@ import ContactFormDialog from "@/components/contacts/contact-form-dialog";
 import { useReactToPrint } from "@/hooks/use-react-to-print";
 import { TransactionDialog } from "./transaction-dialog";
 import { ReconciliationWizard } from "./reconciliation-wizard";
-import { ReceiptViewerDialog } from "./receipt-viewer-dialog";
+import { ReceiptViewerDialog, ReceiptPreview } from "./receipt-viewer-dialog";
+import { getAllReceiptsForArchive } from '@/services/receipt-staging-service';
 import {
   Tooltip,
   TooltipContent,
@@ -146,6 +147,8 @@ export function LedgersView() {
   const [transactionToInspect, setTransactionToInspect] = React.useState<GeneralTransaction | null>(null);
   // Scanned receipt opened from a ledger document number.
   const [receiptToView, setReceiptToView] = React.useState<{ receiptId: string; documentNumber?: string } | null>(null);
+  // Stored scans by Ogeemo document number, so older entries and paid bills still open their scan.
+  const [receiptIdByNumber, setReceiptIdByNumber] = React.useState<Map<string, string>>(new Map());
   
   const [sortConfig, setSortConfig] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'date', direction: 'desc' });
 
@@ -205,6 +208,17 @@ export function LedgersView() {
         setCustomIndustries(fetchedIndustries);
         setCompanies(fetchedCompanies);
         setTaxTypes(fetchedTaxTypes);
+        try {
+            const receipts = await getAllReceiptsForArchive();
+            const byNumber = new Map<string, string>();
+            receipts.forEach(r => {
+                const num = (r.auditReferenceId || '').trim().toLowerCase();
+                if (num && r.storagePath && r.status !== 'rejected') byNumber.set(num, r.id);
+            });
+            setReceiptIdByNumber(byNumber);
+        } catch {
+            // The ledger still works without the receipt index; entries with their own receiptId stay linked.
+        }
     } catch (e: any) {}
     finally { setIsLoading(false); }
   }, [user]);
@@ -390,6 +404,10 @@ export function LedgersView() {
       return map;
   }, [invoices]);
 
+  // The stored scan for a ledger entry: its own receiptId, else the scan filed under its document number.
+  const receiptIdFor = (item: GeneralTransaction): string | undefined =>
+      item.receiptId || (item.documentNumber ? receiptIdByNumber.get(item.documentNumber.trim().toLowerCase()) : undefined);
+
   const clearFilters = () => {
       setStartDate(undefined);
       setEndDate(undefined);
@@ -510,12 +528,12 @@ export function LedgersView() {
                                 {getCategoryName(item.transactionType === 'income' ? (item as IncomeTransaction).incomeCategory : (item as ExpenseTransaction).category, item.transactionType)}
                             </TableCell>
                             <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">
-                                {item.receiptId && item.documentNumber ? (
+                                {receiptIdFor(item) && item.documentNumber ? (
                                     <button
                                         type="button"
                                         className="font-mono text-primary underline-offset-2 hover:underline"
                                         title="Open the scanned receipt"
-                                        onClick={(e) => { e.stopPropagation(); setReceiptToView({ receiptId: item.receiptId as string, documentNumber: item.documentNumber }); }}
+                                        onClick={(e) => { e.stopPropagation(); setReceiptToView({ receiptId: receiptIdFor(item) as string, documentNumber: item.documentNumber }); }}
                                     >
                                         {item.documentNumber}
                                     </button>
@@ -548,11 +566,12 @@ export function LedgersView() {
                                             </Tooltip>
                                         </TooltipProvider>
                                     )}
-                                    {item.documentUrl ? (
+                                    {/* A scanned receipt opens from its document number, so only other attachments get a link icon. */}
+                                    {item.documentUrl && !receiptIdFor(item) ? (
                                         <a href={item.documentUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-primary hover:text-primary/80">
                                             <LinkIcon className="h-4 w-4" />
                                         </a>
-                                    ) : '-'}
+                                    ) : (receiptIdFor(item) ? null : '-')}
                                 </div>
                             </TableCell>
                             <TableCell className="print:hidden" onClick={(e) => e.stopPropagation()}>
@@ -1003,20 +1022,42 @@ export function LedgersView() {
                                 </div>
                             )}
 
-                            {transactionToInspect.receiptId && (
-                                <div className="rounded-md border border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 text-sm">
-                                    <span className="flex items-center gap-2"><ScanSearch className="h-4 w-4 text-primary" /> Scanned receipt on file</span>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setReceiptToView({ receiptId: transactionToInspect.receiptId as string, documentNumber: transactionToInspect.documentNumber })}
-                                    >
-                                        View receipt
+                            {/^REC-/i.test(transactionToInspect.documentNumber || '') && !receiptIdFor(transactionToInspect) && (
+                                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm space-y-2" role="status">
+                                    <p className="font-medium">No scan is stored for {transactionToInspect.documentNumber}.</p>
+                                    <p className="text-muted-foreground">
+                                        This receipt was added before scans were kept, or its scan was not stored. Open the original file again in
+                                        Receipt Processor with <span className="font-medium">Open File</span>; it will be matched to this number and
+                                        stored, and this entry will then show it.
+                                    </p>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link href="/accounting/receipt-processor">Go to Receipt Processor</Link>
                                     </Button>
                                 </div>
                             )}
 
-                            {transactionToInspect.documentUrl && !transactionToInspect.receiptId && (
+                            {receiptIdFor(transactionToInspect) && (
+                                <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3 text-sm">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="flex items-center gap-2"><ScanSearch className="h-4 w-4 text-primary" /> Original scanned receipt</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setReceiptToView({ receiptId: receiptIdFor(transactionToInspect) as string, documentNumber: transactionToInspect.documentNumber })}
+                                        >
+                                            View larger
+                                        </Button>
+                                    </div>
+                                    <ReceiptPreview
+                                        key={receiptIdFor(transactionToInspect)}
+                                        receiptId={receiptIdFor(transactionToInspect) as string}
+                                        title={`Receipt ${transactionToInspect.documentNumber || ''}`.trim()}
+                                        className="h-[26rem]"
+                                    />
+                                </div>
+                            )}
+
+                            {transactionToInspect.documentUrl && !receiptIdFor(transactionToInspect) && (
                                 <div className="rounded-md border p-4 flex items-center justify-between gap-3 text-sm">
                                     <span className="flex items-center gap-2"><LinkIcon className="h-4 w-4 text-primary" /> Attached document</span>
                                     <Button asChild size="sm" variant="outline">

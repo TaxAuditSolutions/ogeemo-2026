@@ -11,19 +11,24 @@ import {
   RECEIPT_LEDGER_LABELS,
   RECEIPT_LEDGER_TYPES,
   type ReceiptLedgerType,
+  type ReceiptTaxChoice,
   type ReceiptVendorRule,
 } from '@/lib/receipt-ocr-options';
 
 const KEEP_LEDGER = '__keep__';
+const KEEP_TAX = '__keep_tax__';
 
 interface VendorRulesEditorProps {
   rules: ReceiptVendorRule[];
+  /** Tax types a rule can pick; empty hides the tax column. */
+  taxChoices?: readonly ReceiptTaxChoice[];
   onChange: (rules: ReceiptVendorRule[]) => void;
   disabled: boolean;
 }
 
-/** Editable list of vendor rules: when the OCR vendor contains X, rename it and/or suggest a category and ledger type. */
-export function ReceiptVendorRulesEditor({ rules, onChange, disabled }: VendorRulesEditorProps) {
+/** Editable list of vendor rules: when the OCR vendor contains X, rename it and/or suggest a category, ledger type and tax type. */
+export function ReceiptVendorRulesEditor({ rules, taxChoices = [], onChange, disabled }: VendorRulesEditorProps) {
+  const showTax = taxChoices.length > 0;
   const update = (index: number, patch: Partial<ReceiptVendorRule>) =>
     onChange(rules.map((rule, i) => (i === index ? { ...rule, ...patch } : rule)));
   const remove = (index: number) => onChange(rules.filter((_, i) => i !== index));
@@ -108,6 +113,24 @@ export function ReceiptVendorRulesEditor({ rules, onChange, disabled }: VendorRu
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
+          {showTax && (
+            <div className="sm:col-span-12 sm:max-w-xs">
+              <Label className="text-xs">Tax type</Label>
+              <Select
+                value={rule.taxChoice ?? KEEP_TAX}
+                disabled={disabled}
+                onValueChange={(value) => update(index, { taxChoice: value === KEEP_TAX ? undefined : value })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={KEEP_TAX}>No change</SelectItem>
+                  {taxChoices.map((choice) => (
+                    <SelectItem key={choice.id} value={choice.id}>{choice.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       ))}
 

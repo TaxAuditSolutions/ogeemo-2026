@@ -14,10 +14,13 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { addExpenseTransaction, addIncomeTransaction, addPayableBill } from '@/core/accounting-service';
 import { claimDocumentNumber } from '@/app/actions/numbering-actions';
+import { fetchWithSession, withServerSession } from '@/lib/server-session';
 import { isVisibleReceiptQueueItem } from '@/lib/receipt-queue-utils';
 import { receiptFileUrl } from '@/lib/receipt-storage-utils';
 import { RECEIPT_OCR_MODEL_NAME } from '@/lib/receipt-file-utils';
 import { ocrResultToItemFields } from '@/lib/receipt-ocr-fields';
+import { resolveOcrTax } from '@/lib/receipt-tax';
+import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 import type { ExtractionResult } from '@/app/actions/ocr-actions';
 
 export type ReceiptLedgerType = 'expense' | 'payable_bill' | 'income';
@@ -61,6 +64,12 @@ export interface ReceiptStagingItem {
   netAmount?: number;
   taxAmount?: number;
   totalAmount?: number;
+  /** Tax type chosen for this receipt (id from Settings, or the manual marker) and what it stands for. */
+  taxChoiceId?: string;
+  taxType?: string;
+  taxRate?: number;
+  /** Tax exactly as printed on the receipt, kept only to compare with the calculated tax. */
+  printedTaxAmount?: number;
   currency?: string;
   confidenceScore?: number;
   proposedLedgerType?: ReceiptLedgerType;
@@ -262,7 +271,7 @@ export async function importLocalReceiptToQueue(
   const duplicate = allItems.find((item) => item.status !== 'rejected' && item.fileHash === input.fileHash);
   if (duplicate) return { status: 'duplicate', existing: duplicate };
 
-  const auditReferenceId = await claimDocumentNumber('REC');
+  const auditReferenceId = await withServerSession(() => claimDocumentNumber('REC'));
 
   const item = {
     importedFrom: 'local_file' as const,
@@ -291,7 +300,7 @@ export async function importLocalReceiptToQueue(
  */
 export async function storeReceiptFile(receiptId: string, bytes: Uint8Array): Promise<string> {
   const body = new Uint8Array(bytes).buffer;
-  const response = await fetch(`/api/receipts/files?receiptId=${encodeURIComponent(receiptId)}`, {
+  const response = await fetchWithSession(`/api/receipts/files?receiptId=${encodeURIComponent(receiptId)}`, {
     method: 'PUT',
     body,
   });
@@ -302,19 +311,52 @@ export async function storeReceiptFile(receiptId: string, bytes: Uint8Array): Pr
   return result.storagePath;
 }
 
+/**
+ * Downloads a receipt's permanent stored copy so OCR can read it without the user
+ * choosing the original file again. Throws a readable error when it cannot be loaded.
+ */
+export async function fetchStoredReceiptFile(receiptId: string): Promise<{ bytes: Uint8Array; mimeType: string }> {
+  const response = await fetchWithSession(receiptFileUrl(receiptId), { cache: 'no-store' });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error || `The stored receipt could not be loaded (${response.status}).`);
+  }
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const mimeType = response.headers.get('Content-Type') || 'application/octet-stream';
+  return { bytes, mimeType };
+}
+
 /** Persists one explicit OCR result and returns the fields needed to update the UI. */
 export async function saveReceiptOcrResult(
   itemId: string,
   extraction: ExtractionResult,
-  current?: Pick<ReceiptStagingItem, 'proposedCategory' | 'proposedLedgerType'>
+  current?: Pick<ReceiptStagingItem, 'proposedCategory' | 'proposedLedgerType' | 'taxChoiceId' | 'taxRate'>,
+  taxSettings?: Pick<ReceiptOcrSettings, 'taxCalculation' | 'taxChoices' | 'defaultTaxChoice'>
 ): Promise<Partial<ReceiptStagingItem>> {
   const mapped = ocrResultToItemFields(extraction);
   // A failed retry must not erase values a reviewer may already have entered.
-  const ocrFields = extraction.data ? mapped : {
+  const ocrFields: Record<string, unknown> = extraction.data ? { ...mapped } : {
     extractedRawJson: mapped.extractedRawJson,
     ocrStatus: mapped.ocrStatus,
     ocrError: mapped.ocrError,
   };
+
+  // "Calculate from the total": keep only the total from OCR. The tax OCR read is stored as the
+  // printed tax for comparison, and net and tax come from the chosen tax type (or stay empty
+  // until the reviewer chooses one).
+  if (extraction.data && taxSettings) {
+    const tax = resolveOcrTax(taxSettings as ReceiptOcrSettings, extraction.data, {
+      currentChoiceId: current?.taxChoiceId,
+      currentRate: current?.taxRate,
+      suggestedChoiceId: extraction.suggested?.taxChoice,
+    });
+    if (tax.dropOcrNetAndTax) {
+      delete ocrFields.netAmount;
+      delete ocrFields.taxAmount;
+    }
+    Object.assign(ocrFields, tax.fields);
+  }
+
   const definedFields = Object.fromEntries(
     Object.entries(ocrFields).filter(([, value]) => value !== undefined)
   ) as Partial<ReceiptStagingItem>;
@@ -381,6 +423,13 @@ export async function postReceiptToLedger(
   const totalAmount = Number(merged.totalAmount ?? 0);
   const preTaxAmount = Number(merged.netAmount ?? totalAmount);
   const taxAmount = Number(merged.taxAmount ?? Math.max(totalAmount - preTaxAmount, 0));
+  // The chosen tax type and rate travel with the ledger entry (the printed tax is not recorded there).
+  const taxLabel = merged.taxType || '';
+  const taxRatePercent = typeof merged.taxRate === 'number' ? merged.taxRate : preTaxAmount ? (taxAmount / preTaxAmount) * 100 : 0;
+  const taxDetails = {
+    ...(taxLabel ? { taxType: taxLabel } : {}),
+    taxRate: Math.round(taxRatePercent * 1000) / 1000,
+  };
 
   let ledgerId = '';
   let collectionName = 'expenseTransactions';
@@ -393,8 +442,8 @@ export async function postReceiptToLedger(
       totalAmount,
       preTaxAmount,
       taxAmount,
-      taxRate: preTaxAmount ? (taxAmount / preTaxAmount) * 100 : 0,
-      taxType: 'GST',
+      ...taxDetails,
+      taxType: taxLabel || 'GST',
       category: merged.proposedCategory || 'General Operating Expenses',
       description,
       documentUrl: sourceDocumentUrl,
@@ -414,6 +463,7 @@ export async function postReceiptToLedger(
       totalAmount,
       preTaxAmount,
       taxAmount,
+      ...taxDetails,
       incomeCategory: merged.proposedCategory || 'Other Income',
       depositedTo: 'Cash / Default',
       type: 'business',
@@ -436,6 +486,7 @@ export async function postReceiptToLedger(
       totalAmount,
       preTaxAmount,
       taxAmount,
+      ...taxDetails,
       category: merged.proposedCategory || 'General Operating Expenses',
       paidFrom: 'Cash / Default',
       type: 'business',

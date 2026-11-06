@@ -19,7 +19,7 @@ import { Field, NumberInput, type RulesFieldsProps } from './receipt-ocr-rules-c
 export function ReadingFields({ value, onChange, disabled }: RulesFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <Field label="OCR model" hint="Pro reads difficult scans best but is slower and costs more.">
+      <Field label="OCR model" hint="Pro reads difficult scans best but is slower.">
         <Select value={value.model} disabled={disabled} onValueChange={(model) => onChange({ model: model as ReceiptOcrSettings['model'] })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -76,7 +76,7 @@ export function ReadingFields({ value, onChange, disabled }: RulesFieldsProps) {
       <div className="flex items-start justify-between gap-3 rounded-md border p-3 sm:col-span-2">
         <div>
           <p className="text-sm font-medium">Run OCR automatically when a file is added</p>
-          <p className="text-xs text-muted-foreground">Off by default. Each OCR run uses your AI quota.</p>
+          <p className="text-xs text-muted-foreground">Off by default.</p>
         </div>
         <Switch checked={value.autoRunOcrOnUpload} disabled={disabled} onCheckedChange={(autoRunOcrOnUpload) => onChange({ autoRunOcrOnUpload })} />
       </div>

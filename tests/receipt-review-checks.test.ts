@@ -19,6 +19,9 @@ const good: ReceiptReviewable = {
   netAmount: 163.94,
   taxAmount: 8.2,
   totalAmount: 172.14,
+  // Tax is calculated from the total by default, so a reviewed receipt carries its tax type.
+  taxChoiceId: 'gst-5',
+  taxType: 'GST 5%',
   proposedCategory: 'Office Supplies',
   businessReason: 'Supplies for client work',
   ocrStatus: 'completed',

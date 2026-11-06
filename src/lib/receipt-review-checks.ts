@@ -45,6 +45,28 @@ function amountFlags(settings: ReceiptOcrSettings, item: ReceiptReviewable): Rec
     }
   }
 
+  if (settings.taxCalculation === 'from_total' && hasNumber(total) && total > 0) {
+    if (!item.taxChoiceId) {
+      flags.push({
+        code: 'tax-type-needed',
+        severity: 'error',
+        field: 'taxAmount',
+        message: 'Choose the tax type for this receipt (for example HST 13%) so the tax can be calculated from the total.',
+      });
+    } else if (hasNumber(item.printedTaxAmount) && item.printedTaxAmount > 0 && hasNumber(tax)) {
+      // Vendors round per line, so allow a couple of cents before calling it a difference.
+      const gap = Math.round((item.printedTaxAmount - tax) * 100) / 100;
+      if (Math.abs(gap) > Math.max(settings.amountTolerance, 0.02) + 1e-9) {
+        flags.push({
+          code: 'printed-tax-differs',
+          severity: 'warning',
+          field: 'taxAmount',
+          message: `The receipt prints tax of ${formatMoney(item.printedTaxAmount)}, but ${item.taxType || 'the chosen tax type'} on the total gives ${formatMoney(tax)}. Check the tax type, or the vendor may have charged the wrong tax.`,
+        });
+      }
+    }
+  }
+
   if (settings.expectedTaxRates.length > 0 && hasNumber(net) && hasNumber(tax) && net > 0 && tax > 0) {
     const rate = (tax / net) * 100;
     if (!settings.expectedTaxRates.some((expected) => Math.abs(expected - rate) <= 0.5)) {

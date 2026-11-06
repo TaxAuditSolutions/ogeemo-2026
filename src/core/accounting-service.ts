@@ -1265,7 +1265,10 @@ export async function reconcileBillPayment(userId: string, billId: string, date:
     type: 'business',
     isReconciled: true,
     bankReferenceId: bankReferenceId,
-    paymentMethod: 'Bank Transfer'
+    paymentMethod: 'Bank Transfer',
+    ...(data.invoiceNumber ? { documentNumber: data.invoiceNumber } : {}),
+    ...(data.receiptId ? { receiptId: data.receiptId } : {}),
+    ...(data.receiptStoragePath ? { receiptStoragePath: data.receiptStoragePath } : {}),
   });
 
   batch.delete(billRef);
@@ -1539,6 +1542,9 @@ export async function postBillPayment(userId: string, billId: string, paymentDat
     type: 'business',
     documentNumber: billData.invoiceNumber ?? "",
     documentUrl: billData.documentUrl ?? "",
+    // Keep the link to the stored scan when a receipt-based bill is paid.
+    ...(billData.receiptId ? { receiptId: billData.receiptId } : {}),
+    ...(billData.receiptStoragePath ? { receiptStoragePath: billData.receiptStoragePath } : {}),
     paymentMethod: paymentMethod
   };
   batch.set(expenseRef, expenseData);

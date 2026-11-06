@@ -5,6 +5,7 @@ import {
     DEFAULT_CONTACT_FOLDER_NAME,
     findMatchingContactFolder,
     resolveContactFolderId,
+    resolveContactFolderIdOrDefault,
     resolveDefaultContactFolderId,
 } from '../src/lib/contact-folders';
 
@@ -77,4 +78,16 @@ test('resolveContactFolderId resolves names to IDs or preserves the reference', 
     assert.equal(resolveContactFolderId('custom_id', folders), 'custom_id');
     assert.equal(resolveContactFolderId('Friends', []), 'Friends');
     assert.equal(resolveContactFolderId('', folders), undefined);
+});
+
+test('resolveContactFolderIdOrDefault rejects unknown folders by using the tenant default', () => {
+    const folders = [
+        { id: 'admin', name: 'Admin', isSystem: true },
+        { id: 'misc', name: 'Miscellaneous', isSystem: true },
+    ];
+
+    assert.equal(resolveContactFolderIdOrDefault('friends', folders), 'misc');
+    assert.equal(resolveContactFolderIdOrDefault('', folders), 'misc');
+    assert.equal(resolveContactFolderIdOrDefault('admin', folders), 'admin');
+    assert.equal(resolveContactFolderIdOrDefault('anything', []), undefined);
 });

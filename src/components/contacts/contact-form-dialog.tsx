@@ -33,7 +33,7 @@ import { useAuth } from '@/context/auth-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
-import { resolveDefaultContactFolderId, findMatchingContactFolder, resolveContactFolderId } from '@/lib/contact-folders';
+import { resolveDefaultContactFolderId, findMatchingContactFolder, resolveContactFolderId, resolveContactFolderIdOrDefault } from '@/lib/contact-folders';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -59,7 +59,7 @@ const contactSchema = z.object({
     faxNumber: z.string().optional(),
     primaryPhoneType: z.enum(['businessPhone', 'cellPhone', 'homePhone']).nullable().default(null),
     notes: z.string().optional(),
-    folderId: z.string().optional(),
+    folderId: z.string().min(1, { message: 'Role Assignment is required.' }),
 
     sin: z.string().optional(),
     workerType: z.enum(["employee", "contractor"]).optional().nullable(),
@@ -162,7 +162,7 @@ export default function ContactFormDialog({
                 const matched = findMatchingContactFolder(rawValue, folders);
                 if (matched) {
                     valueToSet = matched.id;
-                } else if (typeof rawValue === 'string' && rawValue.trim()) {
+                } else if (folders.length === 0 && typeof rawValue === 'string' && rawValue.trim()) {
                     valueToSet = rawValue.trim();
                 } else {
                     continue;
@@ -225,21 +225,33 @@ export default function ContactFormDialog({
                     if (matched && matched.id !== currentFolderVal) {
                         form.setValue('folderId', matched.id, { shouldValidate: true });
                         seededValuesRef.current.folderId = matched.id;
+                    } else if (!matched && defaultId) {
+                        form.setValue('folderId', defaultId, { shouldValidate: true });
+                        editedKeysRef.current.add('folderId');
                     }
                 } else if (!currentFolderVal && defaultId) {
                     form.setValue('folderId', defaultId, { shouldValidate: true });
-                    seededValuesRef.current.folderId = defaultId;
+                    editedKeysRef.current.add('folderId');
                 }
             }
             return;
         }
 
         seededEditIdRef.current = null;
-        const initialFolderId = resolveContactFolderId(initialData?.folderId, folders) ?? defaultId;
+        const initialFolderId = folders.length > 0
+            ? resolveContactFolderIdOrDefault(initialData?.folderId, folders) ?? defaultId
+            : resolveContactFolderId(initialData?.folderId, folders) ?? defaultId;
         form.reset(
             { ...defaultFormValues, email: initialEmail, ...initialData, folderId: initialFolderId },
             { keepDirtyValues: true },
         );
+        if (folders.length > 0) {
+            const currentFolderId = form.getValues('folderId');
+            const resolvedFolderId = resolveContactFolderIdOrDefault(currentFolderId, folders);
+            if (resolvedFolderId && resolvedFolderId !== currentFolderId) {
+                form.setValue('folderId', resolvedFolderId, { shouldValidate: true });
+            }
+        }
     }, [isOpen, contactToEdit, forceFolderId, selectedFolderId, form, initialEmail, initialData, folders, applyDraftPatch]);
 
     useEffect(() => {
@@ -270,10 +282,17 @@ export default function ContactFormDialog({
     async function onSubmit(values: ContactFormData) {
         if (!user) return;
         try {
+            const assignedFolder = findMatchingContactFolder(values.folderId, folders);
+            if (!assignedFolder) {
+                toast({ variant: 'destructive', title: 'Role Assignment required', description: 'Select a valid folder before saving this contact.' });
+                return;
+            }
+            const valuesWithAssignedFolder = { ...values, folderId: assignedFolder.id };
+
             if (contactToEdit) {
                 const { changes, blocked } = buildContactUpdatePayload({
                     baseline: seededValuesRef.current,
-                    values,
+                    values: valuesWithAssignedFolder,
                     editedKeys: editedKeysRef.current,
                 });
                 if (blocked.length > 0) {
@@ -292,8 +311,8 @@ export default function ContactFormDialog({
             } else {
                 // HIGH-FIDELITY PAYLOAD SCRUBBING
                 // If the contact is not a worker, strip all HR/Payroll metadata to prevent list pollution.
-                const scrubbedValues: any = { ...values };
-                const selectedFolderName = folders.find(f => f.id === values.folderId)?.name.toLowerCase();
+                const scrubbedValues: any = { ...valuesWithAssignedFolder };
+                const selectedFolderName = assignedFolder.name.toLowerCase();
                 if (!selectedFolderName || !['workers', 'employees', 'contractors'].includes(selectedFolderName)) {
                     const hrFields = ['sin', 'workerType', 'payType', 'payRate', 'hireDate', 'startDate', 'emergencyContactName', 'emergencyContactPhone', 'hasContract', 'specialNeeds'];
                     hrFields.forEach(f => delete scrubbedValues[f]);
@@ -352,7 +371,7 @@ export default function ContactFormDialog({
                                     const roleId = field.value || (contactToEdit ? findMatchingContactFolder(contactToEdit.folderId, folders)?.id ?? '' : '');
                                     const roleName = folders.find(f => f.id === roleId)?.name;
                                     return (
-                                        <FormItem><FormLabel>Role Assignment (Folder) (optional)</FormLabel><div className="flex gap-2"><FormControl><Select key={`${contactToEdit?.id ?? 'new'}:${folders.length}`} onValueChange={field.onChange} value={roleId}><SelectTrigger><SelectValue placeholder="Assign role...">{roleName}</SelectValue></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Role Assignment (Folder) *</FormLabel><div className="flex gap-2"><FormControl><Select key={`${contactToEdit?.id ?? 'new'}:${folders.length}`} onValueChange={field.onChange} value={roleId}><SelectTrigger><SelectValue placeholder="Assign role...">{roleName}</SelectValue></SelectTrigger><SelectContent>{folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent></Select></FormControl><Button type="button" variant="outline" size="icon" onClick={() => setIsNewFolderDialogOpen(true)}><FolderPlus className="h-4 w-4" /></Button></div><FormMessage /></FormItem>
                                     );
                                 }} />
                                 <FormField control={form.control} name="employeeNumber" render={({ field }) => (<FormItem><FormLabel>Worker/User ID Number</FormLabel><FormControl><Input placeholder="e.g., W-1001" {...field} /></FormControl><FormMessage /></FormItem>)} />

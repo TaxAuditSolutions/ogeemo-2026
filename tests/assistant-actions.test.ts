@@ -299,6 +299,21 @@ test('repairs an unmatched contact form folder into Miscellaneous', () => {
     });
 });
 
+test('defaults an open contact form to Miscellaneous when no folder was chosen', () => {
+    const folders = [
+        { id: 'admin-id', name: 'Admin', isSystem: true },
+        { id: 'misc-id', name: 'Miscellaneous', isSystem: true },
+    ];
+
+    assert.deepEqual(resolveAssistantCapabilityActionWithRepair({
+        type: 'open_contact_form',
+        draft: { name: 'Ada Lovelace' },
+    }, folders), {
+        type: 'open_contact_form',
+        draft: { name: 'Ada Lovelace', folderId: 'misc-id' },
+    });
+});
+
 test('drops an unresolvable folder id from an open_contact patch instead of rejecting the whole action', () => {
     const folders = [{ id: 'clients-id', name: 'Clients' }];
 
@@ -369,6 +384,19 @@ test('directly submits new contact with full snapshot when folder is chosen', ()
         history: formOpenedHistory,
         folders: reconcileFolders,
     }), { type: 'submit_contact_form', patch: { name: 'Porky Pig', folderId: 'friends-id' } });
+});
+
+test('recovers an explicitly chosen folder from the user message when the snapshot omits it', () => {
+    assert.deepEqual(reconcileContactDraftAction({
+        action: { type: 'submit_contact_form' },
+        snapshot: { name: 'Copilot Folder E2E Test' },
+        history: formOpenedHistory,
+        folders: reconcileFolders,
+        userMessage: 'Use the Friends folder.',
+    }), {
+        type: 'submit_contact_form',
+        patch: { name: 'Copilot Folder E2E Test', folderId: 'friends-id' },
+    });
 });
 
 test('leaves other actions and closed-form turns untouched', () => {

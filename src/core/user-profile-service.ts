@@ -7,6 +7,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { addContact, updateContact, getContacts } from '@/services/contact-service';
+import { resolveDefaultContactFolderId } from '@/lib/contact-folders';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -234,11 +235,15 @@ export async function updateUserProfile(
                     });
                 }
             } else {
+                const contactFolderId = adminFolder?.id ?? resolveDefaultContactFolderId(allFolders);
+                if (!contactFolderId) {
+                    throw new Error('Cannot create the profile contact without an assigned folder.');
+                }
                 const newContact = await addContact({
                     name: data.displayName || email,
                     email: email,
                     employeeNumber: data.employeeNumber,
-                    folderId: adminFolder?.id || 'all',
+                    folderId: contactFolderId,
                     userId: userId,
                 } as any);
                 dataWithTimestamp.contactId = newContact.id;

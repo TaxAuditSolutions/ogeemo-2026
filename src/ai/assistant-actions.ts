@@ -270,7 +270,7 @@ export function resolveAssistantCapabilityActionWithRepair(
     folders: ReadonlyArray<{ id: string; name: string }>,
 ): AssistantMessageAction | undefined {
     const direct = resolveAssistantCapabilityAction(value, folders.map((folder) => folder.id));
-    if (direct) return direct;
+    if (direct && (direct.type !== 'open_contact_form' || direct.draft.folderId)) return direct;
 
     if (
         value &&
@@ -416,6 +416,39 @@ export function isContactFormOpenInHistory(history: ReadonlyArray<HistoryEntry>)
 const sameText = (a: unknown, b: unknown) =>
     String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
+function findExplicitFolderIdInMessage(
+    message: string | undefined,
+    folders: ReadonlyArray<{ id: string; name: string }>,
+): string | undefined {
+    if (!message || !/\b(?:use|choose|select|assign|put|place|move)\b/i.test(message)) return undefined;
+
+    const normalizedMessage = message.toLowerCase();
+    const matches = folders.filter((folder) => {
+        const name = folder.name.trim().toLowerCase();
+        if (!name) return false;
+
+        const index = normalizedMessage.lastIndexOf(name);
+        if (index < 0) return false;
+        const end = index + name.length;
+        const hasWordBoundaries = (index === 0 || !/[a-z0-9]/i.test(normalizedMessage[index - 1]))
+            && (end === normalizedMessage.length || !/[a-z0-9]/i.test(normalizedMessage[end]));
+        if (!hasWordBoundaries) return false;
+
+        const clauseStart = Math.max(
+            normalizedMessage.lastIndexOf('.', index),
+            normalizedMessage.lastIndexOf(',', index),
+            normalizedMessage.lastIndexOf(';', index),
+            normalizedMessage.lastIndexOf('!', index),
+            normalizedMessage.lastIndexOf('?', index),
+        ) + 1;
+        const prefix = normalizedMessage.slice(clauseStart, index);
+        return !/\b(?:don't|do not|not|never)\b/.test(prefix)
+            && /\b(?:use|choose|select|assign|put|place|move)\b/.test(prefix);
+    });
+
+    return matches.length === 1 ? matches[0].id : undefined;
+}
+
 /**
  * In an edit only fields that differ from the stored record may change, and a
  * rename or folder move needs the user's latest message to ask for it.
@@ -472,6 +505,10 @@ export function reconcileContactDraftAction(input: {
         ? guard(sanitizeDraftSnapshot((action as { patch?: unknown }).patch, folders))
         : undefined;
     const merged = { ...known, ...modelPatch } as AssistantContactDraftPatch;
+    if (session.mode === 'create' && !merged.folderId) {
+        const folderId = findExplicitFolderIdInMessage(userMessage, folders);
+        if (folderId) merged.folderId = folderId;
+    }
     const hasChanges = Object.keys(merged).length > 0;
 
     if (type === 'submit_contact_form') {

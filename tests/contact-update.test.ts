@@ -45,14 +45,14 @@ test('blocks a blank name even when it was edited', () => {
     assert.deepEqual(blocked, ['name']);
 });
 
-test('allows clearing the role/folder - it is optional', () => {
+test('blocks clearing the role/folder', () => {
     const { changes, blocked } = buildContactUpdatePayload({
         baseline: seeded,
         values: { ...seeded, folderId: '', email: 'porky@example.com' },
         editedKeys: new Set(['folderId', 'email']),
     });
-    assert.deepEqual(changes, { folderId: '', email: 'porky@example.com' });
-    assert.deepEqual(blocked, []);
+    assert.deepEqual(changes, { email: 'porky@example.com' });
+    assert.deepEqual(blocked, ['folderId']);
 });
 
 test('allows an optional field to be cleared only when it was edited', () => {
@@ -80,8 +80,8 @@ test('treats missing, null and empty values as equal and compares dates by day',
     assert.equal(contactValuesEqual('a', 'b'), false);
 });
 
-test('only name is protected from blanking (role/folder is optional)', () => {
-    assert.equal(isBlankRequiredContactField('folderId', ''), false);
+test('name and role/folder are protected from blanking', () => {
+    assert.equal(isBlankRequiredContactField('folderId', ''), true);
     assert.equal(isBlankRequiredContactField('name', '  '), true);
     assert.equal(isBlankRequiredContactField('email', ''), false);
 });

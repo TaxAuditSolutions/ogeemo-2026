@@ -116,7 +116,7 @@ export async function getReceiptQueueItems(): Promise<ReceiptStagingItem[]> {
   const snap = await getDocs(q);
   return snap.docs
     .map(docToReceiptQueueItem)
-    .filter((item) => item.status !== 'posted')
+    .filter((item) => item.status !== 'posted' && item.status !== 'rejected')
     .sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt.toString()).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt.toString()).getTime() : 0;
@@ -150,6 +150,30 @@ export async function updateReceiptQueueItem(id: string, data: Partial<ReceiptSt
   const ref = doc(db, RECEIPT_QUEUE_COLLECTION, id);
   await updateDoc(ref, {
     ...data,
+    updatedAt: new Date(),
+  });
+}
+
+/**
+ * Discards a receipt from the review queue.
+ *
+ * Deliberately a soft delete (status -> 'rejected'): a Drive-sourced receipt's
+ * source file still lives in the unprocessed Drive folder, so hard-deleting
+ * the queue doc would let the next sync silently re-import it. Rejected items
+ * are hidden from the queue and skipped by sync dedupe forever. The source
+ * file in Google Drive is never touched.
+ */
+export async function deleteReceiptQueueItem(id: string): Promise<void> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const ref = doc(db, RECEIPT_QUEUE_COLLECTION, id);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  if (snap.data()?.orgId !== orgId) {
+    throw new Error('This receipt belongs to a different workspace.');
+  }
+  await updateDoc(ref, {
+    status: 'rejected',
     updatedAt: new Date(),
   });
 }
@@ -206,8 +230,17 @@ export async function syncReceiptQueueFromDrive(): Promise<ReceiptStagingItem[]>
     throw new Error(result.error);
   }
 
-  const existingItems = await getReceiptQueueItems();
-  const existingIds = new Set(existingItems.map((item) => item.driveFileId || item.driveFileName || ''));
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  // Dedupe against EVERY queue doc (posted and rejected included) so a
+  // receipt you discarded is never re-imported by a later sync.
+  const rawSnap = await getDocs(query(collection(db, RECEIPT_QUEUE_COLLECTION), where('orgId', '==', orgId)));
+  const existingIds = new Set(
+    rawSnap.docs.map((d) => {
+      const data = d.data();
+      return (data.driveFileId || data.driveFileName || '') as string;
+    })
+  );
   const createdItems: ReceiptStagingItem[] = [];
 
   for (const file of result.files) {

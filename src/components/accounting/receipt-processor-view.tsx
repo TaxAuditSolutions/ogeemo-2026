@@ -15,9 +15,10 @@ import { getExpenseCategories, getCompanies } from '@/core/accounting-service';
 import { useAuth } from '@/context/auth-context';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { getFolders as getDocumentFolders, findOrCreateFileFolder, updateFolder, type FolderItem } from '@/core/file-manager-folders';
-import { FileText, Sparkles, BadgeCheck, PlusCircle, UploadCloud, ArrowRight, ArrowLeft, LoaderCircle, Info } from 'lucide-react';
+import { FileText, Sparkles, BadgeCheck, PlusCircle, UploadCloud, ArrowRight, ArrowLeft, LoaderCircle, Info, Trash2 } from 'lucide-react';
 import {
   addReceiptQueueItem,
+  deleteReceiptQueueItem,
   getReceiptQueueItems,
   postReceiptToLedger,
   seedSampleReceiptQueueItem,
@@ -35,6 +36,7 @@ export function ReceiptProcessorView() {
   const [saving, setSaving] = React.useState(false);
   const [posting, setPosting] = React.useState(false);
   const [syncing, setSyncing] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
   const [categoryOptions, setCategoryOptions] = React.useState<string[]>([]);
   const [folderOptions, setFolderOptions] = React.useState<FolderItem[]>([]);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -225,6 +227,29 @@ export function ReceiptProcessorView() {
     }
   }, [selected, updateSelected]);
 
+  const handleDeleteSelected = React.useCallback(async () => {
+    if (!selected) return;
+    const label = selected.merchantName || selected.driveFileName || 'this receipt';
+    const confirmed = window.confirm(
+      `Delete "${label}" from the review queue?\n\nThis removes it from Ogeemo only - the source file in Google Drive is not touched.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      await deleteReceiptQueueItem(selected.id);
+      const remaining = items.filter((item) => item.id !== selected.id);
+      setItems(remaining);
+      setSelectedId(remaining[0]?.id ?? null);
+      toast({ title: 'Receipt deleted', description: 'The receipt was removed from the review queue.' });
+    } catch (error: any) {
+      console.error('Failed to delete receipt', error);
+      toast({ variant: 'destructive', title: 'Delete failed', description: error?.message || 'The receipt could not be removed.' });
+    } finally {
+      setDeleting(false);
+    }
+  }, [selected, items, toast]);
+
   if (loading) {
     return (
       <div className="p-6">
@@ -291,6 +316,33 @@ export function ReceiptProcessorView() {
         </div>
       </div>
 
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="space-y-3 pt-6">
+          <p className="text-sm text-muted-foreground">
+            Receipts land here first, before anything touches your books. Files synced from Google
+            Drive or uploaded here wait in this queue with their details extracted, so you check
+            them once and post them to the BKS ledger with confidence.
+          </p>
+          <ol className="grid gap-3 sm:grid-cols-3">
+            <li className="rounded-lg border bg-background p-3 text-sm">
+              <span className="font-semibold">1. Get receipts in</span>
+              <p className="mt-1 text-muted-foreground">Use <span className="font-medium text-foreground">Sync Drive receipts</span> (top right), upload a receipt while reviewing one, or add a demo item.</p>
+            </li>
+            <li className="rounded-lg border bg-background p-3 text-sm">
+              <span className="font-semibold">2. Review the details</span>
+              <p className="mt-1 text-muted-foreground">Open a queued receipt and correct the merchant, date, amounts, or category if the extraction got them wrong.</p>
+            </li>
+            <li className="rounded-lg border bg-background p-3 text-sm">
+              <span className="font-semibold">3. Post to the ledger</span>
+              <p className="mt-1 text-muted-foreground">Creates the expense or bill entry, links the receipt, and clears it from this queue.</p>
+            </li>
+          </ol>
+          <Button variant="link" className="h-auto p-0 text-sm" asChild>
+            <Link href="/learn/guides/receipt-intake">Read the full receipt intake guide</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
         <Card>
           <CardHeader>
@@ -300,7 +352,12 @@ export function ReceiptProcessorView() {
           <CardContent className="space-y-3">
             {items.length === 0 ? (
               <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                No items are waiting for review.
+                <p className="font-medium text-foreground">No receipts are waiting for review.</p>
+                <p className="mt-1">
+                  Click <span className="font-medium text-foreground">Sync Drive receipts</span> to pull
+                  files from your unprocessed receipts folder, or{' '}
+                  <span className="font-medium text-foreground">Add demo item</span> to try the flow.
+                </p>
               </div>
             ) : (
               items.map((item) => (
@@ -332,7 +389,20 @@ export function ReceiptProcessorView() {
                   <CardTitle>{selected.merchantName || 'Receipt review'}</CardTitle>
                   <CardDescription>Review OCR extraction and post to the ledger.</CardDescription>
                 </div>
-                <Badge variant="outline">{selected.auditReferenceId || 'Pending ref'}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{selected.auditReferenceId || 'Pending ref'}</Badge>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    disabled={deleting}
+                    onClick={handleDeleteSelected}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" />
+                    {deleting ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">

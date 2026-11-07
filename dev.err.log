@@ -1,0 +1,136 @@
+ ⨯ ./src/components/calendar/calendar-view.tsx
+Error:   [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:87:1]
+ [2m84[0m |   TooltipTrigger,
+ [2m85[0m | } from '../ui/tooltip';
+ [2m86[0m | import { CalendarEvent, ItemTypes } from './CalendarEvent';
+ [2m87[0m | <<<<<<< HEAD
+    : [35;1m^^^^^^^[0m
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m89[0m | =======
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:90:1]
+ [2m87[0m | <<<<<<< HEAD
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+    : [35;1m^^^^^^^[0m
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+ [2m92[0m | import { useDrop } from 'react-dnd';
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:92:1]
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+    : [35;1m^^^^^^^[0m
+ [2m93[0m | import { useDrop } from 'react-dnd';
+ [2m94[0m | import {
+ [2m94[0m |   DropdownMenu,
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/calendar/calendar-view.tsx
+./src/app/(app)/calendar/page.tsx
+ ⨯ ./src/components/calendar/calendar-view.tsx
+Error:   [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:87:1]
+ [2m84[0m |   TooltipTrigger,
+ [2m85[0m | } from '../ui/tooltip';
+ [2m86[0m | import { CalendarEvent, ItemTypes } from './CalendarEvent';
+ [2m87[0m | <<<<<<< HEAD
+    : [35;1m^^^^^^^[0m
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m89[0m | =======
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:90:1]
+ [2m87[0m | <<<<<<< HEAD
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+    : [35;1m^^^^^^^[0m
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+ [2m92[0m | import { useDrop } from 'react-dnd';
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:92:1]
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+    : [35;1m^^^^^^^[0m
+ [2m93[0m | import { useDrop } from 'react-dnd';
+ [2m94[0m | import {
+ [2m94[0m |   DropdownMenu,
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/calendar/calendar-view.tsx
+./src/app/(app)/calendar/page.tsx
+ ⨯ ./src/components/calendar/calendar-view.tsx
+Error:   [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:87:1]
+ [2m84[0m |   TooltipTrigger,
+ [2m85[0m | } from '../ui/tooltip';
+ [2m86[0m | import { CalendarEvent, ItemTypes } from './CalendarEvent';
+ [2m87[0m | <<<<<<< HEAD
+    : [35;1m^^^^^^^[0m
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m89[0m | =======
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:90:1]
+ [2m87[0m | <<<<<<< HEAD
+ [2m88[0m | import { QuickEntryInput } from './quick-entry-input';
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+    : [35;1m^^^^^^^[0m
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+ [2m92[0m | import { useDrop } from 'react-dnd';
+    `----
+  [31mx[0m Merge conflict marker encountered.
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\calendar\calendar-view.tsx[0m:92:1]
+ [2m89[0m | import { buildQuickEntry, droppedTimes } from '@/lib/calendar-quick-entry';
+ [2m90[0m | =======
+ [2m91[0m | import { ActivityFormDialog } from './activity-form-dialog';
+ [2m92[0m | >>>>>>> e83fb7c26aa3f2050deaad9ed8495463a8b14c4c
+    : [35;1m^^^^^^^[0m
+ [2m93[0m | import { useDrop } from 'react-dnd';
+ [2m94[0m | import {
+ [2m94[0m |   DropdownMenu,
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/calendar/calendar-view.tsx
+./src/app/(app)/calendar/page.tsx
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ [Error: aborted] { code: 'ECONNRESET', digest: '884124770' }
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.

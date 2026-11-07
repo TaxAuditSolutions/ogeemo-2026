@@ -65,7 +65,9 @@ interface ActivityFormDialogBodyProps {
 function ActivityFormDialogBody({ data, subjectInputRef, onCancel, onSaved }: ActivityFormDialogBodyProps) {
     const { user } = useAuth();
     const { toast } = useToast();
-    const form = useActivityForm({ activityType: 'appointment', scheduleNow: true });
+    // Opens for right now (the Add + button's rule); the "Next free slot"
+    // choice in the When band searches the same calendar the page uses.
+    const form = useActivityForm({ activityType: 'appointment', scheduleNow: true, calendarEvents: data.events, calendarReady: !data.isLoadingEvents });
     const [isSaving, setIsSaving] = React.useState(false);
 
     const handleSave = async () => {

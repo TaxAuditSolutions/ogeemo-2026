@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
  * Beta feedback: per-field mic buttons were not intuitive. This floating mic
  * dictates into the focused text field, or the last field the user touched
  * (clicking the mic does not steal focus), falling back to the Activity
- * Manager Details field; if nothing sensible is selected it says so instead
+ * Manager Notes field; if nothing sensible is selected it says so instead
  * of silently recording into the void.
  */
 

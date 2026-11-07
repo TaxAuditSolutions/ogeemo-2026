@@ -34,7 +34,7 @@ export function isTextEntry(el: MaybeEl): boolean {
  * 1. the focused field (user clicked/tabbed into it),
  * 2. the last field the user touched (mic-first flows; clicking the mic must
  *    not steal focus from that field),
- * 3. a page fallback (the Activity Manager Details field).
+ * 3. a page fallback (the Activity Manager Notes field).
  * Returns the first text-entry candidate, or null when nothing sensible is
  * available so the caller can prompt the user instead of dropping words.
  */

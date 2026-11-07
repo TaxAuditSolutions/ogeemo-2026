@@ -1,0 +1,206 @@
+   ▲ Next.js 15.2.8
+   - Local:        http://localhost:9002
+   - Network:      http://192.168.2.49:9002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 7.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 16.6s (1150 modules)
+ GET / 200 in 20560ms
+ ○ Compiling /event-manager ...
+ ✓ Compiled /event-manager in 9.4s (2771 modules)
+ GET /event-manager 200 in 10763ms
+ ✓ Compiled /favicon.ico in 424ms (1609 modules)
+ GET /favicon.ico 200 in 887ms
+[Firebase Admin] Credential source: firebase_service_account_key_env
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 561ms (2779 modules)
+ POST /api/auth/session 200 in 3194ms
+ POST /event-manager 200 in 3968ms
+ POST /event-manager 200 in 553ms
+ ○ Compiling /calendar ...
+ GET /calendar 500 in 10229ms
+ GET /calendar 500 in 146ms
+ GET /calendar 500 in 142ms
+ GET /calendar 500 in 145ms
+ GET /calendar 500 in 157ms
+ GET /favicon.ico 500 in 123ms
+ ✓ Compiled /_error in 3.9s (3170 modules)
+ GET /_next/static/webpack/5d027aa107d26cb4.webpack.hot-update.json 404 in 523ms
+ GET /calendar 200 in 1319ms
+ GET /favicon.ico 200 in 388ms
+ ✓ Compiled /api/auth/session in 510ms (1729 modules)
+ POST /api/auth/session 200 in 1519ms
+ POST /calendar 200 in 1708ms
+ POST /calendar 200 in 369ms
+ GET /calendar 200 in 977ms
+ GET /event-manager 200 in 238ms
+ GET /calendar 200 in 178ms
+ GET /event-manager 200 in 546ms
+ GET /calendar 200 in 392ms
+ GET /event-manager?eventId=TD8qO5ZuqecuQluJoHRX 200 in 166ms
+ GET /calendar 200 in 159ms
+ GET /event-manager 200 in 262ms
+ GET /calendar 200 in 159ms
+ GET /event-manager?eventId=TD8qO5ZuqecuQluJoHRX 200 in 164ms
+ GET /calendar 200 in 179ms
+ GET /event-manager 200 in 154ms
+ ✓ Compiled in 3.8s (3150 modules)
+ ✓ Compiled in 1240ms (3150 modules)
+ ✓ Compiled in 1430ms (3150 modules)
+ ✓ Compiled in 1133ms (3150 modules)
+ ✓ Compiled in 908ms (3136 modules)
+ ✓ Compiled in 2.6s (3150 modules)
+ GET /event-manager 200 in 1835ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 3.4s (3271 modules)
+ GET /settings 200 in 3718ms
+ POST /settings 200 in 1181ms
+ GET /calendar 200 in 167ms
+ GET /event-manager 200 in 157ms
+ ✓ Compiled in 1932ms (3209 modules)
+ ✓ Compiled in 1235ms (3209 modules)
+ ✓ Compiled in 1041ms (3209 modules)
+ GET /event-manager 200 in 1161ms
+ GET /event-manager 200 in 559ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /api/auth/session in 1363ms (1723 modules)
+ ✓ Compiled (1728 modules)
+ GET /favicon.ico 200 in 2540ms
+ POST /api/auth/session 200 in 1644ms
+ POST /event-manager 200 in 2100ms
+ POST /event-manager 200 in 400ms
+ GET /event-manager 200 in 798ms
+ GET /favicon.ico 200 in 313ms
+ POST /api/auth/session 200 in 353ms
+ POST /event-manager 200 in 613ms
+ POST /event-manager 200 in 372ms
+ ✓ Compiled in 1782ms (3230 modules)
+ GET /event-manager 200 in 248ms
+ GET /favicon.ico 200 in 333ms
+ GET /event-manager 200 in 2586ms
+ DELETE /api/auth/session 200 in 140ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3.3s (3231 modules)
+ DELETE /api/auth/session 200 in 3482ms
+ GET /login 200 in 3605ms
+ GET /login 200 in 133ms
+ ○ Compiling /welcome ...
+ ✓ Compiled /welcome in 2.2s (3259 modules)
+ GET /welcome 200 in 2506ms
+ POST /api/auth/session 200 in 2569ms
+ POST /welcome 200 in 520ms
+ POST /welcome 200 in 390ms
+ POST /welcome 200 in 355ms
+ POST /welcome 200 in 350ms
+ POST /welcome 200 in 332ms
+ POST /welcome 200 in 357ms
+ GET /event-manager 200 in 158ms
+ ✓ Compiled in 5.4s (3241 modules)
+ GET /event-manager 200 in 5666ms
+ ✓ Compiled in 4.5s (3241 modules)
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 834ms (1739 modules)
+ GET /favicon.ico 200 in 1317ms
+ GET /event-manager 200 in 1060ms
+ GET /event-manager 200 in 306ms
+ GET /favicon.ico 200 in 349ms
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 658ms (1744 modules)
+ POST /api/auth/session 200 in 1728ms
+ POST /event-manager 200 in 1928ms
+ POST /event-manager 200 in 367ms
+ ✓ Compiled in 3s (3241 modules)
+ GET /event-manager 200 in 340ms
+ ✓ Compiled /favicon.ico in 901ms (3227 modules)
+ ✓ Compiled (3243 modules)
+ GET /favicon.ico 200 in 2405ms
+ GET /event-manager 200 in 2111ms
+ ✓ Compiled in 1286ms (3243 modules)
+ GET /favicon.ico 200 in 374ms
+ ✓ Compiled in 1858ms (3227 modules)
+ GET /event-manager 200 in 1330ms
+ ✓ Compiled in 981ms (3227 modules)
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 577ms (1739 modules)
+ GET /favicon.ico 200 in 1198ms
+ ✓ Compiled in 957ms (3243 modules)
+ GET /event-manager 200 in 1113ms
+ ✓ Compiled /api/auth/session in 4s (3247 modules)
+ ✓ Compiled (3252 modules)
+ GET /favicon.ico 200 in 6065ms
+ POST /api/auth/session 200 in 4283ms
+ POST /event-manager 200 in 4418ms
+ GET /event-manager 200 in 1998ms
+ ✓ Compiled in 1211ms (3252 modules)
+ ✓ Compiled in 1528ms (3252 modules)
+ GET /event-manager 200 in 1153ms
+ GET /favicon.ico 200 in 376ms
+ POST /api/auth/session 200 in 475ms
+ POST /event-manager 200 in 677ms
+ POST /event-manager 200 in 388ms
+ ✓ Compiled in 963ms (3252 modules)
+ ✓ Compiled in 2.4s (3266 modules)
+ GET /event-manager 200 in 392ms
+ GET /favicon.ico 200 in 371ms
+ ✓ Compiled in 2.2s (3266 modules)
+ GET /event-manager 200 in 391ms
+ GET /favicon.ico 200 in 351ms
+ ✓ Compiled in 1137ms (3261 modules)
+ GET /event-manager 200 in 299ms
+ ✓ Compiled in 1305ms (3245 modules)
+ GET /event-manager 200 in 694ms
+ ✓ Compiled in 1154ms (3245 modules)
+ GET /event-manager 200 in 335ms
+ ✓ Compiled in 1672ms (3245 modules)
+ GET /event-manager 200 in 263ms
+ ✓ Compiled in 1264ms (3245 modules)
+ GET /event-manager 200 in 245ms
+ ✓ Compiled in 1629ms (3245 modules)
+ GET /event-manager 200 in 503ms
+ ✓ Compiled in 3.8s (3231 modules)
+ ✓ Compiled in 867ms (3231 modules)
+ ✓ Compiled in 1ms (1725 modules)
+ ✓ Compiled /api/auth/session in 1ms (1725 modules)
+ POST /event-manager 200 in 2075ms
+ GET /event-manager 200 in 6090ms
+ ✓ Compiled in 2.1s (3250 modules)
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1661ms (3252 modules)
+ GET /favicon.ico 200 in 2467ms
+ GET /event-manager 200 in 1323ms
+ POST /api/auth/session 200 in 470ms
+ POST /event-manager 200 in 732ms
+ POST /event-manager 200 in 368ms
+ ✓ Compiled in 2.2s (3266 modules)
+ GET /event-manager 200 in 305ms
+ ✓ Compiled in 3.7s (3268 modules)
+ GET /event-manager 200 in 1277ms
+ ✓ Compiled in 2.3s (3268 modules)
+ GET /event-manager 200 in 309ms
+ ✓ Compiled in 1178ms (3268 modules)
+ GET /event-manager 200 in 229ms
+ GET /event-manager 200 in 1046ms
+ GET /calendar 200 in 692ms
+ ✓ Compiled in 3.7s (3247 modules)
+ GET /event-manager 200 in 508ms
+ GET /event-manager 200 in 1096ms
+ GET /event-manager 200 in 355ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1118ms (1742 modules)
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 530ms (1747 modules)
+ GET /favicon.ico 200 in 2598ms
+ POST /api/auth/session 200 in 1716ms
+ POST /event-manager 200 in 2013ms
+ POST /event-manager 200 in 380ms
+ GET /welcome 200 in 179ms
+ POST /welcome 200 in 662ms
+ POST /welcome 200 in 373ms
+ GET /calendar 200 in 168ms
+ GET /event-manager?eventId=3BrPfv3d5kHfR3maqO4z 200 in 128ms
+ GET /calendar 200 in 138ms
+ GET /event-manager 200 in 137ms
+ GET /calendar 200 in 126ms
+ GET /event-manager 200 in 127ms

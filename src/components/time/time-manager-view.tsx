@@ -91,7 +91,14 @@ export function TimeManagerView() {
     const { toast } = useToast();
 
     const refData = useActivityReferenceData();
-    const form = useActivityForm();
+    // A brand-new activity opens on the calendar's next free slot. Editing an
+    // existing event (?eventId) or arriving from a calendar click (?start)
+    // keeps the time it came with.
+    const form = useActivityForm({
+        suggestSlot: !searchParams.get('eventId') && !searchParams.get('start'),
+        calendarEvents: refData.events,
+        calendarReady: !refData.isLoadingEvents,
+    });
     const {
         subject, setSubject,
         notes, setNotes,
@@ -251,6 +258,8 @@ export function TimeManagerView() {
 
     const handleSaveAndNew = async () => {
         await handleSaveEvent(false);
+        // Re-read the calendar so the next suggestion skips the slot just saved.
+        await refData.reloadEvents();
         resetForm();
         setSessions([]); setEventToEdit(null);
         broadcastTimerState(null);

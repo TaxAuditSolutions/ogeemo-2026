@@ -31,7 +31,7 @@ test('pickDictationField: falls back to the last-focused field (mic-first flow)'
     assert.equal(pickDictationField(body, last, null), last);
 });
 
-test('pickDictationField: falls back to the page default (Activity Manager Details)', () => {
+test('pickDictationField: falls back to the page default (Activity Manager Notes)', () => {
     const fallback = textarea({ id: 'notes' });
     assert.equal(pickDictationField(null, body, fallback), fallback);
 });

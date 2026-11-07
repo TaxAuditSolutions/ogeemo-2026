@@ -7,7 +7,7 @@ not document work if recording it means too much typing or too many steps.
 ## What shipped (beta interim — superseded by the Activity Manager redo below)
 
 **Essential capture surface** (`/event-manager`):
-- Subject → Contact / Project / Worker → Details → record. The misleading
+- Subject → Contact / Project / Worker → Notes → record. The misleading
   "Subject Title \*" is gone — the save path already tolerates an empty title
   (auto-names the session), so nothing is falsely marked required.
 - **Scheduling** and **Billing Status** collapsed behind
@@ -17,15 +17,15 @@ not document work if recording it means too much typing or too many steps.
   the current day, Start's time to the current clock time (floored to the
   5-minute step, never a future time); existing values are never overwritten.
 - **Meeting Agenda** moved from a competing full-width button into a
-  *More tools* menu beside Details — discoverable, not promotional.
+  *More tools* menu beside Notes — discoverable, not promotional.
 
 **Voice-to-text** (`GlobalDictation`, Web Speech API — one mic, any field):
 - A single floating microphone on every screen (bottom-right, 48px). Click
-  into any text field — Details, session notes, any form, any page — and tap
+  into any text field — Notes, session notes, any form, any page — and tap
   the mic; or tap it first, and your last-touched field is remembered (with
-  Activity Manager Details as the sensible default).
+  Activity Manager Notes as the sensible default).
 - Clicking the mic never steals focus from your field; while recording a pill
-  shows where words are landing (`Listening → Details`) and the button pulses
+  shows where words are landing (`Listening → Notes`) and the button pulses
   red. If nothing sensible is selected it prompts to select a field instead
   of silently recording into the void.
 - Phrases are appended, never replaced (`appendTranscript` + target picker,
@@ -43,10 +43,24 @@ The interim capture surface above was replaced by the single-card
 - **Activity type tiles** (Task / Appointment / Project / Note) — persisted
   as `Event.activityType` (legacy docs default to `task`). The Appointment
   tile flips the Schedule switch on.
-- **Title \*** / **Details (optional)** / **Client + Project + Assign to**
+- **Three type tiles: Action / Project / Note.** *Action* replaces the separate
+  Task and Appointment tiles. A new Action is stored as `task`; an existing
+  `appointment` still shows under Action and keeps its type (the calendar's
+  overdue rule treats appointments differently, so the stored value is never
+  rewritten by opening it).
+- **When band (under Subject):** the time is part of the activity, not a hidden
+  switch. Three choices — **Next free slot** (default for a new activity on the
+  Activity Manager page), **Pick a time**, **No set time**. Next free slot is the
+  first 30-minute gap in the assignee's calendar inside 9:00–17:00 (today from
+  the next 5 minutes, then weekdays; completed and all-day items don't block) —
+  see `src/lib/next-free-slot.ts`. It follows a change of assignee until the user
+  edits the time; editing it switches the band to *Pick a time*. Editing an
+  existing event, or arriving from a calendar click, keeps its own time. The
+  Calendar's Add dialog still opens at *now*, with *Next free slot* one click away.
+- **Subject \*** / **Notes (optional)** / **Client + Project + Assign to**
   search pickers. "Add new contact…" and inline project creation live inside
   the pickers (the Select/Add-New radios are gone).
-- **Schedule and Billable toggle switches** replace the interim "Add
+- **Billable toggle switch** and the **When band** (above) replace the interim "Add
   scheduling & billing details" bar; an explicit **Status** select
   (To Do / In Progress / Done) replaces the implicit status-by-schedule.
 - **Cancel / Create Activity** footer (Save & New kept; Delete appears when

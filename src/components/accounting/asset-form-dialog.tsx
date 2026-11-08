@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from "date-fns";
 import type { Asset, DepreciationEntry } from "@/core/accounting-service";
+import { checkClaim, remainingBalance } from "@/lib/cca";
 import { PlusCircle, Trash2, Info, Save } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ScrollArea } from "../ui/scroll-area";
@@ -78,11 +79,9 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
 
   const { toast } = useToast();
 
-  const currentDepreciatedValue = useMemo(() => {
-    const openingBalance = parseFloat(formData.undepreciatedCapitalCost.replace(/,/g, '')) || 0;
-    const totalDepreciation = depreciationEntries.reduce((sum, entry) => sum + entry.amount, 0);
-    return openingBalance - totalDepreciation;
-  }, [formData.undepreciatedCapitalCost, depreciationEntries]);
+  const openingBalance = useMemo(() => parseFloat(formData.undepreciatedCapitalCost.replace(/,/g, '')) || 0, [formData.undepreciatedCapitalCost]);
+  // Opening balance less the claims recorded (see lib/cca): the same figure the register shows.
+  const currentDepreciatedValue = useMemo(() => remainingBalance(openingBalance, depreciationEntries), [openingBalance, depreciationEntries]);
 
 
   useEffect(() => {
@@ -202,9 +201,23 @@ export function AssetFormDialog({ isOpen, onOpenChange, onSave, assetToEdit }: A
         return;
     }
     
-    if (amountNum > currentDepreciatedValue) {
-        toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Depreciation cannot exceed the current value of the asset.' });
+    // Positive, within the balance left, not before the purchase year; above the class maximum is allowed with a warning.
+    const check = checkClaim({
+        amount: amountNum,
+        date: newDepreciation.date,
+        balance: currentDepreciatedValue,
+        assetClass: formData.assetClass,
+        purchaseDate: formData.purchaseDate,
+        applyHalfYearRule: formData.applyHalfYearRule,
+        existingClaims: depreciationEntries,
+        openingBalance,
+    });
+    if (!check.ok) {
+        toast({ variant: 'destructive', title: 'Invalid Amount', description: check.message });
         return;
+    }
+    if (check.warning) {
+        toast({ title: 'Check this claim', description: check.warning });
     }
 
     const newEntry: DepreciationEntry = {

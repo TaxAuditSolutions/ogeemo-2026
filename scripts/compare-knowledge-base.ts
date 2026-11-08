@@ -48,6 +48,8 @@ const QUESTIONS = [
   'How do I turn an approved quote into an invoice, and what carries over?',
   'When does an invoice show as overdue, and how do I post a payment?',
   'How do I work out and record the sales tax I owe for a quarter?',
+  'How do I reconcile a bank statement, and what stops a row being posted twice?',
+  'How is the CCA I can claim on an asset worked out?',
   'How do I post a receipt to the ledger, and what does Audit-ready mode change?',
   'Show me my unbilled hours',
   'What is a standard workflow?',

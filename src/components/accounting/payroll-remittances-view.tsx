@@ -42,8 +42,9 @@ import { format, parseISO } from 'date-fns';
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { getRemittances, addRemittance, updateRemittance, deleteRemittance, type PayrollRemittance } from '@/services/payroll-service';
-import { addExpenseTransaction } from '@/core/accounting-service';
+import { getRemittances, addRemittance, markRemittancePaid, deleteRemittance, type PayrollRemittance } from '@/services/payroll-service';
+import { displayDay, isDuplicateRemittance, summarizeRemittances, validateRemittance } from '@/lib/payables';
+import { todayDateKey } from '@/lib/ledger-date';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -90,6 +91,8 @@ export function PayrollRemittancesView() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formState, setFormState] = useState(emptyRemittanceForm);
   const [remittanceToDelete, setRemittanceToDelete] = useState<PayrollRemittance | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -115,11 +118,9 @@ export function PayrollRemittancesView() {
     }
   };
 
-  const { totalRemitted, amountDue } = useMemo(() => {
-    const totalRemitted = remittances.filter(r => r.status === 'Paid').reduce((sum, r) => sum + r.amount, 0);
-    const amountDue = remittances.filter(r => r.status === 'Due').reduce((sum, r) => sum + r.amount, 0);
-    return { totalRemitted, amountDue };
-  }, [remittances]);
+  // Year-to-date counts only what was paid this calendar year, by the day it was paid; amounts due
+  // exclude nothing, and the overdue part is shown separately (see lib/payables).
+  const { remittedThisYear: totalRemitted, amountDue, overdueAmount, overdueCount } = useMemo(() => summarizeRemittances(remittances), [remittances]);
 
   const handleOpenForm = () => {
     setFormState(emptyRemittanceForm);
@@ -128,12 +129,18 @@ export function PayrollRemittancesView() {
   
   const handleSaveRemittance = async () => {
     if (!user) return;
-    const amountNum = parseFloat(formState.amount);
-    if (!formState.payPeriodStart || !formState.payPeriodEnd || !formState.dueDate || !formState.amount || isNaN(amountNum) || amountNum <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all fields correctly.' });
+    const checked = validateRemittance(formState);
+    if (checked.error !== null) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: checked.error });
         return;
     }
-    
+    const amountNum = checked.amount;
+    if (isDuplicateRemittance(remittances, { payPeriodStart: formState.payPeriodStart, payPeriodEnd: formState.payPeriodEnd, amount: amountNum }) && !window.confirm('A remittance for this pay period and amount already exists. Add it again?')) {
+        return;
+    }
+    if (isSaving) return;
+    setIsSaving(true);
+
     try {
         const newRemittance = await addRemittance({
             ...formState,
@@ -146,30 +153,27 @@ export function PayrollRemittancesView() {
         setIsFormOpen(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
     }
   };
   
   const handleMarkAsPaid = async (remittance: PayrollRemittance) => {
-    if (!user) return;
-    const originalRemittances = [...remittances];
-    const updatedRemittance = { ...remittance, status: 'Paid' as const, paidDate: format(new Date(), 'yyyy-MM-dd') };
-    setRemittances(prev => prev.map(r => r.id === remittance.id ? updatedRemittance : r));
+    if (!user || markingPaidId) return;
+    setMarkingPaidId(remittance.id);
+    const paidDay = todayDateKey();
 
     try {
-        await updateRemittance(remittance.id, { status: 'Paid', paidDate: format(new Date(), 'yyyy-MM-dd') });
-        await addExpenseTransaction({
-            date: format(new Date(), 'yyyy-MM-dd'),
-            company: 'Canada Revenue Agency',
-            description: `Payroll remittance for ${format(new Date(remittance.payPeriodStart), 'PP')} - ${format(new Date(remittance.payPeriodEnd), 'PP')}`,
-            totalAmount: remittance.amount,
-            category: '9060', // CRA line for Salaries, wages, and benefits
-            type: 'business',
-            userId: user.uid,
-        });
-        toast({ title: 'Payment Recorded', description: 'An expense transaction has been created.' });
+        // One batch: the status and the ledger entry are saved together or not at all, and a remittance
+        // that is already paid is refused, so the payment cannot be recorded twice.
+        await markRemittancePaid(remittance.id, paidDay);
+        setRemittances(prev => prev.map(r => r.id === remittance.id ? { ...r, status: 'Paid' as const, paidDate: paidDay } : r));
+        toast({ title: 'Payment Recorded', description: 'The remittance is marked paid and the payment to CRA is in your ledger.' });
     } catch (error: any) {
-        setRemittances(originalRemittances);
-        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not mark remittance as paid.' });
+        toast({ variant: 'destructive', title: 'Update Failed', description: error?.message || 'Could not mark remittance as paid.' });
+        loadRemittances();
+    } finally {
+        setMarkingPaidId(null);
     }
   };
   
@@ -217,13 +221,18 @@ export function PayrollRemittancesView() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Next Amount Due</CardTitle>
+              <CardTitle className="text-sm font-medium">Amount Due</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
                 {formatCurrency(amountDue)}
               </div>
+              {overdueCount > 0 && (
+                <p className="mt-1 text-xs font-semibold text-destructive">
+                  {formatCurrency(overdueAmount)} past its deadline ({overdueCount} remittance{overdueCount === 1 ? '' : 's'})
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -251,10 +260,10 @@ export function PayrollRemittancesView() {
                     {remittances.map((remittance) => (
                     <TableRow key={remittance.id}>
                         <TableCell className="font-medium">
-                        {format(new Date(remittance.payPeriodStart), 'PP')} - {format(new Date(remittance.payPeriodEnd), 'PP')}
+                        {displayDay(remittance.payPeriodStart, d => format(d, 'PP'))} - {displayDay(remittance.payPeriodEnd, d => format(d, 'PP'))}
                         </TableCell>
                         <TableCell>
-                        {format(new Date(remittance.dueDate), 'PP')}
+                        {displayDay(remittance.dueDate, d => format(d, 'PP'))}
                         </TableCell>
                         <TableCell>
                         <Badge variant={ remittance.status === 'Paid' ? 'secondary' : 'destructive'}>
@@ -272,7 +281,7 @@ export function PayrollRemittancesView() {
                             </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                            <DropdownMenuItem disabled={remittance.status === 'Paid'} onSelect={() => handleMarkAsPaid(remittance)}>
+                            <DropdownMenuItem disabled={remittance.status === 'Paid' || markingPaidId === remittance.id} onSelect={() => handleMarkAsPaid(remittance)}>
                                 <CheckCircle className="mr-2 h-4 w-4" /> Mark as Paid
                             </DropdownMenuItem>
                              <DropdownMenuItem onSelect={() => setRemittanceToDelete(remittance)} className="text-destructive">
@@ -318,7 +327,7 @@ export function PayrollRemittancesView() {
             </div>
             <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                <Button onClick={handleSaveRemittance}>Add Liability</Button>
+                <Button onClick={handleSaveRemittance} disabled={isSaving}>Add Liability</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -93,6 +93,9 @@ export function IncomeStatementView() {
                 {calculatedData && calculatedData.notes.remittancesExcluded > 0 && (
                     <> {calculatedData.notes.remittancesExcluded} sales tax payment{calculatedData.notes.remittancesExcluded === 1 ? '' : 's'} to CRA ({formatNoteAmount(calculatedData.notes.remittanceTotal)}) {calculatedData.notes.remittancesExcluded === 1 ? 'is' : 'are'} left out of expenses.</>
                 )}
+                {calculatedData && calculatedData.notes.payrollRemittancesExcluded > 0 && (
+                    <> {calculatedData.notes.payrollRemittancesExcluded} payroll remittance{calculatedData.notes.payrollRemittancesExcluded === 1 ? '' : 's'} to CRA ({formatNoteAmount(calculatedData.notes.payrollRemittanceTotal)}) {calculatedData.notes.payrollRemittancesExcluded === 1 ? 'is' : 'are'} left out because payroll already counted the full gross pay.</>
+                )}
                 {calculatedData && calculatedData.notes.incomeWithoutTaxRecorded > 0 && (
                     <> {calculatedData.notes.incomeWithoutTaxRecorded} income {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'entry has' : 'entries have'} no tax recorded and {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'is' : 'are'} counted at the full amount; edit {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'it' : 'them'} to set the tax if tax was charged.</>
                 )}

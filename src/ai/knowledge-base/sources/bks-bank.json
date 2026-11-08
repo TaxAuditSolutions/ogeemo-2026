@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.bank.statement-csv",
+      "module": "BKS Accounting",
+      "title": "Uploading a bank statement CSV for reconciliation",
+      "routes": ["/accounting/bank-statements", "/accounting/ledgers"],
+      "intents": ["how-to", "business-rule", "bank"],
+      "keywords": ["bank statement", "csv", "upload", "ingest", "import", "reconcile", "reconciliation", "date format", "day first", "month first", "skipped rows", "duplicate upload", "columns", "debit", "credit", "negative amount"],
+      "audiences": ["all"],
+      "content": "The reconciliation wizard, opened from the BKS Ledger, reads a bank statement CSV with the columns Date, Type, Name, Memo and Amount in that order, with money going out as a negative amount. A header row is skipped only when its first cell is not a date, so a file with no header keeps its first row. Amounts such as 1,234.56, $50, (12.50), -12.50 and 12.50- are all read with the right sign. Dates can be 2026-10-01, 10/01/2026, 01/10/2026 or Oct 1, 2026; Ogeemo works out whether a file is month first or day first from any date that settles it, such as 25/12/2026, and if every date is ambiguous it reads them as month first and tells you how many were ambiguous. A row with a date that is not real or an amount that is not a number is skipped and reported by line number, instead of being imported as zero dollars or on the wrong day. Each row gets an identity made from its own content, so uploading the same statement again recognises the rows you already reconciled and shows them as Already Reconciled instead of posting them twice. Two identical transactions on the same day stay two separate rows.",
+      "sourceFiles": ["src/lib/bank-csv.ts", "src/lib/bank-cells.ts", "src/components/accounting/reconciliation-wizard.tsx"]
+    },
+    {
+      "id": "bks.bank.matching",
+      "module": "BKS Accounting",
+      "title": "How bank rows are matched to your books",
+      "routes": ["/accounting/ledgers", "/accounting/bank-statements"],
+      "intents": ["business-rule", "bank", "troubleshooting"],
+      "keywords": ["match", "matched", "perfect match", "drift", "day drift", "unmatched", "already reconciled", "verify", "create entry", "orphan", "bank row", "invoice payment", "bill payment", "direction", "withdrawal", "deposit"],
+      "audiences": ["all"],
+      "content": "Each bank row is matched to one entry in your books: income and expense entries, unpaid invoices for the amount still owed, and unpaid bills. The direction must agree, so money coming in only matches income and invoices and money going out only matches expenses and bills; a 100 dollar withdrawal is never matched to a 100 dollar invoice. The amount must agree to the cent. The same day is a perfect match and a date within 7 days is a drift match that shows how many days apart. One book entry is used for one bank row only, and exact-day matches are settled first so a near-day match never takes an entry that another row matches exactly. Verifying a perfect or drift match marks a ledger entry reconciled, or posts the payment on the invoice or bill and issues the receipt number. Rows with no match can be ingested as new ledger entries, which are created already reconciled and tagged with the bank row, or flagged as an orphan. If one row in a batch fails, the rows already saved stay marked reconciled and you are told how many, so trying again does not post them a second time. A missing invoice or bill is reported as an error instead of being silently skipped. Paying a bill through the bank keeps the bill's net amount and tax.",
+      "sourceFiles": ["src/lib/bank-reconcile.ts", "src/components/accounting/reconciliation-wizard.tsx", "src/core/accounting-service.ts"]
+    }
+  ]
+}

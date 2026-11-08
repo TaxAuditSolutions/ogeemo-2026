@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { assetBalance } from '@/lib/cca';
 import { useRouter } from 'next/navigation';
 import { 
     Search, 
@@ -218,7 +219,7 @@ export function FinancialDiscoveryDialog({ isOpen, onOpenChange }: FinancialDisc
                                 } else if (item.resultType === 'Asset') {
                                     title = item.name ?? 'Unnamed asset';
                                     subtitle = item.assetClass ? `Class ${item.assetClass}` : 'Capital Asset';
-                                    amount = Number(item.undepreciatedCapitalCost ?? 0);
+                                    amount = assetBalance(item);
                                 } else if (item.resultType === 'Loan') {
                                     title = item.counterparty ?? 'Unknown counterparty';
                                     subtitle = item.loanType === 'payable' ? 'Loan Payable' : 'Loan Receivable';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { assetBalance } from '@/lib/cca';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -153,7 +154,7 @@ export function FinancialSnapshotView() {
         const balance = inv.originalAmount - inv.amountPaid;
         return sum + (balance > 0 ? balance : 0);
     }, 0);
-    const capitalAssets = assets.reduce((sum, asset) => sum + asset.undepreciatedCapitalCost, 0);
+    const capitalAssets = assets.reduce((sum, asset) => sum + assetBalance(asset), 0);
     const loansReceivable = loans.filter(l => l.loanType === 'receivable').reduce((sum, l) => sum + l.outstandingBalance, 0);
     const totalAssets = accountsReceivable + capitalAssets + loansReceivable;
 

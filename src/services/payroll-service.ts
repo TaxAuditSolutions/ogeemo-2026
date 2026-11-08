@@ -365,6 +365,62 @@ export async function updateRemittance(id: string, data: Partial<Omit<PayrollRem
     });
 }
 
+/**
+ * Marks a remittance paid AND records the cash leaving to CRA in one batch, so the status and the
+ * ledger can never disagree (a failure saves neither). A remittance already paid is refused, so a
+ * double click or a second tab cannot record the payment twice.
+ *
+ * The ledger entry is flagged isPayrollRemittance: the payroll run already expensed each worker's
+ * full gross pay (the deductions are part of it), so the Income Statement leaves this entry out
+ * instead of counting the same wages a second time.
+ */
+export async function markRemittancePaid(id: string, paidDay: string): Promise<{ expenseId: string }> {
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
+    const remittanceRef = doc(db, REMITTANCES_COLLECTION, id);
+    const snapshot = await getDoc(remittanceRef);
+
+    if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
+        throw new Error('Remittance not found for the current organization.');
+    }
+    const remittance = snapshot.data() as PayrollRemittance;
+    if (remittance.status === 'Paid') {
+        throw new Error('This remittance has already been marked as paid.');
+    }
+
+    const now = new Date();
+    const expenseRef = doc(collection(db, 'expenseTransactions'));
+    const batch = writeBatch(db);
+    batch.update(remittanceRef, {
+        status: 'Paid',
+        paidDate: paidDay,
+        updatedBy: currentUser.uid,
+        updatedAt: now,
+    });
+    batch.set(expenseRef, {
+        userId: currentUser.uid,
+        orgId,
+        date: paidDay,
+        company: 'Canada Revenue Agency',
+        description: `Payroll remittance for ${remittance.payPeriodStart} - ${remittance.payPeriodEnd}`,
+        totalAmount: remittance.amount,
+        preTaxAmount: remittance.amount,
+        taxAmount: 0,
+        taxRate: 0,
+        category: '9060',
+        type: 'business',
+        isPayrollRemittance: true,
+        remittanceId: id,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
+        createdAt: now,
+        updatedAt: now,
+    });
+    await batch.commit();
+    return { expenseId: expenseRef.id };
+}
+
 export async function deleteRemittance(id: string): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();

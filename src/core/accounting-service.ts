@@ -117,6 +117,8 @@ export interface IncomeTransaction extends BaseTransaction {
 export interface ExpenseTransaction extends BaseTransaction {
   /** True for the payment of net sales tax to CRA; the income statement leaves it out (tax is not an expense). */
   isSalesTaxRemittance?: boolean;
+  /** True for the payment of payroll deductions to CRA; the payroll run already expensed the gross pay. */
+  isPayrollRemittance?: boolean;
   category: string;
   paidFrom?: string; // This will store the InternalAccount ID or name
 }
@@ -1215,6 +1217,7 @@ export async function reconcileLedgerEntry(entryId: string, type: 'income' | 'ex
         requestResourceData: { isReconciled: true, bankReferenceId },
       }));
     }
+    throw error;
   });
 }
 
@@ -1225,7 +1228,8 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
   const db = getDb();
   const invoiceRef = doc(db, INVOICES_COLLECTION, invoiceId);
   const invoiceSnap = await getDoc(invoiceRef);
-  if (!invoiceSnap.exists()) return null;
+  // A missing invoice is an error, not a silent skip: the bank row must not be marked reconciled for nothing.
+  if (!invoiceSnap.exists()) throw new Error('The invoice for this bank transaction could not be found. It may have been deleted.');
 
   const data = invoiceSnap.data();
   const paymentProblem = validatePaymentAmount(amount, data.originalAmount, data.amountPaid || 0);
@@ -1279,7 +1283,7 @@ export async function reconcileBillPayment(userId: string, billId: string, date:
   const db = getDb();
   const billRef = doc(db, PAYABLES_COLLECTION, billId);
   const billSnap = await getDoc(billRef);
-  if (!billSnap.exists()) return;
+  if (!billSnap.exists()) throw new Error('The bill for this bank transaction could not be found. It may already have been paid or deleted.');
 
   const data = billSnap.data();
   const batch = writeBatch(db);
@@ -1293,6 +1297,10 @@ export async function reconcileBillPayment(userId: string, billId: string, date:
     company: data.vendor,
     description: `Reconciled payment for Bill #${data.invoiceNumber || 'N/A'}`,
     totalAmount: data.totalAmount,
+    // Keep the bill's net and tax so the input tax credit is not lost when it is paid through the bank.
+    preTaxAmount: data.preTaxAmount ?? data.totalAmount,
+    taxAmount: data.taxAmount ?? 0,
+    taxRate: data.taxRate ?? 0,
     category: data.category,
     paidFrom: account,
     type: 'business',
@@ -1646,7 +1654,7 @@ export async function addPettyCashTransaction(data: Omit<PettyCashTransaction, '
 export async function updatePettyCashTransaction(id: string, data: Partial<Omit<PettyCashTransaction, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, PETTY_CASH_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1654,19 +1662,21 @@ export async function updatePettyCashTransaction(id: string, data: Partial<Omit<
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deletePettyCashTransaction(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, PETTY_CASH_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1791,7 +1801,8 @@ export async function addAsset(data: Omit<Asset, 'id'>): Promise<Asset> {
 export async function updateAsset(id: string, data: Partial<Omit<Asset, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, ASSETS_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  // Awaited and re-thrown so a change that did not save is never reported as saved.
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1799,19 +1810,21 @@ export async function updateAsset(id: string, data: Partial<Omit<Asset, 'id' | '
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deleteAsset(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, ASSETS_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1868,7 +1881,7 @@ export async function addEquityTransaction(data: Omit<EquityTransaction, 'id'>):
 export async function updateEquityTransaction(id: string, data: Partial<Omit<EquityTransaction, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, EQUITY_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1876,19 +1889,21 @@ export async function updateEquityTransaction(id: string, data: Partial<Omit<Equ
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deleteEquityTransaction(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, EQUITY_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1945,7 +1960,7 @@ export async function addLoan(data: Omit<Loan, 'id'>): Promise<Loan> {
 export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, LOANS_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1953,19 +1968,21 @@ export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'us
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deleteLoan(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, LOANS_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -2559,7 +2576,7 @@ export async function addInternalAccount(data: Omit<InternalAccount, 'id'>): Pro
 export async function updateInternalAccount(id: string, data: Partial<Omit<InternalAccount, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, INTERNAL_ACCOUNT_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
         path: docRef.path,
@@ -2568,13 +2585,14 @@ export async function updateInternalAccount(id: string, data: Partial<Omit<Inter
       } satisfies SecurityRuleContext);
       errorEmitter.emit('permission-error', permissionError);
     }
+    throw error;
   });
 }
 
 export async function deleteInternalAccount(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, INTERNAL_ACCOUNT_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       const permissionError = new FirestorePermissionError({
         path: docRef.path,
@@ -2582,6 +2600,7 @@ export async function deleteInternalAccount(id: string): Promise<void> {
       } satisfies SecurityRuleContext);
       errorEmitter.emit('permission-error', permissionError);
     }
+    throw error;
   });
 }
 // --- Work Order Functions ---

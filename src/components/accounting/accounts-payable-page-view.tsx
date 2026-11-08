@@ -49,6 +49,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoaderCircle, Landmark, CheckCircle, PlusCircle, Trash2, MoreVertical, Pencil, X } from 'lucide-react';
 import { format } from 'date-fns';
+import { daysPastDue, displayDay, isPastDue } from '@/lib/payables';
+import { parseLedgerDate, todayDateKey } from '@/lib/ledger-date';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -71,6 +73,7 @@ import { getIndustries, type Industry } from '@/services/industry-service';
 import { AccountingPageHeader } from './page-header';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { TransactionDialog } from './transaction-dialog';
+import { sumCents } from '@/lib/ledger-totals';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -96,7 +99,8 @@ export function AccountsPayablePageView() {
   // Bill state
   const [billToEdit, setBillToEdit] = useState<PayableBill | null>(null);
   const [billToPay, setBillToPay] = useState<PayableBill | null>(null);
-  const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [paymentDate, setPaymentDate] = useState(todayDateKey());
+  const [isPaying, setIsPaying] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
 
   // Deletion state
@@ -147,7 +151,12 @@ export function AccountsPayablePageView() {
   };
 
   const handlePostPayment = async () => {
-    if (!user || !billToPay) return;
+    if (!user || !billToPay || isPaying) return;
+    if (!parseLedgerDate(paymentDate)) {
+        toast({ variant: 'destructive', title: 'Choose a payment date', description: 'Enter the date the bill was paid.' });
+        return;
+    }
+    setIsPaying(true);
     try {
         await postBillPayment(user.uid, billToPay.id, paymentDate, paymentMethod);
         setBillToPay(null);
@@ -155,6 +164,8 @@ export function AccountsPayablePageView() {
         loadData();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
+    } finally {
+        setIsPaying(false);
     }
   };
 
@@ -171,7 +182,7 @@ export function AccountsPayablePageView() {
   };
 
   const totalPayable = useMemo(() => {
-      return bills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
+      return sumCents(bills.map(bill => bill.totalAmount));
   }, [bills]);
 
   return (
@@ -233,7 +244,14 @@ export function AccountsPayablePageView() {
                         <TableBody>
                             {bills.length > 0 ? bills.map(bill => (
                                 <TableRow key={bill.id} className="group cursor-pointer" title="Edit bill" onClick={() => handleEdit(bill)}>
-                                    <TableCell>{format(new Date(bill.dueDate), 'PP')}</TableCell>
+                                    <TableCell>
+                                        {displayDay(bill.dueDate, d => format(d, 'PP'))}
+                                        {isPastDue(bill.dueDate) && (
+                                            <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700">
+                                                {daysPastDue(bill.dueDate)} {daysPastDue(bill.dueDate) === 1 ? 'day' : 'days'} overdue
+                                            </span>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="font-medium text-primary group-hover:underline">{bill.vendor}</TableCell>
                                     <TableCell>{bill.invoiceNumber}</TableCell>
                                     <TableCell className="text-right font-mono text-destructive">{formatCurrency(bill.totalAmount)}</TableCell>
@@ -322,7 +340,7 @@ export function AccountsPayablePageView() {
                 </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setBillToPay(null)}>Cancel</Button>
-                    <Button onClick={handlePostPayment}>
+                    <Button onClick={handlePostPayment} disabled={isPaying}>
                         <CheckCircle className="mr-2 h-4 w-4" /> Post to GL
                     </Button>
                 </DialogFooter>

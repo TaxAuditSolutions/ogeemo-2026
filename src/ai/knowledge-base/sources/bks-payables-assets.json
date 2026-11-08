@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "bks.payable.bills",
+      "module": "BKS Accounting",
+      "title": "Accounts Payable: logging and paying bills",
+      "routes": ["/accounting/accounts-payable"],
+      "intents": ["how-to", "business-rule", "bills"],
+      "keywords": ["accounts payable", "bill", "bills", "payable", "log payable bill", "post payment", "pay bill", "overdue bill", "due date", "total unpaid bills", "vendor", "supplier", "payment method", "input tax credit"],
+      "audiences": ["all"],
+      "content": "Accounts Payable at /accounting/accounts-payable lists unpaid bills with their due date, supplier, invoice number and amount, and the Total Unpaid Bills card adds them up to the cent. Log Payable Bill adds a bill; the amount you type includes tax and the bill keeps its net and tax. A bill whose due date has passed shows a red days overdue badge, and a bill due today is not overdue. Due dates are shown as the day you entered, not a day early. Post Payment asks for the payment date and method, writes the payment to the General Ledger as an expense with the bill's net amount and tax, and removes the bill from the list in one step. The payment date must be a real date, and the button is disabled while it saves so one click makes one payment.",
+      "sourceFiles": ["src/components/accounting/accounts-payable-page-view.tsx", "src/lib/payables.ts", "src/core/accounting-service.ts"]
+    },
+    {
+      "id": "bks.payroll.remittances",
+      "module": "BKS Accounting",
+      "title": "Payroll remittances to CRA",
+      "routes": ["/accounting/tax", "/accounting/payroll/run"],
+      "intents": ["how-to", "business-rule", "payroll", "tax"],
+      "keywords": ["payroll remittance", "remittance", "source deductions", "cra", "mark as paid", "amount due", "total remitted", "year to date", "ytd", "deadline", "overdue remittance", "add remittance", "payroll deductions"],
+      "audiences": ["all"],
+      "content": "Payroll Remittances, opened from the Tax Center card of the same name (its address is /accounting/tax/payroll-remittances), tracks the source deductions you owe CRA. Running payroll creates a remittance for the run's deductions, due on the 15th of the following month, and Add Remittance records one by hand. A remittance needs a pay period whose end is not before its start, a due date not before the period starts, and an amount above zero; adding one with the same period and amount as an existing one asks you to confirm. Total Remitted shows only what was paid this calendar year, by the day it was paid. Amount Due adds up everything unpaid, and a note shows how much of it is past its deadline. Mark as Paid saves the new status and the payment to Canada Revenue Agency in your ledger together, dated today, or neither if something fails, and a remittance that is already paid cannot be marked again. That ledger payment is not counted again on the Income Statement, because the payroll run already counted each worker's full gross pay as an expense and the deductions are part of it; the Income Statement says how many were left out.",
+      "sourceFiles": ["src/components/accounting/payroll-remittances-view.tsx", "src/services/payroll-service.ts", "src/lib/payables.ts"]
+    },
+    {
+      "id": "bks.assets.cca",
+      "module": "BKS Accounting",
+      "title": "Capital assets and CCA",
+      "routes": ["/accounting/asset-management", "/accounting/tax"],
+      "intents": ["how-to", "business-rule", "tax", "assets"],
+      "keywords": ["capital asset", "assets", "cca", "capital cost allowance", "depreciation", "ucc", "undepreciated capital cost", "asset class", "half year rule", "record depreciation", "claim", "balance", "register"],
+      "audiences": ["all"],
+      "content": "Capital Asset Management at /accounting/asset-management lists your assets with the original price and the balance left, grouped by CRA class. An asset is entered with its class, purchase date, original price and its current value, which is the opening balance. Each depreciation claim you record lowers the balance, and the register, the class totals, the Financial Snapshot and the loan application all show that same balance, the opening value less the claims. A claim must be more than zero, no more than the balance left, and not dated before the year the asset was bought. CCA is a declining balance: the usual yearly maximum is the class rate times the balance at the start of the year, for example 20 percent for class 8, and half of that in the purchase year when the half-year rule is on. A claim above that usual maximum is allowed because the amount you claim is your choice, but you get a warning showing the maximum. The rates are standard class rates, some assets have special rules, and Ogeemo does not file a CCA claim for you, so confirm the figures with your accountant. Saving or deleting an asset reports success only after it has really saved.",
+      "sourceFiles": ["src/lib/cca.ts", "src/components/accounting/asset-form-dialog.tsx", "src/components/accounting/asset-management-view.tsx"]
+    }
+  ]
+}

@@ -63,9 +63,21 @@ test('the payment of net sales tax to CRA is not an expense, by flag or by how t
   ];
   const result = buildIncomeStatement([], expenses, year, config);
   assert.equal(result.expenses.insurance, 40, 'a different payment to CRA still counts');
-  assert.deepEqual(result.notes, { incomeWithoutTaxRecorded: 0, remittancesExcluded: 2, remittanceTotal: 141 });
+  assert.deepEqual(result.notes, { incomeWithoutTaxRecorded: 0, remittancesExcluded: 2, remittanceTotal: 141, payrollRemittancesExcluded: 0, payrollRemittanceTotal: 0 });
   assert.equal(isSalesTaxRemittance({ company: ' canada revenue agency ', description: 'sales tax remittance' }), true);
   assert.equal(isSalesTaxRemittance({ company: 'Acme', description: 'Sales Tax Remittance' }), false);
+});
+
+test('a payroll remittance is not counted again: the payroll run already expensed the gross wages', () => {
+  const expenses = [
+    { date: '2026-06-30', totalAmount: 5000, category: '9060' },
+    { date: '2026-07-15', totalAmount: 1000, category: '9060', isPayrollRemittance: true },
+  ];
+  const result = buildIncomeStatement([], expenses, year, config);
+  assert.equal(result.totalExpenses, 5000, 'wages counted once, not 6000');
+  assert.equal(result.notes.payrollRemittancesExcluded, 1);
+  assert.equal(result.notes.payrollRemittanceTotal, 1000);
+  assert.equal(result.notes.remittancesExcluded, 0, 'kept apart from sales tax payments');
 });
 
 test('older entries with no tax data are counted at the full amount and are counted in the notes', () => {

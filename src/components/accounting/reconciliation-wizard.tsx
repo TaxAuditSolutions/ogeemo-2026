@@ -71,7 +71,11 @@ import {
     type ExpenseCategory,
     type TaxType
 } from '@/core/accounting-service';
-import { format, isValid, differenceInDays, parse, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
+import { matchBankTransactions } from '@/lib/bank-reconcile';
+import { parseBankCsv } from '@/lib/bank-csv';
+import { isLedgerDateInRange, todayDateKey } from '@/lib/ledger-date';
+import { invoiceBalance } from '@/lib/invoice-status';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -132,18 +136,6 @@ interface ReconciliationWizardProps {
     onSuccess: () => void;
 }
 
-const scrubAmount = (val: any): number => {
-    if (val === null || val === undefined) return 0;
-    const s = String(val).trim();
-    if (!s) return 0;
-    const isParens = s.startsWith('(') && s.endsWith(')');
-    let clean = s.replace(/[$,()]/g, '');
-    let num = parseFloat(clean);
-    if (isNaN(num)) return 0;
-    const isNegative = isParens || s.startsWith('-') || s.endsWith('-');
-    return isNegative ? -Math.abs(num) : num;
-};
-
 const normalizeDate = (dateStr: string): string => {
     if (!dateStr) return '';
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -186,76 +178,59 @@ export function ReconciliationWizard({
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const reconciliationNodes = useMemo(() => {
+    const reconciliationNodes = useMemo((): ReconciliationNode[] => {
         if (bankTransactions.length === 0) return [];
 
+        // Everything the books hold that a bank row could settle, with the direction of the money.
+        // Unpaid invoices are matched on what is still owed; bills on their full amount.
         const allRegistry = [
             ...incomeLedger.map(i => ({ ...i, type: 'income' as const, matchType: 'ledger' as const })),
             ...expenseLedger.map(e => ({ ...e, type: 'expense' as const, matchType: 'ledger' as const })),
-            ...invoices.map(inv => ({ 
-                ...inv, 
-                type: 'income' as const, 
-                matchType: 'invoice' as const, 
-                totalAmount: inv.originalAmount - inv.amountPaid, 
+            ...invoices.map(inv => ({
+                ...inv,
+                type: 'income' as const,
+                matchType: 'invoice' as const,
+                totalAmount: invoiceBalance(inv.originalAmount, inv.amountPaid),
                 company: inv.companyName,
-                date: format(new Date(inv.invoiceDate), 'yyyy-MM-dd')
+                date: todayDateKey(new Date(inv.invoiceDate)),
             })),
-            ...payableBills.map(bill => ({ 
-                ...bill, 
-                type: 'expense' as const, 
-                matchType: 'bill' as const, 
+            ...payableBills.map(bill => ({
+                ...bill,
+                type: 'expense' as const,
+                matchType: 'bill' as const,
                 company: bill.vendor,
-                date: bill.dueDate 
-            }))
+                date: bill.dueDate,
+            })),
         ];
 
-        const usedRegistryIds = new Set<string>();
+        const matches = matchBankTransactions(
+            bankTransactions.map(bt => ({ id: bt.id, date: normalizeDate(bt.date), amount: bt.amount })),
+            allRegistry.map(entry => ({
+                id: entry.id,
+                date: entry.date,
+                amount: entry.totalAmount,
+                direction: entry.type === 'income' ? 'in' as const : 'out' as const,
+                isReconciled: 'isReconciled' in entry ? !!entry.isReconciled : false,
+                bankReferenceId: 'bankReferenceId' in entry ? entry.bankReferenceId : undefined,
+            }))
+        );
+        const registryById = new Map(allRegistry.map(entry => [entry.id, entry]));
 
-        return bankTransactions.map(bt => {
-            const absBankAmount = Math.abs(bt.amount);
-            const normalizedBankDate = normalizeDate(bt.date);
-
-            const perfectMatch = allRegistry.find(lt => {
-                if (usedRegistryIds.has(lt.id)) return false;
-                if ('isReconciled' in lt && lt.isReconciled) return false;
-                return lt.date === normalizedBankDate && Math.abs(lt.totalAmount - absBankAmount) < 0.01;
-            });
-
-            if (perfectMatch) {
-                usedRegistryIds.add(perfectMatch.id);
+        return bankTransactions.map((bt, index) => {
+            const match = matches[index];
+            if (match.status === 'duplicate') {
+                return { bank: bt, matchStatus: 'duplicate' as const, recommendation: 'Already Reconciled' };
+            }
+            if (match.status === 'perfect' || match.status === 'drift') {
                 return {
                     bank: bt,
-                    matchStatus: 'perfect' as const,
-                    matchedLedgerNode: perfectMatch,
-                    recommendation: 'Verify Match'
+                    matchStatus: match.status,
+                    matchedLedgerNode: registryById.get(match.registryId as string),
+                    driftDays: match.driftDays,
+                    recommendation: match.status === 'perfect' ? 'Verify Match' : 'Verify Drift',
                 };
             }
-
-            const driftMatch = allRegistry.find(lt => {
-                if (usedRegistryIds.has(lt.id)) return false;
-                if ('isReconciled' in lt && lt.isReconciled) return false;
-                if (Math.abs(lt.totalAmount - absBankAmount) > 0.01) return false;
-                const dateDiff = Math.abs(differenceInDays(new Date(lt.date), new Date(normalizedBankDate)));
-                return dateDiff <= 7;
-            });
-
-            if (driftMatch) {
-                const drift = differenceInDays(new Date(driftMatch.date), new Date(normalizedBankDate));
-                usedRegistryIds.add(driftMatch.id);
-                return {
-                    bank: bt,
-                    matchStatus: 'drift' as const,
-                    matchedLedgerNode: driftMatch,
-                    driftDays: drift,
-                    recommendation: 'Verify Drift'
-                };
-            }
-
-            return {
-                bank: bt,
-                matchStatus: 'unmatched' as const,
-                recommendation: 'Create Entry'
-            };
+            return { bank: bt, matchStatus: 'unmatched' as const, recommendation: 'Create Entry' };
         });
     }, [bankTransactions, incomeLedger, expenseLedger, invoices, payableBills]);
 
@@ -273,10 +248,8 @@ export function ReconciliationWizard({
 
         if (startDate || endDate) {
             list = list.filter(node => {
-                const txDate = new Date(node.bank.date);
-                const start = startDate ? startOfDay(startDate) : new Date(0);
-                const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
-                return isWithinInterval(txDate, { start, end });
+                // Local-day comparison, both ends included (see lib/ledger-date).
+                return isLedgerDateInRange(normalizeDate(node.bank.date), startDate, endDate);
             });
         }
 
@@ -303,24 +276,33 @@ export function ReconciliationWizard({
         reader.onload = (e) => {
             try {
                 const text = e.target?.result as string;
-                const lines = text.split(/\r?\n/).filter(l => l.trim());
-                if (lines.length < 2) throw new Error("CSV invalid format.");
+                // Rows with a bad date or amount are reported, never imported as $0 or on a wrong day,
+                // and each row's id comes from its content so the same statement can be re-uploaded safely.
+                const parsed = parseBankCsv(text);
+                if (parsed.rows.length === 0) {
+                    throw new Error(parsed.skipped.length > 0
+                        ? `No usable rows. First problem: line ${parsed.skipped[0].line}: ${parsed.skipped[0].reason}.`
+                        : 'CSV invalid format: no transactions found.');
+                }
 
-                const newTxns: BankTransaction[] = lines.slice(1).map((line, index) => {
-                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^"|"$/g, ''));
-                    return {
-                        id: `bank_${Date.now()}_${index}`,
-                        date: parts[0] || '',
-                        name: parts[2] || 'Unknown',
-                        memo: parts[3] || '',
-                        amount: scrubAmount(parts[4]),
-                        status: 'unreconciled'
-                    };
-                });
-                
+                const newTxns: BankTransaction[] = parsed.rows.map(row => ({
+                    id: row.id,
+                    date: row.date,
+                    name: row.name,
+                    memo: row.memo,
+                    amount: row.amount,
+                    status: 'unreconciled' as const,
+                }));
+
                 setBankTransactions(newTxns);
                 setStep('ledger');
-                toast({ title: "Statement Ingested", description: `Discovered ${newTxns.length} bank transactions.` });
+                const notes: string[] = [];
+                if (parsed.skipped.length > 0) notes.push(`${parsed.skipped.length} row${parsed.skipped.length === 1 ? '' : 's'} skipped (first: line ${parsed.skipped[0].line}, ${parsed.skipped[0].reason})`);
+                if (parsed.ambiguousDates > 0) notes.push(`${parsed.ambiguousDates} date${parsed.ambiguousDates === 1 ? ' is' : 's are'} ambiguous and read as month/day`);
+                toast({
+                    title: 'Statement Ingested',
+                    description: `Discovered ${newTxns.length} bank transactions.${notes.length ? ' ' + notes.join('; ') + '.' : ''}`,
+                });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Ingestion Error', description: error.message });
             } finally {
@@ -332,6 +314,7 @@ export function ReconciliationWizard({
 
     const handleBulkVerify = async () => {
         if (!user || selectedIds.length === 0) return;
+        const doneIds: string[] = [];
         setIsProcessing(true);
         try {
             const nodesToVerify = reconciliationNodes.filter(n => 
@@ -346,6 +329,8 @@ export function ReconciliationWizard({
                 return;
             }
 
+            // Rows already written are remembered, so if a later row fails they are still shown as done
+            // here and are not posted a second time when the user tries again.
             const issuedReceipts: string[] = [];
             for (const node of nodesToVerify) {
                 const match = node.matchedLedgerNode;
@@ -353,11 +338,12 @@ export function ReconciliationWizard({
                 if (match.matchType === 'ledger') {
                     await reconcileLedgerEntry(match.id, match.type, node.bank.id);
                 } else if (match.matchType === 'invoice') {
-                    const receiptNumber = await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), node.bank.date, node.bank.id, 'Bank Account');
+                    const receiptNumber = await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), normalizeDate(node.bank.date), node.bank.id, 'Bank Account');
                     if (receiptNumber) issuedReceipts.push(receiptNumber);
                 } else if (match.matchType === 'bill') {
-                    await reconcileBillPayment(user.uid, match.id, node.bank.date, node.bank.id, 'Bank Account');
+                    await reconcileBillPayment(user.uid, match.id, normalizeDate(node.bank.date), node.bank.id, 'Bank Account');
                 }
+                doneIds.push(node.bank.id);
             }
 
             setBankTransactions(prev => prev.map(tx => selectedIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
@@ -368,7 +354,15 @@ export function ReconciliationWizard({
             });
             onSuccess();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Verification Failed', description: error.message });
+            if (doneIds.length > 0) {
+                setBankTransactions(prev => prev.map(tx => doneIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
+                onSuccess();
+            }
+            toast({
+                variant: 'destructive',
+                title: 'Verification Failed',
+                description: `${error.message}${doneIds.length > 0 ? ` ${doneIds.length} earlier row${doneIds.length === 1 ? ' was' : 's were'} already saved and marked reconciled.` : ''}`,
+            });
         } finally {
             setIsProcessing(false);
         }
@@ -376,6 +370,8 @@ export function ReconciliationWizard({
 
     const handleBulkAutoIngest = async () => {
         if (!user || selectedIds.length === 0) return;
+        // Rows already written stay marked done even if a later row fails, so a retry never posts them twice.
+        const doneIds: string[] = [];
         setIsProcessing(true);
         try {
             const nodesToIngest = reconciliationNodes.filter(n => 
@@ -407,7 +403,7 @@ export function ReconciliationWizard({
                 const baseData = {
                     date: normalizeDate(bt.date),
                     company: bt.name,
-                    description: `Bank Ingested: ${bt.memo}`,
+                    description: `Bank Ingested: ${bt.memo || bt.name}`,
                     totalAmount: absAmount,
                     preTaxAmount: absAmount,
                     taxAmount: 0,
@@ -422,8 +418,10 @@ export function ReconciliationWizard({
 
                 if (isIncome) {
                     await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
+                    doneIds.push(bt.id);
                 } else {
                     await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
+                    doneIds.push(bt.id);
                 }
             }
 
@@ -432,7 +430,15 @@ export function ReconciliationWizard({
             toast({ title: 'Ingestion Successful', description: `${nodesToIngest.length} new transactions committed to General Ledger.` });
             onSuccess();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Ingestion Failed', description: error.message });
+            if (doneIds.length > 0) {
+                setBankTransactions(prev => prev.map(tx => doneIds.includes(tx.id) ? { ...tx, status: 'reconciled' } : tx));
+                onSuccess();
+            }
+            toast({
+                variant: 'destructive',
+                title: 'Ingestion Failed',
+                description: `${error.message}${doneIds.length > 0 ? ` ${doneIds.length} earlier row${doneIds.length === 1 ? ' was' : 's were'} already saved and marked reconciled.` : ''}`,
+            });
         } finally {
             setIsProcessing(false);
         }
@@ -627,7 +633,7 @@ export function ReconciliationWizard({
                                                         <Checkbox 
                                                             checked={isSelected}
                                                             onCheckedChange={() => handleToggleSelect(bt.id)}
-                                                            disabled={isReconciled}
+                                                            disabled={isReconciled || node.matchStatus === 'duplicate'}
                                                         />
                                                     </TableCell>
                                                     <TableCell className="text-xs font-mono font-bold">{bt.date}</TableCell>
@@ -647,6 +653,8 @@ export function ReconciliationWizard({
                                                             </Badge>
                                                         ) : isOrphan ? (
                                                             <Badge variant="outline" className="text-[9px] uppercase tracking-widest font-black">Orphaned</Badge>
+                                                        ) : node.matchStatus === 'duplicate' ? (
+                                                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200 text-[9px] uppercase tracking-widest font-black">Already Reconciled</Badge>
                                                         ) : (
                                                             <div className="flex justify-center">
                                                                 {node.matchStatus === 'perfect' && (
@@ -676,7 +684,7 @@ export function ReconciliationWizard({
                                                     <TableCell>
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-[10px] font-bold uppercase text-muted-foreground tracking-tighter w-24">{node.recommendation}</span>
-                                                            {!isReconciled && !isOrphan && (
+                                                            {!isReconciled && !isOrphan && node.matchStatus !== 'duplicate' && (
                                                                 <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-black hover:bg-primary/10 hover:text-primary px-3" onClick={() => handleToggleSelect(bt.id)}>
                                                                     {isSelected ? 'Deselect' : 'Select Item'}
                                                                 </Button>

@@ -22,6 +22,7 @@ export interface StatementEntry {
   company?: string;
   description?: string;
   isSalesTaxRemittance?: boolean;
+  isPayrollRemittance?: boolean;
 }
 
 export interface StatementCategory {
@@ -43,6 +44,9 @@ export interface IncomeStatementData {
     /** Sales tax payments to CRA left out of expenses, and how much they came to. */
     remittancesExcluded: number;
     remittanceTotal: number;
+    /** Payroll remittances left out because the payroll run already expensed the gross pay. */
+    payrollRemittancesExcluded: number;
+    payrollRemittanceTotal: number;
   };
 }
 
@@ -67,6 +71,11 @@ export function netAmountOf(entry: StatementEntry): number {
 export function isSalesTaxRemittance(entry: StatementEntry): boolean {
   if (entry.isSalesTaxRemittance === true) return true;
   return /^canada revenue agency$/i.test((entry.company || '').trim()) && /^sales tax remittance/i.test((entry.description || '').trim());
+}
+
+/** True for the entry made when a payroll remittance is marked paid (the wages were already expensed by the payroll run). */
+export function isPayrollRemittanceEntry(entry: StatementEntry): boolean {
+  return entry.isPayrollRemittance === true;
 }
 
 /** Income entries that never recorded their tax (payments posted before it was kept). */
@@ -103,7 +112,14 @@ export function buildIncomeStatement(
 
   let remittancesExcluded = 0;
   let remittanceTotal = 0;
+  let payrollRemittancesExcluded = 0;
+  let payrollRemittanceTotal = 0;
   for (const entry of expenseRows) {
+    if (isPayrollRemittanceEntry(entry)) {
+      payrollRemittancesExcluded += 1;
+      payrollRemittanceTotal += Number(entry.totalAmount) || 0;
+      continue;
+    }
     if (isSalesTaxRemittance(entry)) {
       remittancesExcluded += 1;
       remittanceTotal += Number(entry.totalAmount) || 0;
@@ -122,6 +138,12 @@ export function buildIncomeStatement(
     expenses: totals,
     totalExpenses,
     netProfitOrLoss: roundCents(gross - totalExpenses),
-    notes: { incomeWithoutTaxRecorded, remittancesExcluded, remittanceTotal: roundCents(remittanceTotal) },
+    notes: {
+      incomeWithoutTaxRecorded,
+      remittancesExcluded,
+      remittanceTotal: roundCents(remittanceTotal),
+      payrollRemittancesExcluded,
+      payrollRemittanceTotal: roundCents(payrollRemittanceTotal),
+    },
   };
 }

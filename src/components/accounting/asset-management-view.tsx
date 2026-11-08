@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/context/auth-context";
 import { getAssets, addAsset, updateAsset, deleteAsset, type Asset } from "@/core/accounting-service";
+import { assetBalance } from "@/lib/cca";
 import { cn } from "@/lib/utils";
 
 
@@ -105,7 +106,7 @@ export function AssetManagementView() {
         }
         summary[key].count++;
         summary[key].totalCost += asset.cost;
-        summary[key].totalUCC += asset.undepreciatedCapitalCost;
+        summary[key].totalUCC += assetBalance(asset);
     });
 
     return Object.entries(summary).sort(([classA], [classB]) => {
@@ -289,7 +290,7 @@ export function AssetManagementView() {
                             <TableCell>{asset.assetClass || 'N/A'}</TableCell>
                             <TableCell>{asset.purchaseDate}</TableCell>
                             <TableCell className="text-right font-mono">{formatCurrency(asset.cost)}</TableCell>
-                            <TableCell className="text-right font-mono">{formatCurrency(asset.undepreciatedCapitalCost)}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(assetBalance(asset))}</TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

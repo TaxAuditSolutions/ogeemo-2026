@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { assetBalance } from '@/lib/cca';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -91,7 +92,7 @@ export function LoanApplicationView() {
     }, [loadData]);
     
     const { totalAssets, totalLiabilities } = useMemo(() => {
-        const capitalAssets = assets.reduce((sum, asset) => sum + asset.undepreciatedCapitalCost, 0);
+        const capitalAssets = assets.reduce((sum, asset) => sum + assetBalance(asset), 0);
         const payableLoans = loans.filter(l => l.loanType === 'payable').reduce((sum, l) => sum + l.outstandingBalance, 0);
         const receivableLoans = loans.filter(l => l.loanType === 'receivable').reduce((sum, l) => sum + l.outstandingBalance, 0);
         

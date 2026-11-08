@@ -120,6 +120,8 @@ export default function SalesTaxPage() {
                 preTaxAmount: netTax,
                 taxAmount: 0,
                 taxRate: 0,
+                // Marked so the Income Statement leaves it out: it is tax paid over, not a business expense.
+                isSalesTaxRemittance: true,
                 category: taxesAndLicensesCategory ? taxesAndLicensesCategory.line : '9999', // Default fallback
                 type: 'business',
                 userId: user.uid,

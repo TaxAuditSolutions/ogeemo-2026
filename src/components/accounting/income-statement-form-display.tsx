@@ -47,7 +47,7 @@ export function T2125FormDisplay({ data, dateRange }: T2125FormDisplayProps) {
     <Card className="print:border-none print:shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Statement of Business or Professional Activities</CardTitle>
-        <CardDescription>for the Period: {renderDateRange()}</CardDescription>
+        <CardDescription>for the Period: {renderDateRange()} - amounts before sales tax</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <section>

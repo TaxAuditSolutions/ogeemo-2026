@@ -67,6 +67,8 @@ const cases = [
   ['What does Record Remittance Payment do?', 'bks.tax.sales-tax'],
   ['What is the income statement based on?', 'bks.tax.income-statement'],
   ['What happens to an expense with no tax line?', 'bks.tax.income-statement'],
+  ['Does the income statement include sales tax?', 'bks.tax.income-statement'],
+  ['Why is my sales tax remittance not an expense on the income statement?', 'bks.tax.income-statement'],
   ['How do I post a scanned receipt to the ledger?', 'bks.receipts.intake-and-posting'],
   ['What checks does receipt review run?', 'bks.receipts.intake-and-posting'],
   ['What is audit-ready record keeping mode?', 'bks.receipts.tax-and-record-keeping'],

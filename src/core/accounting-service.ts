@@ -24,6 +24,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { reconcileSourceRefs, sourceRefsFromLineItems, type EntryRef } from '@/lib/billing-eligibility';
 import { addPayment, quoteConversionProblem, storedStatusFor, validatePaymentAmount } from '@/lib/invoice-status';
+import { impliedTaxRate, splitPaymentTax } from '@/lib/payment-tax';
+import { calculateDocumentTotals } from '@/lib/document-totals';
 
 
 function getDb() {
@@ -113,6 +115,8 @@ export interface IncomeTransaction extends BaseTransaction {
 }
 
 export interface ExpenseTransaction extends BaseTransaction {
+  /** True for the payment of net sales tax to CRA; the income statement leaves it out (tax is not an expense). */
+  isSalesTaxRemittance?: boolean;
   category: string;
   paidFrom?: string; // This will store the InternalAccount ID or name
 }
@@ -1135,6 +1139,14 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
   const paymentProblem = validatePaymentAmount(amount, invoiceData.originalAmount, invoiceData.amountPaid || 0);
   if (paymentProblem) throw new Error(paymentProblem);
   const newAmountPaid = addPayment(invoiceData.amountPaid || 0, amount);
+  // The income entry carries this payment's share of the invoice's sales tax, so Sales Tax
+  // Collected is right and the Income Statement can leave the tax out (see lib/payment-tax).
+  const paymentTax = splitPaymentTax(
+    calculateDocumentTotals(await getLineItemsForInvoice(userId, invoiceId)).tax,
+    invoiceData.originalAmount,
+    invoiceData.amountPaid || 0,
+    amount
+  );
   const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
@@ -1155,6 +1167,9 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
     company: invoiceData.companyName,
     description: `Payment for Invoice #${invoiceData.invoiceNumber ?? ''}`,
     totalAmount: amount,
+    preTaxAmount: paymentTax.preTaxAmount,
+    taxAmount: paymentTax.taxAmount,
+    taxRate: impliedTaxRate(paymentTax.preTaxAmount, paymentTax.taxAmount),
     incomeCategory: primaryIncomeLine || 'Part 3A',
     depositedTo: depositAccount,
     type: 'business',
@@ -1216,6 +1231,12 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
   const paymentProblem = validatePaymentAmount(amount, data.originalAmount, data.amountPaid || 0);
   if (paymentProblem) throw new Error(paymentProblem);
   const newPaid = addPayment(data.amountPaid || 0, amount);
+  const paymentTax = splitPaymentTax(
+    calculateDocumentTotals(await getLineItemsForInvoice(userId, invoiceId)).tax,
+    data.originalAmount,
+    data.amountPaid || 0,
+    amount
+  );
   const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
@@ -1235,6 +1256,9 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
     company: data.companyName,
     description: `Reconciled payment for Invoice #${data.invoiceNumber}`,
     totalAmount: amount,
+    preTaxAmount: paymentTax.preTaxAmount,
+    taxAmount: paymentTax.taxAmount,
+    taxRate: impliedTaxRate(paymentTax.preTaxAmount, paymentTax.taxAmount),
     incomeCategory: primaryIncomeLine || 'Part 3A',
     depositedTo: account,
     type: 'business',

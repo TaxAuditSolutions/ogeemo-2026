@@ -14,10 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer, Info, FileText } from 'lucide-react';
 import { useReactToPrint } from '@/hooks/use-react-to-print';
-import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfYear, endOfYear, startOfMonth, endOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { isLedgerDateInRange } from '@/lib/ledger-date';
-import { isBusinessEntry } from '@/lib/ledger-totals';
+import { buildIncomeStatement, type IncomeStatementData } from '@/lib/income-statement';
 import type { DateRange } from 'react-day-picker';
 import { useAuth } from '@/context/auth-context';
 import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/core/accounting-service';
@@ -28,14 +27,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from '@/components/ui/label';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
-export interface CalculatedT2125Data {
-  businessIncome: { sales: number; other: number; gross: number; };
-  costOfGoodsSold: { purchases: number; total: number; };
-  netIncomeBeforeExpenses: number;
-  expenses: { [key: string]: number; };
-  totalExpenses: number;
-  netProfitOrLoss: number;
-}
+export type CalculatedT2125Data = IncomeStatementData;
+
+const formatNoteAmount = (amount: number) => amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
 export function IncomeStatementView() {
   const [income, setIncome] = useState<IncomeTransaction[]>([]);
@@ -75,56 +69,12 @@ export function IncomeStatementView() {
 
   const calculatedData: CalculatedT2125Data | null = useMemo(() => {
     if (!dateRange?.from) return null;
-    const toDate = dateRange.to || dateRange.from;
-
-    // Business entries only (Personal entries are not part of the business's income statement), and
-    // dates are compared as local days so 1 January lands in the new year (see lib/ledger-date).
-    const inPeriod = (tx: { date: string; type?: string }) =>
-      isBusinessEntry(tx) && isLedgerDateInRange(tx.date, dateRange.from, toDate);
-    const filteredIncome = income.filter(inPeriod);
-    const filteredExpenses = expenses.filter(inPeriod);
-
-    let sales = 0;
-    let otherIncome = 0;
-    
-    const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
-
-    filteredIncome.forEach(tx => {
-        if (tx.incomeCategory === primaryIncomeLine || tx.incomeCategory?.startsWith('C-')) {
-            sales += tx.totalAmount;
-        } else {
-            otherIncome += tx.totalAmount;
-        }
+    // Sales tax is not income or expense, so every figure is BEFORE tax; Personal entries and the
+    // payment of net sales tax to CRA are left out too (see lib/income-statement).
+    return buildIncomeStatement(income, expenses, { from: dateRange.from, to: dateRange.to || dateRange.from }, {
+      salesLine: t2125IncomeCategories.find(c => c.key === 'sales')?.line ?? '',
+      expenseCategories: t2125ExpenseCategories,
     });
-
-    const businessIncome = { sales, other: otherIncome, gross: sales + otherIncome };
-    const costOfGoodsSold = { purchases: 0, total: 0 };
-    const netIncomeBeforeExpenses = businessIncome.gross - costOfGoodsSold.total;
-
-    const expenseTotals: { [key: string]: number } = {};
-    t2125ExpenseCategories.forEach(cat => (expenseTotals[cat.key] = 0));
-    expenseTotals.otherExpenses = 0;
-
-    filteredExpenses.forEach(tx => {
-        const category = t2125ExpenseCategories.find(c => c.line === tx.category);
-        if (category) {
-            expenseTotals[category.key] += tx.totalAmount;
-        } else {
-            expenseTotals.otherExpenses += tx.totalAmount;
-        }
-    });
-    
-    const totalExpenses = Object.values(expenseTotals).reduce((sum, val) => sum + val, 0);
-    const netProfitOrLoss = netIncomeBeforeExpenses - totalExpenses;
-
-    return {
-      businessIncome,
-      costOfGoodsSold,
-      netIncomeBeforeExpenses,
-      expenses: expenseTotals,
-      totalExpenses,
-      netProfitOrLoss,
-    };
   }, [income, expenses, dateRange]);
   
   if (isLoading) {
@@ -139,6 +89,13 @@ export function IncomeStatementView() {
             <AlertTitle>Notice</AlertTitle>
             <AlertDescription>
                 Ensure your ledger entries are assigned to the correct tax line numbers for maximum accuracy.
+                All amounts are before sales tax (GST/HST): tax collected and tax paid are tracked separately on the Sales Tax page.
+                {calculatedData && calculatedData.notes.remittancesExcluded > 0 && (
+                    <> {calculatedData.notes.remittancesExcluded} sales tax payment{calculatedData.notes.remittancesExcluded === 1 ? '' : 's'} to CRA ({formatNoteAmount(calculatedData.notes.remittanceTotal)}) {calculatedData.notes.remittancesExcluded === 1 ? 'is' : 'are'} left out of expenses.</>
+                )}
+                {calculatedData && calculatedData.notes.incomeWithoutTaxRecorded > 0 && (
+                    <> {calculatedData.notes.incomeWithoutTaxRecorded} income {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'entry has' : 'entries have'} no tax recorded and {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'is' : 'are'} counted at the full amount; edit {calculatedData.notes.incomeWithoutTaxRecorded === 1 ? 'it' : 'them'} to set the tax if tax was charged.</>
+                )}
             </AlertDescription>
         </Alert>
 

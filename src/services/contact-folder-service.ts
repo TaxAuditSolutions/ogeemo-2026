@@ -14,6 +14,7 @@ import {
     Timestamp
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
+import { SYSTEM_FOLDERS, checkFolderName, planFolderDelete, wouldCreateCycle } from '@/lib/contact-folder-rules';
 
 export interface FolderData {
     id: string;
@@ -63,7 +64,7 @@ const docToFolder = (doc: any): FolderData => ({
 } as FolderData);
 
 
-export async function getFolders(userId: string): Promise<FolderData[]> {
+export async function getFolders(_userId?: string): Promise<FolderData[]> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
     const q = query(collection(db, FOLDERS_COLLECTION), where("orgId", "==", orgId));
@@ -74,8 +75,18 @@ export async function getFolders(userId: string): Promise<FolderData[]> {
 export async function addFolder(folderData: Omit<FolderData, 'id' | 'createdAt'>): Promise<FolderData> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
+
+    // The same rules the screens use, checked here too so no caller can create a look-alike of a system folder.
+    const existing = await getFolders();
+    const problem = checkFolderName(folderData.name, folderData.parentId, existing);
+    if (problem) throw new Error(problem);
+    if (folderData.parentId && !existing.some((folder) => folder.id === folderData.parentId)) {
+        throw new Error('The parent folder no longer exists.');
+    }
+
     const dataToSave = {
         ...folderData,
+        name: folderData.name.trim().replace(/\s+/g, ' '),
         orgId,
         parentId: folderData.parentId || null,
         createdAt: new Date(),
@@ -86,19 +97,63 @@ export async function addFolder(folderData: Omit<FolderData, 'id' | 'createdAt'>
 
 export async function updateFolder(folderId: string, folderData: Partial<Omit<FolderData, 'id' | 'userId'>>): Promise<void> {
     const db = getDb();
-    const folderRef = doc(db, FOLDERS_COLLECTION, folderId);
-    await updateDoc(folderRef, folderData);
+    const all = await getFolders();
+    const current = all.find((folder) => folder.id === folderId);
+    if (!current) throw new Error('That folder no longer exists.');
+
+    const changes: Record<string, unknown> = { ...folderData };
+    if (current.isSystem && (folderData.name !== undefined || folderData.parentId !== undefined)) {
+        throw new Error(`"${current.name}" is a system folder and cannot be renamed or moved.`);
+    }
+    if (folderData.name !== undefined) {
+        const problem = checkFolderName(folderData.name, current.parentId, all, folderId);
+        if (problem) throw new Error(problem);
+        changes.name = folderData.name.trim().replace(/\s+/g, ' ');
+    }
+    if (folderData.parentId !== undefined) {
+        if (folderData.parentId && !all.some((folder) => folder.id === folderData.parentId)) throw new Error('The destination folder no longer exists.');
+        if (wouldCreateCycle(all, folderId, folderData.parentId ?? null)) throw new Error('A folder cannot be moved into itself or one of its own subfolders.');
+        const problem = checkFolderName(current.name, folderData.parentId, all, folderId);
+        if (problem) throw new Error(problem);
+    }
+    await updateDoc(doc(db, FOLDERS_COLLECTION, folderId), changes);
 }
 
+/**
+ * Deletes folders without losing what is inside them. A folder's contacts move up to its parent folder
+ * (or Miscellaneous at the top level) and its subfolders move up one level, all in one batch with the
+ * delete, so no contact is left pointing at a folder that no longer exists.
+ */
 export async function deleteFolders(folderIds: string[]): Promise<void> {
     const db = getDb();
     if (folderIds.length === 0) return;
+    const orgId = await getCurrentOrgId();
+    const all = await getFolders();
     const batch = writeBatch(db);
+    const deleting = new Set(folderIds);
+    const miscellaneousId = all.find((folder) => folder.isSystem && folder.name.toLowerCase() === 'miscellaneous')?.id;
 
-    folderIds.forEach(id => {
-        const folderRef = doc(db, FOLDERS_COLLECTION, id);
-        batch.delete(folderRef);
-    });
+    for (const id of folderIds) {
+        const plan = planFolderDelete(all, id);
+        if (plan.error !== null) throw new Error(plan.error);
+        // Where things go must not be a folder that is being deleted in the same call.
+        let contactsTo: string | undefined = plan.contactsTo;
+        while (contactsTo && deleting.has(contactsTo)) {
+            contactsTo = all.find((folder) => folder.id === contactsTo)?.parentId || miscellaneousId;
+        }
+        let childrenTo: string | null = plan.childrenTo;
+        while (childrenTo && deleting.has(childrenTo)) {
+            childrenTo = all.find((folder) => folder.id === childrenTo)?.parentId ?? null;
+        }
+        if (!contactsTo) throw new Error('There is no folder to move its contacts into. Reload and try again.');
+
+        const contacts = await getDocs(query(collection(db, CONTACTS_COLLECTION), where('orgId', '==', orgId), where('folderId', '==', id)));
+        contacts.forEach((contactDoc) => batch.update(contactDoc.ref, { folderId: contactsTo }));
+        plan.childIds
+            .filter((childId) => !deleting.has(childId))
+            .forEach((childId) => batch.update(doc(db, FOLDERS_COLLECTION, childId), { parentId: childrenTo }));
+        batch.delete(doc(db, FOLDERS_COLLECTION, id));
+    }
 
     await batch.commit();
 }
@@ -115,18 +170,7 @@ export async function ensureSystemFolders(userId: string): Promise<FolderData[]>
     const existing = snapshot.docs.map(docToFolder);
 
     // Mandated System Taxonomy
-    const systemFoldersConfig = [
-        { name: 'Admin', parent: null },
-        { name: 'Workers', parent: null },
-        { name: 'Employees', parent: 'Workers' },
-        { name: 'Contractors', parent: 'Workers' },
-        { name: 'Suppliers', parent: null },
-        { name: 'Clients', parent: null },
-        { name: 'Prospects', parent: null },
-        { name: 'Family', parent: null },
-        { name: 'Friends', parent: null },
-        { name: 'Miscellaneous', parent: null },
-    ];
+    const systemFoldersConfig = SYSTEM_FOLDERS;
 
     const batch = writeBatch(db);
     let hasChanges = false;

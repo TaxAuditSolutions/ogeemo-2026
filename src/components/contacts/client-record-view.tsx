@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { format, startOfDay, endOfDay, isFuture, isToday, isYesterday } from 'date-fns';
-import { displayStatus, isInvoiceOverdue } from '@/lib/invoice-status';
+import { displayStatus, invoiceBalance, isInvoiceOverdue } from '@/lib/invoice-status';
+import { roundCents } from '@/lib/document-totals';
 import {
   ArrowLeft,
   Briefcase,
@@ -272,7 +273,7 @@ export function ClientRecordView() {
     [tasks]
   );
   const outstandingTotal = useMemo(
-    () => invoices.reduce((sum, inv) => sum + Math.max(0, inv.originalAmount - inv.amountPaid), 0),
+    () => roundCents(invoices.reduce((sum, inv) => sum + invoiceBalance(inv.originalAmount, inv.amountPaid), 0)),
     [invoices]
   );
 
@@ -820,7 +821,7 @@ export function ClientRecordView() {
               </div>
             )}
             {invoices.map((invoice) => {
-              const balance = Math.max(0, invoice.originalAmount - invoice.amountPaid);
+              const balance = invoiceBalance(invoice.originalAmount, invoice.amountPaid);
               const paid = invoice.status === 'paid';
               // Worked out from the due date and balance; 'overdue' is never a stored status.
               const overdue = isInvoiceOverdue(invoice);

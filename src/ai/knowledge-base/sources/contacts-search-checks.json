@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "contacts.search.and-checks",
+      "module": "Contacts",
+      "title": "Searching contacts, duplicate warnings and SIN checks",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "business-rule", "contacts"],
+      "keywords": ["search contacts", "find a contact", "search box", "phone number search", "duplicate contact", "same email", "save anyway", "possible duplicate", "SIN", "social insurance number", "check digit", "invalid SIN", "no contacts match", "selected contacts"],
+      "audiences": ["all"],
+      "content": "The Contacts Hub has a search box above the list. Every word you type must match somewhere in the contact's name, email, company, city, job role or notes, in any order and in any case, so bob barrie finds Bob Smith of Barrie. A phone number matches however it was punctuated: 705-555-0123, (705) 555-0123 and 7055550123 all find the same contact, but a digit run shorter than three is not treated as a phone search. The SIN is never searched. The search works together with the folder you are in, and the count under the folder name says how many match. If nothing matches, the list says so. Changing the folder or the search drops any selected rows that are no longer visible, so Delete (count) never deletes contacts you cannot see. When you create a contact, or change a name or email, Ogeemo checks for an existing contact with the same email address or the same name and asks Save anyway or Go back; a blank email never counts as a match. A SIN, when entered, must be 9 digits (spaces and dashes are fine) and pass the check-digit test, so a mistyped digit is caught before payroll relies on it; leave it blank for contacts who are not workers.",
+      "sourceFiles": ["src/lib/contact-search.ts", "src/lib/contact-clean.ts", "src/components/contacts/contacts-view.tsx", "src/components/contacts/contact-form-dialog.tsx"]
+    }
+  ]
+}

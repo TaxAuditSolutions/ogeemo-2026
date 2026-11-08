@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { type Contact } from '@/services/contact-service';
 import { buildContactUpdatePayload, isBlankValue } from '@/lib/contact-update';
+import { checkContactName, validateSin, findPossibleDuplicates, duplicateMessage } from '@/lib/contact-clean';
 import { type FolderData } from '@/services/contact-folder-service';
 import { type Company } from '@/core/accounting-service';
 import { type Industry } from '@/services/industry-service';
@@ -92,6 +93,8 @@ interface ContactFormDialogProps {
     forceFolderId?: string;
     /** 'overlay' (default) renders a full-screen modal dialog; 'panel' renders inline, filling the nearest positioned ancestor. */
     displayMode?: 'overlay' | 'panel';
+    /** The contacts that already exist, so a possible duplicate can be flagged before saving. */
+    existingContacts?: { id: string; name?: string; email?: string }[];
 }
 
 const defaultFormValues: ContactFormData = {
@@ -124,7 +127,7 @@ function buildEditSeed(
 }
 
 export default function ContactFormDialog({
-    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId, displayMode = 'overlay',
+    isOpen, onOpenChange, contactToEdit, folders, onFoldersChange, onSave, companies, onCompaniesChange, customIndustries, onCustomIndustriesChange, selectedFolderId, initialEmail = '', initialData, forceFolderId, displayMode = 'overlay', existingContacts = [],
 }: ContactFormDialogProps) {
     const { toast } = useToast();
     const { user } = useAuth();
@@ -132,6 +135,8 @@ export default function ContactFormDialog({
 
     const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [duplicatePrompt, setDuplicatePrompt] = useState<{ message: string; values: ContactFormData } | null>(null);
 
     // Edits start from the stored values on the first render, so the role never depends on a value change after mount.
     const form = useForm<ContactFormData>({
@@ -144,7 +149,7 @@ export default function ContactFormDialog({
     const seededEditIdRef = useRef<string | null>(null);
     const seededValuesRef = useRef<Record<string, unknown>>({});
     const appliedInitialDataRef = useRef<Record<string, unknown>>({});
-    const onSubmitRef = useRef<(values: ContactFormData) => Promise<void>>(async () => undefined);
+    const onSubmitRef = useRef<(values: ContactFormData, confirmedDuplicate?: boolean) => Promise<void>>(async () => undefined);
 
     useEffect(() => {
         const subscription = form.watch((_values, { name, type }) => {
@@ -279,15 +284,38 @@ export default function ContactFormDialog({
         };
     }, [form, isOpen, applyDraftPatch]);
 
-    async function onSubmit(values: ContactFormData) {
-        if (!user) return;
+    async function onSubmit(values: ContactFormData, confirmedDuplicate = false) {
+        if (!user || isSaving) return;
+
+        const nameProblem = checkContactName(values.name);
+        if (nameProblem) {
+            toast({ variant: 'destructive', title: 'Check the name', description: nameProblem });
+            return;
+        }
+        const sinCheck = validateSin(values.sin);
+        if (!sinCheck.ok) {
+            toast({ variant: 'destructive', title: 'Check the SIN', description: sinCheck.error });
+            return;
+        }
+        // The same person twice is how work gets split across two records; ask before creating or renaming into one.
+        if (!confirmedDuplicate) {
+            const nameOrEmailEdited = !contactToEdit || editedKeysRef.current.has('name') || editedKeysRef.current.has('email');
+            const matches = nameOrEmailEdited
+                ? findPossibleDuplicates(existingContacts, { name: values.name, email: values.email }, contactToEdit?.id)
+                : [];
+            if (matches.length > 0) {
+                setDuplicatePrompt({ message: duplicateMessage(matches), values });
+                return;
+            }
+        }
+        setIsSaving(true);
         try {
             const assignedFolder = findMatchingContactFolder(values.folderId, folders);
             if (!assignedFolder) {
                 toast({ variant: 'destructive', title: 'Role Assignment required', description: 'Select a valid folder before saving this contact.' });
                 return;
             }
-            const valuesWithAssignedFolder = { ...values, folderId: assignedFolder.id };
+            const valuesWithAssignedFolder = { ...values, sin: sinCheck.sin, folderId: assignedFolder.id };
 
             if (contactToEdit) {
                 const { changes, blocked } = buildContactUpdatePayload({
@@ -326,16 +354,23 @@ export default function ContactFormDialog({
             onOpenChange(false);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Save Failed", description: error.message });
+        } finally {
+            setIsSaving(false);
         }
     }
 
     const handleCreateFolder = async () => {
         if (!user || !newFolderName.trim()) return;
-        const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: null });
-        onFoldersChange([...folders, newFolder]);
-        editedKeysRef.current.add('folderId');
-        form.setValue('folderId', newFolder.id);
-        setIsNewFolderDialogOpen(false);
+        try {
+            const newFolder = await addFolder({ name: newFolderName.trim(), userId: user.uid, parentId: null });
+            onFoldersChange([...folders, newFolder]);
+            editedKeysRef.current.add('folderId');
+            form.setValue('folderId', newFolder.id);
+            setIsNewFolderDialogOpen(false);
+            setNewFolderName('');
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Could not create the folder', description: error.message });
+        }
     };
 
     if (displayMode === 'panel' && !isOpen) {
@@ -356,7 +391,7 @@ export default function ContactFormDialog({
 
     const formBody = (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+            <form onSubmit={form.handleSubmit((values) => onSubmit(values))} className="flex-1 flex flex-col min-h-0">
                 <ScrollArea className="flex-1">
                     <div className="max-w-5xl mx-auto w-full p-8 space-y-10">
                         <section className="space-y-6">
@@ -438,8 +473,8 @@ export default function ContactFormDialog({
                 </ScrollArea>
                 <DialogFooter className="p-6 border-t bg-muted/10 shrink-0">
                     <Button type="button" variant="ghost" size="lg" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button type="submit" size="lg" className="px-12 font-bold shadow-xl">
-                        <Save className="mr-2 h-5 w-5" /> {contactToEdit ? "Save Changes" : "Create Identity"}
+                    <Button type="submit" size="lg" className="px-12 font-bold shadow-xl" disabled={isSaving}>
+                        <Save className="mr-2 h-5 w-5" /> {isSaving ? "Saving..." : contactToEdit ? "Save Changes" : "Create Identity"}
                     </Button>
                 </DialogFooter>
             </form>
@@ -473,6 +508,26 @@ export default function ContactFormDialog({
                 </Dialog>
             )}
             <Dialog open={isNewFolderDialogOpen} onOpenChange={setIsNewFolderDialogOpen}><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Create Identity Folder</DialogTitle></DialogHeader><div className="py-4"><Label>Folder Name</Label><Input value={newFolderName} onChange={e => setNewFolderName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateFolder()} /></div><DialogFooter><Button onClick={handleCreateFolder}>Create</Button></DialogFooter></DialogContent></Dialog>
+            <Dialog open={!!duplicatePrompt} onOpenChange={(open) => { if (!open) setDuplicatePrompt(null); }}>
+                <DialogContent className="sm:max-w-md text-black">
+                    <DialogHeader>
+                        <DialogTitle>Possible duplicate</DialogTitle>
+                        <DialogDescription>{duplicatePrompt?.message} Saving it anyway creates two records for what may be the same person, and work can end up split between them.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setDuplicatePrompt(null)}>Go back</Button>
+                        <Button
+                            onClick={() => {
+                                const pending = duplicatePrompt;
+                                setDuplicatePrompt(null);
+                                if (pending) void onSubmit(pending.values, true);
+                            }}
+                        >
+                            Save anyway
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

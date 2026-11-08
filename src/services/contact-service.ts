@@ -20,6 +20,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 import type { Contact } from '@/data/contacts';
 import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
 import { isBlankRequiredContactField } from '@/lib/contact-update';
+import { cleanContactInput } from '@/lib/contact-clean';
 import { CONTACT_REFERENCES, buildMergePatch, chunkItems, groupReassignments } from '@/lib/contact-merge';
 
 export type { Contact };
@@ -239,7 +240,7 @@ export async function addContact(contactData: Omit<Contact, 'id'>): Promise<Cont
     const folderId = await requireContactFolderId(contactData.folderId, orgId);
 
     const dataToSave = prepareContactDataForWrite({
-        ...contactData,
+        ...cleanContactInput(contactData as Record<string, unknown>),
         folderId,
         orgId,
         createdBy: currentUser.uid,
@@ -284,6 +285,8 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
         ? undefined
         : await requireContactFolderId(contactData.folderId, orgId);
 
+    // Names and emails are saved trimmed (and the email in lower case), so the same person is the same record.
+    contactData = cleanContactInput(contactData as Record<string, unknown>) as typeof contactData;
     // Data Cleaning: Strip undefined and ensure restricted identifiers aren't in the payload
     const cleanedData: Record<string, any> = {};
     Object.keys(contactData).forEach(key => {
@@ -294,6 +297,7 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     });
 
     const currentDoc = await getDoc(contactRef);
+    if (!currentDoc.exists()) throw new Error('This contact no longer exists. It may have been deleted or merged.');
     if (currentDoc.exists()) {
         const currentData = currentDoc.data();
         cleanedData.orgId = currentData.orgId || orgId;
@@ -328,6 +332,9 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
                     requestResourceData: cleanedData,
                 } satisfies SecurityRuleContext));
             }
+            // Re-throw so the form reports "Save Failed" instead of a false "Contact Updated".
+            console.error('[contact-service] updateContact Firestore write failed:', error);
+            throw error;
         });
     }
 }
@@ -336,18 +343,26 @@ export async function deleteContacts(contactIds: string[]): Promise<void> {
     const db = getDb();
     if (contactIds.length === 0) return;
     const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
 
+    // A sign-in account linked to the contact would be left pointing at nothing.
     for (const id of contactIds) {
-        const contactRef = doc(db, CONTACTS_COLLECTION, id);
-        const contactSnap = await getDoc(contactRef);
-
-        if (contactSnap.exists() && contactSnap.data().orgId === orgId) {
-            batch.delete(contactRef);
+        const linked = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('contactId', '==', id)));
+        if (!linked.empty) {
+            const who = linked.docs[0].data().displayName || linked.docs[0].data().email || 'a sign-in account';
+            throw new Error(`That contact is linked to ${who} and cannot be deleted. Remove the sign-in account first.`);
         }
     }
 
-    await batch.commit();
+    // Several batches, because one batch holds at most 500 writes.
+    for (const chunk of chunkItems(contactIds)) {
+        const batch = writeBatch(db);
+        for (const id of chunk) {
+            const contactRef = doc(db, CONTACTS_COLLECTION, id);
+            const contactSnap = await getDoc(contactRef);
+            if (contactSnap.exists() && contactSnap.data().orgId === orgId) batch.delete(contactRef);
+        }
+        await batch.commit();
+    }
 }
 
 export interface MergeContactsResult {

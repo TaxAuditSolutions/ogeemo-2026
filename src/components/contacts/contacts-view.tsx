@@ -25,6 +25,7 @@ import {
   Briefcase,
   Clock,
   ClipboardList,
+  Search,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,8 @@ import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
 import { getContacts, getContactById, deleteContacts, updateContact, addContact, mergeContacts } from '@/services/contact-service';
 import { summarizeReassignments } from '@/lib/contact-merge';
+import { descendantFolderIds, wouldCreateCycle } from '@/lib/contact-folder-rules';
+import { filterContacts } from '@/lib/contact-search';
 import MergeContactsDialog from '@/components/contacts/MergeContactsDialog';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -276,6 +279,7 @@ export function ContactsView() {
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
   const [preselectedContactId, setPreselectedContactId] = useState<string | null>(null);
   const [workersForDialog, setWorkersForSelection] = useState<Worker[]>([]);
@@ -398,19 +402,17 @@ export function ContactsView() {
   };
 
   const displayedContacts = useMemo(() => {
-    if (selectedFolderId === 'all') return contacts;
-    const getDescendantFolderIds = (folderId: string): string[] => {
-      let ids = [folderId];
-      folders.filter(f => f.parentId === folderId).forEach(child => {
-        ids = [...ids, ...getDescendantFolderIds(child.id)];
-      });
-      return ids;
-    };
-    const folderIds = getDescendantFolderIds(selectedFolderId);
-    return contacts.filter((c) => folderIds.includes(c.folderId));
-  }, [contacts, folders, selectedFolderId]);
+    const inFolder = selectedFolderId === 'all'
+      ? contacts
+      : contacts.filter((c) => descendantFolderIds(folders, selectedFolderId).includes(c.folderId));
+    return filterContacts(inFolder, searchQuery);
+  }, [contacts, folders, selectedFolderId, searchQuery]);
 
-  const allVisibleSelected = displayedContacts.length > 0 && selectedContactIds.length === displayedContacts.length;
+  const visibleIds = useMemo(() => new Set(displayedContacts.map((c) => c.id)), [displayedContacts]);
+  const allVisibleSelected = displayedContacts.length > 0 && displayedContacts.every((c) => selectedContactIds.includes(c.id));
+  useEffect(() => {
+    setSelectedContactIds((prev) => (prev.every((id) => visibleIds.has(id)) ? prev : prev.filter((id) => visibleIds.has(id))));
+  }, [visibleIds]);
 
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolderId(folderId);
@@ -437,6 +439,10 @@ export function ContactsView() {
       } catch (error: any) { toast({ variant: "destructive", title: "Move Failed", description: error.message }); }
     } else {
       if ('type' in item && item.type === 'folder' && item.parentId === newFolderId) return;
+      if (newFolderId && wouldCreateCycle(folders, item.id, newFolderId)) {
+        toast({ variant: 'destructive', title: 'Cannot move here', description: 'A folder cannot be moved into itself or one of its own subfolders.' });
+        return;
+      }
       const folder = folders.find(f => f.id === item.id);
       if (folder?.isSystem) { toast({ variant: 'destructive', title: 'Protected Folder', description: 'System folders cannot be moved.' }); return; }
       try {
@@ -461,9 +467,10 @@ export function ContactsView() {
     if (!user || !folderToDelete) return;
     try {
       await deleteFolders([folderToDelete.id]);
-      setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
       if (selectedFolderId === folderToDelete.id) setSelectedFolderId('all');
-      toast({ title: "Folder Deleted" });
+      // The service moved its contacts and subfolders up a level; reload so the list shows where they are now.
+      await loadData();
+      toast({ title: "Folder Deleted", description: "Its contacts and subfolders were moved up to the parent folder." });
     } catch (error: any) { toast({ variant: "destructive", title: "Delete Failed", description: error.message }); }
     finally { setFolderToDelete(null); }
   };
@@ -569,8 +576,18 @@ export function ContactsView() {
             <ResizablePanel defaultSize={80}>
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b h-20">
-                  <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{displayedContacts.length} record(s)</p></div>
+                  <div><h2 className="text-xl font-bold">{selectedFolderId === 'all' ? 'All Contacts' : folders.find(f => f.id === selectedFolderId)?.name}</h2><p className="text-sm text-muted-foreground">{searchQuery.trim() ? `${displayedContacts.length} matching record(s)` : `${displayedContacts.length} record(s)`}</p></div>
                   <div className="flex items-center gap-2">
+                    <div className="relative w-56">
+                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search name, email, phone..."
+                        aria-label="Search contacts"
+                        className="h-9 pl-8"
+                      />
+                    </div>
                     {selectedContactIds.length > 0 && <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-3" /> Delete ({selectedContactIds.length})</Button>}
                     {selectedContactIds.length > 0 && (
                       <Button
@@ -643,6 +660,13 @@ export function ContactsView() {
                           </TableCell>
                         </DraggableTableRow>
                       ))}
+                      {displayedContacts.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={selectedFolderId === 'all' ? 6 : 5} className="h-32 text-center text-muted-foreground">
+                            {searchQuery.trim() ? 'No contacts match your search.' : 'No contacts in this folder yet.'}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -671,6 +695,7 @@ export function ContactsView() {
             onSave={handleContactSave}
             companies={companies}
             onCompaniesChange={setCompanies}
+            existingContacts={contacts}
             customIndustries={customIndustries}
             onCustomIndustriesChange={setCustomIndustries}
             initialData={prefillContactData}
@@ -708,7 +733,7 @@ export function ContactsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Selected?</AlertDialogTitle>
-            <AlertDialogDescription>Delete {selectedContactIds.length} records?</AlertDialogDescription>
+                  <AlertDialogDescription>Permanently delete {selectedContactIds.length} contact{selectedContactIds.length === 1 ? '' : 's'}? This cannot be undone. A contact linked to a sign-in account is refused, and tasks, invoices or time logs that name a contact keep pointing at it, so merge duplicates instead of deleting them.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

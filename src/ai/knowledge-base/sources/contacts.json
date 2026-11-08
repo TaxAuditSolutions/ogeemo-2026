@@ -8,7 +8,7 @@
       "intents": ["how-to", "create", "required-fields"],
       "keywords": ["contact", "client", "new contact", "create identity", "full legal name", "role assignment", "folder", "email", "phone"],
       "audiences": ["all"],
-      "content": "Open Contacts Hub at /contacts and choose New Contact. Full Legal Name and Role Assignment (Folder) are required. Email is optional but must be valid when supplied. Review Core Profile, Business & Tax Configuration, and Contact Intelligence for company, tax, phone, address, and administrative-note fields. Choose Create Identity to save. Cancel closes without creating the record. The manual form does not perform a duplicate check, so review existing records before creating another entry for the same person or business.",
+      "content": "Open Contacts Hub at /contacts and choose New Contact. Full Legal Name and Role Assignment (Folder) are required. Email is optional but must be valid when supplied. Review Core Profile, Business & Tax Configuration, and Contact Intelligence for company, tax, phone, address, and administrative-note fields. Choose Create Identity to save. Cancel closes without creating the record. When you save, the form checks for an existing contact with the same email address or the same name, ignoring capital letters and extra spaces, and asks whether to save anyway; it never blocks you, but two records for one person split their work. Names and emails are saved trimmed, with the email in lower case. A SIN is checked for 9 digits and the check-digit test and is stored as plain digits.",
       "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/components/contacts/contact-form-dialog.tsx", "src/services/contact-service.ts"]
     },
     {
@@ -30,7 +30,7 @@
       "intents": ["how-to", "folders", "organization"],
       "keywords": ["folder", "subfolder", "move", "drag", "rename", "delete", "protected", "all contacts", "descendants", "browse"],
       "audiences": ["all"],
-      "content": "Use All Contacts or select a folder in the Contacts Hub left panel. Selecting a parent also includes contacts in its descendant folders. New Folder creates a top-level folder; a folder menu can create subfolders or rename a non-system folder. Drag a contact onto a folder to change its Role Assignment. Non-system folders can be moved by dragging; protected system folders cannot be moved or renamed. Deleting a folder asks for confirmation and removes the folder and its references, but does not delete the contacts themselves.",
+      "content": "Use All Contacts or select a folder in the Contacts Hub left panel. Selecting a parent also includes contacts in its descendant folders. New Folder creates a top-level folder; a folder menu can create subfolders or rename a non-system folder. Drag a contact onto a folder to change its Role Assignment. Non-system folders can be moved by dragging; protected system folders cannot be moved or renamed. Deleting a folder asks for confirmation. Its contacts move up to the parent folder (or to Miscellaneous for a top-level folder) and its subfolders move up one level, so nothing inside it is lost or left pointing at a folder that no longer exists. System folders cannot be deleted. A folder cannot be moved into itself or one of its own subfolders, and a folder name cannot repeat a sibling or copy a system folder name such as Clients.",
       "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/services/contact-folder-service.ts"]
     },
     {
@@ -41,7 +41,7 @@
       "intents": ["how-to", "edit", "delete"],
       "keywords": ["edit", "save changes", "delete", "bulk delete", "select", "required", "blank", "contact details"],
       "audiences": ["all"],
-      "content": "Open a contact's three-dot menu and choose Edit Details, or select exactly one contact and use Edit. Change the form and choose Save Changes. Full Legal Name and Role Assignment cannot be blanked during an edit. If nothing changed, the form reports that there are no changes to save. Use Delete in the contact menu for one record, or select multiple rows and use Delete (count) for bulk deletion. Both paths require confirmation. These are permanent contact-record deletions, so review linked work before removing an identity.",
+      "content": "Open a contact's three-dot menu and choose Edit Details, or select exactly one contact and use Edit. Change the form and choose Save Changes. Full Legal Name and Role Assignment cannot be blanked during an edit. If nothing changed, the form reports that there are no changes to save. Use Delete in the contact menu for one record, or select multiple rows and use Delete (count) for bulk deletion. Both paths require confirmation. These are permanent contact-record deletions. A contact linked to a sign-in account is refused. Tasks, invoices and time logs that name a contact are not removed and keep pointing at it, so merge a duplicate (Merge Duplicate) instead of deleting it. If a save fails the form says Save Failed instead of reporting success.",
       "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/components/contacts/contact-form-dialog.tsx", "src/services/contact-service.ts"]
     },
     {

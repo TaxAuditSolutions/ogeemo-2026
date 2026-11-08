@@ -21,6 +21,8 @@ import { getInvoices, getInvoiceById, getLineItemsForInvoice, getServiceItems, t
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
+import { calculateDocumentTotals, calculateLineTotals } from '@/lib/document-totals';
+import { storedStatusFor } from '@/lib/invoice-status';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -595,15 +597,8 @@ export function InvoiceGeneratorView() {
         }
     };
 
-    const { subtotal, tax, total } = useMemo(() => {
-        const sub = lineItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
-        const taxAmount = lineItems.reduce((acc, item) => {
-            const itemTotal = item.quantity * item.price;
-            const itemTax = itemTotal * ((item.taxRate || 0) / 100);
-            return acc + itemTax;
-        }, 0);
-        return { subtotal: sub, tax: taxAmount, total: sub + taxAmount };
-    }, [lineItems]);
+    // Whole cents, line by line: the total saved is exactly the total shown (see lib/document-totals).
+    const { subtotal, tax, total } = useMemo(() => calculateDocumentTotals(lineItems), [lineItems]);
 
     const handleSaveInvoice = async () => {
         if (!user) {
@@ -621,8 +616,10 @@ export function InvoiceGeneratorView() {
         const companyName = selectedContact?.businessName || selectedContact?.name || 'N/A';
         // A saved invoice is always a real receivable: outstanding, unless the
         // one being edited has already been (partially) paid.
-        let status: Invoice['status'] =
-            editingStatus === 'paid' || editingStatus === 'partially_paid' ? editingStatus : 'outstanding';
+        // Worked out from the amounts, so raising the total of a paid invoice makes it
+        // partially paid again instead of leaving it marked Paid with money still owing.
+        const existingPaid = invoiceToEditId ? (await getInvoiceById(invoiceToEditId, { quiet: true }))?.amountPaid || 0 : 0;
+        let status: Invoice['status'] = storedStatusFor(total, existingPaid);
 
         let finalInvoiceNumber = invoiceNumber;
         try {
@@ -649,7 +646,7 @@ export function InvoiceGeneratorView() {
             contactId: selectedContactId,
             supplierId: selectedSupplierId,
             originalAmount: total,
-            amountPaid: invoiceToEditId ? (await getInvoiceById(invoiceToEditId, { quiet: true }))?.amountPaid || 0 : 0,
+            amountPaid: existingPaid,
             dueDate: dueDate,
             invoiceDate: invoiceDate,
             status,
@@ -661,7 +658,8 @@ export function InvoiceGeneratorView() {
         };
 
         const itemsToSave = lineItems.filter((item) => item.description.trim() !== '').map(({ id, ...rest }) => {
-            const payload: any = { ...rest, userId: user.uid };
+            // Each saved line carries its own cents-exact pre-tax, tax and total.
+            const payload: any = { ...rest, ...calculateLineTotals(rest), userId: user.uid };
             Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
             return payload;
         });

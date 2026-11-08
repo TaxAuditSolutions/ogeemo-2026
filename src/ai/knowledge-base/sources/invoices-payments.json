@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "invoices.receivable.overdue-and-balance",
+      "module": "Quotes and Invoices",
+      "title": "Outstanding invoices, balance due and overdue",
+      "routes": ["/accounting/accounts-receivable"],
+      "intents": ["business-rule", "invoices", "troubleshooting"],
+      "keywords": ["accounts receivable", "receivable", "receivables", "owe", "owed", "owing", "clients owe me", "money owed", "who owes me", "unpaid invoices", "outstanding", "balance due", "overdue", "late", "days overdue", "due date", "unpaid", "total outstanding", "partially paid", "paid", "invoice status", "client record"],
+      "audiences": ["all"],
+      "content": "Accounts Receivable at /accounting/accounts-receivable lists every invoice that still has a balance, with the invoice date, the due date, and the balance due. The Total Outstanding card adds up those balances to the cent. An invoice shows a red days overdue badge once its due date has passed and money is still owed: an invoice due today is not overdue, and it becomes overdue the next day. Overdue is worked out from the due date and the balance each time the page opens and is never stored, so it clears the moment the invoice is paid. Paid invoices, drafts and fully covered invoices are never overdue, and a part-paid invoice can be. The client record shows the same overdue badge. An invoice that has recorded payments cannot be deleted until its payment entries are removed from the General Ledger.",
+      "sourceFiles": ["src/components/accounting/accounts-receivable-page-view.tsx", "src/lib/invoice-status.ts", "src/components/contacts/client-record-view.tsx"]
+    },
+    {
+      "id": "invoices.payment.post",
+      "module": "Quotes and Invoices",
+      "title": "Posting a payment and issuing a receipt",
+      "routes": ["/accounting/accounts-receivable"],
+      "intents": ["how-to", "business-rule", "invoices"],
+      "keywords": ["post payment", "payment", "receipt", "receipt number", "REC", "overpayment", "more than balance", "partial payment", "deposit account", "general ledger", "income", "send receipt", "email receipt", "paid in full"],
+      "audiences": ["all"],
+      "content": "Post Payment on an invoice row opens a dialog with the payment amount, the date and the deposit account. The amount starts at the exact balance due. It must be more than zero and no more than the balance due, so an overpayment is refused with a message that names the balance, and an invoice already paid in full cannot be paid again. Posting adds the payment to the amount paid to the cent, sets the invoice Partially Paid or Paid, claims the next receipt number such as REC-20261108-001, and records the income in the General Ledger. The payment is reported as posted only after it has actually been saved. Choosing Post and Send Receipt opens the receipt for review, with the client email filled in, and you click Email Receipt to send it. The same checks apply when a bank transaction is matched to an invoice in reconciliation.",
+      "sourceFiles": ["src/core/accounting-service.ts", "src/lib/invoice-status.ts", "src/components/accounting/accounts-receivable-page-view.tsx"]
+    }
+  ]
+}

@@ -45,6 +45,8 @@ const QUESTIONS = [
   'How does payroll calculate hours worked?',
   'How do I set my pay schedule, and what dates will each pay period use?',
   'How do I change the payroll deduction rate from 20%?',
+  'How do I turn an approved quote into an invoice, and what carries over?',
+  'When does an invoice show as overdue, and how do I post a payment?',
   'Show me my unbilled hours',
   'What is a standard workflow?',
   'Which template workflows are available?',

@@ -61,6 +61,7 @@ import { openInvoiceReceipt, resolveClientEmail } from '@/lib/receipt-handoff';
 import { sendReceiptEmail } from '@/app/actions/receipt-actions';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { addPayment, daysOverdue, invoiceBalance, isInvoiceOverdue, validatePaymentAmount } from '@/lib/invoice-status';
 import { AccountingPageHeader } from './page-header';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { TransactionDialog } from './transaction-dialog';
@@ -123,7 +124,7 @@ export function AccountsReceivablePageView() {
             const fetchedContacts = await getContacts().catch(() => []); // Synchronized Directory (auxiliary)
             const fetchedFolders = await getContactFolders(user.uid).catch(() => []);
             const fetchedIndustries = await getIndustries(user.uid).catch(() => []);
-            setInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.01));
+            setInvoices(allInvoices.filter(inv => invoiceBalance(inv.originalAmount, inv.amountPaid) > 0.01));
             setCompanies(fetchedCompanies);
             setIncomeCategories(fetchedIncomeCategories);
             setExpenseCategories(fetchedExpenseCategories);
@@ -144,7 +145,7 @@ export function AccountsReceivablePageView() {
 
     const handleOpenPaymentDialog = (invoice: Invoice) => {
         setSelectedInvoice(invoice);
-        setPaymentAmount(String(invoice.originalAmount - invoice.amountPaid));
+        setPaymentAmount(invoiceBalance(invoice.originalAmount, invoice.amountPaid).toFixed(2));
         setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
         const clientEmail = resolveClientEmail(invoice, contacts) || '';
         setReceiptEmail(clientEmail);
@@ -156,8 +157,10 @@ export function AccountsReceivablePageView() {
         if (!user || !selectedInvoice) return;
 
         const amount = parseFloat(paymentAmount);
-        if (isNaN(amount) || amount <= 0) {
-            toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive amount.' });
+        // Positive, and never more than the balance due (no overpayment reaches the ledger).
+        const amountProblem = validatePaymentAmount(amount, selectedInvoice.originalAmount, selectedInvoice.amountPaid);
+        if (amountProblem) {
+            toast({ variant: 'destructive', title: 'Invalid Amount', description: amountProblem });
             return;
         }
 
@@ -186,7 +189,7 @@ export function AccountsReceivablePageView() {
                 // clicks Email Receipt there (recipient pre-filled from this dialog).
                 const receiptInvoice: Invoice = {
                     ...selectedInvoice,
-                    amountPaid: selectedInvoice.amountPaid + amount,
+                    amountPaid: addPayment(selectedInvoice.amountPaid, amount),
                     lastReceiptNumber: receiptNumber || selectedInvoice.lastReceiptNumber,
                 };
                 toast({
@@ -279,7 +282,7 @@ export function AccountsReceivablePageView() {
     };
 
     const totalOutstanding = useMemo(() => {
-        return invoices.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
+        return invoices.reduce((sum, inv) => sum + invoiceBalance(inv.originalAmount, inv.amountPaid), 0);
     }, [invoices]);
 
     return (
@@ -336,18 +339,27 @@ export function AccountsReceivablePageView() {
                                     <TableHead>Invoice #</TableHead>
                                     <TableHead>Client</TableHead>
                                     <TableHead>Date</TableHead>
+                                    <TableHead>Due</TableHead>
                                     <TableHead className="text-right">Balance Due</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {invoices.length > 0 ? invoices.map((inv) => {
-                                    const balance = inv.originalAmount - inv.amountPaid;
+                                    const balance = invoiceBalance(inv.originalAmount, inv.amountPaid);
                                     return (
                                         <TableRow key={inv.id} className="group cursor-pointer" title="Open invoice" onClick={() => handleOpenInvoice(inv)}>
                                             <TableCell className="font-medium text-primary group-hover:underline">{inv.invoiceNumber}</TableCell>
                                             <TableCell>{inv.companyName}</TableCell>
                                             <TableCell>{format(inv.invoiceDate, 'PP')}</TableCell>
+                                            <TableCell>
+                                                {format(inv.dueDate, 'PP')}
+                                                {isInvoiceOverdue(inv) && (
+                                                    <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700">
+                                                        {daysOverdue(inv)} {daysOverdue(inv) === 1 ? 'day' : 'days'} overdue
+                                                    </span>
+                                                )}
+                                            </TableCell>
                                             <TableCell className="text-right font-mono text-destructive">
                                                 {formatCurrency(balance)}
                                             </TableCell>
@@ -392,7 +404,7 @@ export function AccountsReceivablePageView() {
                                     );
                                 }) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground italic">
+                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground italic">
                                             No outstanding receivables found.
                                         </TableCell>
                                     </TableRow>

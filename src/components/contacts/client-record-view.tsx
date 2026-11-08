@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { format, startOfDay, endOfDay, isFuture, isToday, isYesterday } from 'date-fns';
+import { displayStatus, isInvoiceOverdue } from '@/lib/invoice-status';
 import {
   ArrowLeft,
   Briefcase,
@@ -821,7 +822,8 @@ export function ClientRecordView() {
             {invoices.map((invoice) => {
               const balance = Math.max(0, invoice.originalAmount - invoice.amountPaid);
               const paid = invoice.status === 'paid';
-              const overdue = invoice.status === 'overdue';
+              // Worked out from the due date and balance; 'overdue' is never a stored status.
+              const overdue = isInvoiceOverdue(invoice);
               return (
                 <Link
                   key={invoice.id}
@@ -850,7 +852,7 @@ export function ClientRecordView() {
                           : 'rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700'
                     }
                   >
-                    {invoice.status.replace('_', ' ')}
+                    {displayStatus(invoice).replace('_', ' ')}
                   </span>
                 </Link>
               );

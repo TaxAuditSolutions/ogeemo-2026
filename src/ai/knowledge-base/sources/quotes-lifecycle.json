@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "quotes.lifecycle.statuses",
+      "module": "Quotes and Invoices",
+      "title": "Quote statuses and how a quote moves along",
+      "routes": ["/accounting/quotes"],
+      "intents": ["how-to", "business-rule", "quotes"],
+      "keywords": ["quote", "quotes", "quote manager", "status", "requested", "draft", "sent", "approved", "declined", "invoiced", "in progress", "completed", "paid", "approve", "expiring", "needs attention", "quote status"],
+      "audiences": ["all"],
+      "content": "The Quote Manager at /accounting/quotes lists every quote with a status badge and a count for each status. A quote moves along Requested, Draft, Sent, Approved, then either Invoiced directly or In Progress when a work order is made and Completed, and finally Paid. Declined is a separate end point. A Requested, Draft or Sent quote shows an Approve button. An Approved quote shows Invoice and Work Order buttons. An In Progress or Completed quote shows an Invoice button. An Invoiced quote shows Open Invoice, which opens the linked invoice. Every row also has a Tracking button and a menu where any status can be set by hand, and where a quote can be edited or deleted. A needs attention strip counts quotes that are Sent with no change for 14 days or more, Approved but not yet converted, and expiring within 7 days. Setting a status by hand does not create any invoice or work order.",
+      "sourceFiles": ["src/components/accounting/quotes-page-view.tsx", "src/core/accounting-service.ts"]
+    },
+    {
+      "id": "quotes.convert.to-invoice",
+      "module": "Quotes and Invoices",
+      "title": "Turn a quote into an invoice or a work order",
+      "routes": ["/accounting/quotes", "/accounting/invoices/create", "/accounting/work-orders"],
+      "intents": ["how-to", "business-rule", "quotes", "invoices"],
+      "keywords": ["convert quote", "quote to invoice", "create invoice from quote", "work order", "convert to work order", "already invoiced", "declined quote", "duplicate invoice", "invoice number used", "custom id", "carried forward"],
+      "audiences": ["all"],
+      "content": "Use the Invoice button on an Approved, In Progress or Completed quote to create an invoice. Ogeemo copies the contact, line items, tax, notes and Custom ID, links the invoice back to the quote, gives the invoice its own next invoice number, sets it Outstanding with a due date 14 days out, marks the quote Invoiced, and opens the new invoice so you can review it. Use the Work Order button on an Approved quote to create a work order instead; the quote becomes In Progress and shows the work order number, and invoicing the finished work order marks the quote Invoiced. A quote converts only once. A Declined quote cannot be converted until it is reopened, a quote that is already Invoiced or Paid cannot be turned into another invoice or a work order, and a quote that already has a work order cannot get a second one. These checks happen before a document number is claimed, so a refused conversion does not use up an invoice number.",
+      "sourceFiles": ["src/core/accounting-service.ts", "src/lib/invoice-status.ts", "src/components/accounting/quotes-page-view.tsx"]
+    }
+  ]
+}

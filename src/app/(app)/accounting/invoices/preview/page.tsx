@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Printer, ArrowLeft, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { UserProfile } from '@/core/user-profile-service';
+import { calculateDocumentTotals } from '@/lib/document-totals';
 
 const INVOICE_PREVIEW_KEY = 'invoicePreviewData';
 
@@ -112,9 +113,7 @@ function PreviewContent() {
         );
     }
 
-    const subtotal = invoiceData.lineItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
-    const taxAmount = invoiceData.lineItems.reduce((acc, item) => acc + (item.quantity * item.price * ((item.taxRate || 0) / 100)), 0);
-    const total = subtotal + taxAmount;
+    const { subtotal, tax: taxAmount, total } = calculateDocumentTotals(invoiceData.lineItems);
     const userProfile = invoiceData.userProfile;
 
     return (

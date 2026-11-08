@@ -45,6 +45,7 @@ import { addTask } from '@/services/project-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { AccountingPageHeader } from './page-header';
 import { cn } from '@/lib/utils';
+import { calculateDocumentTotals } from '@/lib/document-totals';
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -209,11 +210,7 @@ export function WorkOrderDetailView() {
 
     const config = statusConfig[workOrder.status];
     const StatusIcon = config.icon;
-    const subtotal = lineItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
-    const tax = lineItems.reduce((acc, item) => {
-        const itemTotal = item.quantity * item.price;
-        return acc + itemTotal * ((item.taxRate || 0) / 100);
-    }, 0);
+    const { subtotal, tax } = calculateDocumentTotals(lineItems);
 
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">

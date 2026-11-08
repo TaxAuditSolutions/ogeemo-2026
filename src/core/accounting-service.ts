@@ -23,6 +23,7 @@ import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-e
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { reconcileSourceRefs, sourceRefsFromLineItems, type EntryRef } from '@/lib/billing-eligibility';
+import { addPayment, quoteConversionProblem, storedStatusFor, validatePaymentAmount } from '@/lib/invoice-status';
 
 
 function getDb() {
@@ -834,6 +835,9 @@ export async function convertQuoteToInvoice(quoteId: string, userId: string): Pr
 
   const quote = await getQuoteById(quoteId);
   if (!quote) throw new Error('Quote not found.');
+  // Checked before a number is claimed, so a refused conversion never uses up an invoice number.
+  const invoiceProblem = quoteConversionProblem(quote.status, 'invoice');
+  if (invoiceProblem) throw new Error(invoiceProblem);
 
   const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
   const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);
@@ -1127,15 +1131,17 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
   if (invoiceSnap.data().orgId !== orgId) throw new Error('Invoice not found for current organization.');
 
   const invoiceData = docToInvoice(invoiceSnap);
-  const newAmountPaid = (invoiceData.amountPaid || 0) + amount;
-  const isFullyPaid = newAmountPaid >= invoiceData.originalAmount - 0.01;
+  // Refused before a receipt number is claimed: no overpayments, no zero or negative payments.
+  const paymentProblem = validatePaymentAmount(amount, invoiceData.originalAmount, invoiceData.amountPaid || 0);
+  if (paymentProblem) throw new Error(paymentProblem);
+  const newAmountPaid = addPayment(invoiceData.amountPaid || 0, amount);
   const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
 
   batch.update(invoiceRef, {
     amountPaid: newAmountPaid,
-    status: isFullyPaid ? 'paid' : 'partially_paid',
+    status: storedStatusFor(invoiceData.originalAmount, newAmountPaid),
     ...(receiptNumber ? { lastReceiptNumber: receiptNumber } : {}),
   });
 
@@ -1158,7 +1164,8 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
   };
   batch.set(incomeRef, incomeData);
 
-  batch.commit().catch(async (error) => {
+  // Awaited and re-thrown: a payment that did not save must not be reported as posted.
+  await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: 'batch',
@@ -1166,6 +1173,7 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
         requestResourceData: incomeData,
       }));
     }
+    throw error;
   });
 
   return receiptNumber;
@@ -1205,14 +1213,15 @@ export async function reconcileInvoicePayment(userId: string, invoiceId: string,
   if (!invoiceSnap.exists()) return null;
 
   const data = invoiceSnap.data();
-  const newPaid = (data.amountPaid || 0) + amount;
-  const isPaid = newPaid >= data.originalAmount - 0.01;
+  const paymentProblem = validatePaymentAmount(amount, data.originalAmount, data.amountPaid || 0);
+  if (paymentProblem) throw new Error(paymentProblem);
+  const newPaid = addPayment(data.amountPaid || 0, amount);
   const receiptNumber = await claimNextNumber('REC', null);
 
   const batch = writeBatch(db);
   batch.update(invoiceRef, {
     amountPaid: newPaid,
-    status: isPaid ? 'paid' : 'partially_paid',
+    status: storedStatusFor(data.originalAmount, newPaid),
     ...(receiptNumber ? { lastReceiptNumber: receiptNumber } : {}),
   });
 
@@ -2864,6 +2873,8 @@ export async function convertQuoteToWorkOrder(quoteId: string, userId: string): 
 
   const quote = await getQuoteById(quoteId);
   if (!quote) throw new Error('Quote not found.');
+  const workOrderProblem = quoteConversionProblem(quote.status, 'work order', { hasWorkOrder: !!quote.workOrderId });
+  if (workOrderProblem) throw new Error(workOrderProblem);
 
   const lineItems = await getQuoteLineItemsForQuote(userId, quoteId);
   const quoteRef = doc(db, QUOTES_COLLECTION, quoteId);

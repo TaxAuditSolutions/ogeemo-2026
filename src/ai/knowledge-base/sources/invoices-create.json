@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "invoices.create.numbers-and-totals",
+      "module": "Quotes and Invoices",
+      "title": "Creating an invoice, its number and its totals",
+      "routes": ["/accounting/invoices/create", "/accounting/quotes/create"],
+      "intents": ["how-to", "business-rule", "invoices"],
+      "keywords": ["create invoice", "invoice generator", "invoice number", "quote number", "next number", "custom id", "document numbering", "totals", "subtotal", "tax", "gst", "hst", "rounding", "cents", "line items", "due date", "payment terms", "net 14", "template"],
+      "audiences": ["all"],
+      "content": "Create Invoice at /accounting/invoices/create and Create Quote at /accounting/quotes/create work the same way: choose the contact, add line items from the Products and Services catalog or type them in, set the tax on each line, choose dates, and save. A new document shows the next number as a preview, and the real number is claimed when you save. Numbers look like INV-20261108-001 and QTE-20261108-001, with a fresh sequence each day, and the prefix and padding are set in Settings under Document Numbering. A saved quote keeps its number on edits, while an invoice number can be edited as long as it is not already in use. Custom ID is a free reference of your own that carries forward from quote to invoice. Payment terms set the due date, for example Net 14, and the due date can still be edited. Every amount is rounded to whole cents line by line, so the subtotal, tax and total on screen are exactly what is saved and what the client owes. Editing a paid invoice so the total goes up makes it Partially Paid again, because the status is worked out from the total and the amount already paid. Select from Template starts a document from a saved template.",
+      "sourceFiles": ["src/components/accounting/invoice-generator-view.tsx", "src/components/accounting/quote-generator-view.tsx", "src/lib/document-totals.ts", "src/core/document-numbering.ts"]
+    }
+  ]
+}

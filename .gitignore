@@ -37,3 +37,7 @@ dev-server.log
 .deploy-run.err.log
 .dev-run.log
 .dev-run.err.log
+
+# Dev server output (written by the local dev server; never commit)
+dev.out.log
+dev.err.log

@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import {
   counterDocId,
+  duplicatePrefixError,
+  numberIsTaken,
   counterValueForNext,
   DEFAULT_NUMBERING,
   formatBusinessDate,
@@ -84,4 +86,29 @@ test('isValidCounterNext enforces whole numbers within bounds', () => {
   assert.equal(isValidCounterNext(-3), false);
   assert.equal(isValidCounterNext(1.5), false);
   assert.equal(isValidCounterNext(NaN), false);
+});
+
+test('a business date must be a real calendar day', () => {
+  assert.equal(isValidBusinessDate('20260229'), false); // 2026 is not a leap year
+  assert.equal(isValidBusinessDate('20240229'), true);
+  assert.equal(isValidBusinessDate('20261340'), false);
+  assert.equal(isValidBusinessDate('20260431'), false);
+  assert.equal(isValidBusinessDate('00000000'), false);
+  assert.equal(isValidBusinessDate('20261231'), true);
+});
+
+test('a number is taken only by a document of this workspace (or a legacy one with no workspace)', () => {
+  assert.equal(numberIsTaken([], 'org1'), false);
+  assert.equal(numberIsTaken([{ id: 'a', orgId: 'org2' }], 'org1'), false);
+  assert.equal(numberIsTaken([{ id: 'a', orgId: 'org1' }], 'org1'), true);
+  assert.equal(numberIsTaken([{ id: 'a' }], 'org1'), true);
+  // the document being edited does not clash with itself
+  assert.equal(numberIsTaken([{ id: 'a', orgId: 'org1' }], 'org1', 'a'), false);
+  assert.equal(numberIsTaken([{ id: 'a', orgId: 'org1' }, { id: 'b', orgId: 'org1' }], 'org1', 'a'), true);
+});
+
+test('two document types cannot share a prefix, ignoring case and spaces', () => {
+  assert.equal(duplicatePrefixError(DEFAULT_NUMBERING), null);
+  const clash = { ...DEFAULT_NUMBERING, QTE: { prefix: ' inv ', padding: 3 } };
+  assert.match(duplicatePrefixError(clash)!, /INV and QTE cannot share the prefix "inv"/);
 });

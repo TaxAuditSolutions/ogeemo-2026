@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "bks.bank.statements-screen",
+      "module": "BKS Accounting",
+      "title": "Bank Statements screen: accounts, uploaded statements and what is not connected",
+      "routes": ["/accounting/bank-statements"],
+      "intents": ["how-to", "business-rule", "bank"],
+      "keywords": ["bank statements", "add account", "upload csv statement", "bank link", "plaid", "secure bank link", "sample transactions", "duplicate upload", "opening balance", "uploaded twice", "not connected"],
+      "audiences": ["all"],
+      "content": "Bank Statements at /accounting/bank-statements lists your accounts (add one with its opening balance and date) and, inside an account, the rows you upload from a CSV statement with the columns Date, Type, Name, Memo and Amount, money out being negative. It used to start with six made-up July 2024 transactions in an account that did not exist for you; the screen now starts empty and shows only what you upload. It reads the file with the same reader as the reconciliation wizard, so a quoted comma in a name or memo does not shift the columns, amounts such as 1,250.00 are read, and rows with a bad date or amount are reported with the line number instead of being added as 0 on today's date. Each row's id comes from its own content, so uploading the same statement to the same account again adds nothing and says how many were already there, while the same statement for a different account is kept. Two identical rows in one file (two coffees on one day) stay two rows. Secure Bank Link does not connect to a bank yet and says so; use Upload CSV Statement. Rows uploaded here are for review on this screen; the reconciliation wizard on the BKS Ledger is what matches them to your books and writes entries against the account you choose for the statement.",
+      "sourceFiles": ["src/lib/bank-statement-rows.ts", "src/lib/bank-csv.ts", "src/components/accounting/bank-statements-view.tsx"]
+    }
+  ]
+}

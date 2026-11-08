@@ -15,6 +15,8 @@ import { getNextDocumentNumbers, setDocumentCounter } from '@/app/actions/number
 import {
     DEFAULT_NUMBERING,
     DOCUMENT_NUMBER_TYPES,
+    duplicatePrefixError,
+    formatBusinessDate,
     isValidCounterNext,
     MAX_COUNTER_NEXT,
     MIN_COUNTER_NEXT,
@@ -58,7 +60,7 @@ export function DocumentNumberingCard() {
 
     const loadPreviews = useCallback(async () => {
         try {
-            const next = await getNextDocumentNumbers();
+            const next = await getNextDocumentNumbers(formatBusinessDate());
             setPreviews(next);
         } catch {
             setPreviews({});
@@ -109,7 +111,7 @@ export function DocumentNumberingCard() {
         }
         setSettingType(type);
         try {
-            await setDocumentCounter(type, nextValue);
+            await setDocumentCounter(type, nextValue, { businessDate: formatBusinessDate() });
             setCounterInputs((prev) => ({ ...prev, [type]: '' }));
             await loadPreviews();
             toast({
@@ -135,6 +137,11 @@ export function DocumentNumberingCard() {
                 });
                 return;
             }
+        }
+        const clash = duplicatePrefixError(rules);
+        if (clash) {
+            toast({ variant: 'destructive', title: 'Prefixes must differ', description: clash });
+            return;
         }
         setIsBusy(true);
         try {

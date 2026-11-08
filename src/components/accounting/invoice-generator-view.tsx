@@ -74,6 +74,7 @@ const formatCurrency = (amount: number) => {
 };
 
 import { claimDocumentNumber, getNextDocumentNumbers } from '@/app/actions/numbering-actions';
+import { formatBusinessDate } from '@/core/document-numbering';
 
 const EDIT_INVOICE_ID_KEY = 'editInvoiceId';
 
@@ -223,14 +224,14 @@ export function InvoiceGeneratorView() {
     const previewFailedRef = useRef(false);
     const previewNextInvoiceNumber = useCallback(async () => {
         try {
-            const next = await getNextDocumentNumbers();
+            const next = await getNextDocumentNumbers(formatBusinessDate());
             if (!numberEditedRef.current && !localStorage.getItem(EDIT_INVOICE_ID_KEY)) {
                 setInvoiceNumber(next.INV);
             }
         } catch {
             await new Promise((resolve) => setTimeout(resolve, 1500));
             try {
-                const next = await getNextDocumentNumbers();
+                const next = await getNextDocumentNumbers(formatBusinessDate());
                 if (!numberEditedRef.current && !localStorage.getItem(EDIT_INVOICE_ID_KEY)) {
                     setInvoiceNumber(next.INV);
                 }
@@ -608,12 +609,12 @@ export function InvoiceGeneratorView() {
         try {
             if (invoiceToEditId) {
                 if (originalInvoiceNumberRef.current !== null && invoiceNumber !== originalInvoiceNumberRef.current) {
-                    finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber, excludeDocId: invoiceToEditId });
+                    finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber, excludeDocId: invoiceToEditId, businessDate: formatBusinessDate() });
                 }
             } else if (numberEditedRef.current) {
-                finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber });
+                finalInvoiceNumber = await claimDocumentNumber('INV', { override: invoiceNumber, businessDate: formatBusinessDate() });
             } else {
-                finalInvoiceNumber = await claimDocumentNumber('INV');
+                finalInvoiceNumber = await claimDocumentNumber('INV', { businessDate: formatBusinessDate() });
             }
         } catch (claimError: any) {
             toast({ variant: 'destructive', title: 'Invalid Invoice Number', description: claimError?.message || 'Could not claim an invoice number.' });

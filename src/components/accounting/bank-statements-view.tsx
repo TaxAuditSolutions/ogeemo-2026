@@ -57,6 +57,8 @@ import {
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
+import { parseBankCsv } from '@/lib/bank-csv';
+import { mergeStatementRows, toStatementRow, uploadSummary, type StatementRow } from '@/lib/bank-statement-rows';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -118,24 +120,9 @@ const ContactFormDialog = dynamic(() => import('@/components/contacts/contact-fo
   loading: () => <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><LoaderCircle className="h-10 w-10 animate-spin text-white" /></div>,
 });
 
-type BankTransaction = {
-  id: string;
-  accountId: string;
-  date: string;
-  transactionType: string;
-  name: string;
-  memo: string;
-  amount: number;
-};
+type BankTransaction = StatementRow;
 
-const initialBankTransactions: BankTransaction[] = [
-  { id: 'txn_b_1', accountId: 'acc_1', date: '2024-07-25', transactionType: 'ACH', name: 'Client Alpha', memo: 'Invoice #1001 payment', amount: 5000 },
-  { id: 'txn_b_2', accountId: 'acc_1', date: '2024-07-25', transactionType: 'DEBIT', name: 'Cloud Hosting Inc.', memo: 'Monthly server fee', amount: -150 },
-  { id: 'txn_b_3', accountId: 'acc_1', date: '2024-07-24', transactionType: 'TRANSFER', name: 'Stripe Payout', memo: 'Merchant settle', amount: 850.75 },
-  { id: 'txn_b_4', accountId: 'acc_1', date: '2024-07-23', transactionType: 'DEBIT', name: 'SaaS Tools Co.', memo: 'Subscription', amount: -75.99 },
-  { id: 'txn_b_5', accountId: 'acc_1', date: '2024-07-22', transactionType: 'XFER', name: 'Self Transfer', memo: 'To savings', amount: -10000 },
-  { id: 'txn_b_6', accountId: 'acc_1', date: '2024-07-21', transactionType: 'DEBIT', name: 'Shell Oil', memo: 'Fuel', amount: -55.45 },
-];
+
 
 const emptyAccountForm = {
     name: '',
@@ -165,7 +152,8 @@ export function BankStatementsView() {
   const [companies, setCompanies] = React.useState<Company[]>([]);
   const [expenseCategories, setExpenseCategories] = React.useState<ExpenseCategory[]>([]);
   const [incomeCategories, setIncomeCategories] = React.useState<IncomeCategory[]>([]);
-  const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>(initialBankTransactions);
+  // Uploaded rows live on this screen only for now; the reconciliation wizard is what writes to the ledger.
+  const [bankTransactions, setBankTransactions] = React.useState<BankTransaction[]>([]);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
 
   const [isContactFormOpen, setIsContactFormOpen] = React.useState(false);
@@ -269,11 +257,12 @@ export function BankStatementsView() {
     };
   }, [bankTransactions, accountIdParam, accounts, sortConfig, searchQuery]);
 
+  // There is no live bank connection yet; saying "connecting" would be false.
   const handlePlaidContinue = () => {
     setIsLinkDialogOpen(false);
     toast({
-        title: "Connecting to Plaid...",
-        description: "In a real application, the secure Plaid Link flow would start now."
+        title: 'Bank link is not available yet',
+        description: 'Upload a CSV statement for the account instead. Open an account and choose Upload CSV Statement.',
     });
   };
 
@@ -369,36 +358,30 @@ export function BankStatementsView() {
 
   const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !accountIdParam) return;
+    const accountId = accountIdParam;
+    if (event.target) event.target.value = '';
+    if (!file || !accountId) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
-        const text = e.target?.result as string;
-        const lines = text.split('\n');
-        const newTxns: BankTransaction[] = lines.slice(1).filter(line => line.trim()).map((line, index) => {
-            const parts = line.split(',');
-            const dateStr = parts[0]?.trim().replace(/^"|"$/g, '') || format(new Date(), 'yyyy-MM-dd');
-            const typeStr = parts[1]?.trim().replace(/^"|"$/g, '') || 'N/A';
-            const nameStr = parts[2]?.trim().replace(/^"|"$/g, '') || 'Unknown';
-            const memoStr = parts[3]?.trim().replace(/^"|"$/g, '') || '';
-            const amountStr = parts[4]?.trim().replace(/^"|"$/g, '') || '0';
-            
-            return {
-                id: `up_${Date.now()}_${index}`,
-                accountId: accountIdParam,
-                date: dateStr,
-                transactionType: typeStr,
-                name: nameStr,
-                memo: memoStr,
-                amount: parseFloat(amountStr),
-            };
-        });
-        
-        setBankTransactions(prev => [...newTxns, ...prev]);
-        toast({ title: 'Statement Ingested', description: `Detected ${newTxns.length} new transactions in the CSV.` });
+        try {
+            // The same reader the reconciliation wizard uses: a quoted comma does not shift the columns,
+            // amounts like 1,250.00 are read, bad rows are reported, and row ids come from the row itself.
+            const parsed = parseBankCsv(e.target?.result as string);
+            if (parsed.rows.length === 0) {
+                throw new Error(parsed.skipped.length > 0
+                    ? `No usable rows. First problem: line ${parsed.skipped[0].line}: ${parsed.skipped[0].reason}.`
+                    : 'No transactions were found in that file. The columns are Date, Type, Name, Memo and Amount.');
+            }
+            const result = mergeStatementRows(bankTransactions, parsed.rows.map(row => toStatementRow(row, accountId)));
+            setBankTransactions(result.merged);
+            toast({ title: 'Statement read', description: uploadSummary(parsed, result) });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Could not read the statement', description: error.message });
+        }
     };
+    reader.onerror = () => toast({ variant: 'destructive', title: 'Could not read the file', description: 'Try saving it as a CSV again.' });
     reader.readAsText(file);
-    if (event.target) event.target.value = '';
   };
 
   const handleSelectAccount = (id: string) => {

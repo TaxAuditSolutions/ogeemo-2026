@@ -93,6 +93,7 @@ import {
     type InternalAccount
 } from '@/core/accounting-service';
 import { claimDocumentNumber } from '@/app/actions/numbering-actions';
+import { formatBusinessDate } from '@/core/document-numbering';
 import { type Contact } from '@/services/contact-service';
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 
@@ -452,8 +453,8 @@ export function TransactionDialog({
                     const contactMatch = contacts.find(c => c.name === values.company || (c.businessName && `${c.name} - ${c.businessName}` === values.company));
                     const typedNumber = (values.documentNumber || '').trim();
                     const invoiceNumberToSave = typedNumber
-                        ? await claimDocumentNumber('INV', { override: typedNumber })
-                        : await claimDocumentNumber('INV');
+                        ? await claimDocumentNumber('INV', { override: typedNumber, businessDate: formatBusinessDate() })
+                        : await claimDocumentNumber('INV', { businessDate: formatBusinessDate() });
                     // The amount typed includes tax, but invoice lines hold the pre-tax price and add
                     // tax on top, so the line carries the NET amount. Otherwise opening this invoice
                     // later would show a total larger than the amount that was logged.

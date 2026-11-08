@@ -19,6 +19,7 @@ import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { mergeContacts, type MergeContactsResult } from '@/services/contact-service';
 import { omitUndefined, replaceUndefinedWithNull } from '@/lib/write-payload';
 import { todayDateKey } from '@/lib/ledger-date';
+import { alreadyPaid, alreadyPaidMessage, newestFirst } from '@/lib/payroll-history';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -434,7 +435,81 @@ export async function deleteRemittance(id: string): Promise<void> {
     await deleteDoc(remittanceRef);
 }
 
+/** A saved payroll run as the History screen and the pay stub read it: day keys, never raw timestamps. */
+export interface SavedPayrollRun {
+    id: string;
+    periodStart: string;
+    periodEnd: string;
+    payDate: string;
+    createdAtMs: number;
+    totalGrossPay: number;
+    totalDeductions: number;
+    totalNetPay: number;
+    employeeCount: number;
+    deductionRatePercent?: number;
+    details: PayrollRunDetail[];
+}
+
+/** Every payroll run saved by this workspace, newest first, each with its per-worker lines. */
+export async function getPayrollRuns(userId: string): Promise<SavedPayrollRun[]> {
+    const db = getDb();
+    if (!userId) return [];
+    const orgId = await getCurrentOrgId();
+    try {
+        const snapshot = await getDocs(query(collection(db, PAYROLL_RUNS_COLLECTION), where('orgId', '==', orgId)));
+        const runs = await Promise.all(snapshot.docs.map(async (runDoc) => {
+            const data = runDoc.data();
+            const detailSnap = await getDocs(collection(db, PAYROLL_RUNS_COLLECTION, runDoc.id, 'details'));
+            const start = toDate(data.payPeriodStart);
+            const end = toDate(data.payPeriodEnd);
+            const pay = toDate(data.payDate);
+            return {
+                id: runDoc.id,
+                periodStart: start ? todayDateKey(start) : '',
+                periodEnd: end ? todayDateKey(end) : '',
+                payDate: pay ? todayDateKey(pay) : '',
+                createdAtMs: toDate(data.createdAt)?.getTime() ?? 0,
+                totalGrossPay: Number(data.totalGrossPay) || 0,
+                totalDeductions: Number(data.totalDeductions) || 0,
+                totalNetPay: Number(data.totalNetPay) || 0,
+                employeeCount: Number(data.employeeCount) || detailSnap.size,
+                ...(data.deductionRatePercent !== undefined ? { deductionRatePercent: Number(data.deductionRatePercent) } : {}),
+                details: detailSnap.docs.map((d) => {
+                    const detail = d.data();
+                    return {
+                        employeeId: String(detail.employeeId ?? ''),
+                        employeeName: String(detail.employeeName ?? ''),
+                        grossPay: Number(detail.grossPay) || 0,
+                        deductions: Number(detail.deductions) || 0,
+                        netPay: Number(detail.netPay) || 0,
+                    };
+                }),
+            } as SavedPayrollRun;
+        }));
+        return newestFirst(runs.filter((run) => run.payDate));
+    } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: PAYROLL_RUNS_COLLECTION,
+                operation: 'list',
+            } satisfies SecurityRuleContext));
+        }
+        throw error;
+    }
+}
+
+
 export async function savePayrollRun(data: PayrollRun): Promise<void> {
+    // Nobody is paid twice for the same days: refuse a period that overlaps one already paid to a worker in this run.
+    const previous = await getPayrollRuns(data.userId);
+    const clashes = alreadyPaid(
+        previous,
+        { start: todayDateKey(data.payPeriodStart), end: todayDateKey(data.payPeriodEnd) },
+        data.details.map((detail) => ({ employeeId: detail.employeeId, employeeName: detail.employeeName }))
+    );
+    if (clashes.length > 0) throw new Error(alreadyPaidMessage(clashes));
+    if (data.payPeriodEnd.getTime() < data.payPeriodStart.getTime()) throw new Error('The pay period ends before it starts.');
+
     const db = getDb();
     const orgId = await getCurrentOrgId();
     const currentUser = getCurrentAuthContext();

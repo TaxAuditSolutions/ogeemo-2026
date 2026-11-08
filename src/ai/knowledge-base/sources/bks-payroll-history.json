@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "time.payroll.history-and-stubs",
+      "module": "Payroll",
+      "title": "Payroll History, pay stubs and paying nobody twice",
+      "routes": ["/accounting/payroll/history", "/accounting/payroll/run"],
+      "intents": ["how-to", "business-rule", "payroll"],
+      "keywords": ["payroll history", "pay stub", "pay statement", "year to date", "ytd", "download report", "csv", "paid twice", "overlapping pay period", "already paid", "deductions estimate", "past payroll runs"],
+      "audiences": ["all"],
+      "content": "Payroll History at /accounting/payroll/history lists the payroll runs you have really saved, newest first, with the pay period, pay date, gross pay, net pay and number of employees, and a total across all runs. It used to show three made-up 2024 runs that were not your data. If none has been run it says so and links to Run Payroll. The row menu opens the details (gross, estimated deductions with the percentage that run used, net, and each worker's gross and net), the pay stubs, and a CSV report with a row per worker and a totals row to the cent. A pay stub shows what that run recorded for the worker. Year to date is added up from the runs actually saved in the same calendar year up to that stub, not assumed to be 14 pay periods. The deduction line is the single estimate the run used, shown with its percentage, because the run never calculated tax, EI and CPP separately and the stub no longer invents a 60, 20 and 20 split. The company name and address come from Settings and the worker's address from their contact, and are left blank when missing. Emailing a stub is not built, and the button says so instead of pretending to send. Run Payroll refuses a pay period that overlaps one already paid to the same worker, names who and when, and lets you remove them or pick another period; a different set of workers for the same period is allowed.",
+      "sourceFiles": ["src/lib/payroll-history.ts", "src/lib/payroll-stub.ts", "src/lib/payroll-report.ts", "src/components/accounting/payroll-history-view.tsx", "src/services/payroll-service.ts"]
+    }
+  ]
+}

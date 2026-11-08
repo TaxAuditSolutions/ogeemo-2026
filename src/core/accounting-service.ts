@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { claimDocumentNumber } from '@/app/actions/numbering-actions';
+import { formatBusinessDate } from '@/core/document-numbering';
 import { format } from 'date-fns';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -832,7 +833,7 @@ async function claimNextNumber(
   fallbackPrefix: string | null
 ): Promise<string | null> {
   try {
-    return await claimDocumentNumber(type);
+    return await claimDocumentNumber(type, { businessDate: formatBusinessDate() });
   } catch (error) {
     if (fallbackPrefix === null) {
       console.error(`[Numbering] Could not claim a ${type} number; omitting it:`, error);

@@ -79,8 +79,15 @@ export function formatBusinessDate(d: Date = new Date()): string {
   return `${y}${m}${day}`;
 }
 
+/** Eight digits that are a real calendar day (20261340 is not). */
 export function isValidBusinessDate(value: string): boolean {
-  return /^\d{8}$/.test(value);
+  if (!/^\d{8}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(4, 6));
+  const day = Number(value.slice(6, 8));
+  if (year < 2000 || year > 2999) return false;
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
 /** Clamps/validates a stored rule against a fallback (defaults for legacy orgs). */
@@ -123,4 +130,27 @@ export function validateOverrideNumber(raw: string): OverrideValidation {
   if (/[\r\n\t]/.test(value)) return { ok: false, error: 'Document number cannot contain line breaks.' };
   if (value.length > 40) return { ok: false, error: 'Document number must be 40 characters or fewer.' };
   return { ok: true, value };
+}
+
+
+/**
+ * Is this number already used by a document of this workspace? `docs` are the documents found with
+ * that number. Documents saved before workspaces existed have no orgId and count as this workspace's.
+ * Every workspace numbers from 001 each day, so the same number is normal in other workspaces.
+ */
+export function numberIsTaken(docs: readonly { id: string; orgId?: unknown }[], orgId: string, excludeDocId?: string): boolean {
+  return docs.some((doc) => doc.id !== excludeDocId && (doc.orgId === undefined || doc.orgId === orgId));
+}
+
+/** Two document types sharing a prefix would issue look-alike numbers. Returns a message, or null when all differ. */
+export function duplicatePrefixError(rules: Record<DocumentNumberType, NumberingRule>): string | null {
+  const seen = new Map<string, DocumentNumberType>();
+  for (const type of DOCUMENT_NUMBER_TYPES) {
+    const prefix = rules[type].prefix.trim();
+    const key = prefix.toLowerCase();
+    const other = seen.get(key);
+    if (other) return `${other} and ${type} cannot share the prefix "${prefix}". Give each document type its own prefix.`;
+    seen.set(key, type);
+  }
+  return null;
 }

@@ -18,6 +18,7 @@ import {
     normalizeRule,
     isValidBusinessDate,
     isValidCounterNext,
+    numberIsTaken,
     validateOverrideNumber,
     type DocumentNumberType,
     type NumberingConfig,
@@ -71,11 +72,12 @@ export async function getNextDocumentNumbers(businessDate?: string): Promise<Rec
     const adminDb = getAdminDb();
     if (!adminDb) throw new Error('Firebase Admin SDK is not initialized.');
 
+    // The browser sends its own calendar day. This code runs on the server, whose clock is usually UTC,
+    // so without it an evening in Canada would already be numbered as tomorrow.
     const date = businessDate && isValidBusinessDate(businessDate) ? businessDate : formatBusinessDate();
     const config = await loadNumberingConfig(orgId);
-    const out = {} as Record<DocumentNumberType, string>;
 
-    for (const type of DOCUMENT_NUMBER_TYPES) {
+    const entries = await Promise.all(DOCUMENT_NUMBER_TYPES.map(async (type) => {
         const rule = normalizeRule(config[type], DEFAULT_NUMBERING[type]);
         const counterSnap = await adminDb
             .collection('organizations')
@@ -83,10 +85,17 @@ export async function getNextDocumentNumbers(businessDate?: string): Promise<Rec
             .collection('counters')
             .doc(counterDocId(type, date))
             .get();
-        const next = ((counterSnap.data()?.value as number) || 0) + 1;
-        out[type] = formatDocumentNumber(type, rule, date, next);
-    }
-    return out;
+        let next = ((counterSnap.data()?.value as number) || 0) + 1;
+        let number = formatDocumentNumber(type, rule, date, next);
+        // A claim skips numbers already used (for example after the counter was steered back), so the
+        // preview skips them too and shows the number the save will really give.
+        for (let attempt = 0; attempt < 10 && (await isNumberTaken(adminDb, type, number, orgId)); attempt++) {
+            next += 1;
+            number = formatDocumentNumber(type, rule, date, next);
+        }
+        return [type, number] as const;
+    }));
+    return Object.fromEntries(entries) as Record<DocumentNumberType, string>;
 }
 
 async function isNumberTaken(
@@ -96,28 +105,30 @@ async function isNumberTaken(
     orgId: string,
     excludeDocId?: string
 ): Promise<boolean> {
-    const snap = await adminDb
-        .collection(NUMBERING_COLLECTIONS[type])
-        .where(NUMBERING_DOC_FIELDS[type], '==', value)
-        .limit(10)
-        .get();
+    const field = NUMBERING_DOC_FIELDS[type];
+    const primary = adminDb.collection(NUMBERING_COLLECTIONS[type]);
 
-    const takenInPrimary = snap.docs.some((doc) => {
-        if (doc.id === excludeDocId) return false;
-        const docOrg = doc.data()?.orgId;
-        // Legacy docs without an orgId are treated as same-tenant (payment ledger).
-        return docOrg === undefined || docOrg === orgId;
-    });
-    if (takenInPrimary || type !== 'REC') return takenInPrimary;
+    // Every workspace numbers from 001 each day, so the same number exists in many workspaces. Ask for this
+    // workspace's documents only: asking for all of them and keeping the first 10 could fill up with other
+    // workspaces' documents and hide a real duplicate here.
+    const scoped = await primary.where(field, '==', value).where('orgId', '==', orgId).limit(5).get();
+    if (numberIsTaken(scoped.docs.map((doc) => ({ id: doc.id, orgId })), orgId, excludeDocId)) return true;
+
+    // Documents saved before workspaces existed have no orgId and count as this workspace's.
+    const everyone = await primary.where(field, '==', value).limit(50).get();
+    const legacy = everyone.docs.filter((doc) => doc.data()?.orgId === undefined).map((doc) => ({ id: doc.id }));
+    if (numberIsTaken(legacy, orgId, excludeDocId)) return true;
+    if (type !== 'REC') return false;
 
     // REC numbers are shared by income receipts and scanned expense receipts, which
     // keep theirs in the receipt queue (auditReferenceId), so check there as well.
     const queueSnap = await adminDb
         .collection('receiptStagingQueue')
         .where('auditReferenceId', '==', value)
-        .limit(10)
+        .where('orgId', '==', orgId)
+        .limit(5)
         .get();
-    return queueSnap.docs.some((doc) => doc.id !== excludeDocId && doc.data()?.orgId === orgId);
+    return queueSnap.docs.some((doc) => doc.id !== excludeDocId);
 }
 
 /**

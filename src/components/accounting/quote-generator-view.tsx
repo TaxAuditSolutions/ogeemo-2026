@@ -71,6 +71,7 @@ const formatCurrency = (amount: number) => {
 };
 
 import { claimDocumentNumber, getNextDocumentNumbers } from '@/app/actions/numbering-actions';
+import { formatBusinessDate } from '@/core/document-numbering';
 
 const EDIT_QUOTE_ID_KEY = 'editQuoteId';
 
@@ -235,14 +236,14 @@ export function QuoteGeneratorView() {
   const previewFailedRef = useRef(false);
   const previewNextQuoteNumber = useCallback(async () => {
     try {
-      const next = await getNextDocumentNumbers();
+      const next = await getNextDocumentNumbers(formatBusinessDate());
       if (!localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
         setQuoteNumber(next.QTE);
       }
     } catch {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       try {
-        const next = await getNextDocumentNumbers();
+        const next = await getNextDocumentNumbers(formatBusinessDate());
         if (!localStorage.getItem(EDIT_QUOTE_ID_KEY)) {
           setQuoteNumber(next.QTE);
         }
@@ -600,7 +601,7 @@ export function QuoteGeneratorView() {
       if (quoteToEditId && originalQuoteNumberRef.current) {
         finalQuoteNumber = originalQuoteNumberRef.current;
       } else {
-        finalQuoteNumber = await claimDocumentNumber('QTE');
+        finalQuoteNumber = await claimDocumentNumber('QTE', { businessDate: formatBusinessDate() });
       }
     } catch (claimError: any) {
       toast({ variant: 'destructive', title: 'Quote Number Error', description: claimError?.message || 'Could not claim a quote number.' });

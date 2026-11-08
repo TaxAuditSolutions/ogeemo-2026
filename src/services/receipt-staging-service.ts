@@ -12,8 +12,9 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
-import { addExpenseTransaction, addIncomeTransaction, addPayableBill } from '@/core/accounting-service';
+import { addExpenseTransaction, addIncomeTransaction, addPayableBill, getExpenseCategories, getIncomeCategories } from '@/core/accounting-service';
 import { claimDocumentNumber } from '@/app/actions/numbering-actions';
+import { formatBusinessDate } from '@/core/document-numbering';
 import { fetchWithSession, withServerSession } from '@/lib/server-session';
 import { isVisibleReceiptQueueItem } from '@/lib/receipt-queue-utils';
 import { receiptFileUrl } from '@/lib/receipt-storage-utils';
@@ -21,6 +22,7 @@ import { RECEIPT_OCR_MODEL_NAME } from '@/lib/receipt-file-utils';
 import { ocrResultToItemFields } from '@/lib/receipt-ocr-fields';
 import { resolveOcrTax } from '@/lib/receipt-tax';
 import { todayDateKey } from '@/lib/ledger-date';
+import { FALLBACK_EXPENSE_LINE, FALLBACK_INCOME_LINE, checkReceiptForPosting, resolveCategoryLine } from '@/lib/receipt-posting';
 import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 import type { ExtractionResult } from '@/app/actions/ocr-actions';
 
@@ -272,7 +274,7 @@ export async function importLocalReceiptToQueue(
   const duplicate = allItems.find((item) => item.status !== 'rejected' && item.fileHash === input.fileHash);
   if (duplicate) return { status: 'duplicate', existing: duplicate };
 
-  const auditReferenceId = await withServerSession(() => claimDocumentNumber('REC'));
+  const auditReferenceId = await withServerSession(() => claimDocumentNumber('REC', { businessDate: formatBusinessDate() }));
 
   const item = {
     importedFrom: 'local_file' as const,
@@ -420,12 +422,19 @@ export async function postReceiptToLedger(
     : { ...(item.paperLocation ? { paperReceiptLocation: item.paperLocation } : {}) };
   const vendorName = merged.proposedCompany || merged.merchantName || 'Unspecified Vendor';
   const description = merged.proposedDescription || `Receipt for ${vendorName}`;
-  // The local day: the UTC day is already "tomorrow" on a Canadian evening (see lib/ledger-date).
-  const date = merged.transactionDate || todayDateKey();
-  const totalAmount = Number(merged.totalAmount ?? 0);
-  const preTaxAmount = Number(merged.netAmount ?? totalAmount);
-  const taxAmount = Number(merged.taxAmount ?? Math.max(totalAmount - preTaxAmount, 0));
-  // The chosen tax type and rate travel with the ledger entry (the printed tax is not recorded there).
+  // Checked before anything is written (Simple mode only warns on screen, so this is the last line):
+  // a total above zero, a real date, and net plus tax that equals the total. A blank date is the local
+  // day: the UTC day is already "tomorrow" on a Canadian evening (see lib/ledger-date).
+  const checked = checkReceiptForPosting(merged, todayDateKey());
+  if (checked.values === null) throw new Error(checked.error);
+  const { date, totalAmount, preTaxAmount, taxAmount } = checked.values;
+
+  // The reviewer picks a category by NAME; the ledger and the Income Statement use the category LINE
+  // (for example 8810). Saving the name counted the entry under "Other expenses" and showed a raw name.
+  const userId = merged.userId || getCurrentAuthContext().uid;
+  const isIncome = merged.proposedLedgerType === 'income';
+  const categoryList = isIncome ? await getIncomeCategories(userId) : await getExpenseCategories(userId);
+  const category = resolveCategoryLine(merged.proposedCategory, categoryList, isIncome ? FALLBACK_INCOME_LINE : FALLBACK_EXPENSE_LINE);
   const taxLabel = merged.taxType || '';
   const taxRatePercent = typeof merged.taxRate === 'number' ? merged.taxRate : preTaxAmount ? (taxAmount / preTaxAmount) * 100 : 0;
   const taxDetails = {
@@ -446,7 +455,7 @@ export async function postReceiptToLedger(
       taxAmount,
       ...taxDetails,
       taxType: taxLabel || 'GST',
-      category: merged.proposedCategory || 'General Operating Expenses',
+      category: category.line,
       description,
       documentUrl: sourceDocumentUrl,
       ...receiptLink,
@@ -466,7 +475,7 @@ export async function postReceiptToLedger(
       preTaxAmount,
       taxAmount,
       ...taxDetails,
-      incomeCategory: merged.proposedCategory || 'Other Income',
+      incomeCategory: category.line,
       depositedTo: 'Cash / Default',
       type: 'business',
       documentNumber: auditReferenceId,
@@ -489,7 +498,7 @@ export async function postReceiptToLedger(
       preTaxAmount,
       taxAmount,
       ...taxDetails,
-      category: merged.proposedCategory || 'General Operating Expenses',
+      category: category.line,
       paidFrom: 'Cash / Default',
       type: 'business',
       documentNumber: auditReferenceId,

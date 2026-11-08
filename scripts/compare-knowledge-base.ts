@@ -54,6 +54,8 @@ const QUESTIONS = [
   'What stops a work order or a petty cash record being posted twice?',
   'How do loan payments change the balance, and what reaches the income statement?',
   'What happens to stock and income when I complete a Point of Sale sale?',
+  'Where does Payroll History get its runs and year-to-date figures?',
+  'What checks run before a receipt is posted to the ledger?',
   'What does the balance sheet include for cash and inventory, and what does it leave out?',
   'How do I post a receipt to the ledger, and what does Audit-ready mode change?',
   'Show me my unbilled hours',

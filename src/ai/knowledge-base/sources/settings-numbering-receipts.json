@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "settings.document-numbering",
+      "module": "Settings",
+      "title": "Document numbering: prefixes, daily sequence and next number",
+      "routes": ["/settings"],
+      "intents": ["how-to", "business-rule", "settings"],
+      "keywords": ["document numbering", "invoice number", "quote number", "receipt number", "work order number", "prefix", "next number", "restart", "001", "daily sequence", "duplicate number", "already in use", "same prefix"],
+      "audiences": ["all"],
+      "content": "Settings has a Document Numbering card for invoices, quotes, receipts and work orders. A number looks like PREFIX-YYYYMMDD-001: your prefix, the day, and a sequence that starts again at 001 each day for each type. Only workspace administrators can change the prefixes, the digits (3 to 6) or steer the next number; entering 1 restarts today's sequence at 001, and numbers already issued are never reused because the sequence skips past them. Each type must have its own prefix: saving two types with the same prefix is refused because their numbers would look alike. The day in the number is your own calendar day, sent from your browser, so an evening in Canada is not numbered as tomorrow, which is what the server's UTC clock would give. A number you type over the suggested one is checked against this workspace only, since every workspace numbers from 001 each day and the same number in another workspace is normal; a duplicate in yours is refused. The number shown on a new invoice or quote is the number the save will really give, skipping any already taken. Numbers are claimed when the document is saved, and if the numbering service is down an invoice falls back to a timestamp number so saving is never blocked.",
+      "sourceFiles": ["src/core/document-numbering.ts", "src/app/actions/numbering-actions.ts", "src/components/settings/document-numbering-card.tsx"]
+    },
+    {
+      "id": "bks.receipts.posting-checks",
+      "module": "BKS Accounting",
+      "title": "What a receipt must pass to be posted, and which category it gets",
+      "routes": ["/accounting/receipt-processor"],
+      "intents": ["business-rule", "receipts", "troubleshooting"],
+      "keywords": ["post to ledger", "receipt", "category", "other expenses", "total above zero", "net plus tax", "not valid date", "cannot post", "simple mode", "category line", "8810", "9270"],
+      "audiences": ["all"],
+      "content": "Posting a receipt to the ledger now checks it first, even in Simple record-keeping mode where the on-screen checks are only warnings. The total must be above zero, the date must be a real day (a blank date means today), and net plus tax must equal the total within a cent or two of rounding; if only the net or only the tax is entered the other is worked out, and with neither the receipt is untaxed. The message says what to correct and nothing is written until it passes. The category you pick is a name such as Office expenses, but the ledger and the Income Statement use the category line number, 8810 for that one. Receipts used to save the name, so the entry was counted under Other expenses on the Income Statement and showed a raw name. Posting now saves the line number. If the category matches nothing, the entry goes to Other expenses (9270) for an expense or bill, or to Other income (Part 3D) for income, rather than an invented name. A custom category you added keeps its own C- number.",
+      "sourceFiles": ["src/lib/receipt-posting.ts", "src/services/receipt-staging-service.ts"]
+    }
+  ]
+}

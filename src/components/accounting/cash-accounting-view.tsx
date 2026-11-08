@@ -60,6 +60,8 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
 import { format, parseISO, isValid } from 'date-fns';
+import { sumCents } from '@/lib/ledger-totals';
+import { parseLedgerDate, todayDateKey } from '@/lib/ledger-date';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -145,6 +147,7 @@ export function CashAccountingView() {
     const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
     const [categorySearchValue, setCategorySearchValue] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [postingId, setPostingId] = useState<string | null>(null);
     const [isContactFormOpen, setIsContactFormOpen] = useState(false);
     const [txToDelete, setTxToDelete] = useState<PettyCashTransaction | null>(null);
     
@@ -200,16 +203,15 @@ export function CashAccountingView() {
     }, [dialogType, incomeCategories, expenseCategories]);
 
     const floatValue = useMemo(() => {
-        return transactions.reduce((sum, tx) => {
-            return tx.type === 'in' ? sum + tx.amount : sum - tx.amount;
-        }, 0);
+        // Cash in less cash out, exact to the cent (see lib/ledger-totals).
+        return sumCents(transactions.map(tx => (tx.type === 'in' ? tx.amount : -tx.amount)));
     }, [transactions]);
 
     const handleOpenDialog = (type: 'in' | 'out') => {
         setDialogType(type);
         setEditingTx(null);
         setViewOnly(false);
-        setFormData({ ...emptyTxForm, date: format(new Date(), 'yyyy-MM-dd') });
+        setFormData({ ...emptyTxForm, date: todayDateKey() });
         setContactSearchValue('');
         setCategorySearchValue('');
         setIsDialogOpen(true);
@@ -342,7 +344,8 @@ export function CashAccountingView() {
     };
 
     const handlePostToGL = async (tx: PettyCashTransaction) => {
-        if (!user) return;
+        if (!user || postingId) return;
+        setPostingId(tx.id);
         setIsLoading(true);
         try {
             await postPettyCashToGL(user.uid, tx.id);
@@ -350,8 +353,10 @@ export function CashAccountingView() {
             toast({ title: 'Posted to GL', description: 'Transaction successfully synchronized with the General Ledger.' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Posting Failed', description: error.message });
+            loadData();
         } finally {
             setIsLoading(false);
+            setPostingId(null);
         }
     };
 
@@ -375,8 +380,9 @@ export function CashAccountingView() {
     };
 
     const formatDateSafe = (dateStr: string) => {
-        const d = parseISO(dateStr);
-        return isValid(d) ? format(d, 'PP') : dateStr;
+        // A plain day is read as a local day, not UTC, so it never shows a day early.
+        const d = parseLedgerDate(dateStr);
+        return d ? format(d, 'PP') : dateStr;
     };
 
     return (
@@ -480,7 +486,7 @@ export function CashAccountingView() {
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
                                                 {!tx.isPosted && (
-                                                    <Button size="sm" variant="outline" className="h-8 border-primary text-primary font-bold text-[10px] uppercase hover:bg-primary/5" onClick={() => handlePostToGL(tx)}>
+                                                    <Button size="sm" variant="outline" className="h-8 border-primary text-primary font-bold text-[10px] uppercase hover:bg-primary/5" onClick={() => handlePostToGL(tx)} disabled={postingId === tx.id}>
                                                         <Landmark className="mr-1.5 h-3.5 w-3.5" /> Post to GL
                                                     </Button>
                                                 )}

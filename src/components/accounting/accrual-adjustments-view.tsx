@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { invoiceBalance, isInvoiceOverdue } from '@/lib/invoice-status';
+import { sumCents } from '@/lib/ledger-totals';
+import { displayDay, isPastDue } from '@/lib/payables';
+import { parseLedgerDate } from '@/lib/ledger-date';
 import {
   Card,
   CardContent,
@@ -69,7 +73,7 @@ export function AccrualAdjustmentsView() {
           getPayableBills(user.uid),
         ]);
         // Source of Truth for AR: Invoices with an outstanding balance
-        setUnpaidInvoices(allInvoices.filter(inv => inv.originalAmount - inv.amountPaid > 0.001));
+        setUnpaidInvoices(allInvoices.filter(inv => inv.status !== 'draft' && invoiceBalance(inv.originalAmount, inv.amountPaid) > 0.001));
         // Source of Truth for AP: All records in the payableBills collection (which are deleted once paid)
         setUnpaidBills(allBills); 
       } catch (error: any) {
@@ -143,8 +147,8 @@ export function AccrualAdjustmentsView() {
       let bVal = b[apSortField];
       
       if (apSortField === 'dueDate') {
-         aVal = new Date(a.dueDate).getTime();
-         bVal = new Date(b.dueDate).getTime();
+         aVal = parseLedgerDate(a.dueDate)?.getTime() ?? 0;
+         bVal = parseLedgerDate(b.dueDate)?.getTime() ?? 0;
          return apSortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
       }
 
@@ -156,14 +160,14 @@ export function AccrualAdjustmentsView() {
   }, [filteredAP, apSortField, apSortDir]);
 
   const totalReceivables = useMemo(() => {
-    return sortedAR.reduce((sum, inv) => sum + (inv.originalAmount - inv.amountPaid), 0);
+    return sumCents(sortedAR.map(inv => invoiceBalance(inv.originalAmount, inv.amountPaid)));
   }, [sortedAR]);
 
   const totalPayables = useMemo(() => {
-    return sortedAP.reduce((sum, bill) => sum + bill.totalAmount, 0);
+    return sumCents(sortedAP.map(bill => bill.totalAmount));
   }, [sortedAP]);
 
-  const netAdjustment = totalReceivables - totalPayables;
+  const netAdjustment = sumCents([totalReceivables, -totalPayables]);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -300,8 +304,8 @@ export function AccrualAdjustmentsView() {
                         <TableRow key={inv.id}>
                           <TableCell className="font-medium">{inv.companyName}</TableCell>
                           <TableCell>{inv.invoiceNumber}</TableCell>
-                          <TableCell>{format(inv.dueDate, 'PP')}</TableCell>
-                          <TableCell className="text-right font-mono text-green-600">{formatCurrency(inv.originalAmount - inv.amountPaid)}</TableCell>
+                          <TableCell>{format(inv.dueDate, 'PP')}{isInvoiceOverdue(inv) && <span className="ml-2 text-[10px] font-bold uppercase text-red-700">overdue</span>}</TableCell>
+                          <TableCell className="text-right font-mono text-green-600">{formatCurrency(invoiceBalance(inv.originalAmount, inv.amountPaid))}</TableCell>
                         </TableRow>
                       )) : (
                         <TableRow>
@@ -356,7 +360,7 @@ export function AccrualAdjustmentsView() {
                         <TableRow key={bill.id}>
                           <TableCell className="font-medium">{bill.vendor}</TableCell>
                           <TableCell>{bill.invoiceNumber || 'N/A'}</TableCell>
-                          <TableCell>{format(new Date(bill.dueDate), 'PP')}</TableCell>
+                          <TableCell>{displayDay(bill.dueDate, d => format(d, 'PP'))}{isPastDue(bill.dueDate) && <span className="ml-2 text-[10px] font-bold uppercase text-red-700">overdue</span>}</TableCell>
                           <TableCell className="text-right font-mono text-red-600">{formatCurrency(bill.totalAmount)}</TableCell>
                         </TableRow>
                       )) : (

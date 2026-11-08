@@ -13,6 +13,24 @@ test('roundCents rounds half up to whole cents and survives floating-point error
   assert.equal(roundCents(Infinity), 0);
 });
 
+test('exact half-cents round up at any size, including thousands (where a tiny nudge is lost)', () => {
+  assert.equal(roundCents(8500.505), 8500.51);
+  assert.equal(roundCents(12345.675), 12345.68);
+  assert.equal(roundCents(999999.995), 1000000);
+  assert.equal(roundCents(-8500.505), -8500.51);
+  assert.equal(roundCents(0.005), 0.01);
+});
+
+test('rounding is unchanged for ordinary values and never returns negative zero or NaN', () => {
+  assert.equal(roundCents(10), 10);
+  assert.equal(roundCents(19.994), 19.99);
+  assert.equal(roundCents(19.996), 20);
+  assert.equal(Object.is(roundCents(-0.001), 0), true, 'no negative zero');
+  assert.equal(roundCents(1e-9), 0);
+  assert.equal(roundCents(1e21), 1e21, 'exponent-form numbers fall back safely');
+  assert.equal(roundCents(-Infinity), 0);
+});
+
 test('a line is rounded to cents before its tax is worked out', () => {
   assert.deepEqual(calculateLineTotals({ quantity: 3, price: 19.99, taxRate: 13 }), {
     preTaxAmount: 59.97,

@@ -50,6 +50,8 @@ const QUESTIONS = [
   'How do I work out and record the sales tax I owe for a quarter?',
   'How do I reconcile a bank statement, and what stops a row being posted twice?',
   'How is the CCA I can claim on an asset worked out?',
+  'How is owner equity calculated, and why does the loan application match the snapshot?',
+  'What stops a work order or a petty cash record being posted twice?',
   'How do I post a receipt to the ledger, and what does Audit-ready mode change?',
   'Show me my unbilled hours',
   'What is a standard workflow?',

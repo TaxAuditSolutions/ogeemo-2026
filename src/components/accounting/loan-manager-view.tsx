@@ -52,6 +52,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/auth-context";
 import { getLoans, addLoan, updateLoan, deleteLoan, type Loan } from "@/core/accounting-service";
 import { cn } from "@/lib/utils";
+import { validateLoan } from "@/lib/loans";
+import { sumCents } from "@/lib/ledger-totals";
 
 const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -87,6 +89,7 @@ export function LoanManagerView() {
   const [loanToEdit, setLoanToEdit] = useState<Loan | null>(null);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
   const [formData, setFormData] = useState(emptyLoanForm);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
 
@@ -128,8 +131,8 @@ export function LoanManagerView() {
     return {
         loansPayable: payables,
         loansReceivable: receivables,
-        totalPayable: payables.reduce((sum, l) => sum + l.outstandingBalance, 0),
-        totalReceivable: receivables.reduce((sum, l) => sum + l.outstandingBalance, 0),
+        totalPayable: sumCents(payables.map(l => l.outstandingBalance)),
+        totalReceivable: sumCents(receivables.map(l => l.outstandingBalance)),
     };
   }, [loans]);
 
@@ -153,23 +156,16 @@ export function LoanManagerView() {
   
   const handleSave = async () => {
     if (!user) return;
-    const { loanType, counterparty, originalAmount, outstandingBalance, startDate, interestRate, termMonths, monthlyPayment } = formData;
-    
-    if (!counterparty.trim() || !originalAmount || !outstandingBalance || !startDate) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out all required fields.' });
+    // Checked and cleaned in one place (see lib/loans): amounts to the cent, a balance no higher than the
+    // original, a real start date, and a sensible rate and term.
+    const checked = validateLoan(formData);
+    if (checked.error !== null) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: checked.error });
         return;
     }
-    
-    const dataToSave = {
-        loanType,
-        counterparty: counterparty.trim(),
-        originalAmount: parseFloat(originalAmount.replace(/,/g, '')),
-        outstandingBalance: parseFloat(outstandingBalance.replace(/,/g, '')),
-        startDate,
-        interestRate: parseFloat(interestRate) || 0,
-        termMonths: parseInt(termMonths) || 0,
-        monthlyPayment: parseFloat(monthlyPayment.replace(/,/g, '')) || 0,
-    };
+    if (isSaving) return;
+    setIsSaving(true);
+    const dataToSave = checked.loan;
 
     try {
         if (loanToEdit) {
@@ -184,6 +180,8 @@ export function LoanManagerView() {
         setIsFormOpen(false);
     } catch(error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
     }
   };
   
@@ -376,7 +374,7 @@ export function LoanManagerView() {
             </div>
             <DialogFooter>
                 <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave}>Save Loan</Button>
+                <Button onClick={handleSave} disabled={isSaving}>Save Loan</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

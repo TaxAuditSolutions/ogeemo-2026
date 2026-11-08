@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkOrders, convertWorkOrderToInvoice, type WorkOrder, type WorkOrderStatus } from '@/core/accounting-service';
+import { isInvoiced } from '@/lib/work-orders';
 import { AccountingPageHeader } from './page-header';
 
 const formatCurrency = (amount: number) => {
@@ -163,7 +164,7 @@ export function WorkOrdersPageView() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-sm text-muted-foreground">
-                                                {wo.scheduledDate ? format(new Date(wo.scheduledDate), 'MMM d, yyyy') : '—'}
+                                                {wo.scheduledDate ? format(new Date(wo.scheduledDate), 'MMM d, yyyy') : '—'}{isInvoiced(wo) && <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase text-purple-700">Invoiced {wo.invoiceNumber}</span>}
                                             </TableCell>
                                             <TableCell className="text-sm text-muted-foreground">
                                                 {wo.assignedWorkerName || '—'}
@@ -180,7 +181,7 @@ export function WorkOrdersPageView() {
                                                         <DropdownMenuItem onClick={() => router.push(`/accounting/work-orders/${wo.id}`)}>
                                                             <Eye className="mr-2 h-4 w-4" /> View Details
                                                         </DropdownMenuItem>
-                                                        {wo.status === 'completed' && (
+                                                        {wo.status === 'completed' && !isInvoiced(wo) && (
                                                             <DropdownMenuItem
                                                                 onClick={() => handleConvertToInvoice(wo.id)}
                                                                 disabled={isConverting === wo.id}

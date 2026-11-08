@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { assetBalance } from '@/lib/cca';
+import { buildBalanceSheet } from '@/lib/loans';
+import { buildIncomeStatement } from '@/lib/income-statement';
+import { invoiceBalance } from '@/lib/invoice-status';
+import { sumCents } from '@/lib/ledger-totals';
+import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -144,30 +149,27 @@ export function FinancialSnapshotView() {
   }, [user, toast]);
   
   const financialMetrics = useMemo(() => {
-    // Profitability
-    const totalIncome = income.reduce((sum, tx) => sum + tx.totalAmount, 0);
-    const totalExpenses = expenses.reduce((sum, tx) => sum + tx.totalAmount, 0);
-    const netIncome = totalIncome - totalExpenses;
+    // Profitability for THIS calendar year to date, before sales tax, business entries only; the same figures
+    // as the Income Statement (see lib/income-statement). It used to add up every entry ever recorded.
+    const yearStatement = buildIncomeStatement(income, expenses, { from: new Date(new Date().getFullYear(), 0, 1), to: new Date() }, {
+      salesLine: t2125IncomeCategories.find(c => c.key === 'sales')?.line ?? '',
+      expenseCategories: t2125ExpenseCategories,
+    });
+    const totalIncome = yearStatement.businessIncome.gross;
+    const totalExpenses = yearStatement.totalExpenses;
+    const netIncome = yearStatement.netProfitOrLoss;
     
-    // Assets
-    const accountsReceivable = invoices.reduce((sum, inv) => {
-        const balance = inv.originalAmount - inv.amountPaid;
-        return sum + (balance > 0 ? balance : 0);
-    }, 0);
-    const capitalAssets = assets.reduce((sum, asset) => sum + assetBalance(asset), 0);
-    const loansReceivable = loans.filter(l => l.loanType === 'receivable').reduce((sum, l) => sum + l.outstandingBalance, 0);
-    const totalAssets = accountsReceivable + capitalAssets + loansReceivable;
-
-    // Liabilities
-    const accountsPayable = payableBills.reduce((sum, bill) => sum + bill.totalAmount, 0);
-    const loansPayable = loans.filter(l => l.loanType === 'payable').reduce((sum, l) => sum + l.outstandingBalance, 0);
-    const payrollLiabilities = remittances.filter(r => r.status === 'Due').reduce((sum, r) => sum + r.amount, 0);
-    const totalLiabilities = accountsPayable + loansPayable + payrollLiabilities;
-
-    // Equity
-    const totalContributions = equity.filter(e => e.type === 'contribution').reduce((sum, e) => sum + e.amount, 0);
-    const totalDraws = equity.filter(e => e.type === 'draw').reduce((sum, e) => sum + e.amount, 0);
-    const netOwnerEquity = totalContributions - totalDraws; // Simplified view
+    // Assets, liabilities and equity come from one tested function (see lib/loans), so the sheet balances:
+    // Owner's Equity is assets less liabilities, and contributions and draws are shown separately.
+    const accountsReceivable = sumCents(invoices.map(inv => invoiceBalance(inv.originalAmount, inv.amountPaid)));
+    const capitalAssets = sumCents(assets.map(asset => assetBalance(asset)));
+    const accountsPayable = sumCents(payableBills.map(bill => bill.totalAmount));
+    const payrollLiabilities = sumCents(remittances.filter(r => r.status === 'Due').map(r => r.amount));
+    const sheet = buildBalanceSheet({ accountsReceivable, capitalAssets, loans, accountsPayable, payrollLiabilities, equity });
+    const { loansReceivable, loansPayable, totalAssets, totalLiabilities } = sheet;
+    const netOwnerEquity = sheet.netWorth;
+    const totalContributions = sheet.contributions;
+    const totalDraws = sheet.draws;
     
     return { 
         totalIncome, totalExpenses, netIncome, 
@@ -255,9 +257,9 @@ export function FinancialSnapshotView() {
                         <BalanceSheetRow label="Payroll Remittances Due" value={formatCurrency(financialMetrics.payrollLiabilities)} colorClass="text-destructive" />
                         <BalanceSheetRow label="Total Liabilities" value={formatCurrency(financialMetrics.totalLiabilities)} />
                         <Separator />
-                        <BalanceSheetRow label="Owner's Equity" value={formatCurrency(financialMetrics.netOwnerEquity)} />
+                        <BalanceSheetRow label="Owner's Equity (assets less liabilities)" value={formatCurrency(financialMetrics.netOwnerEquity)} />
                         <Separator />
-                         <BalanceSheetRow label="Total Liabilities & Equity" value={formatCurrency(financialMetrics.totalLiabilities + financialMetrics.netOwnerEquity)} colorClass="font-bold" />
+                         <BalanceSheetRow label="Total Liabilities & Equity" value={formatCurrency(financialMetrics.totalAssets)} colorClass="font-bold" />
                     </div>
                 </CardContent>
               </Card>

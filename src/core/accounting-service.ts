@@ -25,6 +25,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 import { reconcileSourceRefs, sourceRefsFromLineItems, type EntryRef } from '@/lib/billing-eligibility';
 import { addPayment, quoteConversionProblem, storedStatusFor, validatePaymentAmount } from '@/lib/invoice-status';
 import { impliedTaxRate, splitPaymentTax } from '@/lib/payment-tax';
+import { canMoveWorkOrder, workOrderConversionProblem } from '@/lib/work-orders';
 import { calculateDocumentTotals } from '@/lib/document-totals';
 
 
@@ -364,6 +365,9 @@ export interface WorkOrder {
   status: WorkOrderStatus;
   scheduledDate?: Date | null;
   completedDate?: Date | null;
+  /** The invoice made from this work order; set once, so it cannot be invoiced twice. */
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
   assignedWorkerId?: string | null;
   assignedWorkerName?: string;
   notes: string;
@@ -1688,6 +1692,9 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
 
   const txData = docToPettyCash(txSnap);
   const orgId = await getCurrentOrgId();
+  // Another workspace's record, or one already posted (double click, second tab), must never reach the ledger.
+  if ((txSnap.data() as any).orgId !== orgId) throw new Error('Transaction not found for the current organization.');
+  if (txData.isPosted) throw new Error('This transaction has already been posted to the General Ledger.');
   const batch = writeBatch(db);
 
   if (txData.type === 'in') {
@@ -1699,6 +1706,9 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
       company: txData.contact,
       description: txData.description,
       totalAmount: txData.amount,
+      preTaxAmount: txData.amount,
+      taxAmount: 0,
+      taxRate: 0,
       incomeCategory: txData.category,
       depositedTo: 'Petty Cash Box',
       type: 'business',
@@ -1713,6 +1723,9 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
       company: txData.contact,
       description: txData.description,
       totalAmount: txData.amount,
+      preTaxAmount: txData.amount,
+      taxAmount: 0,
+      taxRate: 0,
       category: txData.category,
       paidFrom: 'Petty Cash Box',
       type: 'business',
@@ -1721,13 +1734,15 @@ export async function postPettyCashToGL(userId: string, txId: string): Promise<v
   }
 
   batch.update(txRef, { isPosted: true });
-  batch.commit().catch(async (error) => {
+  // Awaited and re-thrown: the screen must not say 'Posted' when nothing was written.
+  await batch.commit().catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: 'batch',
         operation: 'write',
       }));
     }
+    throw error;
   });
 }
 
@@ -1943,18 +1958,22 @@ export async function getLoans(userId: string): Promise<Loan[]> {
 
 export async function addLoan(data: Omit<Loan, 'id'>): Promise<Loan> {
   const db = getDb();
+  // The workspace id is stamped on the loan: getLoans only returns loans for the current workspace, and the
+  // security rules require it, so a loan saved without it was never listed and could not be created.
+  const orgId = await getCurrentOrgId();
+  const loanData = { ...data, orgId };
   const docRef = collection(db, LOANS_COLLECTION);
-  const newLoanDoc = await addDoc(docRef, data).catch(async (error) => {
+  const newLoanDoc = await addDoc(docRef, loanData).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: LOANS_COLLECTION,
         operation: 'create',
-        requestResourceData: data,
+        requestResourceData: loanData,
       }));
     }
     throw error;
   });
-  return { id: newLoanDoc.id, ...data };
+  return { id: newLoanDoc.id, ...loanData };
 }
 
 export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'userId'>>): Promise<void> {
@@ -2625,6 +2644,8 @@ const docToWorkOrder = (doc: any): WorkOrder => {
     status: data.status || 'pending',
     scheduledDate: toClientDate(data.scheduledDate) || null,
     completedDate: toClientDate(data.completedDate) || null,
+    invoiceId: data.invoiceId || null,
+    invoiceNumber: data.invoiceNumber || null,
     assignedWorkerId: data.assignedWorkerId || null,
     assignedWorkerName: data.assignedWorkerName || '',
     notes: data.notes || '',
@@ -2853,7 +2874,12 @@ export async function updateWorkOrderStatus(workOrderId: string, status: WorkOrd
   const currentUser = getCurrentAuthContext();
   const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
   const workOrderSnap = await getDoc(workOrderRef);
-  if (!workOrderSnap.exists() || workOrderSnap.data().orgId !== orgId) return;
+  // A missing work order is an error, not a silent no-op that still reports success.
+  if (!workOrderSnap.exists() || workOrderSnap.data().orgId !== orgId) throw new Error('Work order not found for the current organization.');
+  const currentStatus = workOrderSnap.data().status || 'pending';
+  if (!canMoveWorkOrder(currentStatus, status)) {
+    throw new Error('A work order cannot move from ' + String(currentStatus).replace(/_/g, ' ') + ' to ' + String(status).replace(/_/g, ' ') + '.');
+  }
 
   const updateData: any = {
     status,
@@ -2994,6 +3020,10 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
 
   const workOrder = await getWorkOrderById(workOrderId);
   if (!workOrder) throw new Error('Work order not found.');
+  // One work order becomes one invoice. A completed work order stays 'completed' after invoicing, so it is
+  // stamped with its invoice and a second conversion is refused before an invoice number is claimed.
+  const workOrderProblem = workOrderConversionProblem(workOrder.status, workOrder.invoiceNumber);
+  if (workOrderProblem) throw new Error(workOrderProblem);
 
   const lineItems = await getWorkOrderLineItems(userId, workOrderId);
   const workOrderRef = doc(db, WORK_ORDERS_COLLECTION, workOrderId);
@@ -3048,10 +3078,12 @@ export async function convertWorkOrderToInvoice(workOrderId: string, userId: str
 
   const invoice = await addInvoiceWithLineItems(invoiceData, invoiceLineItems);
 
-  // Mark work order as completed
+  // Mark work order as completed and link it to the invoice that was made from it
   await updateDoc(workOrderRef, {
     status: 'completed',
     completedDate: now,
+    invoiceId: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
     updatedBy: currentUser.uid,
     updatedAt: now,
   });

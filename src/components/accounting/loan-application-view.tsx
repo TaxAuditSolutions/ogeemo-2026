@@ -22,7 +22,11 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
-import { getAssets, getLoans, type Asset, type Loan } from '@/core/accounting-service';
+import { getAssets, getLoans, getInvoices, getPayableBills, getEquityTransactions, type Asset, type Loan, type Invoice, type PayableBill, type EquityTransaction } from '@/core/accounting-service';
+import { getRemittances, type PayrollRemittance } from '@/services/payroll-service';
+import { buildBalanceSheet } from '@/lib/loans';
+import { invoiceBalance } from '@/lib/invoice-status';
+import { sumCents } from '@/lib/ledger-totals';
 import { AccountingPageHeader } from './page-header';
 
 const formatCurrency = (amount: number | string) => {
@@ -60,6 +64,10 @@ export function LoanApplicationView() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [assets, setAssets] = useState<Asset[]>([]);
     const [loans, setLoans] = useState<Loan[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [bills, setBills] = useState<PayableBill[]>([]);
+    const [remittances, setRemittances] = useState<PayrollRemittance[]>([]);
+    const [equity, setEquity] = useState<EquityTransaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [loanAmount, setLoanAmount] = useState(searchParams.get('amount') || '');
@@ -72,14 +80,23 @@ export function LoanApplicationView() {
         }
         setIsLoading(true);
         try {
-            const [profileData, assetsData, loansData] = await Promise.all([
+            // The same inputs as the Financial Snapshot, so both show the same balance sheet.
+            const [profileData, assetsData, loansData, invoiceData, billData, remittanceData, equityData] = await Promise.all([
                 getUserProfile(user.uid),
                 getAssets(user.uid),
                 getLoans(user.uid),
+                getInvoices(user.uid),
+                getPayableBills(user.uid),
+                getRemittances(user.uid),
+                getEquityTransactions(user.uid),
             ]);
             setProfile(profileData);
             setAssets(assetsData);
             setLoans(loansData);
+            setInvoices(invoiceData);
+            setBills(billData);
+            setRemittances(remittanceData);
+            setEquity(equityData);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load application data', description: error.message });
         } finally {
@@ -91,15 +108,15 @@ export function LoanApplicationView() {
         loadData();
     }, [loadData]);
     
-    const { totalAssets, totalLiabilities } = useMemo(() => {
-        const capitalAssets = assets.reduce((sum, asset) => sum + assetBalance(asset), 0);
-        const payableLoans = loans.filter(l => l.loanType === 'payable').reduce((sum, l) => sum + l.outstandingBalance, 0);
-        const receivableLoans = loans.filter(l => l.loanType === 'receivable').reduce((sum, l) => sum + l.outstandingBalance, 0);
-        
-        // This is a simplified calculation for the form.
-        // A real balance sheet would include cash, A/R, A/P, etc.
-        return { totalAssets: capitalAssets + receivableLoans, totalLiabilities: payableLoans };
-    }, [assets, loans]);
+    // One tested balance sheet (see lib/loans), the same one the Financial Snapshot shows.
+    const { totalAssets, totalLiabilities, netWorth } = useMemo(() => buildBalanceSheet({
+        accountsReceivable: sumCents(invoices.map(inv => invoiceBalance(inv.originalAmount, inv.amountPaid))),
+        capitalAssets: sumCents(assets.map(asset => assetBalance(asset))),
+        loans,
+        accountsPayable: sumCents(bills.map(bill => bill.totalAmount)),
+        payrollLiabilities: sumCents(remittances.filter(r => r.status === 'Due').map(r => r.amount)),
+        equity,
+    }), [assets, loans, invoices, bills, remittances, equity]);
 
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;
@@ -147,7 +164,7 @@ export function LoanApplicationView() {
                     <Section title="Financial Overview" description="A simplified summary of your current financial position.">
                         <FormRow id="totalAssets" label="Total Assets" value={totalAssets} isCurrency={true} />
                         <FormRow id="totalLiabilities" label="Total Liabilities" value={totalLiabilities} isCurrency={true} />
-                        <FormRow id="ownersEquity" label="Owner's Equity" value={profile?.netEquity || 0} isCurrency={true} />
+                        <FormRow id="ownersEquity" label="Owner's Equity" value={netWorth} isCurrency={true} />
                     </Section>
                     
                     <Section title="Declaration" description="Please read and sign below.">

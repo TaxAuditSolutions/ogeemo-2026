@@ -138,3 +138,57 @@ Import trace for requested module:
   message: 'This operation was aborted',
   assistantUrl: 'https://ogeemoassistant-qsckasljxq-uc.a.run.app'
 }
+/api/ogeemo-assistant upstream-fetch-error {
+  message: 'This operation was aborted',
+  assistantUrl: 'https://ogeemoassistant-qsckasljxq-uc.a.run.app'
+}
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ⨯ ./src/components/accounting/income-statement-view.tsx
+Error:   [31mx[0m Unterminated string constant
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\accounting\income-statement-view.tsx[0m:81:1]
+ [2m78[0m |     // Sales tax is not income or expense, so every figure is BEFORE tax; Personal entries and the
+ [2m79[0m |     // payment of net sales tax to CRA are left out too (see lib/income-statement).
+ [2m80[0m |     return buildIncomeStatement(income, expenses, { from: dateRange.from, to: dateRange.to || dateRange.from }, {
+ [2m81[0m |       salesLine: t2125IncomeCategories.find(c => c.key === 'sales')?.line ?? ',
+    : [35;1m                                                                             ^^[0m
+ [2m82[0m |       expenseCategories: t2125ExpenseCategories,
+ [2m83[0m |     });
+ [2m83[0m |   }, [income, expenses, dateRange]);
+    `----
+  [31mx[0m Expected ',', got 'expenseCategories'
+    ,-[[36;1;4mC:\Users\dw\OneDrive\Project Ogeemo Dev\ogeemo-2026\src\components\accounting\income-statement-view.tsx[0m:82:1]
+ [2m79[0m |     // payment of net sales tax to CRA are left out too (see lib/income-statement).
+ [2m80[0m |     return buildIncomeStatement(income, expenses, { from: dateRange.from, to: dateRange.to || dateRange.from }, {
+ [2m81[0m |       salesLine: t2125IncomeCategories.find(c => c.key === 'sales')?.line ?? ',
+ [2m82[0m |       expenseCategories: t2125ExpenseCategories,
+    : [35;1m      ^^^^^^^^^^^^^^^^^[0m
+ [2m83[0m |     });
+ [2m84[0m |   }, [income, expenses, dateRange]);
+ [2m84[0m |   
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/accounting/income-statement-view.tsx
+./src/app/(app)/accounting/reports/income-statement/page.tsx
+ ⨯ ./src/core/accounting-service.ts:28:1
+Module not found: Can't resolve '@/lib/work-orders'
+  26 | import { addPayment, quoteConversionProblem, storedStatusFor, validatePaymentAmount } from '@/lib/invoice-status';
+  27 | import { impliedTaxRate, splitPaymentTax } from '@/lib/payment-tax';
+> 28 | import { workOrderConversionProblem } from '@/lib/work-orders';
+     | ^
+  29 | import { calculateDocumentTotals } from '@/lib/document-totals';
+  30 |
+  31 |
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+./src/components/accounting/work-orders-page-view.tsx
+/api/ogeemo-assistant upstream-fetch-error {
+  message: 'This operation was aborted',
+  assistantUrl: 'https://ogeemoassistant-qsckasljxq-uc.a.run.app'
+}

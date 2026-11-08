@@ -53,6 +53,9 @@ import { format, parseISO } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CustomCalendar } from "../ui/custom-calendar";
 import { cn } from "@/lib/utils";
+import { validateEquity } from "@/lib/loans";
+import { sumCents } from "@/lib/ledger-totals";
+import { displayDay } from "@/lib/payables";
 
 const emptyTransactionForm = { date: '', description: '', amount: '' };
 
@@ -67,6 +70,7 @@ export function EquityView() {
   const [dialogType, setDialogType] = useState<'contribution' | 'draw'>('contribution');
   const [formData, setFormData] = useState(emptyTransactionForm);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
 
   const { toast } = useToast();
@@ -93,9 +97,9 @@ export function EquityView() {
   const { contributions, draws, totalContributions, totalDraws, netEquity } = useMemo(() => {
     const contributions = transactions.filter(t => t.type === 'contribution').sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const draws = transactions.filter(t => t.type === 'draw').sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const totalContributions = contributions.reduce((sum, t) => sum + t.amount, 0);
-    const totalDraws = draws.reduce((sum, t) => sum + t.amount, 0);
-    const netEquity = totalContributions - totalDraws;
+    const totalContributions = sumCents(contributions.map(t => t.amount));
+    const totalDraws = sumCents(draws.map(t => t.amount));
+    const netEquity = sumCents([totalContributions, -totalDraws]);
     return { contributions, draws, totalContributions, totalDraws, netEquity };
   }, [transactions]);
   
@@ -113,11 +117,14 @@ export function EquityView() {
   
   const handleSave = async () => {
     if (!user) return;
-    const amountNum = parseFloat(formData.amount);
-    if (!formData.date || isNaN(amountNum) || amountNum <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please provide a valid date and a positive amount.' });
+    const checked = validateEquity(formData);
+    if (checked.error !== null) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: checked.error });
         return;
     }
+    const amountNum = checked.amount;
+    if (isSaving) return;
+    setIsSaving(true);
     
     const dataToSave = {
         date: formData.date,
@@ -139,6 +146,8 @@ export function EquityView() {
         setIsDialogOpen(false);
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -170,7 +179,7 @@ export function EquityView() {
       <TableBody>
         {data.length > 0 ? data.map(tx => (
           <TableRow key={tx.id}>
-            <TableCell>{tx.date}</TableCell>
+            <TableCell>{displayDay(tx.date, d => format(d, 'PP'))}</TableCell>
             <TableCell>{tx.description}</TableCell>
             <TableCell className="text-right font-mono">{formatCurrency(tx.amount)}</TableCell>
             <TableCell>
@@ -282,7 +291,7 @@ export function EquityView() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button onClick={handleSave} disabled={isSaving}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

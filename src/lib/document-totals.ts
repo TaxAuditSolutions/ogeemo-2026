@@ -27,11 +27,26 @@ export interface DocumentTotals {
   total: number;
 }
 
-/** Rounds to whole cents (half up), tolerating binary floating-point error. */
+/**
+ * Rounds to whole cents (half up), tolerating binary floating-point error.
+ *
+ * It rounds the number as it is WRITTEN (8500.505 is 850050.5 hundredths, so it rounds up to 8500.51).
+ * A plain multiply-and-round gets thousands wrong, because 8500.505 is stored as 8500.50499999..., and
+ * a tiny nudge such as Number.EPSILON is lost at that size. Numbers written in exponent form (very
+ * large or very small) fall back to the multiply-and-round.
+ */
 export function roundCents(value: number): number {
   if (!Number.isFinite(value)) return 0;
   const sign = value < 0 ? -1 : 1;
-  return (sign * Math.round((Math.abs(value) + Number.EPSILON) * 100)) / 100;
+  const abs = Math.abs(value);
+  // Past about 9e13 a number cannot hold cents at all, so there is nothing to round.
+  if (abs >= 1e13) return value;
+  const written = String(abs);
+  if (!written.includes('e')) {
+    const rounded = Number(`${Math.round(Number(`${written}e2`))}e-2`);
+    if (Number.isFinite(rounded)) return sign * rounded === 0 ? 0 : sign * rounded;
+  }
+  return (sign * Math.round((abs + Number.EPSILON) * 100)) / 100;
 }
 
 function safe(value: unknown): number {

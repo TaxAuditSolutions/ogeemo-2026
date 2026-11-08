@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.pettycash.float",
+      "module": "BKS Accounting",
+      "title": "Petty cash box and posting to the ledger",
+      "routes": ["/accounting/petty-cash"],
+      "intents": ["how-to", "business-rule", "petty-cash"],
+      "keywords": ["petty cash", "cash box", "float", "post to gl", "cash in", "cash out", "posted", "general ledger", "staging", "box float"],
+      "audiences": ["all"],
+      "content": "Petty Cash at /accounting/petty-cash tracks the physical cash box. Cash In and Cash Out records form a staging list, and Current Box Float is cash in less cash out, exact to the cent, to check against the real box. A record can be edited or deleted until it is posted. Post to GL writes it to the General Ledger as income deposited to the Petty Cash Box or an expense paid from it, with the pre-tax amount and no tax recorded, and marks the record posted. A record that is already posted, or that belongs to another workspace, is refused, so a double click or a second tab cannot post it twice, and the button is disabled while it saves. The screen says Posted only after the entry has really been written; if the write fails you are told and the list reloads. Dates show as the day you entered.",
+      "sourceFiles": ["src/components/accounting/cash-accounting-view.tsx", "src/core/accounting-service.ts"]
+    },
+    {
+      "id": "bks.workorders.invoicing",
+      "module": "BKS Accounting",
+      "title": "Work orders: status and invoicing once",
+      "routes": ["/accounting/work-orders", "/accounting/quotes"],
+      "intents": ["how-to", "business-rule", "work-orders", "invoices"],
+      "keywords": ["work order", "work orders", "schedule", "start work", "complete", "convert to invoice", "already invoiced", "pending", "scheduled", "in progress", "completed", "cancelled", "invoice a work order", "double invoice"],
+      "audiences": ["all"],
+      "content": "A work order moves from Pending to Scheduled to In Progress to Completed. Scheduling creates a calendar task for the day. A job cannot jump from Pending or Scheduled straight to Completed, a Completed work order cannot be moved back, and a change that is not allowed is refused with a message instead of being silently ignored. Only a Completed work order can be turned into an invoice. Convert to Invoice creates the invoice, marks the linked quote Invoiced, and stamps the work order with the invoice number. A Completed work order stays Completed after invoicing, so it used to offer Convert to Invoice again and create a second invoice for the same job; now the button is replaced by a note saying Invoiced and the invoice number, the list shows an Invoiced badge, and a second conversion is refused before an invoice number is used up.",
+      "sourceFiles": ["src/lib/work-orders.ts", "src/components/accounting/work-order-detail-view.tsx", "src/components/accounting/work-orders-page-view.tsx", "src/core/accounting-service.ts"]
+    }
+  ]
+}

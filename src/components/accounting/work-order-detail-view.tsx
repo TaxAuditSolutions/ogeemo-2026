@@ -45,6 +45,7 @@ import { addTask } from '@/services/project-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { AccountingPageHeader } from './page-header';
 import { cn } from '@/lib/utils';
+import { isInvoiced } from '@/lib/work-orders';
 import { calculateDocumentTotals } from '@/lib/document-totals';
 
 const formatCurrency = (amount: number) => {
@@ -415,7 +416,13 @@ export function WorkOrderDetailView() {
                                 </Button>
                             )}
 
-                            {workOrder.status === 'completed' && (
+                            {workOrder.status === 'completed' && isInvoiced(workOrder) && (
+                                <p className="rounded-md border border-purple-200 bg-purple-50 p-3 text-sm text-purple-900">
+                                    Invoiced as <strong>{workOrder.invoiceNumber}</strong>. Open it from Accounts Receivable.
+                                </p>
+                            )}
+
+                            {workOrder.status === 'completed' && !isInvoiced(workOrder) && (
                                 <Button
                                     className="w-full"
                                     variant="default"

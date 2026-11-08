@@ -2,6 +2,7 @@
 'use client';
 
 import { useRef, useCallback } from 'react';
+import { printStyleValue } from '@/lib/print-clone';
 
 // Helper function to recursively clone nodes and apply computed styles
 const cloneWithStyles = (node: HTMLElement, ownerDocument: Document): HTMLElement => {
@@ -11,7 +12,11 @@ const cloneWithStyles = (node: HTMLElement, ownerDocument: Document): HTMLElemen
     // Apply all computed styles as inline styles
     for (let i = 0; i < computedStyle.length; i++) {
         const prop = computedStyle[i];
-        clone.style.setProperty(prop, computedStyle.getPropertyValue(prop), computedStyle.getPropertyPriority(prop));
+        // Screen-sized widths/margins are left out and scroll containers opened up, so wide tables
+        // reflow to the page instead of running off the right edge (see lib/print-clone).
+        const value = printStyleValue(prop, computedStyle.getPropertyValue(prop));
+        if (value === null) continue;
+        clone.style.setProperty(prop, value, computedStyle.getPropertyPriority(prop));
     }
     // The popup window has no print stylesheet, so screen-only affordances
     // must opt out explicitly via a data-no-print attribute.

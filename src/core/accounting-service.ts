@@ -1326,10 +1326,12 @@ export async function addIncomeTransaction(data: Omit<IncomeTransaction, 'id'>):
   return newTransaction;
 }
 
+// The writes below are awaited and their errors re-thrown, so a save or delete that did
+// not happen is never reported to the user as done.
 export async function updateIncomeTransaction(id: string, data: Partial<Omit<IncomeTransaction, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, INCOME_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1337,19 +1339,21 @@ export async function updateIncomeTransaction(id: string, data: Partial<Omit<Inc
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deleteIncomeTransaction(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, INCOME_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1364,6 +1368,7 @@ export async function deleteIncomeTransactions(ids: string[]): Promise<void> {
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1413,7 +1418,7 @@ export async function addExpenseTransaction(data: Omit<ExpenseTransaction, 'id'>
 export async function updateExpenseTransaction(id: string, data: Partial<Omit<ExpenseTransaction, 'id' | 'userId'>>): Promise<void> {
   const db = getDb();
   const docRef = doc(db, EXPENSE_COLLECTION, id);
-  updateDoc(docRef, data).catch(async (error) => {
+  await updateDoc(docRef, data).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -1421,19 +1426,21 @@ export async function updateExpenseTransaction(id: string, data: Partial<Omit<Ex
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
 export async function deleteExpenseTransaction(id: string): Promise<void> {
   const db = getDb();
   const docRef = doc(db, EXPENSE_COLLECTION, id);
-  deleteDoc(docRef).catch(async (error) => {
+  await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 
@@ -1448,6 +1455,7 @@ export async function deleteExpenseTransactions(ids: string[]): Promise<void> {
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 

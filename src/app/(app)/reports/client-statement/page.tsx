@@ -17,6 +17,7 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getInvoices, type Invoice, getIncomeTransactions, type IncomeTransaction } from '@/core/accounting-service';
 import { cn } from '@/lib/utils';
+import { parseLedgerDate } from '@/lib/ledger-date';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import type { DateRange } from 'react-day-picker';
 import { ContactSelector } from '@/components/contacts/contact-selector';
@@ -90,7 +91,8 @@ export default function ClientStatementPage() {
         });
 
         clientPayments.forEach(tx => {
-            allEntries.push({ date: new Date(tx.date), description: tx.description || 'Payment Received', invoiceAmount: null, paymentAmount: tx.totalAmount });
+            // Payment dates are plain days; read them as local days, not UTC (see lib/ledger-date).
+            allEntries.push({ date: parseLedgerDate(tx.date) ?? new Date(tx.date), description: tx.description || 'Payment Received', invoiceAmount: null, paymentAmount: tx.totalAmount });
         });
         
         const sortedEntries = allEntries.sort((a,b) => a.date.getTime() - b.date.getTime());

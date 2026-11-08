@@ -18,6 +18,7 @@ import { type Contact } from '@/data/contacts';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
 import { mergeContacts, type MergeContactsResult } from '@/services/contact-service';
 import { omitUndefined, replaceUndefinedWithNull } from '@/lib/write-payload';
+import { todayDateKey } from '@/lib/ledger-date';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -409,9 +410,10 @@ export async function savePayrollRun(data: PayrollRun): Promise<void> {
         batch.set(expenseRef, {
             userId: data.userId,
             orgId,
-            date: data.payDate.toISOString().split('T')[0],
+            // Local days: toISOString() is the UTC day, which is already "tomorrow" on a Canadian evening.
+            date: todayDateKey(data.payDate),
             company: detail.employeeName,
-            description: `Payroll for period ${data.payPeriodStart.toISOString().split('T')[0]} - ${data.payPeriodEnd.toISOString().split('T')[0]}`,
+            description: `Payroll for period ${todayDateKey(data.payPeriodStart)} - ${todayDateKey(data.payPeriodEnd)}`,
             totalAmount: detail.grossPay,
             category: '9060',
             type: 'business',
@@ -427,9 +429,9 @@ export async function savePayrollRun(data: PayrollRun): Promise<void> {
         batch.set(remittanceRef, {
             userId: data.userId,
             orgId,
-            payPeriodStart: data.payPeriodStart.toISOString().split('T')[0],
-            payPeriodEnd: data.payPeriodEnd.toISOString().split('T')[0],
-            dueDate: new Date(data.payDate.getFullYear(), data.payDate.getMonth() + 1, 15).toISOString().split('T')[0],
+            payPeriodStart: todayDateKey(data.payPeriodStart),
+            payPeriodEnd: todayDateKey(data.payPeriodEnd),
+            dueDate: todayDateKey(new Date(data.payDate.getFullYear(), data.payDate.getMonth() + 1, 15)),
             amount: data.totalDeductions,
             status: 'Due',
             createdBy: currentUser.uid,

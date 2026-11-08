@@ -102,7 +102,9 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
-import { format, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { isLedgerDateInRange } from '@/lib/ledger-date';
+import { isBusinessEntry, sumCents } from '@/lib/ledger-totals';
 import { CustomCalendar } from "@/components/ui/custom-calendar";
 import Link from "next/link";
 import ContactFormDialog from "@/components/contacts/contact-form-dialog";
@@ -257,12 +259,9 @@ export function LedgersView() {
     if (activeTab === 'expenses') list = list.filter(tx => tx.transactionType === 'expense');
 
     if (startDate || endDate) {
-        list = list.filter(tx => {
-            const txDate = new Date(tx.date);
-            const start = startDate ? startOfDay(startDate) : new Date(0);
-            const end = endDate ? endOfDay(endDate) : new Date(8640000000000000);
-            return isWithinInterval(txDate, { start, end });
-        });
+        // Entries are dated by a plain day, so compare local days (see lib/ledger-date); an entry
+        // on the first or last day of the range is included, and one in the next period is not.
+        list = list.filter(tx => isLedgerDateInRange(tx.date, startDate, endDate));
     }
 
     if (showDuplicatesOnly) {
@@ -315,19 +314,29 @@ export function LedgersView() {
     return list;
   }, [generalLedgerFull, activeTab, startDate, endDate, showDuplicatesOnly, duplicateMap, sortConfig, getCategoryName]);
 
-  const incomeTotal = React.useMemo(() => generalLedgerFiltered.filter(t => t.transactionType === 'income').reduce((sum, item) => sum + item.totalAmount, 0), [generalLedgerFiltered]);
-  const expenseTotal = React.useMemo(() => generalLedgerFiltered.filter(t => t.transactionType === 'expense').reduce((sum, item) => sum + item.totalAmount, 0), [generalLedgerFiltered]);
-  const netIncome = incomeTotal - expenseTotal;
+  // Business totals: entries marked Personal stay visible in the ledger but are not business
+  // income or expense, and the sums are kept exact to the cent (see lib/ledger-totals).
+  const incomeTotal = React.useMemo(() => sumCents(generalLedgerFiltered.filter(t => t.transactionType === 'income' && isBusinessEntry(t)).map(item => item.totalAmount)), [generalLedgerFiltered]);
+  const expenseTotal = React.useMemo(() => sumCents(generalLedgerFiltered.filter(t => t.transactionType === 'expense' && isBusinessEntry(t)).map(item => item.totalAmount)), [generalLedgerFiltered]);
+  const netIncome = sumCents([incomeTotal, -expenseTotal]);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!transactionToDelete || !user) return;
-    if (transactionToDelete.transactionType === 'income') {
-        deleteIncomeTransaction(transactionToDelete.id);
-    } else {
-        deleteExpenseTransaction(transactionToDelete.id);
-    }
+    const target = transactionToDelete;
     setTransactionToDelete(null);
-    setTimeout(loadData, 500);
+    try {
+        // Awaited: the entry is only reported removed once it has really been deleted.
+        if (target.transactionType === 'income') {
+            await deleteIncomeTransaction(target.id);
+        } else {
+            await deleteExpenseTransaction(target.id);
+        }
+        toast({ title: 'Entry Deleted', description: 'The ledger entry has been removed.' });
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Delete Failed', description: e?.message || 'The entry could not be deleted.' });
+    } finally {
+        loadData();
+    }
   };
 
   const handleBulkDelete = async () => {

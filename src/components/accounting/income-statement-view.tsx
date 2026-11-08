@@ -16,6 +16,8 @@ import { Calendar as CalendarIcon, FilterX, LoaderCircle, Printer, Info, FileTex
 import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { isLedgerDateInRange } from '@/lib/ledger-date';
+import { isBusinessEntry } from '@/lib/ledger-totals';
 import type { DateRange } from 'react-day-picker';
 import { useAuth } from '@/context/auth-context';
 import { getIncomeTransactions, getExpenseTransactions, type IncomeTransaction, type ExpenseTransaction } from '@/core/accounting-service';
@@ -75,8 +77,12 @@ export function IncomeStatementView() {
     if (!dateRange?.from) return null;
     const toDate = dateRange.to || dateRange.from;
 
-    const filteredIncome = income.filter(tx => isWithinInterval(new Date(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
-    const filteredExpenses = expenses.filter(tx => isWithinInterval(new Date(tx.date), { start: startOfDay(dateRange.from!), end: endOfDay(toDate) }));
+    // Business entries only (Personal entries are not part of the business's income statement), and
+    // dates are compared as local days so 1 January lands in the new year (see lib/ledger-date).
+    const inPeriod = (tx: { date: string; type?: string }) =>
+      isBusinessEntry(tx) && isLedgerDateInRange(tx.date, dateRange.from, toDate);
+    const filteredIncome = income.filter(inPeriod);
+    const filteredExpenses = expenses.filter(inPeriod);
 
     let sales = 0;
     let otherIncome = 0;

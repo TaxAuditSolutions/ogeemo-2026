@@ -20,6 +20,7 @@ import { receiptFileUrl } from '@/lib/receipt-storage-utils';
 import { RECEIPT_OCR_MODEL_NAME } from '@/lib/receipt-file-utils';
 import { ocrResultToItemFields } from '@/lib/receipt-ocr-fields';
 import { resolveOcrTax } from '@/lib/receipt-tax';
+import { todayDateKey } from '@/lib/ledger-date';
 import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 import type { ExtractionResult } from '@/app/actions/ocr-actions';
 
@@ -419,7 +420,8 @@ export async function postReceiptToLedger(
     : { ...(item.paperLocation ? { paperReceiptLocation: item.paperLocation } : {}) };
   const vendorName = merged.proposedCompany || merged.merchantName || 'Unspecified Vendor';
   const description = merged.proposedDescription || `Receipt for ${vendorName}`;
-  const date = merged.transactionDate || new Date().toISOString().slice(0, 10);
+  // The local day: the UTC day is already "tomorrow" on a Canadian evening (see lib/ledger-date).
+  const date = merged.transactionDate || todayDateKey();
   const totalAmount = Number(merged.totalAmount ?? 0);
   const preTaxAmount = Number(merged.netAmount ?? totalAmount);
   const taxAmount = Number(merged.taxAmount ?? Math.max(totalAmount - preTaxAmount, 0));

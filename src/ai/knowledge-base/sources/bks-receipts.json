@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.receipts.intake-and-posting",
+      "module": "BKS Accounting",
+      "title": "Receipt Intake: review and post a receipt to the ledger",
+      "routes": ["/accounting/receipt-processor", "/accounting/receipt-archive"],
+      "intents": ["how-to", "business-rule", "receipts"],
+      "keywords": ["receipt", "receipts", "receipt intake", "receipt processor", "ocr", "scan", "post to ledger", "document number", "review", "vendor", "duplicate receipt", "receipt archive", "paper receipt", "queue", "posted", "rejected"],
+      "audiences": ["all"],
+      "content": "Receipt Intake at /accounting/receipt-processor takes receipts you add, reads the vendor, date and total with OCR, and shows the result next to the source so you can check it before anything reaches the books. Each receipt gets an Ogeemo document number to write on the paper. You choose the tax type, category and whether it is an expense, an income or a payable bill, then Post to ledger. A receipt can be posted only once. The ledger entry carries the document number, and when a scan is stored clicking that number in the ledger opens the scan. If the receipt has no date it is dated today in your local day. Review checks show errors that need fixing and warnings to look at: a total that is not above zero, net plus tax that does not match the total, a missing tax type, an invalid date, a missing required field, and warnings for a date in the future or older than your limit, an amount over your review limit, an unexpected tax rate, a failed OCR, and a possible duplicate with the same vendor, date and total. The Receipt Archive at /accounting/receipt-archive lists every receipt, including posted ones, and opens its permanent copy.",
+      "sourceFiles": ["src/components/accounting/receipt-processor-view.tsx", "src/services/receipt-staging-service.ts", "src/lib/receipt-review-checks.ts"]
+    },
+    {
+      "id": "bks.receipts.tax-and-record-keeping",
+      "module": "BKS Accounting",
+      "title": "Receipt tax from the total and the record-keeping modes",
+      "routes": ["/accounting/receipt-processor", "/settings"],
+      "intents": ["business-rule", "receipts", "settings", "tax"],
+      "keywords": ["tax from total", "calculate from total", "printed tax", "tax type", "record keeping", "simple mode", "audit ready", "custom mode", "require scan", "block posting", "receipt ocr rules", "audit", "scan required", "vendor rule"],
+      "audiences": ["all"],
+      "content": "With tax calculated from the total, OCR reads only the amount paid. You or a vendor rule pick the tax type, for example HST 13 percent, and Ogeemo works the tax out from the total, so a printing error or an OCR misread of the small tax line cannot reach the ledger. Net plus tax always equals the total exactly. The tax printed on the receipt is kept only for comparison and a warning is shown when it differs. The tax type comes from your earlier choice, then a matching vendor rule, then the workspace default, and if there is none you must choose one. Settings, under Receipt OCR Rules, holds the record-keeping mode. Simple means paper receipts are the record: Ogeemo still stores a scan and gives each receipt a document number, and checks are warnings that never block posting. Audit-ready requires a stored scan before posting and blocks posting while a receipt has errors. Custom lets you switch each control on or off. Changes to these controls are written to a change log. These modes decide which controls Ogeemo enforces; they are not a legal or CRA certification.",
+      "sourceFiles": ["src/lib/receipt-tax.ts", "src/lib/receipt-record-keeping.ts", "src/lib/receipt-ocr-settings.ts"]
+    }
+  ]
+}

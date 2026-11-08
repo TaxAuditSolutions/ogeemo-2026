@@ -67,6 +67,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ledgerAmountsFromGross } from '@/lib/ledger-totals';
+import { parseLedgerDate } from '@/lib/ledger-date';
+import { roundCents, calculateLineTotals } from '@/lib/document-totals';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
 
 import { 
@@ -191,13 +194,12 @@ export function TransactionDialog({
     const watchCategory = form.watch('category');
     const watchAccount = form.watch('account');
 
-    const totals = React.useMemo(() => {
-        const cleanPrice = String(watchUnitPrice || "0").replace(/,/g, '');
-        const gross = (Number(watchQuantity) || 0) * (Number(cleanPrice) || 0);
-        const net = gross / (1 + ((Number(watchTaxRate) || 0) / 100));
-        const tax = gross - net;
-        return { gross, net, tax };
-    }, [watchQuantity, watchUnitPrice, watchTaxRate]);
+    // The amount typed includes tax. Net and tax are split to the cent so that net + tax is
+    // exactly the total that is saved (see lib/ledger-totals).
+    const totals = React.useMemo(
+        () => ledgerAmountsFromGross(watchQuantity, watchUnitPrice, watchTaxRate),
+        [watchQuantity, watchUnitPrice, watchTaxRate]
+    );
 
     const loadInternalAccounts = React.useCallback(async () => {
         if (!user) return;
@@ -402,6 +404,8 @@ export function TransactionDialog({
                         vendor: values.company,
                         dueDate: values.date,
                         totalAmount: totals.gross,
+                        preTaxAmount: totals.net,
+                        taxAmount: totals.tax,
                         category: values.category,
                         description: values.description,
                         taxRate: values.taxRate,
@@ -428,10 +432,14 @@ export function TransactionDialog({
                     });
                     toast({ title: 'Expense Posted' });
                 } else if (transactionType === 'payable') {
+                    // The net and tax are saved with the bill so that paying it later keeps the
+                    // tax (the input tax credit) instead of recording the whole amount as pre-tax.
                     await addPayableBill({
                         vendor: values.company,
                         dueDate: values.date,
                         totalAmount: totals.gross,
+                        preTaxAmount: totals.net,
+                        taxAmount: totals.tax,
                         category: values.category,
                         description: values.description,
                         taxRate: values.taxRate,
@@ -446,14 +454,24 @@ export function TransactionDialog({
                     const invoiceNumberToSave = typedNumber
                         ? await claimDocumentNumber('INV', { override: typedNumber })
                         : await claimDocumentNumber('INV');
+                    // The amount typed includes tax, but invoice lines hold the pre-tax price and add
+                    // tax on top, so the line carries the NET amount. Otherwise opening this invoice
+                    // later would show a total larger than the amount that was logged.
+                    const qty = Number(values.quantity) || 1;
+                    const evenUnitNet = roundCents(totals.net / qty);
+                    const linesUp = roundCents(evenUnitNet * qty) === totals.net;
+                    const lineQuantity = linesUp ? qty : 1;
+                    const lineNetPrice = linesUp ? evenUnitNet : totals.net;
+                    const invoiceDay = parseLedgerDate(values.date) ?? new Date();
+                    const invoiceDueDay = new Date(invoiceDay.getFullYear(), invoiceDay.getMonth(), invoiceDay.getDate() + 14);
                     await addInvoiceWithLineItems({
                         invoiceNumber: invoiceNumberToSave,
                         companyName: values.company,
                         contactId: contactMatch?.id || 'unknown',
                         originalAmount: totals.gross,
                         amountPaid: 0,
-                        dueDate: new Date(new Date(values.date).getTime() + 14 * 24 * 60 * 60 * 1000),
-                        invoiceDate: new Date(values.date),
+                        dueDate: invoiceDueDay,
+                        invoiceDate: invoiceDay,
                         status: 'outstanding',
                         notes: values.explanation || "",
                         taxType: values.taxType || 'None',
@@ -461,8 +479,9 @@ export function TransactionDialog({
                     }, [
                         {
                             description: values.description || 'Service Rendered',
-                            quantity: values.quantity,
-                            price: Number(values.unitPrice.replace(/,/g, '')),
+                            quantity: lineQuantity,
+                            price: lineNetPrice,
+                            ...calculateLineTotals({ quantity: lineQuantity, price: lineNetPrice, taxRate: values.taxRate }),
                             taxRate: values.taxRate,
                             taxType: values.taxType,
                         }

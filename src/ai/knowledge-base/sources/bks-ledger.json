@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.ledger.overview",
+      "module": "BKS Accounting",
+      "title": "The BKS ledgers and how entries are recorded",
+      "routes": ["/accounting/ledgers"],
+      "intents": ["how-to", "business-rule", "bks"],
+      "keywords": ["bks", "bookkeeping kept simple", "ledger", "general ledger", "income ledger", "expense ledger", "cash based", "add income", "add expense", "edit entry", "delete entry", "duplicate", "reconciled", "audit rationale", "date filter", "personal", "business"],
+      "audiences": ["all"],
+      "content": "Bookkeeping Kept Simple (BKS) is a cash-based record: the BKS Ledger at /accounting/ledgers has three tabs, the General Ledger with everything, the Income Ledger and the Expense Ledger. If a mistake is made you edit or delete the entry directly instead of posting adjusting entries. Each entry has a date, who it was with, a category, a document number, an amount that includes tax, and an Audit Rationale explaining the business purpose. The date filter includes both the first and the last day you pick, so an entry dated 1 October is in an October to December range and not in the quarter before it. A warning triangle marks a possible duplicate, which is the same date, company and amount. A check mark means the entry has been matched to a bank record. Deleting an entry asks for confirmation and reports success only after the entry is really gone; if the delete fails you are told. Entries marked Personal stay visible but are left out of the business income, expense and net profit totals shown above the ledger. The totals are added to the cent.",
+      "sourceFiles": ["src/components/accounting/ledgers-view.tsx", "src/lib/ledger-date.ts", "src/lib/ledger-totals.ts"]
+    },
+    {
+      "id": "bks.entry.tax-and-amounts",
+      "module": "BKS Accounting",
+      "title": "How an entry's amount and tax are worked out",
+      "routes": ["/accounting/ledgers"],
+      "intents": ["how-to", "business-rule", "bks", "tax"],
+      "keywords": ["amount", "tax included", "tax inclusive", "net", "pre tax", "gst", "hst", "tax rate", "tax type", "quantity", "unit price", "rounding", "cents", "payable", "bill", "input tax credit", "itc", "receivable"],
+      "audiences": ["all"],
+      "content": "In the entry form the amount you type already includes tax. Choose a tax type or rate and Ogeemo splits the amount: tax is the total times the rate divided by 100 plus the rate, rounded to the cent, and the net is what is left, so net plus tax is always exactly the total. For example 113.00 at 13 percent is 100.00 net and 13.00 tax. Quantity times unit price gives the total. Saving a payable bill keeps its net and tax, so when the bill is later paid the tax is still recorded as tax paid, and the input tax credit is not lost. An entry logged as a receivable becomes an invoice whose line carries the net amount, so opening that invoice later shows the same total you logged and not a larger one. Editing an entry that already exists saves any change to its amount, tax or date, and you are told if the save fails.",
+      "sourceFiles": ["src/components/accounting/transaction-dialog.tsx", "src/lib/ledger-totals.ts", "src/lib/receipt-tax.ts"]
+    }
+  ]
+}

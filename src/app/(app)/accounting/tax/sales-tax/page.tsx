@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DateRange } from 'react-day-picker';
-import { addDays, format, startOfQuarter, endOfQuarter } from 'date-fns';
+import { format, startOfQuarter, endOfQuarter } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon, LoaderCircle, FileDigit, FilterX } from 'lucide-react';
 import { CustomCalendar } from '@/components/ui/custom-calendar';
@@ -21,12 +21,8 @@ import { t2125ExpenseCategories } from '@/data/standard-expense-categories';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-
-const endOfDay = (date: Date): Date => {
-  const newDate = new Date(date);
-  newDate.setHours(23, 59, 59, 999);
-  return newDate;
-};
+import { isLedgerDateInRange, todayDateKey } from '@/lib/ledger-date';
+import { isBusinessEntry, summarizeSalesTax } from '@/lib/ledger-totals';
 
 const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -47,6 +43,7 @@ export default function SalesTaxPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [carriedForward, setCarriedForward] = useState<string>('');
     const [showOnlyTax, setShowOnlyTax] = useState(true);
+    const [isRecording, setIsRecording] = useState(false);
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
@@ -84,31 +81,24 @@ export default function SalesTaxPage() {
     }, [user, toast]);
 
     const { filteredIncome, filteredExpenses, taxCollected, taxPaid, netTax } = useMemo(() => {
-        const from = dateRange?.from;
-        const to = dateRange?.to ? endOfDay(dateRange.to) : undefined;
+        // Entries are dated by a plain day ("2026-10-01"). Reading that text as UTC put the first
+        // day of a quarter into the previous one in Canada, so days are compared as local days
+        // and both the first and last day of the period are included (see lib/ledger-date).
+        // Personal entries are not business activity and never count toward sales tax.
+        const to = dateRange?.to ?? dateRange?.from;
+        const inPeriod = (tx: { date: string; type?: string }) =>
+            isBusinessEntry(tx) && isLedgerDateInRange(tx.date, dateRange?.from, to);
 
-        const filterByDate = (tx: { date: string }) => {
-            if (!from) return true;
-            const txDate = new Date(tx.date);
-            if (to) {
-                return txDate >= from && txDate < to;
-            }
-            return txDate >= from && txDate < addDays(from, 1);
-        };
-        
-        const allIncomeInRange = income.filter(filterByDate);
-        const allExpensesInRange = expenses.filter(filterByDate);
-        
+        const allIncomeInRange = income.filter(inPeriod);
+        const allExpensesInRange = expenses.filter(inPeriod);
+
         const filteredIncome = showOnlyTax ? allIncomeInRange.filter(tx => tx.taxAmount && tx.taxAmount > 0) : allIncomeInRange;
         const filteredExpenses = showOnlyTax ? allExpensesInRange.filter(tx => tx.taxAmount && tx.taxAmount > 0) : allExpensesInRange;
 
-        const taxCollected = allIncomeInRange.reduce((sum, tx) => sum + (tx.taxAmount || 0), 0);
-        const taxPaid = allExpensesInRange.reduce((sum, tx) => sum + (tx.taxAmount || 0), 0);
-        
-        const carriedForwardNum = parseFloat(carriedForward.replace(/,/g, '')) || 0;
-        const netTax = (taxCollected - taxPaid) + carriedForwardNum;
+        const carriedForwardNum = parseFloat(carriedForward.replace(/,/g, "")) || 0;
+        const summary = summarizeSalesTax(income, expenses, { from: dateRange?.from, to }, carriedForwardNum);
 
-        return { filteredIncome, filteredExpenses, taxCollected, taxPaid, netTax };
+        return { filteredIncome, filteredExpenses, taxCollected: summary.collected, taxPaid: summary.paid, netTax: summary.net };
     }, [income, expenses, dateRange, carriedForward, showOnlyTax]);
 
     const handleRecordRemittance = async () => {
@@ -116,12 +106,14 @@ export default function SalesTaxPage() {
             toast({ variant: 'destructive', title: 'No Remittance to Record', description: 'Net tax must be positive to record a payment.'});
             return;
         }
+        if (isRecording) return;
+        setIsRecording(true);
 
         try {
             const taxesAndLicensesCategory = t2125ExpenseCategories.find(cat => cat.description === "Taxes & Licenses");
 
             const expenseData: Omit<ExpenseTransaction, 'id'> = {
-                date: format(new Date(), 'yyyy-MM-dd'),
+                date: todayDateKey(),
                 company: 'Canada Revenue Agency',
                 description: `Sales Tax Remittance for ${dateRange?.from ? format(dateRange.from, 'PP') : ''} - ${dateRange?.to ? format(dateRange.to, 'PP') : 'period'}`,
                 totalAmount: netTax,
@@ -133,14 +125,17 @@ export default function SalesTaxPage() {
                 userId: user.uid,
             };
 
-            await addExpenseTransaction(expenseData);
+            const saved = await addExpenseTransaction(expenseData);
+            // Show it in this page's list straight away, so recording the same payment twice is visible.
+            setExpenses(prev => [saved, ...prev]);
             toast({
                 title: 'Remittance Payment Logged',
                 description: `An expense of ${formatCurrency(netTax)} has been added to your ledger.`
             });
-            // Optionally, refresh expense data here
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to Record Payment', description: error.message });
+        } finally {
+            setIsRecording(false);
         }
     };
     
@@ -233,7 +228,7 @@ export default function SalesTaxPage() {
                             <CardHeader><CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Net Tax Due</CardTitle></CardHeader>
                             <CardContent><p className="text-2xl font-bold text-primary">{formatCurrency(netTax)}</p></CardContent>
                             <CardFooter>
-                                <Button className="w-full font-bold shadow-lg" onClick={handleRecordRemittance} disabled={netTax <= 0}>
+                                <Button className="w-full font-bold shadow-lg" onClick={handleRecordRemittance} disabled={netTax <= 0 || isRecording}>
                                     <FileDigit className="mr-2 h-4 w-4" /> Record Remittance Payment
                                 </Button>
                             </CardFooter>

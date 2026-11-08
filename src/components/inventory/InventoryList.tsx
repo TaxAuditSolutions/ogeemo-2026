@@ -17,30 +17,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LoaderCircle, MoreVertical, Eye, Pencil, Trash2 } from 'lucide-react';
+import { LoaderCircle, MoreVertical, Eye, Pencil, Trash2, History } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { EditableSkuCell } from './EditableSkuCell';
 import { type Item as InventoryItem } from '@/services/inventory-service';
+import { valueInventory } from '@/lib/inventory-value';
 
 
 interface InventoryListProps {
     items: InventoryItem[];
     isLoading: boolean;
     onItemDelete: (itemId: string) => void;
-    onEditItem: (item: InventoryItem) => void; 
+    onEditItem: (item: InventoryItem) => void;
+    onViewHistory?: (item: InventoryItem) => void;
+    /** The contact list; an item's supplier is one of these. */
+    contacts?: { id: string; name: string }[];
 }
 
-export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: InventoryListProps) {
-  const [suppliers, setSuppliers] = useState<any[]>([]); // Simplified for this view
+export function InventoryList({ items, isLoading, onItemDelete, onEditItem, onViewHistory, contacts = [] }: InventoryListProps) {
+  const supplierMap = useMemo(() => new Map(contacts.map(c => [c.id, c.name])), [contacts]);
 
-  const supplierMap = useMemo(() => {
-    return new Map(suppliers.map(s => [s.id, s.name]));
-  }, [suppliers]);
-
-  const totalInventoryValue = useMemo(() => {
-    return items.reduce((acc, item) => acc + (item.stockQuantity * (item.cost || 0)), 0);
-  }, [items]);
+  const valuation = useMemo(() => valueInventory(items), [items]);
+  const totalInventoryValue = valuation.value;
 
   return (
     <>
@@ -92,6 +91,11 @@ export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: In
                                           </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
+                                          {onViewHistory && (
+                                              <DropdownMenuItem onSelect={() => onViewHistory(item)}>
+                                                  <History className="mr-2 h-4 w-4" /> View History
+                                              </DropdownMenuItem>
+                                          )}
                                           <DropdownMenuItem onSelect={() => onEditItem(item)}>
                                               <Eye className="mr-2 h-4 w-4" /> Open / View
                                           </DropdownMenuItem>
@@ -114,7 +118,14 @@ export function InventoryList({ items, isLoading, onItemDelete, onEditItem }: In
               </TableBody>
                <TableFooter>
                   <TableRow>
-                      <TableCell colSpan={7} className="text-right font-bold text-lg">Total Inventory Value</TableCell>
+                      <TableCell colSpan={7} className="text-right">
+                          <div className="font-bold text-lg">Total Inventory Value</div>
+                          <div className="text-xs font-normal text-muted-foreground">
+                              Products for sale and raw materials at cost, as on the balance sheet.
+                              {valuation.uncostedItems > 0 ? ` ${valuation.uncostedItems} item${valuation.uncostedItems === 1 ? '' : 's'} with stock but no unit cost ${valuation.uncostedItems === 1 ? 'is' : 'are'} not counted.` : ''}
+                              {valuation.suppliesExcluded > 0 ? ` ${valuation.suppliesExcluded} internal suppl${valuation.suppliesExcluded === 1 ? 'y is' : 'ies are'} expensed, not counted.` : ''}
+                          </div>
+                      </TableCell>
                       <TableCell className="text-right font-bold font-mono text-lg">{formatCurrency(totalInventoryValue)}</TableCell>
                   </TableRow>
               </TableFooter>

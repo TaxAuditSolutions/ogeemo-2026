@@ -24,7 +24,7 @@ export function UpdateStockCard({ items, onItemSelected, isLoading }: UpdateStoc
         <Card>
             <CardHeader className="bg-primary/5 border-b">
                 <CardTitle className="text-base">Update Existing Item Stock</CardTitle>
-                <CardDescription>To edit an item details such as quantity and supplers</CardDescription>
+                <CardDescription>Search for an item to change its details, quantity, supplier, cost or price.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-2">

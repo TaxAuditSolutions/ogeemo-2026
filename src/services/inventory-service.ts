@@ -14,9 +14,13 @@ import {
   getDoc,
   writeBatch,
   setDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { t2125IncomeCategories } from '@/data/standard-expense-categories';
+import { planSale, type StockItem } from '@/lib/inventory-sale';
+import { impliedTaxRate } from '@/lib/payment-tax';
+import { todayDateKey } from '@/lib/ledger-date';
 
 export interface Item {
   id: string;
@@ -122,22 +126,6 @@ const docToLog = (doc: any): InventoryLog => ({
 } as InventoryLog);
 
 
-async function addInventoryLog(logData: Omit<InventoryLog, 'id'>): Promise<void> {
-  const db = getDb();
-  const currentUser = getCurrentAuthContext();
-  const orgId = await getCurrentOrgId();
-  const now = new Date();
-
-  await addDoc(collection(db, LOGS_COLLECTION), {
-    ...logData,
-    orgId,
-    createdBy: currentUser.uid,
-    updatedBy: currentUser.uid,
-    createdAt: now,
-    updatedAt: now,
-  });
-}
-
 export async function getInventoryItems(_userId?: string): Promise<Item[]> {
   const db = getDb();
   const orgId = await getCurrentOrgId();
@@ -158,35 +146,49 @@ export async function getInventoryItemById(itemId: string): Promise<Item | null>
   return null;
 }
 
+/** Firestore rejects `undefined` field values, so drop them (an item with no SKU used to fail to save). */
+function withoutUndefined<T extends Record<string, unknown>>(data: T): T {
+  return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) as T;
+}
+
 export async function addInventoryItem(data: Omit<Item, 'id'>): Promise<Item> {
   const db = getDb();
   const currentUser = getCurrentAuthContext();
   const orgId = await getCurrentOrgId();
   const now = new Date();
-  const dataToSave = {
+  const dataToSave = withoutUndefined({
     ...data,
     orgId,
     createdBy: currentUser.uid,
     updatedBy: currentUser.uid,
     createdAt: now,
     updatedAt: now,
-  };
-  const docRef = await addDoc(collection(db, ITEMS_COLLECTION), dataToSave);
+  });
 
+  // The item and its opening stock entry are saved together, so stock never exists without its history.
+  const batch = writeBatch(db);
+  const itemRef = doc(collection(db, ITEMS_COLLECTION));
+  batch.set(itemRef, dataToSave);
   if (dataToSave.stockQuantity > 0) {
-    await addInventoryLog({
-      itemId: docRef.id,
+    batch.set(doc(collection(db, LOGS_COLLECTION)), {
+      itemId: itemRef.id,
       itemName: dataToSave.name,
       reason: 'Initial Stock',
       quantityChange: dataToSave.stockQuantity,
       newQuantity: dataToSave.stockQuantity,
       notes: 'Item created',
-      timestamp: new Date(),
-      userId: dataToSave.userId,
+      timestamp: now,
+      userId: dataToSave.userId ?? currentUser.uid,
+      orgId,
+      createdBy: currentUser.uid,
+      updatedBy: currentUser.uid,
+      createdAt: now,
+      updatedAt: now,
     });
   }
+  await batch.commit();
 
-  return { id: docRef.id, ...dataToSave };
+  return { id: itemRef.id, ...dataToSave } as Item;
 }
 
 export async function updateInventoryItem(id: string, data: Partial<Omit<Item, 'id' | 'userId'>>, logInfo: { reason: InventoryLogReason, notes?: string }): Promise<void> {
@@ -194,36 +196,37 @@ export async function updateInventoryItem(id: string, data: Partial<Omit<Item, '
   const currentUser = getCurrentAuthContext();
   const orgId = await getCurrentOrgId();
   const docRef = doc(db, ITEMS_COLLECTION, id);
-  const currentDoc = await getDoc(docRef);
 
-  if (!currentDoc.exists()) {
-    throw new Error('Item not found.');
-  }
+  // Read, compare and write in one transaction: a sale made at the same moment on another till can no
+  // longer be overwritten by an older stock figure, and the history entry always matches the change.
+  await runTransaction(db, async (transaction) => {
+    const currentDoc = await transaction.get(docRef);
+    if (!currentDoc.exists()) throw new Error('Item not found.');
+    const currentData = currentDoc.data() as Item;
+    if (currentData.orgId !== orgId) throw new Error('Item not found in your organization.');
 
-  const currentData = currentDoc.data() as Item;
-  if (currentData.orgId !== orgId) {
-    throw new Error('Item not found in your organization.');
-  }
-
-  if (data.stockQuantity !== undefined) {
-    const quantityChange = data.stockQuantity - currentData.stockQuantity;
-    if (quantityChange !== 0) {
-      await addInventoryLog({
-        itemId: id,
-        itemName: data.name || currentData.name,
-        reason: logInfo.reason,
-        quantityChange: quantityChange,
-        newQuantity: data.stockQuantity,
-        notes: logInfo.notes,
-        timestamp: new Date(),
-        userId: currentData.userId,
-      });
+    const now = new Date();
+    if (data.stockQuantity !== undefined) {
+      const quantityChange = Math.round((data.stockQuantity - (Number(currentData.stockQuantity) || 0)) * 1000) / 1000;
+      if (quantityChange !== 0) {
+        transaction.set(doc(collection(db, LOGS_COLLECTION)), {
+          itemId: id,
+          itemName: data.name || currentData.name,
+          reason: logInfo.reason,
+          quantityChange,
+          newQuantity: data.stockQuantity,
+          ...(logInfo.notes ? { notes: logInfo.notes } : {}),
+          timestamp: now,
+          userId: currentData.userId ?? currentUser.uid,
+          orgId,
+          createdBy: currentUser.uid,
+          updatedBy: currentUser.uid,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     }
-  }
-  await updateDoc(docRef, {
-    ...data,
-    updatedBy: currentUser.uid,
-    updatedAt: new Date(),
+    transaction.update(docRef, withoutUndefined({ ...data, updatedBy: currentUser.uid, updatedAt: now }));
   });
 }
 
@@ -270,78 +273,82 @@ export async function getInventoryLogs(_userId?: string): Promise<InventoryLog[]
   return snapshot.docs.map(docToLog).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }
 
+export interface SaleResult {
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+/**
+ * Completes a Point of Sale sale. In one transaction it re-reads each item, checks stock and price
+ * against what is in the database now (not what the screen showed), takes the stock out, writes one
+ * history entry per item, and records the income. Either all of it happens or none of it does, and
+ * two tills selling the last unit cannot both succeed.
+ */
 export async function processSaleTransaction(
   _userId: string,
-  saleItems: { itemId: string; quantitySold: number }[],
-  saleDetails: { subtotal: number; taxTotal: number; grandTotal: number }
-): Promise<void> {
+  cart: { itemId: string; quantitySold: number; taxRate?: number | null }[]
+): Promise<SaleResult> {
   const db = getDb();
   const currentUser = getCurrentAuthContext();
   const orgId = await getCurrentOrgId();
-  const batch = writeBatch(db);
+  const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
+  const itemIds = Array.from(new Set(cart.map(line => line.itemId)));
 
-  for (const saleItem of saleItems) {
-    const itemRef = doc(db, ITEMS_COLLECTION, saleItem.itemId);
-    const itemSnap = await getDoc(itemRef);
-
-    if (!itemSnap.exists()) {
-      throw new Error(`Item with ID ${saleItem.itemId} not found.`);
+  return runTransaction(db, async (transaction) => {
+    const current = new Map<string, StockItem>();
+    for (const itemId of itemIds) {
+      const snap = await transaction.get(doc(db, ITEMS_COLLECTION, itemId));
+      if (!snap.exists() || snap.data()?.orgId !== orgId) {
+        throw new Error('An item in this sale no longer exists. Remove it and try again.');
+      }
+      current.set(itemId, docToItem(snap) as StockItem);
     }
 
-    const currentItem = docToItem(itemSnap);
-    if (currentItem.orgId !== orgId) {
-      throw new Error(`Unauthorized to modify item ${currentItem.name}.`);
+    const result = planSale(current, cart.map(line => ({ itemId: line.itemId, quantity: line.quantitySold, taxRate: line.taxRate })));
+    if (!result.plan) throw new Error(result.error);
+    const plan = result.plan;
+
+    const now = new Date();
+    for (const move of plan.movements) {
+      transaction.update(doc(db, ITEMS_COLLECTION, move.itemId), { stockQuantity: move.newQuantity, updatedBy: currentUser.uid, updatedAt: now });
+      transaction.set(doc(collection(db, LOGS_COLLECTION)), {
+        itemId: move.itemId,
+        itemName: move.name,
+        reason: 'Sale',
+        quantityChange: -move.quantity,
+        newQuantity: move.newQuantity,
+        notes: 'Point of Sale transaction',
+        timestamp: now,
+        userId: currentUser.uid,
+        orgId,
+        createdBy: currentUser.uid,
+        updatedBy: currentUser.uid,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
-    const newQuantity = currentItem.stockQuantity - saleItem.quantitySold;
-    if (newQuantity < 0) {
-      throw new Error(`Insufficient stock for item: ${currentItem.name}.`);
-    }
-
-    batch.update(itemRef, { stockQuantity: newQuantity });
-
-    // Create a new log entry for the sale
-    const logRef = doc(collection(db, LOGS_COLLECTION));
-    const logData: Omit<InventoryLog, 'id'> = {
-      itemId: currentItem.id,
-      itemName: currentItem.name,
-      reason: 'Sale',
-      quantityChange: -saleItem.quantitySold,
-      newQuantity: newQuantity,
-      notes: 'Point of Sale transaction',
-      timestamp: new Date(),
+    transaction.set(doc(collection(db, 'incomeTransactions')), {
       userId: currentUser.uid,
       orgId,
+      // The business's own calendar day. toISOString() is UTC, which after about 7 pm in Canada is already tomorrow.
+      date: todayDateKey(now),
+      company: 'Point of Sale Customer',
+      description: plan.description,
+      totalAmount: plan.total,
+      preTaxAmount: plan.subtotal,
+      taxAmount: plan.tax,
+      taxRate: impliedTaxRate(plan.subtotal, plan.tax),
+      incomeCategory: primaryIncomeLine || 'Part 3A',
+      depositedTo: 'Cash Account',
+      type: 'business',
       createdBy: currentUser.uid,
       updatedBy: currentUser.uid,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    batch.set(logRef, logData);
-  }
+      createdAt: now,
+      updatedAt: now,
+    });
 
-  // Create the corresponding income transaction
-  const incomeTxRef = doc(collection(db, 'incomeTransactions'));
-  const primaryIncomeLine = t2125IncomeCategories.find(c => c.key === 'sales')?.line;
-
-  batch.set(incomeTxRef, {
-    userId: currentUser.uid,
-    orgId,
-    date: new Date().toISOString().split('T')[0],
-    company: 'Point of Sale Customer',
-    description: `POS Sale - ${saleItems.length} item(s)`,
-    totalAmount: saleDetails.grandTotal,
-    preTaxAmount: saleDetails.subtotal,
-    taxAmount: saleDetails.taxTotal,
-    taxRate: saleDetails.subtotal > 0 ? (saleDetails.taxTotal / saleDetails.subtotal) * 100 : 0,
-    incomeCategory: primaryIncomeLine || 'C-1', // Default to 'Sales' category or a custom fallback
-    depositedTo: 'Cash Account', // Assuming cash or a default account
-    type: 'business',
-    createdBy: currentUser.uid,
-    updatedBy: currentUser.uid,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    return { subtotal: plan.subtotal, tax: plan.tax, total: plan.total };
   });
-
-  await batch.commit();
 }

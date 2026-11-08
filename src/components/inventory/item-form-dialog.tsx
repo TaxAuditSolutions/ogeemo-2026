@@ -48,6 +48,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CustomCalendar } from '../ui/custom-calendar';
 import { Label } from '../ui/label';
+import { checkItemForm } from '@/lib/inventory-item-form';
 import { type Contact } from '@/services/contact-service';
 import { type Supplier, designateContactAsSupplier } from '@/services/supplier-service';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
@@ -73,6 +74,8 @@ interface ItemFormDialogProps {
   onSave: () => void;
   onDelete: (itemId: string) => void;
   contacts: Contact[];
+  /** The other items, so a SKU already in use is caught. */
+  existingItems?: InventoryItem[];
 }
 
 const formatNumberWithCommas = (value: string | number | null | undefined) => {
@@ -83,7 +86,7 @@ const formatNumberWithCommas = (value: string | number | null | undefined) => {
   return parts.join(".");
 };
 
-export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDelete, contacts }: ItemFormDialogProps) {
+export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDelete, contacts, existingItems = [] }: ItemFormDialogProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -94,6 +97,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isSupplierPopoverOpen, setIsSupplierPopoverOpen] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -118,47 +122,56 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
   
 
   const handleSave = async (values: ItemFormData) => {
-    if (!user) return;
-    
-    let finalSupplierId = values.supplierId;
-    if (values.supplierId && !values.supplierId.startsWith('sup_')) {
-      try {
-        const newSupplier = await designateContactAsSupplier(user.uid, values.supplierId);
-        finalSupplierId = newSupplier.id;
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${'' + error.message}` });
-        return;
-      }
+    if (!user || isSaving) return;
+
+    // Name, numbers and SKU are checked before anything is written.
+    const checked = checkItemForm(values, existingItems, itemToEdit?.id);
+    if (checked.value === null) {
+      toast({ variant: 'destructive', title: 'Check the item', description: checked.error });
+      return;
     }
-    
+
+    setIsSaving(true);
     try {
-      const cleanCost = values.cost ? parseFloat(values.cost.replace(/,/g, '')) : null;
-      const cleanPrice = values.price ? parseFloat(values.price.replace(/,/g, '')) : null;
+      // Only a supplier that is new to this item is moved into the Suppliers folder; saving other
+      // changes does not touch the contact again.
+      let finalSupplierId = values.supplierId || null;
+      if (finalSupplierId && !finalSupplierId.startsWith('sup_') && finalSupplierId !== (itemToEdit?.supplierId ?? null)) {
+        try {
+          const newSupplier = await designateContactAsSupplier(user.uid, finalSupplierId);
+          finalSupplierId = newSupplier.id;
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Supplier Error', description: `Could not designate contact as supplier: ${'' + error.message}` });
+          return;
+        }
+      }
 
       const dataToSave = {
-        name: values.name || 'Untitled Item',
-        sku: values.sku?.trim() || undefined,
+        name: checked.value.name,
+        sku: checked.value.sku,
         type: values.type,
-        supplierId: finalSupplierId || null,
+        supplierId: finalSupplierId,
         acquisitionDate: values.acquisitionDate || null,
-        stockQuantity: Number(values.stockQuantity) || 0,
-        cost: isNaN(cleanCost as any) ? null : cleanCost,
-        price: isNaN(cleanPrice as any) ? null : cleanPrice,
+        stockQuantity: checked.value.stockQuantity,
+        cost: checked.value.cost,
+        price: checked.value.price,
       };
 
       if (itemToEdit) {
         await updateInventoryItem(itemToEdit.id, dataToSave, { reason: 'Adjustment', notes: 'Item details updated.' });
-        toast({ title: 'Item Updated', description: `"${values.name}" has been updated.` });
+        toast({ title: 'Item Updated', description: `"${dataToSave.name}" has been updated.` });
       } else {
         await addInventoryItem({
             ...dataToSave,
             userId: user.uid,
         });
-        toast({ title: 'Item Added', description: `"${values.name}" has been added to your inventory.` });
+        toast({ title: 'Item Added', description: `"${dataToSave.name}" has been added to your inventory.` });
       }
       onSave();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -260,7 +273,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
                              <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                    <FormField control={form.control} name="stockQuantity" render={({ field }) => ( <FormItem> <FormLabel>Quantity</FormLabel> <FormControl><Input type="number" step="any" min="0" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField control={form.control} name="cost" render={({ field }) => ( 
@@ -323,7 +336,7 @@ export function ItemFormDialog({ isOpen, onOpenChange, itemToEdit, onSave, onDel
             ) : <div />}
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" form="item-form">Save</Button>
+            <Button type="submit" form="item-form" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save'}</Button>
           </div>
         </DialogFooter>
       </DialogContent>

@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.inventory.items-and-stock",
+      "module": "Inventory",
+      "title": "Inventory Central: items, stock, cost and history",
+      "routes": ["/inventory-manager/track"],
+      "intents": ["how-to", "business-rule", "inventory"],
+      "keywords": ["inventory", "inventory central", "add item", "stock", "quantity", "sku", "unit cost", "selling price", "product for sale", "internal supply", "raw material", "supplier", "delete item", "total inventory value", "stock history", "adjustment", "duplicate sku"],
+      "audiences": ["all"],
+      "content": "Inventory Central lists your items with type, supplier, SKU, quantity, unit cost and total cost. Add New Item takes just a name and creates it as a Product for Sale with 0 stock; a name already in the list is refused, ignoring capital letters, so you do not end up with two of the same item. Open an item from Update Existing Item Stock or the list menu to set its type, supplier, SKU, quantity, unit cost and selling price. The form checks before saving: the name cannot be blank, quantity cannot be negative and may have up to 3 decimals (for metres or kilograms), cost and price cannot be negative or text, a unit cost can have 4 decimals and a selling price is saved to the cent, and a SKU already used by another item is refused. A blank cost or price means not set, not zero, so an item with stock but no cost is flagged on the balance sheet instead of being valued at nothing. Changing the quantity writes an Adjustment entry to the item's history in the same step, so the history always matches the stock, and a sale made at the same moment cannot be overwritten by an older figure. The Save button is disabled while saving. Deleting an item asks first and keeps its history. The Total Inventory Value at the bottom is the same figure as the balance sheet: quantity times unit cost for products for sale and raw materials, with internal supplies left out because they are expensed, and a note says how many items have no cost.",
+      "sourceFiles": ["src/services/inventory-service.ts", "src/lib/inventory-item-form.ts", "src/components/inventory/item-form-dialog.tsx", "src/components/inventory/InventoryList.tsx"]
+    },
+    {
+      "id": "bks.inventory.point-of-sale",
+      "module": "Inventory",
+      "title": "Point of Sale: what a sale does to stock and income",
+      "routes": ["/inventory-manager/track"],
+      "intents": ["how-to", "business-rule", "inventory", "sales"],
+      "keywords": ["point of sale", "pos", "sale", "complete sale", "cart", "sales tax", "insufficient stock", "no selling price", "income ledger", "cash account", "quantity", "last unit", "two tills", "sale total"],
+      "audiences": ["all"],
+      "content": "Point of Sale, opened from Inventory Central, records a sale of items at the selling price saved on each item. Only items that can be sold are offered: internal supplies and disposed items are not. The quantity must be more than zero and may be fractional; a negative or zero quantity is refused because it would put stock back and record negative income. An item with no selling price cannot be sold. Stock is checked across every line of the same item, whatever its tax type, so two lines of 2 and 1 against 2 in stock are refused. When you press Complete Sale the sale is checked again against the stock and prices in the database at that moment, not the screen, and everything is saved together or not at all: the stock comes down, one Sale entry is written to each item's history, and one business income entry is added to the ledger with the pre-tax amount, the tax and the total, dated with your own calendar day. Two tills selling the last unit cannot both succeed; the second is told how many are left. The totals on screen are rounded to the cent line by line, the same way they are saved. The income entry is deposited to a Cash Account, which is a generic name, so it is not counted in a particular bank account's balance until you assign it. The stock on screen is reloaded after every sale, even a refused one.",
+      "sourceFiles": ["src/services/inventory-service.ts", "src/lib/inventory-sale.ts", "src/app/(app)/inventory-manager/pos/page.tsx"]
+    }
+  ]
+}

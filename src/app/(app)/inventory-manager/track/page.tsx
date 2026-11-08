@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Plus, Info, ShoppingCart, X, ArrowLeft, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { addInventoryItem, type Item as InventoryItem, deleteInventoryItem, getInventoryItems } from '@/services/inventory-service';
+import { addInventoryItem, type Item as InventoryItem, type InventoryLog, deleteInventoryItem, getInventoryItems, getInventoryLogs } from '@/services/inventory-service';
 import { ItemFormDialog } from '@/components/inventory/item-form-dialog';
+import { ItemHistoryDialog } from '@/components/inventory/item-history-dialog';
 import { getContacts, type Contact } from '@/services/contact-service';
 import {
   Dialog,
@@ -24,6 +25,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function InventoryTrackPage() {
     const [newItemName, setNewItemName] = useState('');
@@ -35,6 +46,9 @@ export default function InventoryTrackPage() {
     const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+    const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
+    const [historyLogs, setHistoryLogs] = useState<InventoryLog[]>([]);
     
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -65,19 +79,26 @@ export default function InventoryTrackPage() {
 
 
     const handleAddNewItem = async () => {
-        if (!newItemName.trim() || !user) {
+        if (!user || isSubmitting) return;
+        const name = newItemName.trim();
+        if (!name) {
             toast({ variant: 'destructive', title: 'Item name is required.' });
+            return;
+        }
+        const twin = items.find(i => i.name.trim().toLowerCase() === name.toLowerCase());
+        if (twin) {
+            toast({ variant: 'destructive', title: 'Item already exists', description: `"${twin.name}" is already in your inventory. Search for it under Update Existing Item Stock to change its stock.` });
             return;
         }
         setIsSubmitting(true);
         try {
             await addInventoryItem({
-                name: newItemName,
+                name,
                 type: 'Product for Sale',
                 stockQuantity: 0,
                 userId: user.uid,
             });
-            toast({ title: 'Item Added', description: `"${newItemName}" added with 0 stock.` });
+            toast({ title: 'Item Added', description: `"${name}" added with 0 stock. Open it to set its cost and price.` });
             setNewItemName('');
             await loadData();
         } catch (error: any) {
@@ -90,11 +111,28 @@ export default function InventoryTrackPage() {
     const handleDeleteItem = async (itemId: string) => {
         try {
             await deleteInventoryItem(itemId);
-            toast({ title: 'Item Deleted', variant: 'destructive' });
+            toast({ title: 'Item Deleted', description: 'Its stock history is kept.' });
             await loadData();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Delete failed', description: error.message });
         }
+    };
+
+    const handleViewHistory = async (item: InventoryItem) => {
+        setHistoryItem(item);
+        setHistoryLogs([]);
+        try {
+            const logs = await getInventoryLogs(user?.uid);
+            setHistoryLogs(logs.filter(log => log.itemId === item.id));
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Could not load history', description: error.message });
+        }
+    };
+
+    const itemPendingDelete = items.find(i => i.id === pendingDeleteId) || null;
+    const confirmDelete = async () => {
+        if (pendingDeleteId) await handleDeleteItem(pendingDeleteId);
+        setPendingDeleteId(null);
     };
     
     const handleItemSave = () => {
@@ -187,7 +225,9 @@ export default function InventoryTrackPage() {
                 <InventoryList 
                     items={items} 
                     isLoading={isLoading} 
-                    onItemDelete={handleDeleteItem} 
+                    onItemDelete={setPendingDeleteId}
+                    onViewHistory={handleViewHistory}
+                    contacts={contacts}
                     onEditItem={handleEditItem}
                 />
             </div>
@@ -200,7 +240,28 @@ export default function InventoryTrackPage() {
           onSave={handleItemSave}
           onDelete={handleDeleteItem}
           contacts={contacts}
+          existingItems={items}
       />
+      <ItemHistoryDialog
+          isOpen={!!historyItem}
+          onOpenChange={(open) => { if (!open) setHistoryItem(null); }}
+          item={historyItem}
+          logs={historyLogs}
+      />
+      <AlertDialog open={!!itemPendingDelete} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes "{itemPendingDelete?.name}" and its {itemPendingDelete?.stockQuantity ?? 0} in stock. Its stock history is kept. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
        <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>

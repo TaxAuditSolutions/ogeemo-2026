@@ -53,6 +53,8 @@ import { useAuth } from '@/context/auth-context';
 import { getInventoryItems, type Item as InventoryItem, processSaleTransaction } from '@/services/inventory-service';
 import { getTaxTypes, type TaxType } from '@/core/accounting-service';
 import { ManageTaxTypesDialog } from '@/components/accounting/manage-tax-types-dialog';
+import { calculateDocumentTotals } from '@/lib/document-totals';
+import { checkSaleQuantity, isSellable, priceProblem, stockProblem } from '@/lib/inventory-sale';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -106,47 +108,42 @@ export default function PointOfSalePage() {
   }, [loadData]);
 
   const handleAddItemToCart = () => {
-    if (!selectedItemId || !quantity) {
-      toast({ variant: 'destructive', title: 'Invalid Selection', description: 'Please select an item and enter a quantity.' });
-      return;
-    }
-
     const itemToAdd = inventory.find(item => item.id === selectedItemId);
     if (!itemToAdd) {
-      toast({ variant: 'destructive', title: 'Item not found' });
+      toast({ variant: 'destructive', title: 'Invalid Selection', description: 'Please select an item.' });
       return;
     }
-    
-    if (itemToAdd.stockQuantity < quantity) {
-        toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Only ${itemToAdd.stockQuantity} of ${itemToAdd.name} available.` });
-        return;
+    const checked = checkSaleQuantity(quantity);
+    if (checked.quantity === null) {
+      toast({ variant: 'destructive', title: 'Invalid Quantity', description: checked.error });
+      return;
     }
-    
+    const priceIssue = priceProblem(itemToAdd.name, itemToAdd.price);
+    if (priceIssue) {
+      toast({ variant: 'destructive', title: 'No Selling Price', description: priceIssue });
+      return;
+    }
+
+    // Stock is checked across every line of this item, whatever its tax type.
+    const alreadyInCart = cart.filter(line => line.id === itemToAdd.id).reduce((sum, line) => sum + line.saleQuantity, 0);
+    const stockIssue = stockProblem(itemToAdd.name, itemToAdd.stockQuantity, Math.round((alreadyInCart + checked.quantity) * 1000) / 1000);
+    if (stockIssue) {
+      toast({ variant: 'destructive', title: 'Insufficient Stock', description: stockIssue });
+      return;
+    }
+
     const selectedTaxType = taxTypes.find(t => t.id === selectedTaxTypeId);
-
+    const taxName = selectedTaxType?.name || '';
+    const quantityToAdd = checked.quantity;
     setCart(prevCart => {
-      const existingItemIndex = prevCart.findIndex(item => item.id === selectedItemId && item.taxType === (selectedTaxType?.name || ''));
-      
+      const existingItemIndex = prevCart.findIndex(line => line.id === itemToAdd.id && (line.taxType || '') === taxName);
       if (existingItemIndex > -1) {
-          const existingItem = prevCart[existingItemIndex];
-          const newQuantity = existingItem.saleQuantity + Number(quantity);
-
-          if(itemToAdd.stockQuantity < newQuantity) {
-              toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Cannot add ${quantity}. Only ${itemToAdd.stockQuantity - existingItem.saleQuantity} more available.` });
-              return prevCart;
-          }
-          
-          const updatedCart = [...prevCart];
-          updatedCart[existingItemIndex] = { ...existingItem, saleQuantity: newQuantity };
-          return updatedCart;
+        const updatedCart = [...prevCart];
+        const existing = updatedCart[existingItemIndex];
+        updatedCart[existingItemIndex] = { ...existing, saleQuantity: Math.round((existing.saleQuantity + quantityToAdd) * 1000) / 1000 };
+        return updatedCart;
       }
-      
-      return [...prevCart, { 
-          ...itemToAdd, 
-          saleQuantity: Number(quantity),
-          taxType: selectedTaxType?.name,
-          taxRate: selectedTaxType?.rate,
-      }];
+      return [...prevCart, { ...itemToAdd, saleQuantity: quantityToAdd, taxType: selectedTaxType?.name, taxRate: selectedTaxType?.rate }];
     });
 
     setSelectedItemId(null);
@@ -158,20 +155,18 @@ export default function PointOfSalePage() {
   };
   
   const handleCompleteSale = async () => {
-    if (!user || cart.length === 0) {
-        toast({ variant: 'destructive', title: 'Cart Empty', description: 'Please add items to the sale first.' });
+    if (!user || cart.length === 0 || isProcessing) {
+        if (cart.length === 0) toast({ variant: 'destructive', title: 'Cart Empty', description: 'Please add items to the sale first.' });
         return;
     }
     setIsProcessing(true);
     try {
-        const saleItems = cart.map(item => ({
-            itemId: item.id,
-            quantitySold: item.saleQuantity,
-        }));
-        await processSaleTransaction(user.uid, saleItems, { subtotal, taxTotal, grandTotal });
+        // The stock, prices and totals are checked again against the database when the sale is saved.
+        const saleItems = cart.map(item => ({ itemId: item.id, quantitySold: item.saleQuantity, taxRate: item.taxRate }));
+        const result = await processSaleTransaction(user.uid, saleItems);
         toast({
-            title: "Sale Completed!",
-            description: "Inventory and income ledger updated.",
+            title: 'Sale Completed!',
+            description: `${formatCurrency(result.total)} recorded (tax ${formatCurrency(result.tax)}). Inventory and income ledger updated.`,
             action: (
                 <Button variant="link" asChild>
                     <Link href="/accounting/ledgers?tab=income">View Ledger</Link>
@@ -179,30 +174,26 @@ export default function PointOfSalePage() {
             )
         });
         setCart([]);
-        // Reload inventory to get updated stock counts
-        await loadData();
     } catch (error: any) {
         toast({
             variant: 'destructive',
-            title: 'Sale Failed',
+            title: 'Sale Not Completed',
             description: error.message
         });
     } finally {
         setIsProcessing(false);
+        // Show the stock as it is now, whether the sale went through or was refused.
+        await loadData();
     }
   };
 
+  const sellable = useMemo(() => inventory.filter(isSellable), [inventory]);
   const selectedItem = inventory.find(item => item.id === selectedItemId);
-  const { subtotal, taxTotal, grandTotal } = useMemo(() => {
-    let sub = 0;
-    let tax = 0;
-    cart.forEach(item => {
-        const itemTotal = (item.price || 0) * item.saleQuantity;
-        sub += itemTotal;
-        tax += itemTotal * ((item.taxRate || 0) / 100);
-    });
-    return { subtotal: sub, taxTotal: tax, grandTotal: sub + tax };
-  }, [cart]);
+  // Whole cents, line by line, the same way the sale is recorded, so the total on screen is the total charged.
+  const { subtotal, tax: taxTotal, total: grandTotal } = useMemo(
+    () => calculateDocumentTotals(cart.map(item => ({ quantity: item.saleQuantity, price: item.price || 0, taxRate: item.taxRate }))),
+    [cart]
+  );
 
   return (
     <>
@@ -255,7 +246,7 @@ export default function PointOfSalePage() {
                       <CommandList>
                         <CommandEmpty>No items found.</CommandEmpty>
                         <CommandGroup>
-                          {inventory.map((item) => (
+                          {sellable.map((item) => (
                             <CommandItem
                               key={item.id}
                               value={item.name}
@@ -300,7 +291,8 @@ export default function PointOfSalePage() {
                   type="number"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-                  min="1"
+                  min="0.001"
+                  step="any"
                 />
               </div>
             </CardContent>

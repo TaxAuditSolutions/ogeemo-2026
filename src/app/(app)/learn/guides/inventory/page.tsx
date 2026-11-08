@@ -49,7 +49,7 @@ export default function InventoryGuidePage() {
               <p>There are two ways to add a new item to your inventory:</p>
               <ul>
                 <li><strong>Quick Add:</strong> On the 'Inventory Central' page, use the "Add New Item" card to quickly create an item with a name and a starting quantity of zero.</li>
-                <li><strong>Detailed Add:</strong> Click the "Add/Update Item Stock" button to open a dialog where you can enter comprehensive details like SKU, cost, supplier, and an initial stock quantity.</li>
+                <li><strong>Detailed Add:</strong> Search for an item under "Update Existing Item Stock" to open its full form, where you can enter details like SKU, cost, selling price, supplier, and stock quantity. A SKU already used by another item is refused, and a blank cost or price means not set, not zero.</li>
               </ul>
             </FeatureDetail>
             <FeatureDetail title="Updating Stock Levels" icon={PenSquare}>
@@ -63,8 +63,8 @@ export default function InventoryGuidePage() {
             <FeatureDetail title="Viewing Transaction History" icon={History}>
               <p>Every change to an item's stock is recorded, creating a complete audit trail.</p>
               <ul>
-                <li>On the 'Inventory Central' page, click on any item in the main list to filter the "Transaction Log" below.</li>
-                <li>Alternatively, use the 3-dot menu on any item and select "View History" to see the log in a focused dialog.</li>
+                <li>On the 'Inventory Central' page, use the 3-dot menu on any item and select "View History" to see its log in a dialog.</li>
+                <li>A Point of Sale sale writes one "Sale" entry for each item sold, in the same step that takes the stock out, so the log and the stock always agree.</li>
                 <li>Each log entry shows the reason for the change (e.g., Initial Stock, Purchase, Sale, Adjustment), the quantity change, and the new total.</li>
               </ul>
             </FeatureDetail>

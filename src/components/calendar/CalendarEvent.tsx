@@ -136,7 +136,7 @@ export function CalendarEvent({
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => onToggleComplete(event)}>
               <CheckCircle className="mr-2 h-4 w-4" />
-              {isCompleted ? 'Mark as Not Completed' : 'Mark as Completed'}
+              {isCompleted ? 'Reopen' : 'Done'}
             </DropdownMenuItem>
             {event.projectId && (
               <DropdownMenuItem asChild>

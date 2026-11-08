@@ -12,7 +12,7 @@ import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { DraggableMenuItem } from './DraggableMenuItem';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Save, Briefcase, Users, Users2, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA, ChevronDown } from 'lucide-react';
+import { Save, Briefcase, Users, Users2, Bot, BarChart3, Settings, ExternalLink, PlayCircle, ClipboardList, Landmark, Crown, Chrome, Pin, PinOff, Search, X, ArrowDownAZ, ArrowUpZA, ChevronDown, Menu, Layers, Star } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getActionChips } from '@/services/project-service';
@@ -145,7 +145,7 @@ export function MainMenu() {
     const { preferences, isLoading: isLoadingPreferences, updatePreferences } = useUserPreferences();
     const { user, accessLevel, isMasterTenant } = useAuth();
     const { toast } = useToast();
-    const { view } = useSidebarView();
+    const { view, setView } = useSidebarView();
     const [isLoadingChips, setIsLoadingChips] = useState(true);
     const [profileAccessLevel, setProfileAccessLevel] = useState<AccessLevel | null>(null);
     const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
@@ -323,14 +323,32 @@ export function MainMenu() {
 
     return (
         <div className="flex flex-col h-full p-2">
-            <div className="flex items-center gap-1 p-1 rounded-md bg-muted mb-2 text-black group-data-[collapsible=icon]:hidden">
+            <div className="mb-2 flex items-center gap-1 rounded-md bg-muted p-1 text-black group-data-[collapsible=icon]:hidden">
+                {([
+                    { value: 'fullMenu', label: 'All', Icon: Menu },
+                    { value: 'grouped', label: 'Groups', Icon: Layers },
+                    { value: 'dashboard', label: 'Favorites', Icon: Star },
+                ] as const).map(({ value, label, Icon }) => (
+                    <Button
+                        key={value}
+                        type="button"
+                        variant={view === value ? 'secondary' : 'ghost'}
+                        className="h-8 min-w-0 flex-1 gap-1 px-1 text-[11px] text-black"
+                        onClick={() => setView(value)}
+                        aria-pressed={view === value}
+                        aria-label={`Show ${label} sidebar view`}
+                    >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{label}</span>
+                    </Button>
+                ))}
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="flex-1 h-8 w-full text-black"
+                                className="h-8 w-8 shrink-0 text-black"
                                 onClick={togglePinned}
                                 aria-label={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
                                 aria-pressed={isPinned}

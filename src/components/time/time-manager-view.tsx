@@ -471,25 +471,24 @@ export function TimeManagerView() {
                         </div>
                 </header>
 
+                <div className="w-full max-w-4xl flex flex-col gap-2 sm:flex-row sm:justify-end print:hidden">
+                    <Button variant="outline" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
+                    <Button variant="secondary" onClick={() => router.back()}>Cancel</Button>
+                    <Button onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> Save</Button>
+                </div>
+
                 <div className="w-full max-w-4xl space-y-6">
                     <Card className="shadow-md border-black/5">
                         <CardContent className="pt-6">
                             <ActivityFormFields form={form} data={refData} subjectInputRef={subjectInputRef} onOpenAgenda={() => setIsAgendaFormOpen(true)} />
                         </CardContent>
-                        <CardFooter className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                {eventToEdit && (
-                                    <Button variant="outline" className="text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Activity
-                                    </Button>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-2 sm:flex-row">
-                                <Button variant="outline" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
-                                <Button variant="secondary" onClick={() => router.back()}>Cancel</Button>
-                                <Button onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> {eventToEdit ? 'Save Changes' : 'Create Activity'}</Button>
-                            </div>
-                        </CardFooter>
+                        {eventToEdit && (
+                            <CardFooter className="border-t pt-4">
+                                <Button variant="outline" className="text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Activity
+                                </Button>
+                            </CardFooter>
+                        )}
                     </Card>
 
                     <Card>

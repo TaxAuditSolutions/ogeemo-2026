@@ -104,7 +104,7 @@ function ActivityFormDialogBody({ data, subjectInputRef, onCancel, onSaved }: Ac
             <DialogFooter className="gap-2 sm:gap-0">
                 <Button variant="secondary" onClick={onCancel} disabled={isSaving}>Cancel</Button>
                 <Button onClick={handleSave} disabled={isSaving}>
-                    <Save className="mr-2 h-4 w-4" /> Create Activity
+                    <Save className="mr-2 h-4 w-4" /> Save
                 </Button>
             </DialogFooter>
         </>

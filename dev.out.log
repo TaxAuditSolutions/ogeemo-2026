@@ -204,3 +204,120 @@
  GET /event-manager 200 in 137ms
  GET /calendar 200 in 126ms
  GET /event-manager 200 in 127ms
+ GET /calendar 200 in 130ms
+ GET /event-manager 200 in 131ms
+ ✓ Compiled in 2.5s (3247 modules)
+ GET /event-manager 200 in 352ms
+ ✓ Compiled in 1142ms (3247 modules)
+ GET /event-manager 200 in 231ms
+ GET /event-manager 200 in 928ms
+ ✓ Compiled in 3.1s (3247 modules)
+ GET /event-manager 200 in 356ms
+ ✓ Compiled in 1270ms (3247 modules)
+ GET /event-manager 200 in 251ms
+ GET /event-manager 200 in 630ms
+ ✓ Compiled in 2.4s (3247 modules)
+ GET /event-manager 200 in 260ms
+ ✓ Compiled in 1970ms (3247 modules)
+ GET /event-manager 200 in 217ms
+ GET /event-manager 200 in 804ms
+ ○ Compiling /projects/all ...
+ ✓ Compiled /projects/all in 4.7s (3276 modules)
+ GET /projects/all 200 in 5021ms
+ GET /projects/all 200 in 144ms
+ GET /calendar 200 in 165ms
+ GET /event-manager 200 in 156ms
+ ✓ Compiled in 4s (3276 modules)
+ GET /event-manager 200 in 264ms
+ GET /event-manager 200 in 1119ms
+ GET /calendar 200 in 154ms
+ GET /event-manager?eventId=3BrPfv3d5kHfR3maqO4z 200 in 124ms
+ GET /event-manager?eventId=YUFWNxZOwZWLVOvp9Nei 200 in 144ms
+ GET /event-manager?eventId=iaclJdMKzHXZMAkc9Ts0 200 in 141ms
+ ○ Compiling /to-do ...
+ ✓ Compiled /to-do in 6.2s (3309 modules)
+ GET /to-do 200 in 7014ms
+ GET /to-do 200 in 162ms
+ ✓ Compiled in 942ms (1548 modules)
+ GET /to-do 200 in 202ms
+ GET /calendar 200 in 168ms
+ GET /to-do 200 in 124ms
+ GET /calendar 200 in 137ms
+ ✓ Compiled in 4.1s (3309 modules)
+ GET /calendar 200 in 313ms
+ GET /calendar 200 in 1310ms
+ GET /event-manager 200 in 160ms
+ ○ Compiling /api/ogeemo-assistant ...
+ ✓ Compiled /api/ogeemo-assistant in 6s (3415 modules)
+[AI Diagnostic] Genkit initialized with Key prefix: AQ.Ab8RN6I... (Length: 53)
+ GET /event-manager 200 in 3420ms
+/api/ogeemo-assistant source {
+  source: 'functions_primary',
+  reason: 'functions_answer_accepted',
+  decisionPath: 'functions_primary',
+  functionsRefusal: false,
+  refusalReason: 'none',
+  genkitAttempted: false,
+  upstreamFailureKind: 'none'
+}
+ POST /api/ogeemo-assistant 200 in 19740ms
+/api/ogeemo-assistant source {
+  source: 'functions_primary',
+  reason: 'functions_answer_accepted',
+  decisionPath: 'functions_primary',
+  functionsRefusal: false,
+  refusalReason: 'none',
+  genkitAttempted: false,
+  upstreamFailureKind: 'none'
+}
+ POST /api/ogeemo-assistant 200 in 7356ms
+/api/ogeemo-assistant fallback-triggered {
+  reason: 'fetch_error',
+  decisionPath: 'functions_miss_trigger_fallback',
+  functionsRefusal: null,
+  refusalReason: null,
+  upstreamStatus: null,
+  upstreamContentType: null,
+  upstreamFailureKind: 'fetch_error'
+}
+/api/ogeemo-assistant genkit-operational-attempt {
+  decisionPath: 'genkit_operational_attempt',
+  reason: 'functions_empty_answer'
+}
+/api/ogeemo-assistant source {
+  source: 'genkit_operational_accepted',
+  reason: 'functions_empty_answer',
+  decisionPath: 'functions_miss->genkit_operational_accepted',
+  functionsRefusal: null,
+  refusalReason: null,
+  genkitAttempted: true,
+  genkitOperationalOutcome: 'accepted',
+  upstreamFailureKind: 'fetch_error'
+}
+ POST /api/ogeemo-assistant 200 in 13348ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 6.9s (1823 modules)
+ GET /settings 200 in 7320ms
+ POST /settings 200 in 1489ms
+ ✓ Compiled in 5.1s (3356 modules)
+ GET /settings 200 in 332ms
+ GET /settings 200 in 1210ms
+ GET /settings 200 in 145ms
+ GET /settings 200 in 130ms
+ ✓ Compiled in 2.9s (3356 modules)
+ GET /settings 200 in 281ms
+ ✓ Compiled in 1416ms (3356 modules)
+ GET /settings 200 in 278ms
+ ✓ Compiled in 4.1s (3360 modules)
+ GET /settings 200 in 221ms
+ ○ Compiling /event-manager ...
+ ✓ Compiled /event-manager in 3.9s (1825 modules)
+ GET /event-manager 200 in 5935ms
+ GET /settings 200 in 729ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /api/auth/session in 2.2s (1826 modules)
+ ✓ Compiled (1831 modules)
+ GET /favicon.ico 200 in 6071ms
+ POST /api/auth/session 200 in 4581ms
+ POST /settings 200 in 5280ms
+ POST /settings 200 in 420ms

@@ -330,11 +330,17 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
                         <Label className="text-sm">Client <span className="font-normal text-muted-foreground">(optional)</span></Label>
                         <Popover open={isContactPopoverOpen} onOpenChange={setIsContactPopoverOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start gap-2 font-normal h-10">
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={isContactPopoverOpen}
+                                    className="w-full justify-start gap-2 font-normal h-10"
+                                >
                                     <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                                     <span className={cn('truncate', selectedContactId ? 'text-foreground' : 'text-muted-foreground')}>
-                                        {contacts.find(c => c.id === selectedContactId)?.name || 'Search by client name or company...'}
+                                        {contacts.find(c => c.id === selectedContactId)?.name || 'Search by contact...'}
                                     </span>
+                                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-full p-0" align="start">
@@ -436,11 +442,17 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
                         <Label className="text-sm">Assign to <span className="font-normal text-muted-foreground">(optional)</span></Label>
                         <Popover open={isWorkerPopoverOpen} onOpenChange={setIsWorkerPopoverOpen}>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-full justify-start gap-2 font-normal h-10">
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={isWorkerPopoverOpen}
+                                    className="w-full justify-start gap-2 font-normal h-10"
+                                >
                                     <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                                     <span className={cn('truncate', selectedWorkerId ? 'text-foreground' : 'text-muted-foreground')}>
                                         {selectedWorker?.name || 'Search by worker...'}
                                     </span>
+                                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-full p-0" align="start">
@@ -498,7 +510,7 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
                             </div>
                         )}
                     </div>
-                    <Textarea id="notes" className={cn('transition-colors', activityType === 'note' && ACTIVITY_TYPE_COLORS.note)} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add notes, instructions or other details..." />
+                    <Textarea id="notes" className={cn('transition-colors', activityType === 'note' && cn(ACTIVITY_TYPE_COLORS.note, 'border-input dark:border-input'))} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add notes, instructions or other details..." />
                 </div>
                 {/* Controls row: Billable / Status (scheduling lives in the When band above) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

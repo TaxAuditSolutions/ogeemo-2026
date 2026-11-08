@@ -134,3 +134,7 @@ Import trace for requested module:
  ⚠ Fast Refresh had to perform a full reload due to a runtime error.
  ⨯ [Error: aborted] { code: 'ECONNRESET', digest: '884124770' }
  ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+/api/ogeemo-assistant upstream-fetch-error {
+  message: 'This operation was aborted',
+  assistantUrl: 'https://ogeemoassistant-qsckasljxq-uc.a.run.app'
+}

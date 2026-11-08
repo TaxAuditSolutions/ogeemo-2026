@@ -63,7 +63,7 @@ The interim capture surface above was replaced by the single-card
 - **Billable toggle switch** and the **When band** (above) replace the interim "Add
   scheduling & billing details" bar; an explicit **Status** select
   (To Do / In Progress / Done) replaces the implicit status-by-schedule.
-- **Cancel / Create Activity** footer (Save & New kept; Delete appears when
+- **Cancel / Save** footer (Save & New kept; Delete appears when
   editing). The Time Sessions card, Gmail tools, and Meeting Agenda stay.
 - New events default to **unscheduled** (Schedule toggle off); the interim
   behaviour of implicitly scheduling every new event at "now" is gone.
@@ -80,7 +80,7 @@ same record shape (including the start/end rules in `resolveScheduledWindow`).
   Start = today at the current hour and 5-minute slot, End date = today. (A
   calendar entry has to be scheduled to appear on the calendar, so this is the
   one place a new activity defaults to scheduled.)
-- Footer is **Cancel / Create Activity**. Save & New, the Time Sessions card and
+- Footer is **Cancel / Save**. Save & New, the Time Sessions card and
   the *More tools* menu are Activity Manager only.
 - After saving, the calendar reloads so the entry shows in its slot.
 

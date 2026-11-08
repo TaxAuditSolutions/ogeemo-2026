@@ -58,6 +58,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { 
     reconcileLedgerEntry,
+    getInternalAccounts,
+    type InternalAccount,
     reconcileInvoicePayment,
     reconcileBillPayment,
     addIncomeTransaction,
@@ -73,6 +75,7 @@ import {
 } from '@/core/accounting-service';
 import { format, isValid, parse } from 'date-fns';
 import { matchBankTransactions } from '@/lib/bank-reconcile';
+import { accountsForStatement, chooseStatementAccount } from '@/lib/reconcile-account';
 import { parseBankCsv } from '@/lib/bank-csv';
 import { isLedgerDateInRange, todayDateKey } from '@/lib/ledger-date';
 import { invoiceBalance } from '@/lib/invoice-status';
@@ -105,6 +108,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface BankTransaction {
     id: string;
@@ -177,6 +181,29 @@ export function ReconciliationWizard({
     const { toast } = useToast();
     const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // The account this statement is for. Entries are recorded against it, not a generic "Bank Account".
+    const [accounts, setAccounts] = useState<InternalAccount[]>([]);
+    const [accountsLoaded, setAccountsLoaded] = useState(false);
+    const [statementAccountId, setStatementAccountId] = useState('');
+    const statementAccounts = useMemo(() => accountsForStatement(accounts), [accounts]);
+
+    React.useEffect(() => {
+        if (!isOpen || !user) return;
+        let cancelled = false;
+        getInternalAccounts(user.uid)
+            .then((list) => {
+                if (cancelled) return;
+                setAccounts(list);
+                const usable = accountsForStatement(list);
+                // Only one choice: no need to ask.
+                setStatementAccountId((current) => (current && usable.some((a) => a.id === current)) ? current : (usable.length === 1 ? usable[0].id : ''));
+            })
+            .catch((error: any) => toast({ variant: 'destructive', title: 'Could not load accounts', description: error?.message || 'Try again.' }))
+            .finally(() => { if (!cancelled) setAccountsLoaded(true); });
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, user]);
 
     const reconciliationNodes = useMemo((): ReconciliationNode[] => {
         if (bankTransactions.length === 0) return [];
@@ -314,6 +341,12 @@ export function ReconciliationWizard({
 
     const handleBulkVerify = async () => {
         if (!user || selectedIds.length === 0) return;
+        const chosen = chooseStatementAccount(accounts, statementAccountId);
+        if (!chosen.account) {
+            toast({ variant: 'destructive', title: 'Account needed', description: chosen.error });
+            return;
+        }
+        const statementAccountName = chosen.account.name;
         const doneIds: string[] = [];
         setIsProcessing(true);
         try {
@@ -336,12 +369,12 @@ export function ReconciliationWizard({
                 const match = node.matchedLedgerNode;
                 if (!match) continue;
                 if (match.matchType === 'ledger') {
-                    await reconcileLedgerEntry(match.id, match.type, node.bank.id);
+                    await reconcileLedgerEntry(match.id, match.type, node.bank.id, statementAccountName);
                 } else if (match.matchType === 'invoice') {
-                    const receiptNumber = await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), normalizeDate(node.bank.date), node.bank.id, 'Bank Account');
+                    const receiptNumber = await reconcileInvoicePayment(user.uid, match.id, Math.abs(node.bank.amount), normalizeDate(node.bank.date), node.bank.id, statementAccountName);
                     if (receiptNumber) issuedReceipts.push(receiptNumber);
                 } else if (match.matchType === 'bill') {
-                    await reconcileBillPayment(user.uid, match.id, normalizeDate(node.bank.date), node.bank.id, 'Bank Account');
+                    await reconcileBillPayment(user.uid, match.id, normalizeDate(node.bank.date), node.bank.id, statementAccountName);
                 }
                 doneIds.push(node.bank.id);
             }
@@ -371,6 +404,13 @@ export function ReconciliationWizard({
     const handleBulkAutoIngest = async () => {
         if (!user || selectedIds.length === 0) return;
         // Rows already written stay marked done even if a later row fails, so a retry never posts them twice.
+        const chosen = chooseStatementAccount(accounts, statementAccountId);
+        if (!chosen.account) {
+            toast({ variant: 'destructive', title: 'Account needed', description: chosen.error });
+            return;
+        }
+        const statementAccountName = chosen.account.name;
+
         const doneIds: string[] = [];
         setIsProcessing(true);
         try {
@@ -417,10 +457,10 @@ export function ReconciliationWizard({
                 };
 
                 if (isIncome) {
-                    await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: 'Bank Account' } as any);
+                    await addIncomeTransaction({ ...baseData, incomeCategory: categoryId, depositedTo: statementAccountName } as any);
                     doneIds.push(bt.id);
                 } else {
-                    await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: 'Bank Account' } as any);
+                    await addExpenseTransaction({ ...baseData, category: categoryId, paidFrom: statementAccountName } as any);
                     doneIds.push(bt.id);
                 }
             }
@@ -487,7 +527,27 @@ export function ReconciliationWizard({
                                     Ingest a bank statement (CSV) to achieve professional parity between your bank activity and ledger entries.
                                 </p>
                             </div>
-                            <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" onClick={() => fileInputRef.current?.click()}>
+                            <div className="w-full max-w-md space-y-2 text-left">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground tracking-widest">Which account is this statement for?</Label>
+                                {accountsLoaded && statementAccounts.length === 0 ? (
+                                    <p className="text-sm text-destructive">
+                                        You have no business accounts yet. <Link href="/accounting/bank-statements" className="underline font-semibold">Add one in Bank Statements</Link>, then come back.
+                                    </p>
+                                ) : (
+                                    <Select value={statementAccountId} onValueChange={setStatementAccountId}>
+                                        <SelectTrigger className="h-12 text-base bg-white">
+                                            <SelectValue placeholder={accountsLoaded ? 'Choose an account...' : 'Loading accounts...'} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {statementAccounts.map((account) => (
+                                                <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                <p className="text-xs text-muted-foreground">Entries confirmed or created from this statement are recorded against this account, so your cash balance stays right.</p>
+                            </div>
+                            <Button size="lg" className="h-20 px-20 text-2xl font-bold shadow-2xl rounded-2xl" disabled={isProcessing || !statementAccountId} onClick={() => fileInputRef.current?.click()}>
                                 {isProcessing ? <LoaderCircle className="mr-3 h-8 w-8 animate-spin" /> : <FileSpreadsheet className="mr-3 h-8 w-8" />}
                                 Select Statement File
                             </Button>

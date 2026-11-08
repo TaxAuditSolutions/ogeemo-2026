@@ -28,6 +28,7 @@ import { impliedTaxRate, splitPaymentTax } from '@/lib/payment-tax';
 import { canMoveWorkOrder, workOrderConversionProblem } from '@/lib/work-orders';
 import { applyLoanPayment, removeLoanPayment, validateLoanPayment, type LoanPayment } from '@/lib/loan-payments';
 import { calculateDocumentTotals } from '@/lib/document-totals';
+import { accountAfterReconcile } from '@/lib/reconcile-account';
 
 
 function getDb() {
@@ -1209,20 +1210,28 @@ export async function postInvoicePayment(userId: string, invoiceId: string, amou
 /**
  * Permanently links a ledger entry to a bank transaction.
  */
-export async function reconcileLedgerEntry(entryId: string, type: 'income' | 'expense', bankReferenceId: string): Promise<void> {
+export async function reconcileLedgerEntry(entryId: string, type: 'income' | 'expense', bankReferenceId: string, statementAccount?: string): Promise<void> {
   const db = getDb();
   const collectionName = type === 'income' ? INCOME_COLLECTION : EXPENSE_COLLECTION;
   const docRef = doc(db, collectionName, entryId);
 
-  await updateDoc(docRef, {
-    isReconciled: true,
-    bankReferenceId: bankReferenceId,
-  }).catch(async (error) => {
+  const update: Record<string, unknown> = { isReconciled: true, bankReferenceId };
+  // The statement proves which account the money moved through. An entry that named no particular
+  // account is assigned to it, so the balance sheet can place the cash; one already tied to an
+  // account keeps it.
+  if (statementAccount) {
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) throw new Error('The ledger entry for this bank transaction could not be found. It may have been deleted.');
+    const field = type === 'income' ? 'depositedTo' : 'paidFrom';
+    update[field] = accountAfterReconcile(snap.data()[field], statementAccount);
+  }
+
+  await updateDoc(docRef, update).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'update',
-        requestResourceData: { isReconciled: true, bankReferenceId },
+        requestResourceData: update,
       }));
     }
     throw error;

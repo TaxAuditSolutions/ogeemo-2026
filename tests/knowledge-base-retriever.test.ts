@@ -89,6 +89,7 @@ const cases = [
   ['What does Post to GL do for petty cash?', 'bks.pettycash.float'],
   ['Can I invoice a work order twice?', 'bks.workorders.invoicing'],
   ['What order do work order statuses go in?', 'bks.workorders.invoicing'],
+  ['Which account do reconciled bank statement entries go to?', 'bks.bank.matching'],
   ['How do I record a payment on a loan?', 'bks.loans.payments'],
   ['Does loan interest count as an expense?', 'bks.loans.payments'],
   ['Does the balance sheet include cash in the bank?', 'bks.balance-sheet.cash-inventory'],

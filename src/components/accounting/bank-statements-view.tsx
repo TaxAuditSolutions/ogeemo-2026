@@ -103,6 +103,7 @@ import {
 import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
+import { checkOpeningBalance } from '@/lib/cash-balance';
 import { format, parseISO, isValid } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,6 +145,8 @@ const emptyAccountForm = {
     institutionNumber: '',
     transitNumber: '',
     accountNumber: '',
+    openingBalance: '',
+    openingBalanceDate: '',
 };
 
 export function BankStatementsView() {
@@ -285,6 +288,8 @@ export function BankStatementsView() {
               institutionNumber: account.institutionNumber || '',
               transitNumber: account.transitNumber || '',
               accountNumber: account.accountNumber || '',
+              openingBalance: account.openingBalance !== undefined ? String(account.openingBalance) : '',
+              openingBalanceDate: account.openingBalanceDate || '',
           });
       } else {
           setEditingAccount(null);
@@ -303,8 +308,16 @@ export function BankStatementsView() {
           return;
       }
       
+      // An opening balance needs the day it was true (so earlier ledger entries are not counted twice).
+      const opening = checkOpeningBalance(accountForm.openingBalance, accountForm.openingBalanceDate);
+      if (opening.error !== null) {
+          toast({ variant: 'destructive', title: 'Check the opening balance', description: opening.error });
+          return;
+      }
+
       try {
           const accountData: Partial<InternalAccount> = {
+              ...(opening.amount !== null ? { openingBalance: opening.amount, openingBalanceDate: opening.date } : {}),
               name: accountForm.name,
               bankName: accountForm.bankName,
               businessType: accountForm.businessType,
@@ -474,6 +487,19 @@ export function BankStatementsView() {
                             </div>
                         </React.Fragment>
                     )}
+
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Opening Balance</Label>
+                            <Input type="number" step="0.01" value={accountForm.openingBalance} onChange={e => setAccountForm(p => ({...p, openingBalance: e.target.value}))} placeholder="0.00" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>As Of Date</Label>
+                            <Input type="date" value={accountForm.openingBalanceDate} onChange={e => setAccountForm(p => ({...p, openingBalanceDate: e.target.value}))} />
+                        </div>
+                        <p className="col-span-2 text-xs text-muted-foreground">What the account held on that day. The balance sheet adds the deposits and payments recorded after it. For a credit card enter what was owed as a negative number.</p>
+                    </div>
 
                     {accountForm.type === 'Credit Card' && (
                         <div className="space-y-2">

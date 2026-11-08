@@ -19,7 +19,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Landmark, TrendingDown, TrendingUp } from "lucide-react";
+import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Landmark, TrendingDown, TrendingUp, Banknote } from "lucide-react";
+import { LoanPaymentDialog } from "@/components/accounting/loan-payment-dialog";
 import { AccountingPageHeader } from "@/components/accounting/page-header";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -90,6 +91,7 @@ export function LoanManagerView() {
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
   const [formData, setFormData] = useState(emptyLoanForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [loanForPayment, setLoanForPayment] = useState<Loan | null>(null);
 
   const { toast } = useToast();
 
@@ -246,6 +248,7 @@ export function LoanManagerView() {
                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => setLoanForPayment(loan)}><Banknote className="mr-2 h-4 w-4"/>Record Payment</DropdownMenuItem>
                                         <DropdownMenuItem onSelect={() => handleOpenDialog(loan)}><Pencil className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
                                         <DropdownMenuItem onSelect={() => setLoanToDelete(loan)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -379,7 +382,15 @@ export function LoanManagerView() {
         </DialogContent>
       </Dialog>
       
+      {/* Always shows the loan as last loaded, so its balance and history are current after each payment. */}
+      <LoanPaymentDialog
+        loan={loanForPayment ? (loans.find(l => l.id === loanForPayment.id) ?? loanForPayment) : null}
+        onOpenChange={(open) => { if (!open) setLoanForPayment(null); }}
+        onChanged={loadData}
+      />
+
       <AlertDialog open={!!loanToDelete} onOpenChange={() => setLoanToDelete(null)}>
+
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the loan record for "{loanToDelete?.counterparty}".</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>

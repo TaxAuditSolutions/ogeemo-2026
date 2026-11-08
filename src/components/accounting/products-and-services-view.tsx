@@ -51,6 +51,7 @@ import {
 } from "@/core/accounting-service";
 import { ManageTaxTypesDialog } from './manage-tax-types-dialog';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { isDuplicateDescription, taxForChoice, validateServiceItem } from '@/lib/service-items';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
@@ -58,7 +59,7 @@ const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 };
 
-const emptyItemForm = { description: '', price: '', taxType: '', taxRate: '' };
+const emptyItemForm = { description: '', price: '', taxType: '', taxRate: '', itemType: 'service' as 'service' | 'product' };
 
 export function ProductsAndServicesView() {
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
@@ -72,6 +73,7 @@ export function ProductsAndServicesView() {
   const [itemToEdit, setItemToEdit] = useState<ServiceItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<ServiceItem | null>(null);
   const [newItem, setNewItem] = useState(emptyItemForm);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { toast } = useToast();
   
@@ -107,6 +109,7 @@ export function ProductsAndServicesView() {
               price: String(item.price),
               taxType: item.taxType || '',
               taxRate: String(item.taxRate || ''),
+              itemType: item.itemType === 'product' ? 'product' : 'service',
             });
       } else {
           setItemToEdit(null);
@@ -120,18 +123,19 @@ export function ProductsAndServicesView() {
   
   const handleSaveItem = async () => {
     if (!user) return;
-      const priceNum = parseFloat(newItem.price);
-      if (!newItem.description.trim() || isNaN(priceNum) || priceNum < 0) {
-          toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please fill out the description and a valid price.' });
+      // Checked and cleaned in one place (see lib/service-items): price to the cent, rate 0-100, None = 0%.
+      const checked = validateServiceItem(newItem);
+      if (checked.error !== null) {
+          toast({ variant: 'destructive', title: 'Invalid Input', description: checked.error });
           return;
       }
-      
-      const itemData = {
-          description: newItem.description,
-          price: priceNum,
-          taxType: newItem.taxType,
-          taxRate: parseFloat(newItem.taxRate) || 0,
-      };
+      if (isSaving) return;
+      const sameName = isDuplicateDescription(serviceItems, checked.item.description, itemToEdit?.id);
+      if (sameName && !window.confirm(`An item called "${checked.item.description}" already exists. Save this one anyway?`)) {
+          return;
+      }
+      const itemData = checked.item;
+      setIsSaving(true);
 
       try {
         if (itemToEdit) {
@@ -146,6 +150,8 @@ export function ProductsAndServicesView() {
         setIsItemDialogOpen(false);
       } catch (error: any) {
          toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
+      } finally {
+         setIsSaving(false);
       }
   };
   
@@ -180,12 +186,9 @@ export function ProductsAndServicesView() {
   };
 
   const handleSelectTaxType = (typeName: string) => {
-      const type = taxTypes.find(t => t.name === typeName);
-      if (type) {
-          setNewItem(prev => ({ ...prev, taxType: type.name, taxRate: String(type.rate) }));
-      } else {
-          setNewItem(prev => ({ ...prev, taxType: '', taxRate: String(preferences?.defaultTaxRate ?? '') }));
-      }
+      // None is 0%. It used to fall back to the workspace default rate, so a no-tax item was saved with tax.
+      const choice = taxForChoice(typeName, taxTypes);
+      setNewItem(prev => ({ ...prev, taxType: choice.taxType, taxRate: String(choice.taxRate) }));
   };
 
   return (
@@ -225,7 +228,10 @@ export function ProductsAndServicesView() {
                 <TableBody>
                     {serviceItems.map(item => (
                     <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.description}</TableCell>
+                        <TableCell className="font-medium">
+                            {item.description}
+                            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">{item.itemType === 'product' ? 'Product' : 'Service'}</span>
+                        </TableCell>
                         <TableCell>{item.taxType || 'N/A'} ({item.taxRate || 0}%)</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(item.price)}</TableCell>
                         <TableCell className="text-right">
@@ -257,6 +263,16 @@ export function ProductsAndServicesView() {
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Input id="description" value={newItem.description} onChange={e => setNewItem(p => ({ ...p, description: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="itemKind">Kind</Label>
+                <Select value={newItem.itemType} onValueChange={(value) => setNewItem(p => ({ ...p, itemType: value as 'service' | 'product' }))}>
+                  <SelectTrigger id="itemKind"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="service">Service</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Price</Label>
@@ -306,7 +322,7 @@ export function ProductsAndServicesView() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsItemDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveItem}>{itemToEdit ? 'Save Changes' : 'Add Item'}</Button>
+            <Button onClick={handleSaveItem} disabled={isSaving}>{itemToEdit ? 'Save Changes' : 'Add Item'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

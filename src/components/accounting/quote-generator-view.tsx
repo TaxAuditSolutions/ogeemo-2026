@@ -20,6 +20,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
 import { calculateDocumentTotals, calculateLineTotals } from '@/lib/document-totals';
+import { followsCatalogue, refreshFromCatalogue } from '@/lib/service-items';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import ContactFormDialog from '../contacts/contact-form-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -486,31 +487,13 @@ export function QuoteGeneratorView() {
     }
   }, [selectedContactId, contacts, userProfile]);
 
-  // Sync draft line items with library
+  // Keep lines in step with the Products & Services catalogue only while this quote is new or still a draft;
+  // a saved quote that has been sent or approved keeps the prices the client was given.
   useEffect(() => {
-    if (status === 'draft' && lineItems.length > 0 && serviceItems.length > 0) {
-      setLineItems(prev => {
-        let changed = false;
-        const newItems = prev.map(item => {
-          if (item.serviceItemId) {
-            const libItem = serviceItems.find(s => s.id === item.serviceItemId);
-            if (libItem && (libItem.price !== item.price || libItem.description !== item.description || libItem.taxType !== item.taxType)) {
-              changed = true;
-              return {
-                ...item,
-                description: libItem.description,
-                price: libItem.price,
-                taxType: libItem.taxType || '',
-                taxRate: libItem.taxRate || 0,
-              };
-            }
-          }
-          return item;
-        });
-        return changed ? newItems : prev;
-      });
-    }
-  }, [serviceItems, status]); // Run once when service items load
+    if (lineItems.length === 0 || serviceItems.length === 0) return;
+    if (!followsCatalogue(status, !!quoteToEditId)) return;
+    setLineItems(prev => refreshFromCatalogue(prev, serviceItems, true));
+  }, [serviceItems, status, quoteToEditId]);
 
   const handleAddEmptyLineItem = () => {
     const defaultTaxType = preferences?.defaultTaxRate

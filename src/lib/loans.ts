@@ -71,6 +71,14 @@ export function validateLoan(input: LoanInput): { error: string } | { error: nul
 }
 
 export interface BalanceSheetInput {
+  /** Cash in bank and cash accounts (see lib/cash-balance); optional so older callers still work. */
+  cash?: number;
+  /** The petty cash box float. */
+  pettyCash?: number;
+  /** Stock on hand at cost (see lib/inventory-value). */
+  inventory?: number;
+  /** Credit card balances owing. */
+  creditCards?: number;
   accountsReceivable: number;
   capitalAssets: number;
   loans: readonly { loanType: LoanType; outstandingBalance: number }[];
@@ -80,6 +88,10 @@ export interface BalanceSheetInput {
 }
 
 export interface BalanceSheet {
+  cash: number;
+  pettyCash: number;
+  inventory: number;
+  creditCards: number;
   loansReceivable: number;
   loansPayable: number;
   totalAssets: number;
@@ -97,11 +109,19 @@ const sum = (values: readonly number[]) => roundCents(values.reduce((total, valu
 export function buildBalanceSheet(input: BalanceSheetInput): BalanceSheet {
   const loansReceivable = sum(input.loans.filter((l) => l.loanType === 'receivable').map((l) => l.outstandingBalance));
   const loansPayable = sum(input.loans.filter((l) => l.loanType === 'payable').map((l) => l.outstandingBalance));
-  const totalAssets = roundCents(input.accountsReceivable + input.capitalAssets + loansReceivable);
-  const totalLiabilities = roundCents(input.accountsPayable + loansPayable + input.payrollLiabilities);
+  const cash = roundCents(Number(input.cash) || 0);
+  const pettyCash = roundCents(Number(input.pettyCash) || 0);
+  const inventory = roundCents(Number(input.inventory) || 0);
+  const creditCards = roundCents(Math.max(0, Number(input.creditCards) || 0));
+  const totalAssets = roundCents(cash + pettyCash + inventory + input.accountsReceivable + input.capitalAssets + loansReceivable);
+  const totalLiabilities = roundCents(input.accountsPayable + loansPayable + input.payrollLiabilities + creditCards);
   const contributions = sum(input.equity.filter((e) => e.type === 'contribution').map((e) => e.amount));
   const draws = sum(input.equity.filter((e) => e.type === 'draw').map((e) => e.amount));
   return {
+    cash,
+    pettyCash,
+    inventory,
+    creditCards,
     loansReceivable,
     loansPayable,
     totalAssets,

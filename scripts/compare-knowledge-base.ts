@@ -52,6 +52,8 @@ const QUESTIONS = [
   'How is the CCA I can claim on an asset worked out?',
   'How is owner equity calculated, and why does the loan application match the snapshot?',
   'What stops a work order or a petty cash record being posted twice?',
+  'How do loan payments change the balance, and what reaches the income statement?',
+  'What does the balance sheet include for cash and inventory, and what does it leave out?',
   'How do I post a receipt to the ledger, and what does Audit-ready mode change?',
   'Show me my unbilled hours',
   'What is a standard workflow?',

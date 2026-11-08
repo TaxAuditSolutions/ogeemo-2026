@@ -22,6 +22,7 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getFolders as getContactFolders, type FolderData } from '@/services/contact-folder-service';
 import { cn } from '@/lib/utils';
 import { calculateDocumentTotals, calculateLineTotals } from '@/lib/document-totals';
+import { followsCatalogue, refreshFromCatalogue } from '@/lib/service-items';
 import { storedStatusFor } from '@/lib/invoice-status';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import ContactFormDialog from '../contacts/contact-form-dialog';
@@ -497,32 +498,14 @@ export function InvoiceGeneratorView() {
         setBusinessNumber(orgDetails?.businessNumber || userProfile?.businessNumber || '');
     }, [userProfile, orgDetails]);
 
-    // Sync draft line items with library
+    // Keep lines in step with the Products & Services catalogue ONLY while this invoice is new or still a draft.
+    // A saved invoice keeps the prices it was issued with: changing the catalogue later must not reprice it
+    // (it used to, silently, the next time the invoice was opened).
     useEffect(() => {
-        // invoices technically don't have 'draft' state in this implementation, but we can assume editing = draft if it hasn't been paid
-        if (lineItems.length > 0 && serviceItems.length > 0) {
-            setLineItems(prev => {
-                let changed = false;
-                const newItems = prev.map(item => {
-                    if (item.serviceItemId) {
-                        const libItem = serviceItems.find(s => s.id === item.serviceItemId);
-                        if (libItem && (libItem.price !== item.price || libItem.description !== item.description || libItem.taxType !== item.taxType)) {
-                            changed = true;
-                            return {
-                                ...item,
-                                description: libItem.description,
-                                price: libItem.price,
-                                taxType: libItem.taxType || '',
-                                taxRate: libItem.taxRate || 0,
-                            };
-                        }
-                    }
-                    return item;
-                });
-                return changed ? newItems : prev;
-            });
-        }
-    }, [serviceItems]); // Run once when service items load
+        if (lineItems.length === 0 || serviceItems.length === 0) return;
+        if (!followsCatalogue(editingStatus, !!invoiceToEditId)) return;
+        setLineItems(prev => refreshFromCatalogue(prev, serviceItems, true));
+    }, [serviceItems, editingStatus, invoiceToEditId]);
 
     const handleOpenEditDialog = (item: LocalLineItem) => {
         setItemToEdit(item);

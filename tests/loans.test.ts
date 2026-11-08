@@ -68,6 +68,28 @@ test('owner\'s equity shown is assets less liabilities, so the sheet always bala
 
 const roundTrip = (n: number) => Math.round(n * 100) / 100;
 
+test('cash, petty cash and inventory are assets; credit cards owing are a liability; the sheet still balances', () => {
+  const result = sheet({ cash: 2500.5, pettyCash: 64.75, inventory: 1200.25, creditCards: 300 });
+  assert.equal(result.cash, 2500.5);
+  assert.equal(result.pettyCash, 64.75);
+  assert.equal(result.inventory, 1200.25);
+  assert.equal(result.creditCards, 300);
+  assert.equal(result.totalAssets, 1000 + 5000 + 2500.5 + 64.75 + 1200.25);
+  assert.equal(result.totalLiabilities, 400 + 100 + 300);
+  assert.equal(roundTrip(result.totalLiabilities + result.netWorth), result.totalAssets);
+});
+
+test('the new inputs are optional: leaving them out gives the same sheet as before', () => {
+  assert.equal(sheet().totalAssets, 6000);
+  assert.deepEqual([sheet().cash, sheet().pettyCash, sheet().inventory, sheet().creditCards], [0, 0, 0, 0]);
+});
+
+test('an overdrawn account (negative cash) lowers assets, and junk or negative card amounts never add an asset', () => {
+  assert.equal(sheet({ cash: -250 }).totalAssets, 5750);
+  assert.equal(sheet({ creditCards: -50 }).creditCards, 0);
+  assert.equal(sheet({ cash: NaN, inventory: undefined }).totalAssets, 6000);
+});
+
 test('contributions and draws are reported separately and never replace net worth', () => {
   const result = sheet({ equity: [{ type: 'contribution', amount: 1000 }, { type: 'contribution', amount: 500.5 }, { type: 'draw', amount: 200 }] });
   assert.deepEqual([result.contributions, result.draws, result.ownerContributedEquity], [1500.5, 200, 1300.5]);

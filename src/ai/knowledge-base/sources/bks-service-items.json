@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "bks.catalogue.products-services",
+      "module": "Quotes and Invoices",
+      "title": "Products and Services: the reusable item list",
+      "routes": ["/accounting/service-items"],
+      "intents": ["how-to", "business-rule", "invoices", "quotes"],
+      "keywords": ["products and services", "service items", "catalogue", "library", "reusable line items", "price", "tax type", "none", "default tax rate", "service", "product", "duplicate item", "saved to library", "reprice", "draft"],
+      "audiences": ["all"],
+      "content": "Products and Services at /accounting/service-items is the list of reusable lines you pick from when building a quote or an invoice. An item has a description, a kind (Service or Product), a price and a tax type with its rate. The price is saved to the cent and may be 0 for a free item but not negative or blank; the tax rate must be between 0 and 100. Choosing None for the tax type means 0 percent; it used to fall back to your workspace default rate, so an item meant to carry no tax was saved with tax. Saving an item with the same description as an existing one asks you to confirm, ignoring capital letters and extra spaces. The Save button is disabled while it saves so one click adds one item. Updating or deleting an item that no longer exists now reports an error instead of saying it worked. When you add an item to a document, the document copies its price and tax. A new or draft document keeps in step with the list, so a price change shows up; a saved invoice or a quote that has been sent or approved keeps the price it was issued at, so changing the list later does not silently reprice it. Saving a line to the library from a document links the line to the new item.",
+      "sourceFiles": ["src/lib/service-items.ts", "src/components/accounting/products-and-services-view.tsx", "src/components/accounting/invoice-generator-view.tsx"]
+    }
+  ]
+}

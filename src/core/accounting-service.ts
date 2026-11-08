@@ -26,6 +26,7 @@ import { reconcileSourceRefs, sourceRefsFromLineItems, type EntryRef } from '@/l
 import { addPayment, quoteConversionProblem, storedStatusFor, validatePaymentAmount } from '@/lib/invoice-status';
 import { impliedTaxRate, splitPaymentTax } from '@/lib/payment-tax';
 import { canMoveWorkOrder, workOrderConversionProblem } from '@/lib/work-orders';
+import { applyLoanPayment, removeLoanPayment, validateLoanPayment, type LoanPayment } from '@/lib/loan-payments';
 import { calculateDocumentTotals } from '@/lib/document-totals';
 
 
@@ -179,6 +180,9 @@ export interface InternalAccount {
   transitNumber?: string;
   accountNumber?: string;
   businessType?: "Business" | "Personal";
+  /** What the account held on openingBalanceDate; cash on the balance sheet is this plus later deposits less payments. */
+  openingBalance?: number;
+  openingBalanceDate?: string;
 }
 
 // --- Invoice Interfaces & Functions ---
@@ -1933,6 +1937,8 @@ export interface Loan {
   termMonths?: number;
   monthlyPayment?: number;
   startDate: string;
+  /** Payments made so far; each lowers the balance by its principal. */
+  payments?: LoanPayment[];
   userId: string;
 }
 
@@ -1989,6 +1995,97 @@ export async function updateLoan(id: string, data: Partial<Omit<Loan, 'id' | 'us
     }
     throw error;
   });
+}
+
+/**
+ * Records a loan payment: the balance goes down by the PRINCIPAL, the payment is added to the loan's list, and the
+ * INTEREST is written to the ledger (an expense on a loan you owe, income on a loan owed to you) - all in one batch, so
+ * a failure saves none of it. The date is a plain local day. Refused when the loan is paid off or the principal is more
+ * than is owing.
+ */
+export async function recordLoanPayment(
+  loanId: string,
+  input: { date: string; total: string | number; interest: string | number; note?: string }
+): Promise<{ outstandingBalance: number; payment: LoanPayment }> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+  const loanRef = doc(db, LOANS_COLLECTION, loanId);
+  const snap = await getDoc(loanRef);
+  if (!snap.exists() || snap.data().orgId !== orgId) throw new Error('Loan not found for the current organization.');
+  const loan = docToLoan(snap);
+
+  const checked = validateLoanPayment({ balance: loan.outstandingBalance, date: input.date, total: input.total, interest: input.interest });
+  if (checked.error !== null) throw new Error(checked.error);
+
+  const batch = writeBatch(db);
+  let ledgerEntryId: string | null = null;
+  if (checked.interest > 0) {
+    const ledgerRef = doc(collection(db, loan.loanType === 'payable' ? EXPENSE_COLLECTION : INCOME_COLLECTION));
+    ledgerEntryId = ledgerRef.id;
+    const base = {
+      userId: currentUser.uid,
+      orgId,
+      date: input.date,
+      company: loan.counterparty,
+      description: 'Loan interest - ' + loan.counterparty,
+      totalAmount: checked.interest,
+      preTaxAmount: checked.interest,
+      taxAmount: 0,
+      taxRate: 0,
+      type: 'business',
+      paymentMethod: 'Bank Transfer',
+      loanId,
+      isLoanInterest: true,
+    };
+    batch.set(ledgerRef, loan.loanType === 'payable'
+      ? { ...base, category: '8710', paidFrom: 'Bank Account' }
+      : { ...base, incomeCategory: 'Part 3D', depositedTo: 'Bank Account' });
+  }
+
+  const payment: LoanPayment = {
+    id: 'pay_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    date: input.date,
+    principal: checked.principal,
+    interest: checked.interest,
+    ...(input.note ? { note: input.note } : {}),
+    ledgerEntryId,
+  };
+  const next = applyLoanPayment(loan, payment);
+  batch.update(loanRef, { outstandingBalance: next.outstandingBalance, payments: next.payments, updatedBy: currentUser.uid, updatedAt: new Date() });
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'batch', operation: 'write' }));
+    }
+    throw error;
+  });
+  return { outstandingBalance: next.outstandingBalance, payment };
+}
+
+/** Removes a payment: its principal goes back onto the balance and its interest entry leaves the ledger, in one batch. */
+export async function removeLoanPaymentRecord(loanId: string, paymentId: string): Promise<{ outstandingBalance: number }> {
+  const db = getDb();
+  const orgId = await getCurrentOrgId();
+  const currentUser = getCurrentAuthContext();
+  const loanRef = doc(db, LOANS_COLLECTION, loanId);
+  const snap = await getDoc(loanRef);
+  if (!snap.exists() || snap.data().orgId !== orgId) throw new Error('Loan not found for the current organization.');
+  const loan = docToLoan(snap);
+  const result = removeLoanPayment(loan, paymentId);
+  if (!result.removed) throw new Error('That payment was not found. It may already have been removed.');
+
+  const batch = writeBatch(db);
+  if (result.removed.ledgerEntryId) {
+    batch.delete(doc(db, loan.loanType === 'payable' ? EXPENSE_COLLECTION : INCOME_COLLECTION, result.removed.ledgerEntryId));
+  }
+  batch.update(loanRef, { outstandingBalance: result.outstandingBalance, payments: result.payments, updatedBy: currentUser.uid, updatedAt: new Date() });
+  await batch.commit().catch(async (error) => {
+    if (error.code === 'permission-denied') {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'batch', operation: 'write' }));
+    }
+    throw error;
+  });
+  return { outstandingBalance: result.outstandingBalance };
 }
 
 export async function deleteLoan(id: string): Promise<void> {
@@ -2354,7 +2451,8 @@ export async function updateServiceItem(id: string, data: Partial<Omit<ServiceIt
   const orgId = await getCurrentOrgId();
   const docRef = doc(db, SERVICE_ITEMS_COLLECTION, id);
   const docSnap = await getDoc(docRef);
-  if (!docSnap.exists() || docSnap.data().orgId !== orgId) return;
+  // A missing item is an error, not a silent no-op that still reports 'Item Updated'.
+  if (!docSnap.exists() || docSnap.data().orgId !== orgId) throw new Error('That item was not found. It may have been deleted.');
   await updateDoc(docRef, {
     ...data,
     orgId,
@@ -2368,6 +2466,7 @@ export async function updateServiceItem(id: string, data: Partial<Omit<ServiceIt
         requestResourceData: data,
       }));
     }
+    throw error;
   });
 }
 
@@ -2376,7 +2475,7 @@ export async function deleteServiceItem(id: string): Promise<void> {
   const orgId = await getCurrentOrgId();
   const docRef = doc(db, SERVICE_ITEMS_COLLECTION, id);
   const docSnap = await getDoc(docRef);
-  if (!docSnap.exists() || docSnap.data().orgId !== orgId) return;
+  if (!docSnap.exists() || docSnap.data().orgId !== orgId) throw new Error('That item was not found. It may already have been deleted.');
   await deleteDoc(docRef).catch(async (error) => {
     if (error.code === 'permission-denied') {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -2384,6 +2483,7 @@ export async function deleteServiceItem(id: string): Promise<void> {
         operation: 'delete',
       }));
     }
+    throw error;
   });
 }
 

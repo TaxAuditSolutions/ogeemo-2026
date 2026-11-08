@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { assetBalance } from '@/lib/cca';
-import { buildBalanceSheet } from '@/lib/loans';
+import { buildFullBalanceSheet } from '@/lib/balance-sheet-inputs';
+import { BalanceSheetNotesPanel } from '@/components/accounting/balance-sheet-notes';
+import { getInventoryItems, type Item } from '@/services/inventory-service';
 import { buildIncomeStatement } from '@/lib/income-statement';
-import { invoiceBalance } from '@/lib/invoice-status';
-import { sumCents } from '@/lib/ledger-totals';
 import { t2125ExpenseCategories, t2125IncomeCategories } from '@/data/standard-expense-categories';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -44,6 +43,8 @@ import {
   type Asset,
   type Loan,
   type EquityTransaction,
+  getInternalAccounts,
+  type InternalAccount,
 } from '@/core/accounting-service';
 import { getRemittances, type PayrollRemittance } from '@/services/payroll-service';
 import { MatchbookLoanSummaryDialog } from './MatchbookLoanSummaryDialog';
@@ -86,6 +87,8 @@ export function FinancialSnapshotView() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [equity, setEquity] = useState<EquityTransaction[]>([]);
   const [remittances, setRemittances] = useState<PayrollRemittance[]>([]);
+  const [accounts, setAccounts] = useState<InternalAccount[]>([]);
+  const [stock, setStock] = useState<Item[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
@@ -116,7 +119,9 @@ export function FinancialSnapshotView() {
           assetsData,
           loansData,
           equityData,
-          remittanceData
+          remittanceData,
+          accountData,
+          stockData
         ] = await Promise.all([
           getIncomeTransactions(user.uid),
           getExpenseTransactions(user.uid),
@@ -125,7 +130,10 @@ export function FinancialSnapshotView() {
           getAssets(user.uid),
           getLoans(user.uid),
           getEquityTransactions(user.uid),
-          getRemittances(user.uid)
+          getRemittances(user.uid),
+          getInternalAccounts(user.uid),
+          // Inventory is optional: a workspace that does not use it still gets a sheet.
+          getInventoryItems(user.uid).catch(() => [] as Item[])
         ]);
         setIncome(incomeData);
         setExpenses(expenseData);
@@ -135,6 +143,8 @@ export function FinancialSnapshotView() {
         setLoans(loansData);
         setEquity(equityData);
         setRemittances(remittanceData);
+        setAccounts(accountData);
+        setStock(stockData);
       } catch (error: any) {
         toast({
           variant: 'destructive',
@@ -150,34 +160,24 @@ export function FinancialSnapshotView() {
   
   const financialMetrics = useMemo(() => {
     // Profitability for THIS calendar year to date, before sales tax, business entries only; the same figures
-    // as the Income Statement (see lib/income-statement). It used to add up every entry ever recorded.
+    // as the Income Statement (see lib/income-statement).
     const yearStatement = buildIncomeStatement(income, expenses, { from: new Date(new Date().getFullYear(), 0, 1), to: new Date() }, {
       salesLine: t2125IncomeCategories.find(c => c.key === 'sales')?.line ?? '',
       expenseCategories: t2125ExpenseCategories,
     });
-    const totalIncome = yearStatement.businessIncome.gross;
-    const totalExpenses = yearStatement.totalExpenses;
-    const netIncome = yearStatement.netProfitOrLoss;
-    
-    // Assets, liabilities and equity come from one tested function (see lib/loans), so the sheet balances:
-    // Owner's Equity is assets less liabilities, and contributions and draws are shown separately.
-    const accountsReceivable = sumCents(invoices.map(inv => invoiceBalance(inv.originalAmount, inv.amountPaid)));
-    const capitalAssets = sumCents(assets.map(asset => assetBalance(asset)));
-    const accountsPayable = sumCents(payableBills.map(bill => bill.totalAmount));
-    const payrollLiabilities = sumCents(remittances.filter(r => r.status === 'Due').map(r => r.amount));
-    const sheet = buildBalanceSheet({ accountsReceivable, capitalAssets, loans, accountsPayable, payrollLiabilities, equity });
-    const { loansReceivable, loansPayable, totalAssets, totalLiabilities } = sheet;
-    const netOwnerEquity = sheet.netWorth;
-    const totalContributions = sheet.contributions;
-    const totalDraws = sheet.draws;
-    
-    return { 
-        totalIncome, totalExpenses, netIncome, 
-        accountsReceivable, capitalAssets, loansReceivable, totalAssets,
-        accountsPayable, loansPayable, payrollLiabilities, totalLiabilities,
-        netOwnerEquity,
+
+    // One tested balance sheet shared with the loan application (see lib/balance-sheet-inputs): cash, petty
+    // cash and inventory are assets, credit cards owing are a liability, and owner's equity is what is left.
+    const sheet = buildFullBalanceSheet({ accounts, income, expenses, inventory: stock, invoices, bills: payableBills, assets, loans, remittances, equity });
+
+    return {
+        totalIncome: yearStatement.businessIncome.gross,
+        totalExpenses: yearStatement.totalExpenses,
+        netIncome: yearStatement.netProfitOrLoss,
+        ...sheet,
+        netOwnerEquity: sheet.netWorth,
     };
-  }, [income, expenses, invoices, payableBills, assets, loans, equity, remittances]);
+  }, [income, expenses, invoices, payableBills, assets, loans, equity, remittances, accounts, stock]);
 
 
   if (isLoading) {
@@ -243,6 +243,9 @@ export function FinancialSnapshotView() {
                     <div className="space-y-2">
                         <h3 className="font-semibold flex items-center gap-2"><Wallet className="h-5 w-5 text-primary"/> Assets</h3>
                         <Separator />
+                        <BalanceSheetRow label="Cash in Bank Accounts" value={formatCurrency(financialMetrics.cash)} />
+                        <BalanceSheetRow label="Petty Cash Box" value={formatCurrency(financialMetrics.pettyCash)} />
+                        <BalanceSheetRow label="Inventory (at cost)" value={formatCurrency(financialMetrics.inventory)} />
                         <BalanceSheetRow label="Accounts Receivable" value={formatCurrency(financialMetrics.accountsReceivable)} />
                         <BalanceSheetRow label="Capital Assets (UCC)" value={formatCurrency(financialMetrics.capitalAssets)} />
                         <BalanceSheetRow label="Loans Receivable" value={formatCurrency(financialMetrics.loansReceivable)} />
@@ -254,6 +257,7 @@ export function FinancialSnapshotView() {
                         <Separator />
                         <BalanceSheetRow label="Accounts Payable" value={formatCurrency(financialMetrics.accountsPayable)} />
                         <BalanceSheetRow label="Loans Payable" value={formatCurrency(financialMetrics.loansPayable)} />
+                        <BalanceSheetRow label="Credit Cards Owing" value={formatCurrency(financialMetrics.creditCards)} />
                         <BalanceSheetRow label="Payroll Remittances Due" value={formatCurrency(financialMetrics.payrollLiabilities)} colorClass="text-destructive" />
                         <BalanceSheetRow label="Total Liabilities" value={formatCurrency(financialMetrics.totalLiabilities)} />
                         <Separator />
@@ -261,6 +265,7 @@ export function FinancialSnapshotView() {
                         <Separator />
                          <BalanceSheetRow label="Total Liabilities & Equity" value={formatCurrency(financialMetrics.totalAssets)} colorClass="font-bold" />
                     </div>
+                    <BalanceSheetNotesPanel notes={financialMetrics.notes} />
                 </CardContent>
               </Card>
           </div>

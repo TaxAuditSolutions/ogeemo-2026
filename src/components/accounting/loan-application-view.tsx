@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { assetBalance } from '@/lib/cca';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -22,11 +21,10 @@ import { useReactToPrint } from '@/hooks/use-react-to-print';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
-import { getAssets, getLoans, getInvoices, getPayableBills, getEquityTransactions, type Asset, type Loan, type Invoice, type PayableBill, type EquityTransaction } from '@/core/accounting-service';
+import { getAssets, getLoans, getInvoices, getPayableBills, getEquityTransactions, type Asset, type Loan, type Invoice, type PayableBill, type EquityTransaction, getInternalAccounts, getIncomeTransactions, getExpenseTransactions, type InternalAccount, type IncomeTransaction, type ExpenseTransaction } from '@/core/accounting-service';
+import { getInventoryItems, type Item } from '@/services/inventory-service';
+import { buildFullBalanceSheet } from '@/lib/balance-sheet-inputs';
 import { getRemittances, type PayrollRemittance } from '@/services/payroll-service';
-import { buildBalanceSheet } from '@/lib/loans';
-import { invoiceBalance } from '@/lib/invoice-status';
-import { sumCents } from '@/lib/ledger-totals';
 import { AccountingPageHeader } from './page-header';
 
 const formatCurrency = (amount: number | string) => {
@@ -68,6 +66,10 @@ export function LoanApplicationView() {
     const [bills, setBills] = useState<PayableBill[]>([]);
     const [remittances, setRemittances] = useState<PayrollRemittance[]>([]);
     const [equity, setEquity] = useState<EquityTransaction[]>([]);
+    const [accounts, setAccounts] = useState<InternalAccount[]>([]);
+    const [income, setIncome] = useState<IncomeTransaction[]>([]);
+    const [expenses, setExpenses] = useState<ExpenseTransaction[]>([]);
+    const [stock, setStock] = useState<Item[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [loanAmount, setLoanAmount] = useState(searchParams.get('amount') || '');
@@ -81,7 +83,7 @@ export function LoanApplicationView() {
         setIsLoading(true);
         try {
             // The same inputs as the Financial Snapshot, so both show the same balance sheet.
-            const [profileData, assetsData, loansData, invoiceData, billData, remittanceData, equityData] = await Promise.all([
+            const [profileData, assetsData, loansData, invoiceData, billData, remittanceData, equityData, accountData, incomeData, expenseData, stockData] = await Promise.all([
                 getUserProfile(user.uid),
                 getAssets(user.uid),
                 getLoans(user.uid),
@@ -89,6 +91,10 @@ export function LoanApplicationView() {
                 getPayableBills(user.uid),
                 getRemittances(user.uid),
                 getEquityTransactions(user.uid),
+                getInternalAccounts(user.uid),
+                getIncomeTransactions(user.uid),
+                getExpenseTransactions(user.uid),
+                getInventoryItems(user.uid).catch(() => [] as Item[]),
             ]);
             setProfile(profileData);
             setAssets(assetsData);
@@ -97,6 +103,10 @@ export function LoanApplicationView() {
             setBills(billData);
             setRemittances(remittanceData);
             setEquity(equityData);
+            setAccounts(accountData);
+            setIncome(incomeData);
+            setExpenses(expenseData);
+            setStock(stockData);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to load application data', description: error.message });
         } finally {
@@ -108,15 +118,10 @@ export function LoanApplicationView() {
         loadData();
     }, [loadData]);
     
-    // One tested balance sheet (see lib/loans), the same one the Financial Snapshot shows.
-    const { totalAssets, totalLiabilities, netWorth } = useMemo(() => buildBalanceSheet({
-        accountsReceivable: sumCents(invoices.map(inv => invoiceBalance(inv.originalAmount, inv.amountPaid))),
-        capitalAssets: sumCents(assets.map(asset => assetBalance(asset))),
-        loans,
-        accountsPayable: sumCents(bills.map(bill => bill.totalAmount)),
-        payrollLiabilities: sumCents(remittances.filter(r => r.status === 'Due').map(r => r.amount)),
-        equity,
-    }), [assets, loans, invoices, bills, remittances, equity]);
+    // The same balance sheet as the Financial Snapshot (see lib/balance-sheet-inputs), from the same records.
+    const { totalAssets, totalLiabilities, netWorth } = useMemo(() => buildFullBalanceSheet({
+        accounts, income, expenses, inventory: stock, invoices, bills, assets, loans, remittances, equity,
+    }), [accounts, income, expenses, stock, invoices, bills, assets, loans, remittances, equity]);
 
     if (isLoading) {
         return <div className="flex h-full w-full items-center justify-center p-4"><LoaderCircle className="h-10 w-10 animate-spin text-primary" /></div>;

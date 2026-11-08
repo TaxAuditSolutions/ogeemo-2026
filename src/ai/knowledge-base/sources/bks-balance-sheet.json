@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "bks.loans.payments",
+      "module": "BKS Accounting",
+      "title": "Recording loan payments",
+      "routes": ["/accounting/loan-manager"],
+      "intents": ["how-to", "business-rule", "loans"],
+      "keywords": ["loan payment", "record payment", "principal", "interest", "outstanding balance", "paid off", "payment history", "remove payment", "loan balance", "monthly interest", "loan interest expense"],
+      "audiences": ["all"],
+      "content": "In the Loan Manager, the Record Payment item on a loan opens its payments. You enter the date, the whole amount paid or received, and how much of it is interest; the interest starts as one month of the loan's annual rate on the balance, which you can change. Only the principal lowers the outstanding balance. The interest is written to your ledger, as an expense on a loan you owe and as income on a loan owed to you, so it reaches the Income Statement, while the principal never does because it is not a cost. The payment, the lower balance and the interest entry are saved together or not at all. A payment is refused if the loan is already paid off, if the interest is more than the amount, or if its principal is more than is owing, and the message says the most you can pay. Each loan keeps a payment history with the total principal and interest so far. Removing a payment puts its principal back on the balance, never above the original amount, and removes its interest entry from the ledger. Editing the loan itself still lets you correct the balance by hand.",
+      "sourceFiles": ["src/lib/loan-payments.ts", "src/components/accounting/loan-payment-dialog.tsx", "src/core/accounting-service.ts"]
+    },
+    {
+      "id": "bks.balance-sheet.cash-inventory",
+      "module": "BKS Accounting",
+      "title": "Cash, inventory and credit cards on the balance sheet",
+      "routes": ["/accounting/financial-snapshot", "/accounting/bank-statements"],
+      "intents": ["business-rule", "reports", "bank"],
+      "keywords": ["cash", "cash in bank", "opening balance", "as of date", "inventory", "stock", "at cost", "credit card", "unit cost", "petty cash", "balance sheet", "not in the cash figure", "unassigned", "negative stock"],
+      "audiences": ["all"],
+      "content": "The Financial Snapshot balance sheet now includes cash, petty cash and inventory as assets and credit cards owing as a liability. Cash in Bank Accounts is each business bank or cash account's opening balance plus the deposits to it and less the payments from it dated on or after its opening date; entries dated before the opening date are already inside the opening balance and are not counted twice. Set the opening balance and its date when you add or edit an account in Bank Statements; for a credit card enter what was owed as a negative number. Entries are matched to an account by its name or id. Entries that name no account in your list, such as Bank Account or Cash / Default, cannot be tied to one account, so they are left out of the cash figure and the sheet tells you how many and their net. Personal accounts and personal entries are left out. The Petty Cash Box is its own line. Inventory is the quantity in stock times the unit cost, never the selling price, for products for sale and raw materials; internal supplies are expensed and are not an asset, disposed items are not on hand, and items with no cost are left out and counted in a note. Credit card spending is money owed, shown as a liability, and never below zero. Owner's equity is still assets less liabilities, so the sheet balances, and the Loan Application shows the same figures.",
+      "sourceFiles": ["src/lib/cash-balance.ts", "src/lib/inventory-value.ts", "src/lib/balance-sheet-inputs.ts", "src/components/accounting/financial-snapshot-view.tsx"]
+    }
+  ]
+}

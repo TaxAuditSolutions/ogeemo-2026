@@ -59,6 +59,9 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { isScheduledPlaceholder } from '@/lib/duration-source';
+import { resolveEntryStart } from '@/lib/time-entry-date';
+import { eligibleRefsForContact } from '@/lib/billing-eligibility';
+import { writeInvoiceDraftHandoff } from '@/lib/invoice-handoff';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { LogTimeDialog } from '@/components/reports/log-time-dialog';
 import { ContactSelector } from '@/components/contacts/contact-selector';
@@ -182,7 +185,7 @@ function ClientTimeLogReportContent() {
                     workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
                     contactName: contact ? contact.name : 'Client',
                     contactId: t.contactId,
-                    startTime: new Date(t.start),
+                    startTime: resolveEntryStart(t) ?? new Date(),
                     durationSeconds: t.duration || 0,
                     source: 'calendar',
                     isBillable: t.isBillable || false,
@@ -267,8 +270,17 @@ function ClientTimeLogReportContent() {
         router.push(`/event-manager?${query.toString()}`);
     };
 
+    // Carries the client's eligible, unbilled, worked entries in the CURRENT
+    // view (client + date range filters) into the Invoice Generator, where
+    // Add from Time Log opens with them pre-checked - the same hand-off the
+    // Worker Time Log Report uses. Nothing eligible: the invoice still opens
+    // for the client, just without pre-checked entries.
     const handleCreateInvoice = (contactId: string | null) => {
         if (!contactId) return;
+        const entryRefs = eligibleRefsForContact(clientEntries, contactId);
+        if (entryRefs.length > 0) {
+            writeInvoiceDraftHandoff({ contactId, entryRefs });
+        }
         router.push(`/accounting/invoices/create?contactId=${contactId}`);
     };
 

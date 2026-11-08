@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "projects.overview.screens",
+      "module": "Projects",
+      "title": "Project List, Project Board and Project Planner",
+      "routes": ["/projects/all", "/project-status"],
+      "intents": ["overview", "navigation", "how-to"],
+      "keywords": ["project", "project list", "project board", "project planner", "task board", "master project register", "idea board", "status", "navigate"],
+      "audiences": ["all"],
+      "content": "Projects are managed on connected screens. Projects at /projects/all opens the Project List, the Master Project Register of every project. Project Status at /project-status opens the Project Board, where projects are columns by status. The Idea Board is reachable from the same header. Each project also has a Task Board at /projects/<id>/tasks and a Project Planner for its steps. The Project List, Project Board, and Idea Board buttons appear in a shared header; the Project Planner button appears for a specific project.",
+      "sourceFiles": ["src/components/tasks/ProjectManagementHeader.tsx", "src/components/tasks/project-list-view.tsx", "src/components/tasks/project-status-view.tsx", "src/app/(app)/project-plan/page.tsx"]
+    },
+    {
+      "id": "projects.create.blank-or-template",
+      "module": "Projects",
+      "title": "Create a project from scratch or a template",
+      "routes": ["/projects/all"],
+      "intents": ["how-to", "create"],
+      "keywords": ["create project", "new project", "blank project", "template", "start from a template", "project name", "client", "save project", "planner"],
+      "audiences": ["all"],
+      "content": "From the Project List choose Create New Project. First choose Start a Blank Project or Start from a Template. A template pre-fills the name, description, and steps from one of your saved templates; template menus allow editing or deleting a template. On Project Details, Project Name is required, Description is optional, and Client is optional with a searchable list plus a New button to create a contact. Choose Save Project. A new project is saved with Planning status and opens the Project Planner. Starting a project from a contact's menu opens the same screen with that client preselected.",
+      "sourceFiles": ["src/app/(app)/projects/create/page.tsx", "src/services/project-service.ts"]
+    },
+    {
+      "id": "projects.status.lifecycle",
+      "module": "Projects",
+      "title": "Project statuses and the Project Board",
+      "routes": ["/project-status"],
+      "intents": ["business-rule", "how-to", "status"],
+      "keywords": ["status", "planning", "active", "on hold", "completed", "drag", "board", "move project", "in planning", "columns"],
+      "audiences": ["all"],
+      "content": "A project's status is Planning, Active, On Hold, or Completed. Project Status shows these as four columns: In Planning, Active, On Hold, and Completed. Drag a project card to another column to change its status; Ogeemo shows a confirmation and reverts the card if saving fails. Click a card to open its Task Board. Edit Details and Delete Project are available from a card's menu only while the project is in the In Planning column. A project with no recorded status is treated as Planning.",
+      "sourceFiles": ["src/components/tasks/project-status-view.tsx", "src/components/dashboard/DraggableProjectCard.tsx", "src/types/calendar-types.ts"]
+    }
+  ]
+}

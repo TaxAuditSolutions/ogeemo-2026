@@ -1,0 +1,92 @@
+{
+  "documents": [
+    {
+      "id": "contacts.create.manual",
+      "module": "Contacts",
+      "title": "Create a contact in Contacts Hub",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "create", "required-fields"],
+      "keywords": ["contact", "client", "new contact", "create identity", "full legal name", "role assignment", "folder", "email", "phone"],
+      "audiences": ["all"],
+      "content": "Open Contacts Hub at /contacts and choose New Contact. Full Legal Name and Role Assignment (Folder) are required. Email is optional but must be valid when supplied. Review Core Profile, Business & Tax Configuration, and Contact Intelligence for company, tax, phone, address, and administrative-note fields. Choose Create Identity to save. Cancel closes without creating the record. The manual form does not perform a duplicate check, so review existing records before creating another entry for the same person or business.",
+      "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/components/contacts/contact-form-dialog.tsx", "src/services/contact-service.ts"]
+    },
+    {
+      "id": "contacts.folders.defaults-and-system",
+      "module": "Contacts",
+      "title": "Contact folders, roles and the Miscellaneous default",
+      "routes": ["/contacts"],
+      "intents": ["business-rule", "folders", "organization"],
+      "keywords": ["folder", "role", "miscellaneous", "default", "system", "clients", "workers", "employees", "contractors", "suppliers", "prospects", "family", "friends", "admin", "no folder", "not choose", "unfiled", "where do new contacts go", "default folder", "system folders"],
+      "audiences": ["all"],
+      "content": "A contact's Role Assignment is its Contacts Hub folder. Ogeemo ensures these system folders exist: Admin; Workers with Employees and Contractors beneath it; Suppliers; Clients; Prospects; Family; Friends; and Miscellaneous. When a new contact has no selected or forced folder, Miscellaneous is the neutral default rather than an arbitrary first folder. The folder must resolve to a valid folder in the active organization before the contact can be saved.",
+      "sourceFiles": ["src/services/contact-folder-service.ts", "src/lib/contact-folders.ts", "src/components/contacts/contact-form-dialog.tsx"]
+    },
+    {
+      "id": "contacts.folders.manage",
+      "module": "Contacts",
+      "title": "Browse, move, rename and delete contact folders",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "folders", "organization"],
+      "keywords": ["folder", "subfolder", "move", "drag", "rename", "delete", "protected", "all contacts", "descendants", "browse"],
+      "audiences": ["all"],
+      "content": "Use All Contacts or select a folder in the Contacts Hub left panel. Selecting a parent also includes contacts in its descendant folders. New Folder creates a top-level folder; a folder menu can create subfolders or rename a non-system folder. Drag a contact onto a folder to change its Role Assignment. Non-system folders can be moved by dragging; protected system folders cannot be moved or renamed. Deleting a folder asks for confirmation and removes the folder and its references, but does not delete the contacts themselves.",
+      "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/services/contact-folder-service.ts"]
+    },
+    {
+      "id": "contacts.edit.delete",
+      "module": "Contacts",
+      "title": "Edit or delete a contact",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "edit", "delete"],
+      "keywords": ["edit", "save changes", "delete", "bulk delete", "select", "required", "blank", "contact details"],
+      "audiences": ["all"],
+      "content": "Open a contact's three-dot menu and choose Edit Details, or select exactly one contact and use Edit. Change the form and choose Save Changes. Full Legal Name and Role Assignment cannot be blanked during an edit. If nothing changed, the form reports that there are no changes to save. Use Delete in the contact menu for one record, or select multiple rows and use Delete (count) for bulk deletion. Both paths require confirmation. These are permanent contact-record deletions, so review linked work before removing an identity.",
+      "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/components/contacts/contact-form-dialog.tsx", "src/services/contact-service.ts"]
+    },
+    {
+      "id": "contacts.actions.workflow-links",
+      "module": "Contacts",
+      "title": "Start work from a contact's action menu",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "workflow", "navigation"],
+      "keywords": ["log time", "schedule task", "work report", "invoice", "project", "documents", "activity manager", "contact menu", "client"],
+      "audiences": ["all"],
+      "content": "A contact row's three-dot menu connects the identity to work: Log Time opens the time-entry dialog for that contact; Schedule Task opens Activity Manager with the contact preselected; Generate Work Report opens Work Activity with the contact filter; Create Invoice opens invoice creation; Start Project opens project creation; and View Documents opens the contact's document folder when one exists. Open Client Record or click the contact's name for the consolidated client view.",
+      "sourceFiles": ["src/components/contacts/contacts-view.tsx", "src/components/contacts/client-record-view.tsx"]
+    },
+    {
+      "id": "contacts.client-record.overview",
+      "module": "Contacts",
+      "title": "Use the consolidated Client Record",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "client-record", "overview"],
+      "keywords": ["client record", "overview", "recent activity", "active tasks", "scheduled tasks", "accounts receivable", "projects", "notes", "invoicing", "documents"],
+      "audiences": ["all"],
+      "content": "Click a contact's name in Contacts Hub to open the consolidated Client Record. Its section dropdown provides Overview, Notes, Tasks, Projects, Schedule, Invoicing, and Documents. Overview includes a date-filterable Recent Activity stream, summary cards for projects, active tasks, scheduled tasks, and Accounts Receivable, plus Client Details and Key Information. The Activity Manager button starts work with this contact. The action menu also provides Edit Details, Schedule Task, Generate Work Report, Create Invoice, Start Project, and View Documents.",
+      "sourceFiles": ["src/components/contacts/client-record-view.tsx"]
+    },
+    {
+      "id": "contacts.documents.provisioning",
+      "module": "Contacts",
+      "title": "How contact document folders are created",
+      "routes": ["/contacts"],
+      "intents": ["business-rule", "documents", "integration"],
+      "keywords": ["document folder", "documents", "document manager", "provision", "view documents", "contact folder", "rename"],
+      "audiences": ["all"],
+      "content": "When Ogeemo creates a contact, it also attempts to provision the contact's Document Manager folder and stores the resulting documentFolderId. Editing a contact's name or Role Assignment synchronizes that document location again. View Documents is enabled only when the contact has a documentFolderId. This document folder is separate from the Role Assignment folder used to categorize the contact inside Contacts Hub.",
+      "sourceFiles": ["src/services/contact-service.ts", "src/components/contacts/contacts-view.tsx", "src/core/file-manager-folders.ts"]
+    },
+    {
+      "id": "contacts.hr.conditional-fields",
+      "module": "Contacts",
+      "title": "Worker-only payroll and HR fields",
+      "routes": ["/contacts"],
+      "intents": ["business-rule", "privacy", "hr"],
+      "keywords": ["worker", "employee", "contractor", "payroll", "hr", "sin", "pay rate", "salary", "hourly", "confidential", "hire date"],
+      "audiences": ["all"],
+      "content": "Payroll & HR Details appears when the selected Role Assignment is Workers, Employees, or Contractors. It includes employment type, hourly or salary pay model, rate, SIN, hire and start dates, agreement status, emergency-contact information, and special needs. When a contact is created outside those worker roles, HR and payroll metadata is stripped from the new contact payload. Treat these fields as confidential; the read-only Knowledge Base does not need or request their values to explain the feature.",
+      "sourceFiles": ["src/components/contacts/contact-form-dialog.tsx"]
+    }
+  ]
+}

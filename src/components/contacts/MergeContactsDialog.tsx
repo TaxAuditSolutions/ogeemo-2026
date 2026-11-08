@@ -111,7 +111,7 @@ export default function MergeContactsDialog({ isOpen, onOpenChange, sourceContac
                         <div>
                             <h4 className="font-semibold text-destructive">Important Warning</h4>
                             <p className="text-xs text-destructive/90">
-                                This action will permanently delete the contact "{sourceContact.name}". In this version, only the contact details will be merged. Any associated items like tasks, projects, or invoices will <strong className="font-bold">NOT</strong> be automatically reassigned.
+                                This will permanently delete the contact "{sourceContact.name}". Their tasks, projects, quotes, invoices, work orders and time logs are moved to the master contact first. Details the master is missing (such as phone, email, address and notes) are copied across; anything the master already has is kept. This cannot be undone.
                             </p>
                         </div>
                     </div>

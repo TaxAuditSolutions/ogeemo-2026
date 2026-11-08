@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "time.client-log.report",
+      "module": "Time Tracking",
+      "title": "The Client Time Log Report",
+      "routes": ["/reports/client-time-log"],
+      "intents": ["how-to", "reports", "clients"],
+      "keywords": ["client time log", "client time log report", "client hours", "hours for a client", "client report", "billable totals", "billed", "unbilled", "prepare invoices", "accounts receivable", "client engagement"],
+      "audiences": ["all"],
+      "content": "Open Client Time Log Report at /reports/client-time-log to see the work done for clients. Only entries that have a client attached appear; internal work is left out. Pick a client with the contact selector and set a Start and End date, then use Clear Filters to reset. Columns are Client, Worker, Date, Subject, Duration and Billing; click a heading to sort. Scheduled-only entries are labelled Scheduled – not yet worked and are not counted in the Billable Totals row. With a client selected, Create Invoice for that client opens a new invoice for them with that client's eligible, unbilled, worked entries in the current view pre-checked in Add from Time Log, so narrow the date range first if you only want part of the period. Use + Log Time Event to add a missed entry. As on the Worker Time Log Report, manual entries can be edited or deleted, while Activity Manager entries open in Activity Manager.",
+      "sourceFiles": ["src/app/(app)/reports/client-time-log/page.tsx"]
+    },
+    {
+      "id": "time.work-activity.summary",
+      "module": "Time Tracking",
+      "title": "The Work Activity Summary and Evidence PDF",
+      "routes": ["/reports/work-activity"],
+      "intents": ["how-to", "reports", "evidence"],
+      "keywords": ["work activity summary", "work activity", "evidence", "print evidence pdf", "summary only", "include notes", "rituals", "client work report", "timeline", "billable total", "generate work report"],
+      "audiences": ["all"],
+      "content": "Work Activity Summary at /reports/work-activity assembles one client's work into a printable record. First choose a client; the page stays empty until you do. Optionally set a Start and End date, and choose Detail Level: Summary Only, or Include Notes to show each entry's notes beneath it. It shows Total Time, Billable Time, Rituals (Automated) and Billable Total, then a Work Activity Log with Date, Task / Activity, Source, Duration and Billing. Print Evidence PDF prints a client-ready version. Scheduled-only entries are labelled and excluded from the totals. Rituals are system-generated sessions from your planning rituals. A contact's menu can open this report for that client.",
+      "sourceFiles": ["src/components/reports/work-activity-view.tsx", "src/app/(app)/reports/work-activity/page.tsx"]
+    },
+    {
+      "id": "time.reports.hub",
+      "module": "Time Tracking",
+      "title": "Which report answers which question",
+      "routes": ["/reports"],
+      "intents": ["overview", "navigation", "reports"],
+      "keywords": ["reports hub", "which report", "reports", "time reports", "client statement", "income statement", "advanced search", "export my data", "operational evidence", "financial intelligence"],
+      "audiences": ["all"],
+      "content": "The Reports Hub at /reports groups reports by purpose. Operational Evidence has the Work Activity Summary (one client's timeline of sessions and tasks), Worker Time Logs (work attributed to staff) and Client Time Log (hours scoped to client engagements). Financial Intelligence has Client Statement, Income Statement (T2125) and Accrual Adjustments. Global Discovery has Advanced AI Search across contacts, files and projects. Data Portability has Export My Data, which opens Backups so you can download your full ledger and files. In short: use the Worker Time Log for who did what, the Client Time Log for what a client owes you time for, and the Work Activity Summary for something to show the client.",
+      "sourceFiles": ["src/app/(app)/reports/page.tsx"]
+    }
+  ]
+}

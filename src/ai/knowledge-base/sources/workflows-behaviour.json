@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "workflows.sidebar-fallback",
+      "module": "Workflows",
+      "title": "When the sidebar falls back to default Workspace",
+      "routes": ["/workflows"],
+      "intents": ["business-rule", "troubleshooting", "sidebar"],
+      "keywords": ["fallback", "default workspace", "sidebar", "workspace group", "deleted workflow", "empty workflow", "dead link", "not showing", "standard workflow", "refresh"],
+      "audiences": ["all"],
+      "content": "The sidebar's Workspace group uses your standard workflow only when it is valid. It falls back to the default Workspace destinations when there is no standard workflow, the standard workflow was deleted, it has no steps, or none of its steps match real Ogeemo destinations. Steps that no longer match a real destination are skipped and duplicate destinations appear once. Saving, applying, or deleting a workflow refreshes the sidebar without a page reload.",
+      "sourceFiles": ["src/lib/workspace-workflow.ts", "src/components/layout/main-menu.tsx"]
+    },
+    {
+      "id": "workflows.delete",
+      "module": "Workflows",
+      "title": "Delete a workflow",
+      "routes": ["/workflows"],
+      "intents": ["how-to", "delete", "warning"],
+      "keywords": ["delete workflow", "remove workflow", "standard", "confirm", "default workspace returns"],
+      "audiences": ["all"],
+      "content": "Delete a workflow from its card's trash button or from its Open view. Ogeemo asks for confirmation and removes the workflow and its steps. If the deleted workflow was your standard workflow, the standard is cleared and the default Workspace destinations return. Deleting a workflow does not delete the destinations themselves, only the saved arrangement.",
+      "sourceFiles": ["src/app/(app)/workflows/page.tsx"]
+    },
+    {
+      "id": "workflows.welcome-integration",
+      "module": "Workflows",
+      "title": "Workflows on the Welcome page",
+      "routes": ["/workflows"],
+      "intents": ["how-to", "welcome", "integration"],
+      "keywords": ["welcome", "start your day", "your workflow", "edit order", "back to your workflow", "create your workflow", "standard workflow", "login"],
+      "audiences": ["all"],
+      "content": "The Welcome page's Start Your Day tile shows Your workflow followed by the standard workflow's name; it says Create your workflow when you have none yet, and a neutral Your workflow while loading. With a standard workflow, a Start your day button opens it, and an Edit order link opens that workflow directly in the editor at /workflows. A Back to your workflow link returns you to it.",
+      "sourceFiles": ["src/app/(app)/welcome/page.tsx", "src/app/(app)/workflows/page.tsx"]
+    }
+  ]
+}

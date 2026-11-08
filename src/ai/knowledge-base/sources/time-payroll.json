@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "time.payroll.from-time",
+      "module": "Time Tracking",
+      "title": "How tracked time feeds payroll",
+      "routes": ["/accounting/payroll/run"],
+      "intents": ["business-rule", "payroll", "how-to"],
+      "keywords": ["payroll", "run payroll", "hours tracked", "hourly", "salary", "salaried", "annual salary", "prorated", "gross pay", "pay period", "worked time", "payroll time", "workers", "deductions", "net pay"],
+      "audiences": ["all"],
+      "content": "Run Payroll at /accounting/payroll/run is a three-step flow: select a pay period, select workers, then review and submit. For each worker it adds up the time worked in the period, counting both Activity Manager time and manual time logs, and shows it as hours tracked. Planned schedule spans with no session recorded are never paid. For an hourly worker, gross pay is hours times the hourly rate. For a salaried worker the Rate is the annual salary, and pay is that salary for exactly the period selected, prorated by the number of days: a 7-day period pays 7/365 of the year, a full calendar year pays the whole salary, and leap years and periods that cross New Year are handled exactly. The review step names the length of the period. Deductions are an estimate: a percentage of gross pay, 20% by default, which can be changed in Payroll Settings or for a single run on this screen. Net pay is gross minus that estimate. A period and at least one worker are required to submit. The pay period comes from the workspace pay schedule; see the pay periods and deductions entry.",
+      "sourceFiles": ["src/components/accounting/run-payroll-view.tsx", "docs/time-billing-model.md"]
+    },
+    {
+      "id": "time.entries.no-set-time",
+      "module": "Time Tracking",
+      "title": "Timed work on an activity with No set time",
+      "routes": ["/reports/time-log", "/event-manager"],
+      "intents": ["business-rule", "troubleshooting", "reports"],
+      "keywords": ["no set time", "unscheduled", "missing from report", "report date", "wrong date", "1970", "invalid date", "report blank", "timer on unscheduled", "date of entry", "session date"],
+      "audiences": ["all"],
+      "content": "An activity saved with No set time has no scheduled start, but it can still have worked time from a timer session. In the Worker Time Log, Client Time Log and Work Activity reports such an entry is dated by the day the work was actually done (its earliest session), and if there is no session, by the day the activity was created. A scheduled start always takes priority when there is one. Reports no longer fail to display, or show 1 January 1970, for these entries, and they appear on the day you worked.",
+      "sourceFiles": ["src/lib/time-entry-date.ts", "src/app/(app)/reports/time-log/page.tsx", "src/app/(app)/reports/client-time-log/page.tsx", "src/components/reports/work-activity-view.tsx"]
+    }
+  ]
+}

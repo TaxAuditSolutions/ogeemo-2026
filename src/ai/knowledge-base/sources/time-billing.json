@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "time.billing.eligibility",
+      "module": "Time Tracking",
+      "title": "Which time can be billed",
+      "routes": ["/reports/time-log", "/accounting/invoices/create"],
+      "intents": ["business-rule", "billing", "eligibility"],
+      "keywords": ["billable", "eligible", "eligibility", "can be billed", "billed", "unbilled", "invoiced", "not billable", "bill time", "which time can i bill", "client required", "duplicate billing"],
+      "audiences": ["all"],
+      "content": "Only time that meets every rule is offered for invoicing: it is marked billable, has more than zero duration, has a client attached, is actually worked rather than just scheduled, and has not already been invoiced. Entries with no client, scheduled-only placeholders, zero-length entries and already-invoiced entries are never offered. Already-invoiced entries stay visible but disabled and labelled Invoiced with the invoice number, and a billed entry shows an Invoiced badge in the Time Log Report. The same records are used from both directions, so a time entry can never be billed twice.",
+      "sourceFiles": ["src/lib/billing-eligibility.ts", "docs/time-billing-model.md", "src/components/accounting/time-log-import-dialog.tsx"]
+    },
+    {
+      "id": "time.billing.to-invoice",
+      "module": "Time Tracking",
+      "title": "Turn time into an invoice",
+      "routes": ["/reports/time-log", "/accounting/invoices/create"],
+      "intents": ["how-to", "billing", "invoice"],
+      "keywords": ["create invoice", "add to invoice", "add from time log", "invoice from time", "bill client", "time to invoice", "handoff", "pre-checked", "invoice generator", "unbilled hours", "billable entries"],
+      "audiences": ["all"],
+      "content": "You can bill time from either the Worker Time Log Report or the Client Time Log Report. On the Worker report, Create Invoice in the footer takes all eligible entries for a client; with one client it goes straight to the invoice, and with several it asks which client first, each carrying only its own entries. Add to Invoice on a row sends just that entry. On the Client report, Create Invoice (in the footer once a client is chosen, or on a row) takes that client's eligible entries in the current view, so the date filters narrow what is carried. Either way the Invoice Generator opens for that client with those entries pre-checked in Add from Time Log, which you can also open yourself from the invoice. Only eligible entries are carried; if there are none, the invoice still opens for the client with nothing pre-checked. Each added entry becomes an invoice line with hours and your billable rate, and saving the invoice marks the source time as invoiced. The hand-off is used once, so a refresh will not re-apply it.",
+      "sourceFiles": ["src/app/(app)/reports/time-log/page.tsx", "src/lib/invoice-handoff.ts", "src/lib/billing-eligibility.ts", "src/components/accounting/invoice-generator-view.tsx"]
+    }
+  ]
+}

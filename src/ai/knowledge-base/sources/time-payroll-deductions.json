@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "time.payroll.deductions-rate",
+      "module": "Time Tracking",
+      "title": "Adjusting payroll deductions",
+      "routes": ["/accounting/payroll/settings", "/accounting/payroll/run"],
+      "intents": ["how-to", "business-rule", "payroll", "settings"],
+      "keywords": ["deductions", "deduction rate", "deduction percentage", "20%", "net pay", "tax", "cpp", "ei", "withholding", "estimate", "change deductions", "override", "payroll history", "percent"],
+      "audiences": ["all"],
+      "content": "Payroll deductions are an estimate of tax, EI, CPP and benefits, taken as one percentage of each worker's gross pay. The default is 20%. A workspace administrator can change the default in Payroll Settings, under Pay Periods & Deductions, to any value from 0 to 100. On Run Payroll the Deductions field starts at that default and can be changed for that one run without changing the default; Reset puts the default back. Gross pay, deductions and net pay all update at once, and net pay is gross minus deductions to the cent. The percentage used is saved on the payroll run, so a past run keeps the rate it actually used even if the default changes later. A run cannot be submitted while the percentage is blank or outside 0 to 100. This is a flat estimate, not a tax calculation: Ogeemo does not work out actual tax, EI or CPP tables.",
+      "sourceFiles": ["src/lib/payroll-deductions.ts", "src/components/accounting/deduction-rate-field.tsx", "src/components/accounting/run-payroll-view.tsx"]
+    }
+  ]
+}

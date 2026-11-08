@@ -22,14 +22,13 @@ import {
 import { Save } from "lucide-react";
 import { AccountingPageHeader } from '@/components/accounting/page-header';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '../ui/separator';
+import { PayScheduleCard } from '@/components/accounting/pay-schedule-card';
 
 const PAYROLL_SETTINGS_KEY = 'payrollSettings';
 
 interface PayrollSettings {
   companyName: string;
   companyAddress: string;
-  paySchedule: 'weekly' | 'bi-weekly' | 'semi-monthly' | 'monthly';
   payrollBankAccount: string;
   federalTaxId: string;
   provincialTaxId: string;
@@ -38,7 +37,6 @@ interface PayrollSettings {
 const defaultSettings: PayrollSettings = {
   companyName: '',
   companyAddress: '',
-  paySchedule: 'bi-weekly',
   payrollBankAccount: '',
   federalTaxId: '',
   provincialTaxId: '',
@@ -55,7 +53,9 @@ export function PayrollSettingsView() {
     try {
       const savedSettings = localStorage.getItem(PAYROLL_SETTINGS_KEY);
       if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+        // Merge over the defaults; older saves also held a pay schedule, which now lives on the organization.
+        const { paySchedule: _legacySchedule, ...saved } = JSON.parse(savedSettings);
+        setSettings({ ...defaultSettings, ...saved });
       }
     } catch (error) {
       console.error("Failed to load payroll settings:", error);
@@ -87,7 +87,7 @@ export function PayrollSettingsView() {
       <AccountingPageHeader pageTitle="Payroll Settings" />
       <header className="print:hidden">
         <h1 className="text-3xl font-bold font-headline text-primary">Payroll Settings</h1>
-        <p className="text-muted-foreground">Configure your company's payroll information and schedules.</p>
+        <p className="text-muted-foreground">Configure your company's payroll information, pay periods and deductions.</p>
       </header>
 
       <div className="max-w-3xl mx-auto space-y-6">
@@ -116,30 +116,14 @@ export function PayrollSettingsView() {
           </CardContent>
         </Card>
 
+        <PayScheduleCard />
+
         <Card>
           <CardHeader className="bg-primary/5 border-b">
-            <CardTitle className="text-base">Payroll Schedule & Accounts</CardTitle>
-            <CardDescription>Define how and when you pay your employees.</CardDescription>
+            <CardTitle className="text-base">Payroll Accounts</CardTitle>
+            <CardDescription>The account you pay your employees from.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="paySchedule">Pay Schedule</Label>
-              <Select
-                value={settings.paySchedule}
-                onValueChange={(value) => handleInputChange('paySchedule', value)}
-              >
-                <SelectTrigger id="paySchedule">
-                  <SelectValue placeholder="Select a pay schedule" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="bi-weekly">Bi-weekly (every 2 weeks)</SelectItem>
-                  <SelectItem value="semi-monthly">Semi-monthly (twice a month)</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Separator />
             <div className="space-y-2">
               <Label htmlFor="payrollBankAccount">Payroll Bank Account</Label>
               <Select

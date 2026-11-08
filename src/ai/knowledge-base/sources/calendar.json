@@ -1,0 +1,48 @@
+{
+  "documents": [
+    {
+      "id": "calendar.quick-entry.create",
+      "module": "Calendar",
+      "title": "Create entries from a calendar time slot",
+      "routes": ["/calendar"],
+      "intents": ["how-to", "create", "quick-entry"],
+      "keywords": ["calendar", "slot", "quick entry", "click", "type", "enter", "add", "appointment", "all day"],
+      "audiences": ["all"],
+      "content": "Open Calendar at /calendar and click an empty time slot. Type a one-line entry and press Enter to save it and move to the next slot. Calendar slots can use 5-to-60-minute divisions. Use the expansion option when the one-line entry needs the full Activity Manager form. The Add + button opens the complete New Calendar Entry dialog at the current date and time; its When band also offers Next free slot, Pick a time, and No set time. All-day notes can be entered in the all-day area.",
+      "sourceFiles": ["src/components/calendar/calendar-view.tsx", "src/components/calendar/quick-entry-input.tsx", "src/components/calendar/activity-form-dialog.tsx"]
+    },
+    {
+      "id": "calendar.events.done-and-menu",
+      "module": "Calendar",
+      "title": "Calendar event menu, Done and Reopen",
+      "routes": ["/calendar"],
+      "intents": ["how-to", "completion", "menu"],
+      "keywords": ["three dots", "menu", "done", "reopen", "complete", "completed", "edit", "delete", "timer", "agenda"],
+      "audiences": ["all"],
+      "content": "Use the three-dot menu on a calendar event to open or edit it, view its agenda, start a timer, log actual time, open its project workspace when linked, or delete it. Choose Done to mark an unfinished event completed. For a completed event, the same menu shows Reopen, which returns its status to To Do. The completion checkbox and Done menu item use the same status-update behaviour.",
+      "sourceFiles": ["src/components/calendar/CalendarEvent.tsx", "src/components/calendar/calendar-view.tsx"]
+    },
+    {
+      "id": "calendar.events.overdue",
+      "module": "Calendar",
+      "title": "Why unfinished calendar items turn amber",
+      "routes": ["/calendar"],
+      "intents": ["business-rule", "overdue", "troubleshooting"],
+      "keywords": ["amber", "overdue", "unfinished", "missed", "appointment", "task", "ritual", "drag forward", "past"],
+      "audiences": ["all"],
+      "content": "An unfinished scheduled task whose end time has passed is considered overdue and can appear amber so it can be dragged forward. Stored appointments and daily or weekly planning rituals are not flagged overdue. Completed items are not overdue. This distinction is why existing appointments keep their stored appointment type when displayed under the Activity Manager's Action tile. A newly created Action is stored as a task, so a missed scheduled Action can be flagged overdue.",
+      "sourceFiles": ["src/lib/calendar-quick-entry.ts", "src/components/calendar/CalendarEvent.tsx"]
+    },
+    {
+      "id": "calendar.events.move-and-duration",
+      "module": "Calendar",
+      "title": "Move calendar events by dragging",
+      "routes": ["/calendar"],
+      "intents": ["how-to", "drag", "reschedule"],
+      "keywords": ["drag", "drop", "move", "reschedule", "duration", "slot", "time"],
+      "audiences": ["all"],
+      "content": "Drag a calendar event to another visible slot to reschedule it. Dropping preserves the event's planned duration while changing its Start and End to the destination slot. Open the event in Activity Manager when more detailed schedule, billing, notes, or time-session changes are needed.",
+      "sourceFiles": ["src/components/calendar/calendar-view.tsx", "src/lib/calendar-quick-entry.ts"]
+    }
+  ]
+}

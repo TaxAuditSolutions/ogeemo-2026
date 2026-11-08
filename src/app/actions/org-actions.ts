@@ -8,6 +8,7 @@ import { canManageTargetRole } from '@/core/rbac';
 import { buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMessage, sendFormNotification } from '@/core/email-service';
 import type { NumberingConfig } from '@/core/document-numbering';
 import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
+import type { PayrollSettings } from '@/lib/payroll-settings';
 
 // Canonical tenant shape. isMasterTenant is true only for the single "Ogeemo"
 // organization whose super_admins manage tenant lifecycle (see createTenantWithSuperAdmin).
@@ -32,6 +33,8 @@ export interface Organization {
     numbering?: NumberingConfig;
     /** Receipt OCR rules (Settings > Receipt OCR Rules); validated by normalizeReceiptOcrSettings. */
     receiptOcrSettings?: ReceiptOcrSettings;
+    /** Pay schedule and default deduction rate (Payroll Settings); cleaned by normalizePayrollSettings. */
+    payrollSettings?: PayrollSettings;
 }
 
 async function requireMasterTenantSuperAdmin() {

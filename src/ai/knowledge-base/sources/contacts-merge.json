@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "contacts.merge.duplicates",
+      "module": "Contacts",
+      "title": "Merge a duplicate contact",
+      "routes": ["/contacts"],
+      "intents": ["how-to", "merge", "duplicates", "delete"],
+      "keywords": ["merge", "duplicate", "merge duplicate", "master contact", "duplicates", "combine contacts", "same person", "reassign", "linked records"],
+      "audiences": ["all"],
+      "content": "In Contacts Hub, open a duplicate contact's three-dot menu and choose Merge Duplicate. Pick the master contact to keep, then choose Merge Contact and confirm. Ogeemo first moves the duplicate's tasks, projects, quotes, invoices, work orders, time logs, leave requests and supplier links to the master, then copies across details the master is missing (email, phone numbers, website, company details, birth date, an address, and notes). Anything the master already has is kept, and identity, folder, payroll and HR data are never copied. Only then is the duplicate permanently deleted, and the result lists how many records were moved. If a step fails, the duplicate is left in place and the merge can be safely retried. A contact that is linked to a sign-in account cannot be merged away; merge the other way round or ask an administrator to unlink the account first. Merging cannot be undone.",
+      "sourceFiles": ["src/services/contact-service.ts", "src/lib/contact-merge.ts", "src/components/contacts/MergeContactsDialog.tsx", "src/components/contacts/contacts-view.tsx"]
+    },
+    {
+      "id": "contacts.merge.workers",
+      "module": "Contacts",
+      "title": "Merge a duplicate worker",
+      "routes": ["/workers"],
+      "intents": ["how-to", "merge", "duplicates", "workers"],
+      "keywords": ["merge duplicate worker", "duplicate worker", "workers", "manage workers", "employee", "contractor", "merge worker", "payroll history", "time logs", "leave requests"],
+      "audiences": ["all"],
+      "content": "On Workers (the Manage Workers screen), open a worker's menu and choose Merge Duplicate, pick the master worker, and confirm. Workers are Contact Hub records, so this works exactly like merging contacts: the duplicate's time logs, leave requests, tasks, projects, quotes, invoices and work orders are moved to the master first, missing details are copied across without overwriting the master's own, and only then is the duplicate permanently deleted. Past payroll runs are left unchanged and keep the name that was paid at the time. A worker linked to a sign-in account cannot be merged away. Merging cannot be undone.",
+      "sourceFiles": ["src/services/payroll-service.ts", "src/services/contact-service.ts", "src/components/accounting/MergeWorkerDialog.tsx", "src/components/accounting/payroll-employees-view.tsx"]
+    }
+  ]
+}

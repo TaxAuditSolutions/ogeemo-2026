@@ -1,0 +1,59 @@
+{
+  "documents": [
+    {
+      "id": "activity-manager.capture.types-and-fields",
+      "module": "Activity Manager",
+      "title": "Action, Project, Note, Subject and Notes",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "fields", "activity-types"],
+      "keywords": ["action", "task", "appointment", "project", "note", "subject", "title", "details", "notes", "create", "activity"],
+      "audiences": ["all"],
+      "content": "Open Activity Manager at /event-manager. Choose Action, Project, or Note. Action covers both things to do and appointments. A new Action is stored as a task; an older appointment still appears under Action and keeps its stored appointment type. Enter the required Subject. Notes are optional and replace the former Details label. Client, Project, and Assign to are optional searchable dropdowns. Selecting Project tints its picker; selecting Note tints the Notes background while retaining the standard border.",
+      "sourceFiles": ["src/components/time/activity-form-fields.tsx", "src/components/time/time-manager-view.tsx", "src/types/calendar-types.ts"]
+    },
+    {
+      "id": "activity-manager.when.next-free-slot",
+      "module": "Activity Manager",
+      "title": "How Next free slot chooses a time",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "scheduling", "business-rule"],
+      "keywords": ["next free", "available", "slot", "schedule", "time", "calendar", "30 minutes", "working hours", "assignee", "auto populate"],
+      "audiences": ["all"],
+      "content": "For a new activity opened directly in Activity Manager, the When band defaults to Next free slot. Ogeemo searches the selected assignee's scheduled, unfinished, timed events for the first 30-minute gap inside 9:00 AM–5:00 PM. It searches today from the next five-minute boundary, then subsequent weekdays. Today is still allowed on a weekend. Completed, all-day, unscheduled, and untimed items do not block a slot. The suggestion follows an assignee change until the user edits the date or time. If no suitable time exists within 14 days, no slot is suggested.",
+      "sourceFiles": ["src/lib/next-free-slot.ts", "src/hooks/use-activity-form.ts", "src/hooks/use-activity-reference-data.ts"]
+    },
+    {
+      "id": "activity-manager.when.choices-and-editing",
+      "module": "Activity Manager",
+      "title": "When choices and schedule preservation",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "scheduling", "editing"],
+      "keywords": ["when", "pick a time", "no set time", "unscheduled", "all day", "start", "end", "existing", "calendar click", "change time"],
+      "audiences": ["all"],
+      "content": "The When band under Subject has three choices: Next free slot, Pick a time, and No set time. Next free slot supplies a calendar-based suggestion. Pick a time keeps scheduling enabled and lets the user choose Start, End, or All-day. No set time saves the activity unscheduled. Editing a suggested date or time changes the band to Pick a time so later refreshes do not overwrite the user's choice. Opening an existing event or arriving through a calendar handoff preserves that event's own schedule instead of applying the new-activity suggestion.",
+      "sourceFiles": ["src/components/time/activity-form-fields.tsx", "src/hooks/use-activity-form.ts", "src/lib/schedule-dates.ts"]
+    },
+    {
+      "id": "activity-manager.save.controls",
+      "module": "Activity Manager",
+      "title": "Save, Save & New, Cancel and Delete",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "buttons", "save"],
+      "keywords": ["save", "save and new", "save & new", "cancel", "delete", "create activity", "buttons", "top"],
+      "audiences": ["all"],
+      "content": "Save, Save & New, and Cancel are at the top of Activity Manager below the page header. Save stores the activity and returns to the previous page. Save & New stores it, refreshes the calendar used for availability, resets the form, and suggests another free slot so the just-used time is not reused. Cancel returns without saving the current edits. A Subject is required before Save or Save & New. Delete Activity remains at the bottom and is shown only when editing an existing activity.",
+      "sourceFiles": ["src/components/time/time-manager-view.tsx"]
+    },
+    {
+      "id": "activity-manager.time-sessions",
+      "module": "Activity Manager",
+      "title": "Time sessions and billing",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "time-tracking", "billing"],
+      "keywords": ["timer", "session", "actual time", "billable", "hourly rate", "status", "time log", "pause"],
+      "audiences": ["all"],
+      "content": "The Time Sessions card records actual work on an activity. Start a session to run the timer; pause, resume, or log the session as needed. Actual sessions take precedence over the planned schedule span for recorded duration. Mark as billable controls whether the activity can be included on an invoice and reveals the hourly rate. Status can be To Do, In Progress, or Done. Scheduled time by itself is planning information, not automatically billable work.",
+      "sourceFiles": ["src/components/time/time-manager-view.tsx", "src/lib/duration-source.ts"]
+    }
+  ]
+}

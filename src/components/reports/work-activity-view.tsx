@@ -50,6 +50,7 @@ import { getTasksForUser } from '@/services/project-service';
 import { type Event as TaskEvent } from '@/types/calendar-types';
 import { cn, formatTime, formatCurrency } from '@/lib/utils';
 import { isScheduledPlaceholder } from '@/lib/duration-source';
+import { resolveEntryStart } from '@/lib/time-entry-date';
 import { ReportsPageHeader } from '@/components/reports/page-header';
 import { ContactSelector } from '@/components/contacts/contact-selector';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -140,7 +141,7 @@ export function WorkActivityView() {
             })),
             ...filteredTasks.map(t => ({
                 id: t.id,
-                date: new Date(t.start || 0),
+                date: resolveEntryStart(t) ?? new Date(0),
                 subject: t.title,
                 details: t.description || '',
                 workerName: t.ritualType ? 'System Ritual' : 'Staff Member',

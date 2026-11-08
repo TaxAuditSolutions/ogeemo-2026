@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "projects.list.register",
+      "module": "Projects",
+      "title": "Use and sort the Master Project Register",
+      "routes": ["/projects/all"],
+      "intents": ["how-to", "sort", "overview"],
+      "keywords": ["project list", "register", "sort", "project name", "contact", "client", "current status", "worker", "unassigned", "select", "columns"],
+      "audiences": ["all"],
+      "content": "The Project List shows Project Name, Contact (Client/Lead), Current Status, Worker, and Actions. Click a heading to sort by name, contact, status, or worker; click again to reverse. Ties sort by project name, and empty values such as Unassigned always sink to the bottom. Status sorts by lifecycle order. The Worker column is derived from Activity Manager entries linked to the project and lists each worker's name. Click a project name to open its Task Board.",
+      "sourceFiles": ["src/components/tasks/project-list-view.tsx", "src/lib/project-picker.ts"]
+    },
+    {
+      "id": "projects.list.actions",
+      "module": "Projects",
+      "title": "Project actions: board, planner, edit and template",
+      "routes": ["/projects/all"],
+      "intents": ["how-to", "edit", "template"],
+      "keywords": ["project menu", "go to project board", "project planner", "edit project details", "save as template", "template", "three dots"],
+      "audiences": ["all"],
+      "content": "Each Project List row has a three-dot menu: Go to Project Board opens the project's task board; Open Project Planner opens its planning steps; Edit Project Details changes its name, description, and client; Save as Template stores the project's name, description, and steps as a reusable template named '<project> Template'; and Delete Project removes it. Editing a project's details saves the changes and returns to the Project List.",
+      "sourceFiles": ["src/components/tasks/project-list-view.tsx", "src/app/(app)/projects/[projectId]/edit/page.tsx"]
+    },
+    {
+      "id": "projects.delete.cascade",
+      "module": "Projects",
+      "title": "What deleting a project removes",
+      "routes": ["/projects/all"],
+      "intents": ["business-rule", "delete", "warning"],
+      "keywords": ["delete project", "bulk delete", "delete selected", "permanent", "tasks deleted", "cannot be undone", "remove project"],
+      "audiences": ["all"],
+      "content": "Deleting a project is permanent. Deleting one project removes the project and all of its associated tasks and logs; Ogeemo asks for confirmation first. To delete several, select projects in the Project List and choose Delete Selected; the bulk confirmation warns that associated task boards and timelines will be destroyed. Deleting a project removes its linked tasks, so review the project's work before confirming.",
+      "sourceFiles": ["src/components/tasks/project-list-view.tsx", "src/services/project-service.ts"]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "documents": [
+    {
+      "id": "projects.task-board.columns",
+      "module": "Projects",
+      "title": "Work a project's Task Board",
+      "routes": ["/projects/all"],
+      "intents": ["how-to", "tasks", "status"],
+      "keywords": ["task board", "to do", "in progress", "done", "drag task", "complete", "mark as done", "kanban", "columns", "reorder"],
+      "audiences": ["all"],
+      "content": "A project's Task Board has three columns: To Do, In Progress, and Done. Drag a task card between columns to change its status, or reorder cards within a column. Choose Add Task in the To Do column to create a task. A card's menu offers Edit / View Details, Schedule to Calendar, Add to To-Do List, Mark as Done (when the task is not already done), Archive, and Delete Task. Marking a completed task again reopens it to To Do. Archive saves the task content to the File Manager.",
+      "sourceFiles": ["src/components/tasks/project-tasks-view.tsx", "src/components/tasks/TaskCard.tsx", "src/components/tasks/TaskColumn.tsx"]
+    },
+    {
+      "id": "projects.planner.steps",
+      "module": "Projects",
+      "title": "Plan a project with steps",
+      "routes": ["/projects/all"],
+      "intents": ["how-to", "planning", "steps"],
+      "keywords": ["project planner", "steps", "plan", "add step", "task created", "rename", "edit details", "schedule step", "archive step", "delete step"],
+      "audiences": ["all"],
+      "content": "Open Project Planner from a project's menu. Type a step in 'Add a new step to the plan...' and press Enter or choose Add. Each new step automatically creates a linked To Do task on the project's board. A step's menu offers Edit Details, Rename, Schedule to Calendar, Add to To-Do List, Archive, and Delete Step. Editing a step's title or description also updates its linked task. Deleting a step also deletes its linked task. Use Back to Task Board to return to the board.",
+      "sourceFiles": ["src/components/tasks/project-steps-view.tsx", "src/app/(app)/project-plan/page.tsx"]
+    },
+    {
+      "id": "projects.planner.schedule-and-template",
+      "module": "Projects",
+      "title": "Schedule a step or save a plan as a template",
+      "routes": ["/projects/all", "/event-manager"],
+      "intents": ["how-to", "scheduling", "template"],
+      "keywords": ["schedule to calendar", "schedule step", "save to templates", "template", "30 minutes", "activity manager", "project plan", "step"],
+      "audiences": ["all"],
+      "content": "Schedule to Calendar on a planner step opens that step in Activity Manager. If the step already has a linked task, the existing task opens; otherwise Activity Manager opens with the step's title, description, and project prefilled and a 30-minute window starting now. Save to Templates in the planner stores the plan as a reusable template. The template can later be chosen when creating a project.",
+      "sourceFiles": ["src/components/tasks/project-steps-view.tsx", "src/app/(app)/projects/create/page.tsx"]
+    },
+    {
+      "id": "projects.activity-link",
+      "module": "Projects",
+      "title": "How projects connect to Activity Manager",
+      "routes": ["/event-manager"],
+      "intents": ["business-rule", "integration", "how-to"],
+      "keywords": ["project picker", "activity manager", "project", "link activity", "active first", "by client", "a-z", "completed", "sort projects", "create project inline"],
+      "audiences": ["all"],
+      "content": "In Activity Manager, the Project picker links an activity to a project. Its ordering buttons are Active first, By client, and A-Z; none hides a project. Active first lists the chosen client's open work first, then In progress and Planning projects, with Completed projects dimmed at the bottom but still selectable. By client groups by contact, and projects without a client appear under No client. Each result shows the client and status. A new project can be created from the picker with a name and Create; it starts in Planning.",
+      "sourceFiles": ["src/components/time/activity-form-fields.tsx", "src/lib/project-picker.ts"]
+    }
+  ]
+}

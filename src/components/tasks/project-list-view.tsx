@@ -57,6 +57,7 @@ import { getProjects, deleteProject, getTasksForProject, addProject, updateProje
 import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { sortProjectList, type ProjectListSortKey } from '@/lib/project-picker';
+import { summarizeReassignments } from '@/lib/contact-merge';
 import { ProjectManagementHeader } from '@/components/tasks/ProjectManagementHeader';
 import { Checkbox } from '../ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -190,9 +191,14 @@ export function ProjectListView() {
 
   const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
     try {
-      await mergeContacts(sourceContactId, masterContactId);
+      const result = await mergeContacts(sourceContactId, masterContactId);
       setContacts(prev => prev.filter(c => c.id !== sourceContactId));
-      toast({ title: 'Merge Successful', description: 'The contact has been merged and the duplicate was removed.' });
+      // Projects now point at the master; reload so the register reflects that.
+      loadData();
+      toast({
+        title: 'Merge Successful',
+        description: `The duplicate was removed. Moved to the master contact: ${summarizeReassignments(result.reassigned)}.`,
+      });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
     } finally {

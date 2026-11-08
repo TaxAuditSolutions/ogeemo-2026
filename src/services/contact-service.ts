@@ -20,6 +20,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 import type { Contact } from '@/data/contacts';
 import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
 import { isBlankRequiredContactField } from '@/lib/contact-update';
+import { CONTACT_REFERENCES, buildMergePatch, chunkItems, groupReassignments } from '@/lib/contact-merge';
 
 export type { Contact };
 
@@ -349,13 +350,85 @@ export async function deleteContacts(contactIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<void> {
+export interface MergeContactsResult {
+    /** Linked records re-pointed at the master, by collection. */
+    reassigned: Record<string, number>;
+    /** Number of master fields filled from the duplicate. */
+    detailsCopied: number;
+}
+
+/**
+ * Merges a duplicate contact into a master contact without orphaning work.
+ *
+ * Order matters for safety: (1) validate both contacts, (2) re-point every
+ * record that references the duplicate at the master, (3) copy blank details
+ * across, and only then (4) delete the duplicate. If any step before the delete
+ * fails, the duplicate is left in place and nothing is lost; re-running the
+ * merge is safe because already re-pointed records no longer match.
+ */
+export async function mergeContacts(sourceContactId: string, masterContactId: string): Promise<MergeContactsResult> {
+    if (!sourceContactId || !masterContactId) throw new Error('Choose both a duplicate and a master contact.');
+    if (sourceContactId === masterContactId) throw new Error('A contact cannot be merged into itself.');
+
     const db = getDb();
     const orgId = await getCurrentOrgId();
+    const currentUser = getCurrentAuthContext();
     const sourceRef = doc(db, CONTACTS_COLLECTION, sourceContactId);
-    const sourceSnap = await getDoc(sourceRef);
+    const masterRef = doc(db, CONTACTS_COLLECTION, masterContactId);
+    const [sourceSnap, masterSnap] = await Promise.all([getDoc(sourceRef), getDoc(masterRef)]);
 
-    if (sourceSnap.exists() && sourceSnap.data().orgId === orgId) {
-        await deleteDoc(sourceRef);
+    if (!sourceSnap.exists() || sourceSnap.data().orgId !== orgId) {
+        throw new Error('The duplicate contact was not found in this organization.');
     }
+    if (!masterSnap.exists() || masterSnap.data().orgId !== orgId) {
+        throw new Error('The master contact was not found in this organization.');
+    }
+
+    // A sign-in account can be linked to a contact (users.contactId). Re-pointing
+    // it needs an administrator, and silently deleting the contact would leave
+    // the account linked to nothing, so stop before changing anything.
+    const linkedAccounts = await getDocs(
+        query(collection(db, 'users'), where('orgId', '==', orgId), where('contactId', '==', sourceContactId)),
+    );
+    if (!linkedAccounts.empty) {
+        const who = linkedAccounts.docs[0].data().displayName || linkedAccounts.docs[0].data().email || 'a sign-in account';
+        throw new Error(
+            `"${sourceSnap.data().name}" is linked to ${who}, so it cannot be merged away. Merge the other way round (keep this contact), or ask an administrator to unlink the account first.`,
+        );
+    }
+
+    // (2) Find every record that points at the duplicate.
+    const hits: { path: string; collection: string; field: string }[] = [];
+    for (const reference of CONTACT_REFERENCES) {
+        const snapshot = await getDocs(
+            query(
+                collection(db, reference.collection),
+                where('orgId', '==', orgId),
+                where(reference.field, '==', sourceContactId),
+            ),
+        );
+        snapshot.forEach((found) => hits.push({ path: found.ref.path, collection: reference.collection, field: reference.field }));
+    }
+
+    const pending = groupReassignments(hits);
+    const reassigned: Record<string, number> = {};
+    for (const batchOfUpdates of chunkItems(pending)) {
+        const batch = writeBatch(db);
+        for (const update of batchOfUpdates) {
+            const fields: Record<string, unknown> = { updatedBy: currentUser.uid, updatedAt: new Date() };
+            for (const field of update.fields) fields[field] = masterContactId;
+            batch.update(doc(db, update.path), fields);
+            reassigned[update.collection] = (reassigned[update.collection] ?? 0) + 1;
+        }
+        await batch.commit();
+    }
+
+    // (3) Keep useful details from the duplicate, never overwriting the master's own.
+    const patch = buildMergePatch(masterSnap.data(), sourceSnap.data());
+    const detailsCopied = Object.keys(patch).length;
+    if (detailsCopied > 0) await updateContact(masterContactId, patch as Partial<Omit<Contact, 'id' | 'userId'>>);
+
+    // (4) Only now remove the duplicate.
+    await deleteDoc(sourceRef);
+    return { reassigned, detailsCopied };
 }

@@ -79,6 +79,12 @@ import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
 import { getUserProfile, getUsers } from '@/core/user-profile-service';
 import { cn } from '@/lib/utils';
 import { isScheduledPlaceholder } from '@/lib/duration-source';
+import { calculateGrossPay, periodDays } from '@/lib/payroll-pay';
+import { calculateDeductions, isValidDeductionPercent } from '@/lib/payroll-deductions';
+import { lastCompletedPayPeriod } from '@/lib/payroll-periods';
+import { usePayrollSettings } from '@/hooks/use-payroll-settings';
+import { PayPeriodPicker } from '@/components/accounting/pay-period-picker';
+import { DeductionRateField } from '@/components/accounting/deduction-rate-field';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type PayrollEmployee = Worker & {
@@ -87,9 +93,6 @@ type PayrollEmployee = Worker & {
     netPay: number;
     hoursWorked: number;
 };
-
-// Global deduction rate for the prototype (20%)
-const ESTIMATED_DEDUCTION_RATE = 0.20;
 
 const formatCurrency = (amount: number) => {
   return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -131,8 +134,11 @@ export function RunPayrollView() {
   
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
-  const [isEndDateOpen, setIsEndDateOpen] = useState(false);
+  const { settings: payrollSettings, isDefault: isDefaultSchedule, isLoading: settingsLoading } = usePayrollSettings();
+  // The deduction % for THIS run, typed as text so it can be edited freely; starts at the workspace default.
+  const [rateText, setRateText] = useState('20');
+  const [rateTouched, setRateTouched] = useState(false);
+  const [periodPrefilled, setPeriodPrefilled] = useState(false);
 
   const [payrollStatus, setPayrollStatus] = useState<'idle' | 'processing' | 'completed'>('idle');
   const [isLoading, setIsLoading] = useState(true);
@@ -185,6 +191,22 @@ export function RunPayrollView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Once the workspace settings arrive: start from the saved deduction default (unless already edited for this
+  // run) and pre-select the last completed pay period, so the dates are never guessed.
+  useEffect(() => {
+    if (settingsLoading) return;
+    if (!rateTouched) setRateText(String(payrollSettings.deductionRatePercent));
+    if (!periodPrefilled) {
+        setPeriodPrefilled(true);
+        const last = lastCompletedPayPeriod(new Date(), payrollSettings);
+        if (last) { setStartDate(last.start); setEndDate(last.end); }
+    }
+  }, [settingsLoading, payrollSettings, rateTouched, periodPrefilled]);
+
+  const handleRateChange = (value: string) => { setRateTouched(true); setRateText(value); };
+  const rateValid = isValidDeductionPercent(rateText);
+  const runRatePercent = rateValid ? parseFloat(rateText) : payrollSettings.deductionRatePercent;
+
   // Map of email to UID for precise log matching
   const emailToUidMap = useMemo(() => {
       const map = new Map<string, string>();
@@ -225,26 +247,28 @@ export function RunPayrollView() {
         }
 
         const totalHours = totalSeconds / 3600;
-        let grossPay = 0;
-        const rate = Number(emp.payRate) || 0;
+        // Hourly: hours x rate. Salaried: the annual salary for exactly the
+        // selected period (see src/lib/payroll-pay.ts).
+        const grossPay = calculateGrossPay({
+            payType: emp.payType,
+            rate: emp.payRate,
+            hoursWorked: totalHours,
+            periodStart: startDate,
+            periodEnd: endDate,
+        });
 
-        if (emp.payType === 'hourly') {
-            grossPay = parseFloat((totalHours * rate).toFixed(2));
-        } else {
-            grossPay = parseFloat((rate / 2).toFixed(2));
-        }
-
-        const deductions = parseFloat((grossPay * ESTIMATED_DEDUCTION_RATE).toFixed(2));
+        // Deductions use this run's percentage (workspace default unless changed on this screen).
+        const { deductions, netPay } = calculateDeductions(isNaN(grossPay) ? 0 : grossPay, runRatePercent);
 
         return { 
             ...emp, 
             hoursWorked: totalHours, 
             grossPay: isNaN(grossPay) ? 0 : grossPay,
-            deductions: isNaN(deductions) ? 0 : deductions,
-            netPay: isNaN(grossPay - deductions) ? 0 : (grossPay - deductions)
+            deductions,
+            netPay,
         };
     });
-  }, [workersList, allTasks, allTimeLogs, startDate, endDate, emailToUidMap]);
+  }, [workersList, allTasks, allTimeLogs, startDate, endDate, emailToUidMap, runRatePercent]);
 
   const selectedEmployees = useMemo(() => processedEmployees.filter((e) => selectedEmployeeIds.includes(e.id)), [processedEmployees, selectedEmployeeIds]);
 
@@ -325,6 +349,7 @@ export function RunPayrollView() {
               totalDeductions,
               totalNetPay,
               employeeCount: selectedEmployeeIds.length,
+              deductionRatePercent: runRatePercent,
               details: selectedEmployees.map(emp => ({
                   employeeId: emp.id,
                   employeeName: emp.name,
@@ -366,45 +391,14 @@ export function RunPayrollView() {
             <Card>
                 <CardHeader className="bg-primary/5 border-b"><CardTitle className="text-base">1. Select Pay Period</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Start of Payroll Period</Label>
-                        <Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <CustomCalendar
-                                    mode="single"
-                                    selected={startDate}
-                                    onSelect={(d) => { if(d) { setStartDate(d); setIsStartDateOpen(false); } }}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>End of Payroll Period</Label>
-                        <Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")} disabled={!startDate}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <CustomCalendar
-                                    mode="single"
-                                    selected={endDate}
-                                    onSelect={(d) => { if(d) { setEndDate(d); setIsEndDateOpen(false); } }}
-                                    disabled={(date) => startDate ? date < startDate : false}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
+                    <PayPeriodPicker
+                        config={payrollSettings}
+                        isDefaultSchedule={isDefaultSchedule}
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(start, end) => { setStartDate(start); setEndDate(end); }}
+                    />
+                    <DeductionRateField value={rateText} defaultPercent={payrollSettings.deductionRatePercent} onChange={handleRateChange} />
                 </CardContent>
             </Card>
             
@@ -489,7 +483,7 @@ export function RunPayrollView() {
                 <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="text-base">3. Review & Submit</CardTitle>
                     <CardDescription>
-                        Calculated pay for selected workers. Deductions are estimated at 20% for taxes and benefits.
+                        Calculated pay for selected workers. Hourly workers are paid for hours worked in the period; salaried workers are paid their annual salary for exactly the {startDate && endDate ? `${periodDays(startDate, endDate)}-day ` : ''}period selected. Deductions are estimated at 20% for taxes and benefits.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
@@ -577,7 +571,7 @@ export function RunPayrollView() {
                     )}
                 </CardContent>
                 <CardFooter className="border-t p-6">
-                    <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing' || !startDate || !endDate} onClick={handleRunPayroll}>
+                    <Button className="w-full" size="lg" disabled={selectedEmployeeIds.length === 0 || payrollStatus === 'processing' || !startDate || !endDate || !rateValid} onClick={handleRunPayroll}>
                         {payrollStatus === 'processing' ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/> : <Calculator className="mr-2 h-4 w-4"/>}
                         {payrollStatus === 'processing' ? 'Processing...' : `Submit Payroll for ${selectedEmployeeIds.length} Workers`}
                     </Button>

@@ -13,6 +13,8 @@
     "deploy:app": "npx firebase-tools deploy --only hosting,firestore:rules,storage",
     "test": "node --import tsx --test tests/*.test.ts",
     "kb:eval": "node --import tsx scripts/run-kb-eval.ts",
+    "knowledge:sync": "node --import tsx scripts/sync-knowledge-base.ts",
+    "knowledge:compare": "node --import tsx scripts/compare-knowledge-base.ts",
     "lint": "next lint",
     "clean": "rm -rf .next .next-dev .next-build node_modules",
     "fix-disk": "npm cache clean --force && rm -rf .next .next-dev .next-build node_modules && rm -rf functions/node_modules functions/lib"

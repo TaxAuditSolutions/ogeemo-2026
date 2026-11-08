@@ -28,6 +28,7 @@ import {
   StickyNote,
   Inbox,
   Workflow,
+  BookOpen,
   Globe
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -44,6 +45,7 @@ export interface MenuItem {
 
 export const allMenuItems: MenuItem[] = [
   { href: "/action-manager", label: "My Shortcuts", icon: LayoutDashboard },
+  { href: "/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/event-manager", label: "Activity Manager", icon: PlayCircle },
   { href: "/action-manager/manage", label: "Customize My Shortcuts", icon: LayoutDashboard },
   { href: "/workflows", label: "Workflows", icon: Workflow },
@@ -113,6 +115,7 @@ export const CORE_WORKFLOW_DESTINATIONS = [
 export const WORKSPACE_GROUP_ITEMS = [
     ...CORE_WORKFLOW_DESTINATIONS,
     '/action-manager',
+    '/knowledge-base',
     '/workflows',
     '/to-do',
     '/document-manager',

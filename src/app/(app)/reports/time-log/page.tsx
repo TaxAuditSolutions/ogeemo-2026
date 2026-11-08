@@ -74,7 +74,8 @@ import { getContacts, type Contact } from '@/services/contact-service';
 import { getUserProfile } from '@/core/user-profile-service';
 import { formatTime, cn, formatCurrency } from '@/lib/utils';
 import { isScheduledPlaceholder } from '@/lib/duration-source';
-import { isEligibleForBilling, type EntryRef } from '@/lib/billing-eligibility';
+import { resolveEntryStart } from '@/lib/time-entry-date';
+import { isEligibleForBilling, toEntryRef, type EntryRef } from '@/lib/billing-eligibility';
 import { writeInvoiceDraftHandoff } from '@/lib/invoice-handoff';
 import { FileDigit } from 'lucide-react';
 import { ReportsPageHeader } from '@/components/reports/page-header';
@@ -202,7 +203,7 @@ function WorkerTimeLogReportContent() {
                 workerId: workerId,
                 workerName: worker ? worker.name : (workerId === user?.uid ? adminName : 'Unknown'),
                 contactName: contact ? contact.name : 'Internal',
-                startTime: new Date(t.start),
+                startTime: resolveEntryStart(t) ?? new Date(),
                 durationSeconds: t.duration || 0,
                 source: 'calendar',
                 isBillable: t.isBillable || false,
@@ -320,10 +321,7 @@ function WorkerTimeLogReportContent() {
     const handleCreateInvoice = (contactId: string) => {
         const group = eligibleByContact.get(contactId);
         if (!group || group.entries.length === 0) return;
-        const entryRefs: EntryRef[] = group.entries.map((e) => ({
-            id: e.id,
-            source: e.source === 'log' ? 'log' : 'event',
-        }));
+        const entryRefs: EntryRef[] = group.entries.map(toEntryRef);
         writeInvoiceDraftHandoff({ contactId, entryRefs });
         router.push(`/accounting/invoices/create?contactId=${contactId}`);
     };
@@ -332,7 +330,7 @@ function WorkerTimeLogReportContent() {
         if (!entry.contactId || !isEligibleForBilling(entry)) return;
         writeInvoiceDraftHandoff({
             contactId: entry.contactId,
-            entryRefs: [{ id: entry.id, source: entry.source === 'log' ? 'log' : 'event' }],
+            entryRefs: [toEntryRef(entry)],
         });
         router.push(`/accounting/invoices/create?contactId=${entry.contactId}`);
     };

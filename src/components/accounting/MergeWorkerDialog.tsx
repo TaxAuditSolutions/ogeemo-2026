@@ -112,7 +112,7 @@ export default function MergeWorkerDialog({ isOpen, onOpenChange, sourceWorker, 
                         <div>
                             <h4 className="font-semibold text-destructive">Important Warning</h4>
                             <p className="text-xs text-destructive/90">
-                                This action will reassign all time logs and leave requests from "{sourceWorker.name}" to "{masterWorker?.name || 'the master worker'}" and then permanently delete the duplicate record for "{sourceWorker.name}".
+                                This will move all of "{sourceWorker.name}"'s time logs, leave requests, tasks, projects, quotes, invoices and work orders to "{masterWorker?.name || 'the master worker'}", copy across details the master is missing (anything the master already has is kept), and then permanently delete the duplicate record for "{sourceWorker.name}". Past payroll runs keep the name that was paid at the time. A worker linked to a sign-in account cannot be merged away.
                             </p>
                         </div>
                     </div>

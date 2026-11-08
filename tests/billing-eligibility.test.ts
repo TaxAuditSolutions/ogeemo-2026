@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  eligibleRefsForContact,
+  toEntryRef,
   isEligibleForBilling,
   isInvoiced,
   toInvoiceLineItem,
@@ -121,4 +123,37 @@ test('sourceRefsFromLineItems: filters lines without source links (manual/librar
         { id: 'a', source: 'log' },
         { id: 'b', source: 'event' },
     ]);
+});
+
+// --- Time report -> Invoice hand-off (shared by both time reports) ---
+
+test('toEntryRef: the reports call the Activity Manager source "calendar"; billing calls it "event"', () => {
+  assert.deepEqual(toEntryRef({ id: 'a', source: 'calendar' }), { id: 'a', source: 'event' });
+  assert.deepEqual(toEntryRef({ id: 'b', source: 'event' }), { id: 'b', source: 'event' });
+  assert.deepEqual(toEntryRef({ id: 'c', source: 'log' }), { id: 'c', source: 'log' });
+});
+
+test('eligibleRefsForContact: only that client\'s eligible entries are handed over', () => {
+  const entries = [
+    base({ id: 'ok-log', source: 'log' }),
+    base({ id: 'ok-calendar', source: 'calendar' as never }),
+    base({ id: 'other-client', contactId: 'c2' }),
+    base({ id: 'already-billed', billedInvoiceId: 'inv-1' }),
+    base({ id: 'scheduled-only', scheduledOnly: true }),
+    base({ id: 'non-billable', isBillable: false }),
+    base({ id: 'zero', durationSeconds: 0 }),
+    base({ id: 'no-client', contactId: null }),
+  ];
+  assert.deepEqual(eligibleRefsForContact(entries, 'c1'), [
+    { id: 'ok-log', source: 'log' },
+    { id: 'ok-calendar', source: 'event' },
+  ]);
+  assert.deepEqual(eligibleRefsForContact(entries, 'c2'), [{ id: 'other-client', source: 'event' }]);
+});
+
+test('eligibleRefsForContact: nothing eligible, or no client, hands over nothing', () => {
+  assert.deepEqual(eligibleRefsForContact([base({ isBillable: false })], 'c1'), []);
+  assert.deepEqual(eligibleRefsForContact([base({})], null), []);
+  assert.deepEqual(eligibleRefsForContact([base({})], undefined), []);
+  assert.deepEqual(eligibleRefsForContact([], 'c1'), []);
 });

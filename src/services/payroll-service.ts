@@ -16,6 +16,7 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
+import { mergeContacts, type MergeContactsResult } from '@/services/contact-service';
 import { omitUndefined, replaceUndefinedWithNull } from '@/lib/write-payload';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -32,8 +33,6 @@ const CONTACTS_COLLECTION = 'contacts';
 const FOLDERS_COLLECTION = 'contactFolders';
 const REMITTANCES_COLLECTION = 'payrollRemittances';
 const PAYROLL_RUNS_COLLECTION = 'payrollRuns';
-const TIME_LOGS_COLLECTION = 'timeLogs';
-const LEAVE_REQUESTS_COLLECTION = 'leaveRequests';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -254,21 +253,18 @@ export async function deleteWorkers(workerIds: string[]): Promise<void> {
     await batch.commit();
 }
 
-export async function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<void> {
-    const db = getDb();
-    const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
-
-    const timeLogsQuery = query(collection(db, TIME_LOGS_COLLECTION), where('orgId', '==', orgId), where('workerId', '==', sourceWorkerId));
-    const timeLogsSnapshot = await getDocs(timeLogsQuery);
-    timeLogsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
-
-    const leaveRequestsQuery = query(collection(db, LEAVE_REQUESTS_COLLECTION), where('orgId', '==', orgId), where('workerId', '==', sourceWorkerId));
-    const leaveRequestsSnapshot = await getDocs(leaveRequestsQuery);
-    leaveRequestsSnapshot.forEach(doc => batch.update(doc.ref, { workerId: masterWorkerId }));
-
-    batch.delete(doc(db, CONTACTS_COLLECTION, sourceWorkerId));
-    await batch.commit();
+/**
+ * Workers are Contact Hub records, so merging two workers is a contact merge.
+ * Delegating keeps one safe implementation: every linked record (tasks,
+ * projects, quotes, invoices, work orders, time logs, leave requests...) is
+ * re-pointed at the master before the duplicate is deleted. This used to move
+ * only time logs and leave requests, orphaning everything else.
+ *
+ * Historical payroll runs are deliberately left alone: each stores the
+ * employee's name alongside the id as an audit snapshot of what was paid.
+ */
+export function mergeWorkers(sourceWorkerId: string, masterWorkerId: string): Promise<MergeContactsResult> {
+    return mergeContacts(sourceWorkerId, masterWorkerId);
 }
 
 export interface PayrollRemittance {
@@ -304,6 +300,8 @@ export interface PayrollRun {
     totalDeductions: number;
     totalNetPay: number;
     employeeCount: number;
+    /** The deduction estimate (percent of gross) used for this run, kept so history stays an audit snapshot. */
+    deductionRatePercent?: number;
     details: PayrollRunDetail[];
 }
 
@@ -396,6 +394,7 @@ export async function savePayrollRun(data: PayrollRun): Promise<void> {
         totalDeductions: data.totalDeductions,
         totalNetPay: data.totalNetPay,
         employeeCount: data.employeeCount,
+        ...(data.deductionRatePercent !== undefined ? { deductionRatePercent: data.deductionRatePercent } : {}),
         createdBy: currentUser.uid,
         updatedBy: currentUser.uid,
         createdAt: now,

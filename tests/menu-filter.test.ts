@@ -38,7 +38,7 @@ test('returns all menu items for an empty or whitespace-only query', () => {
 test('matches label words by case-insensitive prefix', () => {
     const labels = filterMenuItems(allMenuItems, 'Ba').map((item) => item.label);
 
-    assert.deepEqual(labels, ['Backups', 'Bank Statements']);
+    assert.deepEqual(labels, ['Knowledge Base', 'Backups', 'Bank Statements']);
     assert.ok(!labels.includes('Feedback'));
 });
 

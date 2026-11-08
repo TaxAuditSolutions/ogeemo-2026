@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/dialog';
 import Link from 'next/link';
 import MergeWorkerDialog from './MergeWorkerDialog';
+import { summarizeReassignments } from '@/lib/contact-merge';
 import { Checkbox } from '../ui/checkbox';
 
 export function PayrollEmployeesView() {
@@ -173,11 +174,16 @@ export function PayrollEmployeesView() {
     
     const handleMergeConfirm = async (sourceWorkerId: string, masterWorkerId: string) => {
         try {
-            await mergeWorkers(sourceWorkerId, masterWorkerId);
-            toast({ title: "Workers Merged", description: "All records have been reassigned." });
+            const result = await mergeWorkers(sourceWorkerId, masterWorkerId);
+            toast({
+                title: "Workers Merged",
+                description: `The duplicate was removed. Moved to the master worker: ${summarizeReassignments(result.reassigned)}.`,
+            });
             loadWorkers(); // Refresh data
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Merge Failed', description: error.message });
+            // The duplicate is deleted last, so a failure leaves it in place.
+            loadWorkers();
+            toast({ variant: 'destructive', title: 'Merge Failed', description: `${error.message} The duplicate was not deleted; you can safely try again.` });
         }
     };
 

@@ -1,0 +1,48 @@
+{
+  "documents": [
+    {
+      "id": "time.timer.start-pause-log",
+      "module": "Time Tracking",
+      "title": "Start, pause, resume and log a timer session",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "timer", "sessions"],
+      "keywords": ["timer", "start session", "start new session", "pause session", "resume session", "stop and log", "log session", "session notes", "active session", "time sessions", "track time"],
+      "audiences": ["all"],
+      "content": "Open an activity in Activity Manager and find the Time Sessions card. Choose Start New Session to run the timer; if the activity has not been saved yet, Ogeemo first saves it as an In Progress activity (untitled ones are named Untitled Session). While it runs the card shows an Active session clock; choose Pause Session and Resume Session as needed, and the paused time is not counted. Add notes in Active Session Notes. Choose Stop & Log, or Log Session, to record the elapsed time as a session on the activity and clear the timer. Logging with no elapsed time is refused. You can also start a timer from a calendar event's menu using Start Timer.",
+      "sourceFiles": ["src/components/time/time-manager-view.tsx", "src/components/calendar/CalendarEvent.tsx"]
+    },
+    {
+      "id": "time.timer.running-indicator",
+      "module": "Time Tracking",
+      "title": "How the running timer is remembered across pages",
+      "routes": ["/event-manager"],
+      "intents": ["business-rule", "timer", "troubleshooting"],
+      "keywords": ["running timer", "timer indicator", "timer on another page", "timer stuck", "abandoned", "browser", "local storage", "one timer", "welcome", "current work", "timer lost"],
+      "audiences": ["all"],
+      "content": "The running timer is kept in your browser, not on the server, so it keeps counting while you move between Ogeemo pages and shows as an indicator in the app and in the Welcome page's current-work panel. Only one timer runs at a time. Because it lives in this browser, it does not follow you to another browser or computer. A timer started a very long time ago is treated as abandoned on the Welcome page rather than shown as current work. The time only becomes a recorded session when you choose Stop & Log.",
+      "sourceFiles": ["src/components/layout/active-timer-indicator.tsx", "src/components/welcome/current-work-panel.tsx", "src/components/time/time-manager-view.tsx"]
+    },
+    {
+      "id": "time.sessions.edit-and-save",
+      "module": "Time Tracking",
+      "title": "Edit or delete a recorded session",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "sessions", "edit"],
+      "keywords": ["edit session", "delete session", "recorded session", "edit recorded session", "apply changes", "hours minutes", "session notes", "total on this event", "save"],
+      "audiences": ["all"],
+      "content": "Each recorded session in the Time Sessions list shows its duration and notes. Use the pencil to open Edit Recorded Session, change the Hours, Minutes and Session Notes, and choose Apply Changes (a duration of zero is ignored); use the trash can to remove a session. These changes apply to the form and are stored only when you save the activity, so choose Save afterwards. The header shows Total on this event, the sum of all sessions. Deleting the whole activity removes all its sessions and cannot be undone.",
+      "sourceFiles": ["src/components/time/time-manager-view.tsx"]
+    },
+    {
+      "id": "time.duration.scheduled-vs-worked",
+      "module": "Time Tracking",
+      "title": "Scheduled time versus worked time",
+      "routes": ["/event-manager", "/reports/time-log"],
+      "intents": ["business-rule", "billing", "concept"],
+      "keywords": ["scheduled", "scheduled not yet worked", "worked time", "actual time", "planned time", "placeholder", "not billable until", "duration", "billable", "span", "sessions"],
+      "audiences": ["all"],
+      "content": "Ogeemo keeps three different durations apart. Scheduled time is the planned start-to-end span on the calendar and is never billed by itself. Worked time is what sessions or a manual log actually recorded and is the only legitimate billing source. The reported duration is a total whose source is remembered. An activity that is scheduled but has no session shows as Scheduled (not yet worked) with the note that it is not billable until a session is logged. Recording a session replaces the placeholder on the same activity, with no duplicate row, and the planned start and end are kept for the calendar. Manually entered durations count as worked time.",
+      "sourceFiles": ["src/lib/duration-source.ts", "docs/time-billing-model.md", "src/components/time/time-manager-view.tsx"]
+    }
+  ]
+}

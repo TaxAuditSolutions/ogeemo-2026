@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "workflows.overview.standard",
+      "module": "Workflows",
+      "title": "What Workflows are and the standard workflow",
+      "routes": ["/workflows"],
+      "intents": ["overview", "concept", "how-to"],
+      "keywords": ["workflow", "workflows", "standard workflow", "set as standard", "clear standard", "restore default", "default workspace", "named", "ordered", "destinations", "login"],
+      "audiences": ["all"],
+      "content": "Workflows at /workflows are named, ordered sets of destinations that represent a way of working, such as Bookkeeping or Quotes. Choose Set as standard on a workflow to save it as your default. A standard workflow stays selected across logins, drives the Welcome page's Start your day button, and the sidebar's Workspace group follows it. Only one workflow is standard at a time and it is marked Standard. Choose Clear standard, or Restore default Workspace, to return to the default Workspace destinations. Nothing is applied automatically.",
+      "sourceFiles": ["src/app/(app)/workflows/page.tsx", "src/services/workflow-service.ts", "src/lib/workspace-workflow.ts"]
+    },
+    {
+      "id": "workflows.create.edit",
+      "module": "Workflows",
+      "title": "Create, edit, reorder and sort a workflow",
+      "routes": ["/workflows"],
+      "intents": ["how-to", "create", "edit"],
+      "keywords": ["new workflow", "create workflow", "edit workflow", "workflow name", "steps", "destinations", "palette", "drag", "reorder", "move up", "move down", "sort", "name a-z", "search destinations", "save"],
+      "audiences": ["all"],
+      "content": "Choose New Workflow, enter a name such as Bookkeeping, and create it. A name is required. Choose Edit on a workflow to open its editor. Add steps by dragging destinations from the Destinations palette or clicking them; search the palette to find one. Reorder steps by dragging or with a step's move up and move down menu, and remove a step by dragging it back to the palette or using its menu. Sort offers Name A to Z or Name Z to A. Choose Save to store the workflow; Back asks before discarding unsaved changes. Open shows the steps as numbered tiles.",
+      "sourceFiles": ["src/app/(app)/workflows/page.tsx", "src/lib/workflow-sort.ts"]
+    },
+    {
+      "id": "workflows.templates",
+      "module": "Workflows",
+      "title": "Start from a template workflow",
+      "routes": ["/workflows"],
+      "intents": ["how-to", "templates"],
+      "keywords": ["template", "template workflows", "start from a template", "accountant", "lawyer", "consultant", "virtual assistant", "paralegal", "field contractor", "marketing agency", "property manager", "it", "msp", "role"],
+      "audiences": ["all"],
+      "content": "Template Workflows offers nine role-based starting points: Accountant, Lawyer, Consultant, Virtual Assistant, Paralegal, Field Contractor, Marketing Agency, Property Manager, and IT & MSP. Choosing one copies it into your own list; it is never applied automatically. After copying it is an ordinary workflow you can rename, edit, or delete. If a workflow with the same name is already in your list, Ogeemo tells you it is already there instead of adding a duplicate.",
+      "sourceFiles": ["src/lib/workflow-templates.ts", "src/app/(app)/workflows/page.tsx"]
+    }
+  ]
+}

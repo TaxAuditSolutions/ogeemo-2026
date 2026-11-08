@@ -59,6 +59,34 @@ export function isEligibleForBilling(
   );
 }
 
+/**
+ * Reference to an entry as shown in the time reports, which label the
+ * Activity Manager source 'calendar' while billing calls it 'event'.
+ */
+export function toEntryRef(entry: { id: string; source: string }): EntryRef {
+  return { id: entry.id, source: entry.source === 'log' ? 'log' : 'event' };
+}
+
+/**
+ * The refs to hand to the Invoice Generator for one client: every entry in
+ * `entries` that is eligible (OG-070) and belongs to that client. Both time
+ * reports use this, so they can never disagree about what is billable.
+ */
+export function eligibleRefsForContact(
+  entries: ReadonlyArray<
+    Pick<InvoiceableEntry, 'isBillable' | 'durationSeconds' | 'contactId' | 'scheduledOnly' | 'billedInvoiceId'> & {
+      id: string;
+      source: string;
+    }
+  >,
+  contactId: string | null | undefined
+): EntryRef[] {
+  if (!contactId) return [];
+  return entries
+    .filter((entry) => entry.contactId === contactId && isEligibleForBilling(entry))
+    .map(toEntryRef);
+}
+
 /** True when an entry would be eligible except that it is already invoiced. */
 export function isInvoiced(
   entry: Pick<InvoiceableEntry, 'isBillable' | 'durationSeconds' | 'contactId' | 'scheduledOnly' | 'billedInvoiceId'>

@@ -1,0 +1,37 @@
+{
+  "documents": [
+    {
+      "id": "time.log.report",
+      "module": "Time Tracking",
+      "title": "The Worker Time Log Report",
+      "routes": ["/reports/time-log"],
+      "intents": ["how-to", "reports", "overview"],
+      "keywords": ["time log", "time logs", "worker time log report", "time log report", "report", "worker", "filter", "start date", "end date", "clear filters", "sort", "totals", "where do i find time logs"],
+      "audiences": ["all"],
+      "content": "Open Worker Time Log Report at /reports/time-log (it is in the sidebar's Workspace group). It combines two sources in one table: manually logged time cards and Activity Manager activities that have recorded time. Columns are Worker, Client, Date, Billing status, Notes and Duration; click Worker, Client, Date or Billing to sort. Use the worker picker and the Start and End date filters, or click a worker's name to show only their entries, and Clear Filters to reset. The footer shows Total Hours (Actual Worked), Scheduled (not yet worked), Billable Hours Only and Total Billable Amount. Entries with no client show as Internal.",
+      "sourceFiles": ["src/app/(app)/reports/time-log/page.tsx"]
+    },
+    {
+      "id": "time.log.manual-entry",
+      "module": "Time Tracking",
+      "title": "Log time after the fact",
+      "routes": ["/reports/time-log"],
+      "intents": ["how-to", "manual", "create"],
+      "keywords": ["log time", "log time event", "time card", "log time after the fact", "manual time", "add time", "operational date", "worker", "billable to client", "hourly rate", "non-billable"],
+      "audiences": ["all"],
+      "content": "On the Time Log Report choose + Log Time Event to open the Log Time Card Entry form. A worker and an Operational Date are required, plus a Breakdown of Tasks (Details); Subject, Client and the billing choice are optional. Start defaults to the current time and End to one hour later, and End must be after Start. Choose Non-Billable or Billable to Client; billable reveals an Hourly Rate that defaults to 100. Save records a completed work session. Use Add Worker on the same page if the worker you need is not in the list. Manual entries can be edited or deleted later from the row menu.",
+      "sourceFiles": ["src/components/reports/log-time-dialog.tsx", "src/app/(app)/reports/time-log/page.tsx"]
+    },
+    {
+      "id": "time.log.row-actions",
+      "module": "Time Tracking",
+      "title": "Time Log row actions: edit, delete, schedule, invoice",
+      "routes": ["/reports/time-log"],
+      "intents": ["how-to", "edit", "delete", "actions"],
+      "keywords": ["row menu", "edit details", "edit activity", "delete time log", "schedule an event", "view worker documents", "add to invoice", "calendar event", "restricted", "manual log", "activity manager entry"],
+      "audiences": ["all"],
+      "content": "Each Time Log row has a three-dot menu. Add to Invoice sends an eligible entry to invoicing; Schedule an event opens Activity Manager prefilled with the entry's title, notes and client; View Worker Documents opens the worker's document folder when there is one. For a manually logged entry, Edit Details reopens the time card and Delete permanently removes it after confirmation. For an Activity Manager entry, Edit Activity opens it in Activity Manager instead, and it cannot be deleted from this report: calendar events must be deleted from the Calendar or the Task Board.",
+      "sourceFiles": ["src/app/(app)/reports/time-log/page.tsx"]
+    }
+  ]
+}

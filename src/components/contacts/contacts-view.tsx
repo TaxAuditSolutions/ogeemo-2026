@@ -31,7 +31,9 @@ import { Button } from '@/components/ui/button';
 import type { AssistantContactDraft } from '@/ai/assistant-actions';
 import { type Contact } from '@/data/contacts';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, getContactById, deleteContacts, updateContact, addContact } from '@/services/contact-service';
+import { getContacts, getContactById, deleteContacts, updateContact, addContact, mergeContacts } from '@/services/contact-service';
+import { summarizeReassignments } from '@/lib/contact-merge';
+import MergeContactsDialog from '@/components/contacts/MergeContactsDialog';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
 import { getIndustries, type Industry } from '@/services/industry-service';
@@ -267,6 +269,7 @@ export function ContactsView() {
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  const [contactToMerge, setContactToMerge] = useState<Contact | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<FolderData | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
@@ -475,6 +478,27 @@ export function ContactsView() {
     finally { setContactToDelete(null); }
   };
 
+  const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
+    try {
+      const result = await mergeContacts(sourceContactId, masterContactId);
+      setContacts(prev => prev.filter(c => c.id !== sourceContactId));
+      setSelectedContactIds(prev => prev.filter(id => id !== sourceContactId));
+      // The master may have gained details from the duplicate; reload so the list is current.
+      loadData();
+      toast({
+        title: 'Merge Successful',
+        description: `The duplicate was removed. Moved to the master contact: ${summarizeReassignments(result.reassigned)}.`,
+      });
+    } catch (error: any) {
+      // mergeContacts deletes the duplicate last, so a failure leaves it in place.
+      // Reload to show the true state, including any records already moved.
+      loadData();
+      toast({ variant: 'destructive', title: 'Merge Failed', description: `${error.message} The duplicate was not deleted; you can safely try again.` });
+    } finally {
+      setContactToMerge(null);
+    }
+  };
+
   const handleConfirmBulkDelete = async () => {
     if (selectedContactIds.length === 0) return;
     try {
@@ -612,6 +636,7 @@ export function ContactsView() {
                                   <Files className="mr-2 h-4 w-4" /> View Documents
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); setContactToMerge(contact); }}><GitMerge className="mr-2 h-4 w-4" /> Merge Duplicate</DropdownMenuItem>
                                 <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.stopPropagation(); setContactToDelete(contact); }}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -691,6 +716,15 @@ export function ContactsView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {contactToMerge && (
+        <MergeContactsDialog
+          isOpen={!!contactToMerge}
+          onOpenChange={(open) => { if (!open) setContactToMerge(null); }}
+          sourceContact={contactToMerge}
+          allContacts={contacts}
+          onMergeConfirm={handleMergeConfirm}
+        />
+      )}
       {isLogTimeDialogOpen && <LogTimeDialog isOpen={isLogTimeDialogOpen} onOpenChange={setIsLogTimeDialogOpen} workers={workersForDialog} onTimeLogged={loadData} preselectedContactId={preselectedContactId} />}
     </>
   );

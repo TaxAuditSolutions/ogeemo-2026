@@ -1,0 +1,15 @@
+{
+  "documents": [
+    {
+      "id": "time.payroll.pay-periods",
+      "module": "Time Tracking",
+      "title": "Pay periods and the pay schedule",
+      "routes": ["/accounting/payroll/settings", "/accounting/payroll/run"],
+      "intents": ["how-to", "business-rule", "payroll", "settings"],
+      "keywords": ["pay period", "pay periods", "pay schedule", "weekly", "bi-weekly", "biweekly", "semi-monthly", "monthly", "payroll dates", "period dates", "start date", "end date", "anchor", "payroll settings", "last completed", "custom dates", "gap", "overlap"],
+      "audiences": ["all"],
+      "content": "Payroll periods follow a pay schedule saved once for the whole workspace in Payroll Settings, under Pay Periods & Deductions, so every payroll run uses the same dates. Choose Weekly (and the weekday each week starts), Bi-weekly (every 2 weeks, with the first day of any one real pay period so every period stays in step), Semi-monthly (1st to 15th and 16th to the end of the month) or Monthly (1st to the end of the month). The card shows the exact dates of your last completed, current and next period. Each period starts the day after the previous one ends, so there are no gaps or overlaps. Run Payroll opens on the last completed period, and the arrows step to the previous or next period, with the exact start and end dates shown. Use custom dates is still available for a one-off, but it warns when the dates are not a whole pay period of your schedule, and it warns when a period has not finished yet. Until a schedule is saved, Run Payroll shows a notice linking to Payroll Settings, and Bi-weekly cannot work out periods until its first-day date is entered. Only a workspace administrator can change the schedule.",
+      "sourceFiles": ["src/lib/payroll-periods.ts", "src/lib/payroll-settings.ts", "src/components/accounting/pay-schedule-card.tsx", "src/components/accounting/pay-period-picker.tsx"]
+    }
+  ]
+}

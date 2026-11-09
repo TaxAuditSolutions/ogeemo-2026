@@ -10,7 +10,7 @@
 ## Contacts & Relationships
 **How do I add a contact?** Contacts Hub (`/contacts`) → **New Contact** → complete the form → assign a role/folder → **Create Identity**. A valid Role Assignment is required; if no folder is chosen, the tenant's default folder is assigned. Requires Editor or higher. Folders are categories that group contacts.
 **How do I update a contact?** `/contacts` → search/browse → open the row or action menu → **Edit Contact** → change fields → **Save Changes**.
-**Assisted (Co-Pilot) creation:** gather the name and any chosen folder, check for likely duplicates by name/email first, prepare the form pre-filled — the contact is only created when the user clicks **Create Identity**; if folder choice is skipped, the tenant default is assigned. Cancelling creates nothing.
+**Assisted (Co-Pilot) creation:** ask Co-Pilot to add the contact (for example "add Jane Doe, jane@acme.com, in Clients") and it uses `createContact` to save it straight away. Only the name is needed; if no folder is named, the workspace default folder is used. Editors and administrators only. It checks for the same email or name first and, if it finds one, adds nothing and asks you whether to add another anyway. It does not add Employees or Contractors (use Workers, `/workers`, so pay and Document Manager setup are done) and never takes a SIN, pay rate or dates.
 **Confidential fields (SIN, pay rate, dates):** chat history is retained — warn the user and get explicit consent before accepting them; otherwise leave blank for manual entry. Never choose tenant, audit or folder IDs.
 **Assigning contact owners:** edit the contact record (owner/assignment fields live on the contact form).
 

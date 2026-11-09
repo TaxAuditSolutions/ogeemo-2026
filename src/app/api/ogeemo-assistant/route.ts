@@ -57,17 +57,6 @@ function buildDeterministicDraftResponse(question: string, tenantFolders: Array<
     };
 }
 
-/**
- * True when the message is a direct imperative contact-creation request
- * ("create a new contact for John Test ...") rather than an informational
- * question ("how do I create a contact ...").
- */
-function isImperativeContactRequest(question: string): boolean {
-    const imperative = /\b(create|make|add|new)\b[\s\S]{0,40}\bcontact\b/i.test(question);
-    const informational = /\bhow\s+(?:do|to|can)\b/i.test(question);
-    return imperative && !informational;
-}
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json().catch(() => null);
@@ -154,21 +143,8 @@ export async function POST(request: NextRequest) {
                     return NextResponse.json({ answer, ...(action ? { action } : {}) }, { status: 200 });
                 }
 
-                // The capability explicitly declined the conversation. If the
-                // message is nevertheless an imperative contact-creation request,
-                // still prepare a draft rather than losing it to the generic
-                // text assistant.
-                if (isImperativeContactRequest(question)) {
-                    const deterministic = buildDeterministicDraftResponse(question, tenantFolders);
-                    if (deterministic) {
-                        console.info('/api/ogeemo-assistant source', {
-                            source: 'deterministic_contact_fallback',
-                            reason: 'capability_declined',
-                            decisionPath: 'capability_declined->deterministic_contact_fallback',
-                        });
-                        return NextResponse.json({ ...deterministic, degraded: true }, { status: 200 });
-                    }
-                }
+                // Declined: not a Contacts Hub form conversation, or the user wants a contact added. The main assistant answers,
+                // and it adds a contact itself with its createContact tool.
             }
         } catch (capabilityError) {
             console.warn('/api/ogeemo-assistant contact-capability-error', capabilityError);

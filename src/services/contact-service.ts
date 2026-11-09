@@ -21,6 +21,7 @@ import type { Contact } from '@/data/contacts';
 import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
 import { isBlankRequiredContactField } from '@/lib/contact-update';
 import { cleanContactInput } from '@/lib/contact-clean';
+import { generateContactKeywords } from '@/lib/contact-keywords';
 import { ContactInUseError, planContactDelete, tallyLinks, type LinkCounts, type LinkHit } from '@/lib/contact-links';
 import { CONTACT_REFERENCES, buildMergePatch, chunkItems, groupReassignments } from '@/lib/contact-merge';
 
@@ -168,27 +169,8 @@ function prepareContactDataForWrite(contactData: Record<string, any>) {
     return dataToSave;
 }
 
-/**
- * High-fidelity search indexing for all identity roles.
- */
-const generateKeywords = (data: Partial<Contact>): string[] => {
-    const keywords = new Set<string>();
-
-    const addValue = (value: any) => {
-        if (!value || typeof value !== 'string') return;
-        const lowerCaseValue = value.toLowerCase();
-        keywords.add(lowerCaseValue);
-        lowerCaseValue.split(/[\s@.-]+/).forEach(part => { if (part) keywords.add(part); });
-    };
-
-    addValue(data.name);
-    addValue(data.email);
-    addValue(data.businessName);
-    addValue(data.employeeNumber);
-    addValue(data.sin);
-
-    return Array.from(keywords);
-};
+/** Search indexing for all identity roles (shared with the Co-Pilot, see src/lib/contact-keywords.ts). */
+const generateKeywords = generateContactKeywords;
 
 export async function getContacts(_userId?: string): Promise<Contact[]> {
     const db = getDb();

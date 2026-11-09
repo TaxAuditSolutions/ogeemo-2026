@@ -67,3 +67,12 @@ test('an empty workspace is kept while a person who can sign in holds a membersh
   const plan = planIdentityCleanup([], orgs, new Set(), new Set(['mine']));
   assert.deepEqual(plan.deleteOrgs.map((o) => o.id), ['abandoned']);
 });
+
+test('a login-less sole Super Admin goes together with its own empty, unused workspace, and only then', () => {
+  const profiles = [profile('ghost', 'empty', 'super_admin', false), profile('ghost2', 'used', 'super_admin', false)];
+  const orgs = [{ id: 'empty', ownerUid: 'ghost', recordCount: 0 }, { id: 'used', ownerUid: 'ghost2', recordCount: 0 }];
+  const plan = planIdentityCleanup(profiles, orgs, new Set(), new Set(['used']));
+  assert.deepEqual(plan.deleteProfiles.map((p) => p.uid), ['ghost']);
+  assert.deepEqual(plan.deleteOrgs.map((o) => o.id), ['empty']);
+  assert.match(plan.keptProfiles.find((p) => p.uid === 'ghost2')!.reason, /only Super Admin/);
+});

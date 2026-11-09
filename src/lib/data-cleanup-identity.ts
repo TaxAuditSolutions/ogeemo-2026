@@ -46,8 +46,8 @@ export interface IdentityPlan {
 
 /**
  * Profiles with no login account and workspaces that are completely empty.
- * A profile goes only when nothing references it, it is not the only Super Admin of its workspace who could be
- * replaced by someone who can sign in, and every workspace it owns is itself empty and going.
+ * A profile goes only when nothing references it and every workspace it owns is itself empty and going. The only
+ * Super Admin of a workspace goes too, but only together with that workspace, which must be empty and unused.
  * A workspace goes only when it has no records at all, nobody who can sign in holds a membership in it, and every
  * person with a profile in it is going too.
  */
@@ -60,11 +60,13 @@ export function planIdentityCleanup(
 ): IdentityPlan {
   const kept = new Map<string, string>();
   const candidates = new Set<string>();
+  /** Login-less sole Super Admins: they go only together with their own workspace, and only if it goes. */
+  const soleSupers = new Set<string>();
   for (const profile of profiles) {
     if (profile.hasLogin) continue;
     if (referencedUids.has(profile.uid)) { kept.set(profile.uid, 'records still name this person'); continue; }
     const otherSupers = profiles.filter((o) => o.uid !== profile.uid && o.hasLogin && o.orgId === profile.orgId && o.accessLevel === 'super_admin').length;
-    if (profile.accessLevel === 'super_admin' && otherSupers === 0) { kept.set(profile.uid, 'the only Super Admin of its workspace; decide by hand'); continue; }
+    if (profile.accessLevel === 'super_admin' && otherSupers === 0) soleSupers.add(profile.uid);
     candidates.add(profile.uid);
   }
 
@@ -79,13 +81,20 @@ export function planIdentityCleanup(
         .filter((org) => profiles.filter((p) => p.orgId === org.id).every((p) => goingProfiles.has(p.uid)))
         .map((org) => org.id)
     );
-    const next = new Set([...candidates].filter((uid) => orgs.filter((org) => org.ownerUid === uid).every((org) => goingOrgs.has(org.id))));
+    const next = new Set(
+      [...candidates]
+        .filter((uid) => orgs.filter((org) => org.ownerUid === uid).every((org) => goingOrgs.has(org.id)))
+        .filter((uid) => !soleSupers.has(uid) || goingOrgs.has(profiles.find((p) => p.uid === uid)?.orgId ?? ''))
+    );
     const stable = next.size === goingProfiles.size;
     goingProfiles = next;
     if (stable) break;
   }
 
-  for (const uid of candidates) if (!goingProfiles.has(uid)) kept.set(uid, 'it owns a workspace that still has records');
+  for (const uid of candidates) {
+    if (goingProfiles.has(uid)) continue;
+    kept.set(uid, soleSupers.has(uid) ? 'the only Super Admin of a workspace that is still in use; decide by hand' : 'it owns a workspace that still has records');
+  }
   return {
     deleteProfiles: [...goingProfiles].map((uid) => ({ uid, reason: 'no login account, nothing refers to it' })),
     deleteOrgs: [...goingOrgs].map((id) => ({ id, reason: 'no records and nobody who can sign in' })),

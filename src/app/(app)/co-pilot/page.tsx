@@ -404,19 +404,7 @@ export default function AiDispatchPage() {
 
     const handleLaunchRegistry = async (contactId: string, patch?: AssistantContactDraftPatch) => {
         setContactDraft(patch);
-        // 1. Hardcoded Support for Dan/Julie
-        if (contactId === 'dan-admin-id') {
-            setContactToEdit({ id: 'dan', name: 'Dan (Ogeemo Administrator)', email: 'dan@ogeemo.com', businessName: 'Ogeemo Mastermind', businessPhone: '555-0199', cellPhone: '555-0100', folderId: folders[0]?.id || 'default' } as any);
-            setIsFormOpen(true);
-            return;
-        }
-        if (contactId === 'julie-support-id') {
-            setContactToEdit({ id: 'julie', name: 'Julie (Ogeemo Support)', email: 'julie@ogeemo.com', businessName: 'Support Specialist', businessPhone: '555-0188', folderId: folders[0]?.id || 'default' } as any);
-            setIsFormOpen(true);
-            return;
-        }
-
-        // 2. Real Contact Launch, from the stored record rather than a possibly stale list copy
+        // Real contact launch, from the stored record rather than a possibly stale list copy
         const storedContact = user?.uid ? await getContactById(contactId).catch(() => null) : null;
         const contact = storedContact ?? contacts.find(c => c.id === contactId);
         if (contact) {
@@ -868,18 +856,10 @@ export default function AiDispatchPage() {
                                                             let contactLabel = "Registry Entry";
                                                             let contactBiz = "Ogeemo Data";
 
-                                                            if (contactId === 'dan-admin-id') {
-                                                                contactLabel = "Dan (Ogeemo Administrator)";
-                                                                contactBiz = "Ogeemo Mastermind";
-                                                            } else if (contactId === 'julie-support-id') {
-                                                                contactLabel = "Julie (Ogeemo Support)";
-                                                                contactBiz = "Support Specialist";
-                                                            } else {
-                                                                const c = contacts.find(r => r.id === contactId);
-                                                                if (c) {
-                                                                    contactLabel = c.name;
-                                                                    contactBiz = c.businessName || "Contact";
-                                                                }
+                                                            const c = contacts.find(r => r.id === contactId);
+                                                            if (c) {
+                                                                contactLabel = c.name;
+                                                                contactBiz = c.businessName || "Contact";
                                                             }
 
                                                             return (

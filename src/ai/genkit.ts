@@ -1,17 +1,16 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
-// Diagnostic: Ensure API key is available during initialization
-// We check for both GEMINI_API_KEY and NEXT_PUBLIC_GEMINI_API_KEY as a fallback.
-const rawKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-// Clean the key: remove any literal quotes that might have been accidentally included in the .env file
-const apiKey = rawKey?.replace(/^["']|["']$/g, '');
+// The key is read from the server environment only. A NEXT_PUBLIC_ variable is copied into the browser
+// bundle, so a key set there would be public: it is deliberately not used as a fallback.
+// Quotes that were accidentally typed into the .env file are removed.
+const apiKey = process.env.GEMINI_API_KEY?.replace(/^["']|["']$/g, '');
 
 if (!apiKey) {
-    console.warn("[AI Diagnostic] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.");
+    console.warn("[AI] GEMINI_API_KEY is not defined in the environment. AI plugins are disabled.");
 } else {
-    console.log(`[AI Diagnostic] Genkit initialized with Key prefix: ${apiKey.substring(0, 10)}... (Length: ${apiKey.length})`);
+    // Never print any part of the key: server logs are read by more people than the key should be.
+    console.log("[AI] Genkit initialized with a Gemini API key.");
 }
 
 export const ai = genkit({

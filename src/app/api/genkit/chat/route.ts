@@ -1,70 +1,37 @@
-import {NextRequest, NextResponse} from 'next/server';
-import {ogeemoAgent} from '@/ai/flows/ogeemo-chat';
-import {getCurrentUserId} from '@/app/actions';
+import { NextRequest, NextResponse } from 'next/server';
+import { ogeemoAgent } from '@/ai/flows/ogeemo-chat';
+import { getCurrentSessionContext } from '@/app/actions';
+import { assistantLimiter, tooManyRequests } from '@/lib/ai-limits';
+import { checkPrompt, limitHistory } from '@/lib/ai-input';
+import { trustedRuntimeContext } from '@/lib/ai-runtime';
 
+/**
+ * The plain operational agent (no contact workflow). Who is asking, the workspace and the role come from the
+ * signed-in session; the request body supplies only the message, the history and the page.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {message, history: rawHistory, clientUserId, localContext} = body;
-    
-    // 1. Total Auth Immunity in Development
-    let userId = 'ogeemo-guest';
-    if (process.env.NODE_ENV === 'production') {
-        try {
-            const serverUserId = await getCurrentUserId();
-            if (serverUserId) userId = serverUserId;
-        } catch (authError: any) {
-            console.warn("[AI Auth] Production server auth check failed.");
-        }
-    } else {
-        userId = clientUserId || 'ogeemo-guest';
+    const session = await getCurrentSessionContext();
+    if (!session) return NextResponse.json({ error: 'Please sign in to use the Co-Pilot.' }, { status: 401 });
+
+    const limit = assistantLimiter.check(session.userId);
+    if (!limit.ok) {
+      return NextResponse.json({ error: tooManyRequests(limit.retryAfterSeconds) }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
     }
 
-    if (!message) {
-      return NextResponse.json({error: 'Message is required.'}, {status: 400});
-    }
+    const body = await req.json().catch(() => null);
+    const prompt = checkPrompt(body?.message, 4000);
+    if (!prompt.ok) return NextResponse.json({ error: prompt.error }, { status: 400 });
 
-    // 2. Strict History Mapping (Critical Fix)
-    // We manually map every message to ensure it matches the AI's strict Zod schema.
-    const mappedHistory = Array.isArray(rawHistory) ? rawHistory.map((msg: any) => {
-        // If message is already model/user role-based
-        const role = msg.role === 'model' || msg.role === 'assistant' ? 'model' : 'user';
-        let content = [];
-        if (typeof msg.content === 'string') {
-            content = [{ text: msg.content }];
-        } else if (Array.isArray(msg.content)) {
-            content = msg.content.map((c: any) => ({ text: c.text || c.toString() }));
-        } else {
-            content = [{ text: msg.message || '' }];
-        }
-        return { role, content };
-    }) : [];
-
-    // 3. Dispatch to AI Agent with Enhanced Catching
-    console.log(`[AI Dispatch] Processing signal for User: ${userId}`);
-    try {
-        const result = await ogeemoAgent({
-            message, 
-            history: mappedHistory, 
-            clientUserId: userId,
-            localContext // Pass the "Pulse" data to the flow
-        });
-        
-        console.log(`[AI Dispatch] Request Success for User: ${userId}`);
-        return NextResponse.json(result);
-    } catch (agentError: any) {
-        console.error("[Ogeemo Agent ERROR]:", agentError);
-        throw agentError; // Let the outer catch handle the JSON response
-    }
-    
+    const result = await ogeemoAgent({
+      message: prompt.text,
+      history: limitHistory(body?.history),
+      runtimeContext: trustedRuntimeContext(session, body?.runtimeContext, '/co-pilot'),
+    });
+    return NextResponse.json(result);
   } catch (error: any) {
-    // Diagnostic logging to console (safe for both local and production)
-    console.error("[Ogeemo Final Fix API Error]", error);
-
-    return NextResponse.json({
-        error: 'Intelligence Dispatch Error',
-        details: error.message || 'The AI Engine encountered an unexpected signal state.',
-        code: error.code || 'ENGINE_ERROR'
-    }, {status: 500});
+    // The detail goes to the server log; the browser gets a message that cannot leak internals.
+    console.error('[Genkit Chat API Error]', error);
+    return NextResponse.json({ error: 'The assistant could not answer right now. Please try again.' }, { status: 500 });
   }
 }

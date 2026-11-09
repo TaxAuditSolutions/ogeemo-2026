@@ -74,7 +74,7 @@ async function main() {
   for (const question of QUESTIONS) {
     process.stdout.write(`Comparing: ${question}\n`);
     const [current, beta] = await Promise.allSettled([
-      ogeemoAgent({ message: question, history: [], clientUserId: 'knowledge-compare', runtimeContext: { currentPath: '/knowledge-base' } }),
+      ogeemoAgent({ message: question, history: [], runtimeContext: { userId: 'knowledge-compare', isMasterTenant: false, currentPath: '/knowledge-base', timeZone: 'UTC' } }),
       knowledgeBaseChat({ message: question, history: [], currentPath: '/knowledge-base' }),
     ]);
     if (current.status === 'rejected' || beta.status === 'rejected') errors++;

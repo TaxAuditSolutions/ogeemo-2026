@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { getCurrentUserId } from '@/app/actions';
+import { checkPrompt } from '@/lib/ai-input';
+import { imageLimiter, tooManyRequests } from '@/lib/ai-limits';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,16 +10,16 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const limit = imageLimiter.check(userId);
+    if (!limit.ok) return NextResponse.json({ error: tooManyRequests(limit.retryAfterSeconds) }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
 
-    const { prompt } = await req.json();
+    const body = await req.json().catch(() => null);
+    const prompt = checkPrompt(body?.prompt, 1000);
+    if (!prompt.ok) return NextResponse.json({ error: prompt.error }, { status: 400 });
 
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required.' }, { status: 400 });
-    }
-
-    const result = await generateImage({ prompt, clientUserId: userId });
+    const result = await generateImage({ prompt: prompt.text });
     return NextResponse.json(result);
-    
+
   } catch (error: any) {
     console.error("[Image Generation API Error]", error);
 
@@ -29,6 +31,6 @@ export async function POST(req: NextRequest) {
         }, { status: 429 });
     }
 
-    return NextResponse.json({ error: error.message || 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: 'The image could not be generated right now. Please try again.' }, { status: 500 });
   }
 }

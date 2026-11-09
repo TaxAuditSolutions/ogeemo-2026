@@ -3,6 +3,9 @@ import { ogeemoAgent, ogeemoGeneralKnowledgeFallbackAgent, orchestrateContactCap
 import { buildDeterministicContactDraft, reconcileContactDraftAction, resolveAssistantCapabilityActionWithRepair, type AssistantMessageAction } from '@/ai/assistant-actions';
 import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminDb } from '@/core/firebase-admin';
+import { assistantLimiter, tooManyRequests } from '@/lib/ai-limits';
+import { checkPrompt, limitHistory } from '@/lib/ai-input';
+import { recentUserText, selectCatalogContacts, trustedRuntimeContext } from '@/lib/ai-runtime';
 
 const DEFAULT_ASSISTANT_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
 
@@ -133,20 +136,29 @@ function determineFallbackDecision(answer: string, metadata?: UpstreamAssistantM
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const question = (body?.question ?? body?.message ?? "").toString().trim();
-        const history = Array.isArray(body?.history) ? body.history : [];
-        const sessionId = typeof body?.sessionId === 'string' ? body.sessionId : undefined;
-        const runtimeContext = body?.runtimeContext && typeof body.runtimeContext === 'object' ? body.runtimeContext : undefined;
+        const body = await request.json().catch(() => null);
 
-        if (!question) {
-            return NextResponse.json({ error: "Missing question in request body." }, { status: 400 });
+        // Who is asking, which workspace and what role come from the signed-in SESSION. The browser used to be
+        // trusted for all of them, so any client could claim another workspace or the super_admin role.
+        const session = await getCurrentSessionContext();
+        if (!session) return NextResponse.json({ error: 'Please sign in to use the Co-Pilot.' }, { status: 401 });
+
+        const limit = assistantLimiter.check(session.userId);
+        if (!limit.ok) {
+            return NextResponse.json({ error: tooManyRequests(limit.retryAfterSeconds) }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
         }
+
+        const prompt = checkPrompt(body?.question ?? body?.message, 4000);
+        if (!prompt.ok) return NextResponse.json({ error: prompt.error }, { status: 400 });
+        const question = prompt.text;
+        const history = limitHistory(body?.history);
+        const sessionId = session.userId;
+        const runtimeContext = trustedRuntimeContext(session, body?.runtimeContext, '/co-pilot');
 
         let tenantFolders: Array<{ id: string; name: string; parentId?: string | null }> = [];
         let tenantContacts: Array<{ id: string; name: string; email?: string; businessName?: string; folderId?: string }> = [];
         try {
-            const sessionContext = await getCurrentSessionContext();
+            const sessionContext = session;
             if (sessionContext) {
                 const db = getAdminDb();
                 const [folderSnapshot, contactSnapshot] = db && sessionContext.orgId
@@ -182,7 +194,7 @@ export async function POST(request: NextRequest) {
                     orgId: sessionContext.orgId,
                     accessLevel: sessionContext.accessLevel,
                     folders: tenantFolders,
-                    contacts: tenantContacts,
+                    contacts: selectCatalogContacts(tenantContacts, recentUserText(history, question)),
                 });
 
                 if (capabilityResult.handled) {
@@ -339,15 +351,7 @@ export async function POST(request: NextRequest) {
             const genkitResult = await ogeemoAgent({
                 message: question,
                 history,
-                clientUserId: sessionId || 'ogeemo-guest',
-                runtimeContext: {
-                    userId: runtimeContext?.userId || sessionId,
-                    orgId: runtimeContext?.orgId,
-                    accessLevel: runtimeContext?.accessLevel,
-                    isMasterTenant: runtimeContext?.isMasterTenant,
-                    currentPath: runtimeContext?.currentPath || new URL(request.url).pathname,
-                    activeOrgName: runtimeContext?.activeOrgName,
-                },
+                runtimeContext,
             });
 
             const genkitAnswer = normalizeAnswerText(genkitResult?.reply);
@@ -386,15 +390,7 @@ export async function POST(request: NextRequest) {
             const generalResult = await ogeemoGeneralKnowledgeFallbackAgent({
                 message: question,
                 history,
-                clientUserId: sessionId || 'ogeemo-guest',
-                runtimeContext: {
-                    userId: runtimeContext?.userId || sessionId,
-                    orgId: runtimeContext?.orgId,
-                    accessLevel: runtimeContext?.accessLevel,
-                    isMasterTenant: runtimeContext?.isMasterTenant,
-                    currentPath: runtimeContext?.currentPath || new URL(request.url).pathname,
-                    activeOrgName: runtimeContext?.activeOrgName,
-                },
+                runtimeContext,
             });
 
             const generalAnswer = normalizeAnswerText(generalResult?.reply);

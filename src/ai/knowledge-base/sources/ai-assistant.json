@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "ai.copilot.tasks-and-limits",
+      "module": "Co-Pilot",
+      "title": "What the Co-Pilot can do: creating tasks, searching, dates, roles and limits",
+      "routes": ["/knowledge-base", "/event-manager", "/to-do"],
+      "intents": ["how-to", "business-rule", "troubleshooting"],
+      "keywords": ["co-pilot", "copilot", "ai assistant", "create task", "schedule", "tomorrow", "time zone", "viewer", "editor", "role", "search contact", "sync receipts", "too quickly", "rate limit", "sign in", "google drive", "receipts folder"],
+      "audiences": ["all"],
+      "content": "The Co-Pilot is the AI assistant in the side panel and on its own page. You must be signed in to use it: who you are, which workspace you are in and your role come from your sign-in, never from what the browser sends. It can search Ogeemo pages and the contacts and projects of your own workspace (by name, company, email or a phone number typed any way), create a task or calendar event, and explain how Ogeemo works. It cannot read time logs, invoices or payroll, and it cannot edit or delete tasks. Creating a task needs the editor, org_admin or super_admin role; a viewer can ask questions but is told an editor must create the task. A task it creates appears in the Activity Manager and, when it has no date and no project, on the To-Do List; a task for a project also becomes a step of that project. The contact and project must belong to your workspace. The Co-Pilot is told today's date and your time zone, so \"tomorrow at 3pm\" or \"next Friday\" is worked out from your own clock; a time with no offset is read in your zone, an end time defaults to one hour after the start, and an end before the start is refused. If the Co-Pilot is unsure of the time it asks. It only says a task was created when it was really saved; otherwise it gives the reason. The search never invents people: earlier versions listed made-up \"Dan\" and \"Julie\" contacts for any search containing those letters. \"Sync receipts\" tells you plainly that Google Drive is not connected yet and points to Receipt Intake, instead of listing made-up PDFs. To protect the service, each person can send about 30 Co-Pilot or Knowledge Base messages a minute, 20 sandbox questions and 6 images; past that a message asks you to wait a few seconds. A message can be at most 4,000 characters (2,000 in the Knowledge Base) and only the recent conversation is sent.",
+      "sourceFiles": ["src/ai/flows/ogeemo-chat.ts", "src/ai/agent-tools.ts", "src/ai/agent-task-tool.ts", "src/lib/ai-task.ts", "src/lib/ai-time.ts", "src/lib/ai-runtime.ts", "src/lib/ai-input.ts", "src/lib/ai-limits.ts", "src/app/api/ogeemo-assistant/route.ts"]
+    },
+    {
+      "id": "ai.image-generator.usage",
+      "module": "Image Generator",
+      "title": "Image Generator: how it works, limits and why an image may fail",
+      "routes": ["/tools/image-generator"],
+      "intents": ["how-to", "troubleshooting"],
+      "keywords": ["image generator", "generate image", "ai image", "picture", "prompt", "download", "failed", "busy", "capacity", "too quickly"],
+      "audiences": ["all"],
+      "content": "The Image Generator at /tools/image-generator turns a short description into a picture using Google's Gemini image model. You must be signed in. Describe what you want in up to 1,000 characters, choose Generate, and download the result when it appears. Each image is billed to Ogeemo, so you can make about 6 a minute; past that a message tells you how many seconds to wait. If the image service is busy you are asked to try again in a minute, and if it returns no picture you are asked to describe the image differently. Technical error details are written to the server log and are not shown on screen. The generator used to ask for a model (imagen-3) that Google no longer offers for this account, so every request failed; it now uses gemini-2.5-flash-image.",
+      "sourceFiles": ["src/ai/flows/image-generation-flow.ts", "src/app/api/genkit/generate-image/route.ts", "src/components/tools/image-generator-view.tsx", "src/lib/ai-limits.ts"]
+    }
+  ]
+}

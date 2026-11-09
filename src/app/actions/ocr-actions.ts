@@ -37,19 +37,9 @@ export async function extractInvoiceData(fileId: string, isExternal: boolean = f
     let base64Pdf: string;
 
     if (isExternal) {
-        // High-Fidelity Simulation: In a production environment, we would use the 
-        // Google Drive API to download the file binary using the fileId.
-        // For this orchestration, we simulate a successful extraction result.
-        const mockExtraction: ExtractedInvoice = {
-            vendor_name: fileId.includes('Acme') ? "Acme Supplies Ltd." : "Shell Global Operations",
-            invoice_number: `EXT-${Math.floor(Math.random() * 10000)}`,
-            date: format(new Date(), 'yyyy-MM-dd'),
-            subtotal: 100.00,
-            tax: 15.00,
-            total_amount: 115.00,
-            currency: 'USD'
-        };
-        return { data: mockExtraction };
+        // Reading a file straight from Google Drive is not connected yet. This used to return an invented invoice
+        // (a random number, today's date, $100 + $15 tax), which could then be posted to Accounts Payable as real.
+        return { error: 'Reading files from Google Drive is not available yet. Add the PDF to the Document Manager and extract it from there.' };
     }
 
     // --- Internal Storage Extraction Logic ---

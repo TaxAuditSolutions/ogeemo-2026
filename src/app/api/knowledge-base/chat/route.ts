@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentSessionContext } from '@/app/actions';
 import { knowledgeBaseChat } from '@/ai/flows/knowledge-base-chat';
+import { knowledgeLimiter, tooManyRequests } from '@/lib/ai-limits';
+import { limitHistory } from '@/lib/ai-input';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   const session = await getCurrentSessionContext();
   if (!session) return NextResponse.json({ error: 'Please sign in to use the Knowledge Base.' }, { status: 401 });
+
+  const limit = knowledgeLimiter.check(session.userId);
+  if (!limit.ok) return NextResponse.json({ error: tooManyRequests(limit.retryAfterSeconds) }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } });
 
   try {
     const body = await request.json();
@@ -19,7 +24,7 @@ export async function POST(request: NextRequest) {
       : '/knowledge-base';
     const result = await knowledgeBaseChat({
       message,
-      history: Array.isArray(body.history) ? body.history.slice(-12) : [],
+      history: limitHistory(body.history, { maxMessages: 12, maxChars: 2000 }),
       currentPath,
       accessLevel: session.accessLevel,
     });

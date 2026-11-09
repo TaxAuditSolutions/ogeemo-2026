@@ -16,8 +16,8 @@
 
 ## Projects & Tasks
 **How do I create a project?** Projects (`/projects/all`) → create, link client and details; Project Status (`/project-status`) shows progress.
-**How do I make a task?** To-Do List (`/to-do`) for personal tasks; Activity Manager (`/event-manager`) for work sessions — or ask Co-Pilot to `createTask` (it writes a to-do; scheduled when start/end times are given).
-**How do I set task due dates?** Give Co-Pilot an explicit date/time for `createTask`, or edit the task on its board.
+**How do I make a task?** To-Do List (`/to-do`) for personal tasks; Activity Manager (`/event-manager`) for work sessions - or ask Co-Pilot to `createTask` (editors and administrators only). It saves a to-do, or a scheduled event when you give a start time; "tomorrow at 3" is worked out from today's date and your time zone.
+**How do I set task due dates?** Tell Co-Pilot the date and time (for example "tomorrow at 3pm") when you ask for `createTask`, or edit the task on its board.
 **Action-to-Protocol:** park ideas on the Idea Board (`/idea-board`), then schedule them into time slots (Calendar `/calendar` or Activity Manager) to make them billable work.
 
 ## Time & Activity
@@ -30,7 +30,7 @@
 ## Sales & Invoicing (Quote → Invoice)
 **How do I quote a client?** Create Quote (`/accounting/quotes/create`) with items from Products & Services (`/accounting/service-items`); manage/convert in Quote Manager (`/accounting/quotes`) — accepted quotes convert to invoices.
 **How do I invoice?** Create Invoice (`/accounting/invoices/create`); track payment in Accounts Receivable (`/accounting/accounts-receivable`).
-**How do I process receipts?** Receipt Intake (`/accounting/receipt-processor`) turns scans into ledger entries; say "sync receipts" to have Co-Pilot call `syncReceipts` (it scans the Drive Receipts folder and lists files ready for extraction).
+**How do I process receipts?** Receipt Intake (`/accounting/receipt-processor`) turns scans into ledger entries. Say "sync receipts" and Co-Pilot calls `syncReceipts`; Google Drive is not connected yet, so it will say there are no Drive files and point you to Receipt Intake.
 **Bills I owe?** Accounts Payable (`/accounting/accounts-payable`).
 
 ## Bookkeeping (BKS)

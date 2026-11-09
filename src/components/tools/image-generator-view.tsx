@@ -25,10 +25,9 @@ export function ImageGeneratorView() {
     setGeneratedImageUrl(null);
 
     try {
-      // Call the server action with a clientUserId fallback for improved resilience
-      const result = await generateImage({ 
+      // The server action checks the signed-in session itself.
+      const result = await generateImage({
           prompt: prompt.trim(),
-          clientUserId: user.uid
       });
       
       if (!result) {

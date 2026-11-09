@@ -35,33 +35,10 @@ export async function getReceiptsFolderPdfs(): Promise<{ files: GDriveFile[]; er
         await adminAuth.verifySessionCookie(sessionCookie);
     }
 
-    // Simulation: High-fidelity mock of files found in the GDrive "Receipts" node.
-    // This allows the UI to build out the full extraction workflow.
-    return {
-      files: [
-        { 
-            id: 'gdrive_receipt_001', 
-            name: 'INV_2024_02_28_Acme_Supplies.pdf', 
-            size: '1.2 MB', 
-            modifiedTime: new Date().toISOString(),
-            mimeType: 'application/pdf'
-        },
-        { 
-            id: 'gdrive_receipt_002', 
-            name: 'Shell_Gas_Station_Receipt.pdf', 
-            size: '450 KB', 
-            modifiedTime: new Date().toISOString(),
-            mimeType: 'application/pdf'
-        },
-        { 
-            id: 'gdrive_receipt_003', 
-            name: 'Office_Depot_Order_Confirm.pdf', 
-            size: '2.1 MB', 
-            modifiedTime: new Date().toISOString(),
-            mimeType: 'application/pdf'
-        },
-      ]
-    };
+    // Google Drive is not connected yet. This used to return three made-up PDFs (Acme, Shell, Office Depot) as if
+    // they were in the Receipts folder, which then showed in Invoice Intelligence and the Co-Pilot as real files.
+    // An empty list is the truth until the Drive API is wired up.
+    return { files: [] };
   } catch (error: any) {
     console.error("[GDrive Service Error]", error);
     return { files: [], error: error.message };

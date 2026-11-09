@@ -25,7 +25,6 @@ export default function SandboxAgentPage() {
     try {
       const response = await askSandboxAgent({
         prompt: userMessage,
-        clientUserId: user?.uid,
       });
 
       if (response.error) {

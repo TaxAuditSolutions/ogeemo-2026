@@ -47,8 +47,7 @@ async function main() {
             const out = await ogeemoAgent({
                 message: q,
                 history: [],
-                clientUserId: 'kb-eval-user',
-                runtimeContext: { userId: 'kb-eval-user', currentPath: '/event-manager' },
+                runtimeContext: { userId: 'kb-eval-user', isMasterTenant: false, currentPath: '/event-manager', timeZone: 'UTC' },
             });
             results.push({ q, a: out.reply });
             process.stdout.write(`A: ${out.reply}\n---\n`);

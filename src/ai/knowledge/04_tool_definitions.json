@@ -3,24 +3,28 @@
   "tools": [
     {
       "name": "syncReceipts",
-      "description": "Scans the Google Drive \"Receipts\" folder for new PDF invoices. Returns a list of files ready for extraction.",
+      "description": "Lists PDF files in the Google Drive \"Receipts\" folder, when Drive is connected.",
       "inputs": {},
-      "sideEffects": "Read-only scan of Google Drive; recommends navigating to the Extraction Hub (/accounting/receipt-processor).",
-      "auth": "Requires an authenticated user; safe to call when the user asks to check or sync receipts."
+      "sideEffects": "Read-only. Google Drive is not connected yet, so it returns an empty list and says so; point the user to Receipt Intake (/accounting/receipt-processor).",
+      "auth": "Requires a signed-in user."
     },
     {
       "name": "searchContacts",
-      "description": "Searches the user's contact directory for phone numbers, emails or IDs.",
-      "inputs": { "searchTerm": "string - name, company or email fragment" },
-      "sideEffects": "Read-only (Firestore contacts, org-scoped).",
-      "auth": "Requires authenticated user + org (tenant)."
+      "description": "Searches the workspace's contacts by name, company, email or phone number and returns their ids.",
+      "inputs": {
+        "searchTerm": "string - name, company, email or phone fragment (every word must match)"
+      },
+      "sideEffects": "Read-only (Firestore contacts, scoped to the user's workspace). At most 20 results are returned.",
+      "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
     },
     {
       "name": "searchGlobal",
-      "description": "MANDATORY first action for any single name, company or entity. Searches local context (browser pulse of contacts) and the web.",
-      "inputs": { "query": "string - search query or keyword" },
-      "sideEffects": "Read-only search; no writes.",
-      "auth": "Works for guests (falls back to web-only)."
+      "description": "Searches Ogeemo pages and the workspace's contacts and projects by name, and returns real record ids.",
+      "inputs": {
+        "query": "string - search query or keyword"
+      },
+      "sideEffects": "Read-only search; no writes, no web search. It never invents people.",
+      "auth": "Pages are searched for everyone; contacts and projects only for a signed-in user, inside their own workspace."
     },
     {
       "name": "createTask",
@@ -28,33 +32,62 @@
       "inputs": {
         "title": "string (required)",
         "description": "string (optional)",
-        "startTime": "ISO datetime (optional; presence makes it a scheduled event)",
-        "endTime": "ISO datetime (optional)",
-        "contactId": "string (optional)",
-        "projectId": "string (optional)"
+        "startTime": "ISO date-time (optional; presence makes it a scheduled event; without an offset it is read in the user's time zone)",
+        "endTime": "ISO date-time (optional; one hour after the start when omitted)",
+        "contactId": "string (optional) - must be a contact in this workspace, from searchContacts",
+        "projectId": "string (optional) - must be a project in this workspace; the task also becomes a step of the project"
       },
-      "sideEffects": "WRITES a document to the Firestore 'tasks' collection with status 'todo'. If admin keys are missing (dev), it simulates success without writing.",
-      "auth": "Requires authenticated user."
+      "sideEffects": "WRITES a document to the Firestore 'tasks' collection with status 'todo', stamped with the workspace so the app lists it. A task with no date and no project is a To-Do List item. If the database is unavailable nothing is written and the reply says the task was NOT created.",
+      "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     }
   ],
   "flows": [
     {
       "name": "contactCapability",
       "description": "Structured contact create/edit flow: Co-Pilot gathers the name (folder is optional - a default is applied when omitted), checks for duplicates by name/email, prepares the contact form with gathered values, and the contact is only created when the user reviews and clicks Create Identity. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
-      "inputs": ["message", "history?", "userId", "orgId?", "accessLevel?", "folders", "contacts?"],
+      "inputs": [
+        "message",
+        "history?",
+        "userId",
+        "orgId?",
+        "accessLevel?",
+        "folders",
+        "contacts?"
+      ],
       "sideEffects": "UI-assisted only: it prepares forms and navigation; the user's click performs the write."
     }
   ],
   "commands": {
     "how": "The command processor maps normalized natural-language words to navigation and simple actions (src/lib/command-processor.ts). Examples:",
     "examples": [
-      { "say": "timer, start timer, log time, track time", "does": "opens /event-manager?startTimer=true (Activity Manager timer)" },
-      { "say": "activity manager, time manager", "does": "opens /event-manager" },
-      { "say": "my shortcuts, dashboard", "does": "opens /action-manager" },
-      { "say": "ledger, books, general ledger", "does": "opens /accounting/ledgers (BKS Ledger)" },
-      { "say": "income / expense", "does": "opens the income or expenses tab of the ledger" },
-      { "say": "tax", "does": "opens /accounting/tax (Tax Center)" },
-      { "say": "co-pilot, ogeemo ai, dispatch", "does": "opens /co-pilot" }
+      {
+        "say": "timer, start timer, log time, track time",
+        "does": "opens /event-manager?startTimer=true (Activity Manager timer)"
+      },
+      {
+        "say": "activity manager, time manager",
+        "does": "opens /event-manager"
+      },
+      {
+        "say": "my shortcuts, dashboard",
+        "does": "opens /action-manager"
+      },
+      {
+        "say": "ledger, books, general ledger",
+        "does": "opens /accounting/ledgers (BKS Ledger)"
+      },
+      {
+        "say": "income / expense",
+        "does": "opens the income or expenses tab of the ledger"
+      },
+      {
+        "say": "tax",
+        "does": "opens /accounting/tax (Tax Center)"
+      },
+      {
+        "say": "co-pilot, ogeemo ai, dispatch",
+        "does": "opens /co-pilot"
+      }
     ]
   },
   "cannotYet": [

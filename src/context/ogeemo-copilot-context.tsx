@@ -211,6 +211,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                             accessLevel: accessLevel || undefined,
                             isMasterTenant,
                             currentPath: pathname,
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                         },
                     }),
                 });

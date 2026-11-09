@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import { isInternalPath } from '@/lib/ai-input';
 import remarkGfm from 'remark-gfm';
 import { BookOpen, ExternalLink, LoaderCircle, RotateCcw, Send, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -88,7 +89,7 @@ export function KnowledgeBaseView() {
             <article key={message.id} className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}>
               <div className={cn('max-w-[88%] rounded-lg px-4 py-3 text-sm', message.role === 'user' ? 'bg-primary text-primary-foreground' : 'border bg-card')}>
                 <div className="prose prose-sm max-w-none dark:prose-invert [&_a]:text-primary [&_a]:underline [&_p]:mb-3 [&_p:last-child]:mb-0">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={(url) => url.startsWith('/') ? url : ''}>{message.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={(url) => (isInternalPath(url) ? url : '')}>{message.content}</ReactMarkdown>
                 </div>
                 {message.citations && message.citations.length > 0 && (
                   <div className="mt-3 border-t pt-3">

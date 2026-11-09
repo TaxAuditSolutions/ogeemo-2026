@@ -48,7 +48,7 @@ export function sanitizeKnowledgeReply(text: string): string {
   const answerOnly = text.split(/\n\s*(?:<details\b|<small\b|\(?Sources?(?:\s+ID\(s\))?\s*:|\(Source:)/i)[0];
   return answerOnly
     .replace(/<[^>]+>/g, '')
-    .replace(/\[([^\]]+)\]\((?!\/)[^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\((?!\/(?![\/\\]))[^)]+\)/g, '$1')
     .trim();
 }
 

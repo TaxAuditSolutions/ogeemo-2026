@@ -1,5 +1,9 @@
 # Ogeemo Comprehensive Ingestion Flow Runbook
 
+> **Retired:** the `ogeemoAssistant` Cloud Function (Steps 6 to 8 below) was deleted and the chat route no longer calls it. The
+> Co-Pilot now answers through Genkit only (`src/app/api/ogeemo-assistant/route.ts`). Steps 6 to 8 are kept as history and
+> will not work as written. Ingestion into `help_guides` (Steps 1 to 5) is unaffected.
+
 Use this runbook as the step-by-step sequence for Copilot to build and maintain a broad guide corpus in Firestore vectors.
 
 ## Step 1: Prepare environment

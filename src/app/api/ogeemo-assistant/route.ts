@@ -7,32 +7,6 @@ import { assistantLimiter, tooManyRequests } from '@/lib/ai-limits';
 import { checkPrompt, limitHistory } from '@/lib/ai-input';
 import { recentUserText, selectCatalogContacts, trustedRuntimeContext } from '@/lib/ai-runtime';
 
-const DEFAULT_ASSISTANT_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
-
-type AssistantRefusalReason = 'none' | 'no_guide_match' | 'insufficient_guide_detail' | 'policy_refusal';
-
-type UpstreamAssistantMetadata = {
-    answeredFromGuides?: boolean;
-    refusal?: boolean;
-    refusalReason?: AssistantRefusalReason;
-    answerSource?: 'deterministic_identity' | 'exact_intent_structured' | 'gemini_generated';
-    questionType?: 'identity_or_navigation' | 'procedural_or_other';
-    contextChunkCount?: number;
-    responseMode?: 'chat' | 'verification';
-};
-
-type FallbackDecision = {
-    shouldFallback: boolean;
-    reason:
-    | 'metadata_refusal_true'
-    | 'metadata_answered_from_guides_false'
-    | 'metadata_refusal_reason_no_guide_match'
-    | 'metadata_refusal_reason_insufficient_guide_detail'
-    | 'legacy_refusal_pattern_match'
-    | 'functions_empty_answer'
-    | 'functions_answer_accepted';
-};
-
 const FUNCTIONS_REFUSAL_PATTERNS = [
     'provided guide context does not contain',
     'does not contain a direct definition',
@@ -94,46 +68,6 @@ function isImperativeContactRequest(question: string): boolean {
     return imperative && !informational;
 }
 
-function parseUpstreamMetadata(value: unknown): UpstreamAssistantMetadata | undefined {
-    if (!value || typeof value !== 'object') {
-        return undefined;
-    }
-
-    return value as UpstreamAssistantMetadata;
-}
-
-function determineFallbackDecision(answer: string, metadata?: UpstreamAssistantMetadata): FallbackDecision {
-    if (metadata) {
-        if (metadata.refusal === true) {
-            return { shouldFallback: true, reason: 'metadata_refusal_true' };
-        }
-
-        if (metadata.answeredFromGuides === false) {
-            return { shouldFallback: true, reason: 'metadata_answered_from_guides_false' };
-        }
-
-        if (metadata.refusalReason === 'no_guide_match') {
-            return { shouldFallback: true, reason: 'metadata_refusal_reason_no_guide_match' };
-        }
-
-        if (metadata.refusalReason === 'insufficient_guide_detail') {
-            return { shouldFallback: true, reason: 'metadata_refusal_reason_insufficient_guide_detail' };
-        }
-
-        return { shouldFallback: false, reason: 'functions_answer_accepted' };
-    }
-
-    if (!answer) {
-        return { shouldFallback: true, reason: 'functions_empty_answer' };
-    }
-
-    if (hasLegacyRefusalPattern(answer)) {
-        return { shouldFallback: true, reason: 'legacy_refusal_pattern_match' };
-    }
-
-    return { shouldFallback: false, reason: 'functions_answer_accepted' };
-}
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json().catch(() => null);
@@ -152,7 +86,6 @@ export async function POST(request: NextRequest) {
         if (!prompt.ok) return NextResponse.json({ error: prompt.error }, { status: 400 });
         const question = prompt.text;
         const history = limitHistory(body?.history);
-        const sessionId = session.userId;
         const runtimeContext = trustedRuntimeContext(session, body?.runtimeContext, '/co-pilot');
 
         let tenantFolders: Array<{ id: string; name: string; parentId?: string | null }> = [];
@@ -253,101 +186,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const assistantUrl = process.env.OGEEMO_ASSISTANT_URL || DEFAULT_ASSISTANT_URL;
-
-        let upstreamResponse: Response | null = null;
-        let upstreamJson: any = null;
-        let upstreamStatus: number | null = null;
-        let upstreamContentType: string | null = null;
-        let upstreamFailureKind: 'none' | 'fetch_error' | 'non_json' | 'http_error' = 'none';
-
-        try {
-            const controller = new AbortController();
-            const timeoutMs = 10000;
-            const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-            upstreamResponse = await fetch(assistantUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ question, history, sessionId }),
-                cache: "no-store",
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeout);
-
-            upstreamStatus = upstreamResponse.status;
-            upstreamContentType = upstreamResponse.headers.get('content-type');
-
-            const upstreamText = await upstreamResponse.text();
-            if (upstreamText) {
-                try {
-                    upstreamJson = JSON.parse(upstreamText);
-                } catch {
-                    upstreamFailureKind = 'non_json';
-                    console.warn('/api/ogeemo-assistant upstream-non-json', {
-                        upstreamStatus,
-                        upstreamContentType,
-                        bodyPreview: upstreamText.slice(0, 200),
-                    });
-                }
-            }
-
-            if (!upstreamResponse.ok && upstreamFailureKind === 'none') {
-                upstreamFailureKind = 'http_error';
-                console.warn('/api/ogeemo-assistant upstream-http-error', {
-                    upstreamStatus,
-                    upstreamContentType,
-                    upstreamError: upstreamJson?.error ?? upstreamJson?.details ?? null,
-                });
-            }
-        } catch (upstreamError) {
-            upstreamFailureKind = 'fetch_error';
-            const message = upstreamError instanceof Error ? upstreamError.message : String(upstreamError);
-            console.warn('/api/ogeemo-assistant upstream-fetch-error', {
-                message,
-                assistantUrl,
-            });
-        }
-
-        const functionsAnswer = normalizeAnswerText(upstreamJson?.answer);
-        const functionsMetadata = parseUpstreamMetadata(upstreamJson?._metadata);
-        const fallbackDecision = determineFallbackDecision(functionsAnswer, functionsMetadata);
-
-        const shouldForceFallbackFromUpstreamFailure = upstreamFailureKind !== 'none';
-
-        if (functionsAnswer && !fallbackDecision.shouldFallback && !shouldForceFallbackFromUpstreamFailure) {
-            console.info('/api/ogeemo-assistant source', {
-                source: 'functions_primary',
-                reason: fallbackDecision.reason,
-                decisionPath: 'functions_primary',
-                functionsRefusal: functionsMetadata?.refusal ?? null,
-                refusalReason: functionsMetadata?.refusalReason ?? null,
-                genkitAttempted: false,
-                upstreamFailureKind,
-            });
-            return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
-        }
-
-        console.info('/api/ogeemo-assistant fallback-triggered', {
-            reason: shouldForceFallbackFromUpstreamFailure ? upstreamFailureKind : fallbackDecision.reason,
-            decisionPath: 'functions_miss_trigger_fallback',
-            functionsRefusal: functionsMetadata?.refusal ?? null,
-            refusalReason: functionsMetadata?.refusalReason ?? null,
-            upstreamStatus,
-            upstreamContentType,
-            upstreamFailureKind,
-        });
-
+        // The Genkit assistant answers. A separate guide-based Cloud Function used to be asked first and Genkit only
+        // ran when it missed; that function is retired, so the operational assistant is tried first and the
+        // general-knowledge one second.
         let operationalOutcome: 'accepted' | 'empty_reply' | 'refusal_pattern' | 'error' = 'error';
         try {
-            console.info('/api/ogeemo-assistant genkit-operational-attempt', {
-                decisionPath: 'genkit_operational_attempt',
-                reason: fallbackDecision.reason,
-            });
-
             const genkitResult = await ogeemoAgent({
                 message: question,
                 history,
@@ -356,37 +199,19 @@ export async function POST(request: NextRequest) {
 
             const genkitAnswer = normalizeAnswerText(genkitResult?.reply);
             if (genkitAnswer && !hasLegacyRefusalPattern(genkitAnswer)) {
-                console.info('/api/ogeemo-assistant source', {
-                    source: 'genkit_operational_accepted',
-                    reason: fallbackDecision.reason,
-                    decisionPath: 'functions_miss->genkit_operational_accepted',
-                    functionsRefusal: functionsMetadata?.refusal ?? null,
-                    refusalReason: functionsMetadata?.refusalReason ?? null,
-                    genkitAttempted: true,
-                    genkitOperationalOutcome: 'accepted',
-                    upstreamFailureKind,
-                });
+                console.info('/api/ogeemo-assistant source', { source: 'genkit_operational_accepted' });
                 return NextResponse.json({ answer: genkitAnswer }, { status: 200 });
             }
 
             operationalOutcome = genkitAnswer ? 'refusal_pattern' : 'empty_reply';
-            console.info('/api/ogeemo-assistant genkit-operational-miss', {
-                decisionPath: 'functions_miss->genkit_operational_miss',
-                reason: fallbackDecision.reason,
-                genkitOperationalOutcome: operationalOutcome,
-            });
+            console.info('/api/ogeemo-assistant genkit-operational-miss', { genkitOperationalOutcome: operationalOutcome });
         } catch (fallbackError) {
             operationalOutcome = 'error';
-            console.warn('/api/ogeemo-assistant genkit fallback failed', fallbackError);
+            console.warn('/api/ogeemo-assistant genkit operational assistant failed', fallbackError);
         }
 
         let generalOutcome: 'accepted' | 'empty_reply' | 'refusal_pattern' | 'error' = 'error';
         try {
-            console.info('/api/ogeemo-assistant genkit-general-knowledge-attempt', {
-                decisionPath: 'genkit_general_knowledge_attempt',
-                reason: fallbackDecision.reason,
-            });
-
             const generalResult = await ogeemoGeneralKnowledgeFallbackAgent({
                 message: question,
                 history,
@@ -397,61 +222,22 @@ export async function POST(request: NextRequest) {
             if (generalAnswer && !hasLegacyRefusalPattern(generalAnswer)) {
                 console.info('/api/ogeemo-assistant source', {
                     source: 'genkit_general_knowledge_accepted',
-                    reason: fallbackDecision.reason,
-                    decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_accepted',
-                    functionsRefusal: functionsMetadata?.refusal ?? null,
-                    refusalReason: functionsMetadata?.refusalReason ?? null,
-                    genkitAttempted: true,
                     genkitOperationalOutcome: operationalOutcome,
-                    genkitGeneralKnowledgeOutcome: 'accepted',
-                    upstreamFailureKind,
                 });
                 return NextResponse.json({ answer: generalAnswer }, { status: 200 });
             }
 
             generalOutcome = generalAnswer ? 'refusal_pattern' : 'empty_reply';
-            console.info('/api/ogeemo-assistant genkit-general-knowledge-miss', {
-                decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_miss',
-                reason: fallbackDecision.reason,
-                genkitGeneralKnowledgeOutcome: generalOutcome,
-            });
+            console.info('/api/ogeemo-assistant genkit-general-knowledge-miss', { genkitGeneralKnowledgeOutcome: generalOutcome });
         } catch (fallbackError) {
             generalOutcome = 'error';
-            console.warn('/api/ogeemo-assistant genkit general knowledge fallback failed', fallbackError);
+            console.warn('/api/ogeemo-assistant genkit general knowledge assistant failed', fallbackError);
         }
-
-        console.info('/api/ogeemo-assistant source', {
-            source: 'functions_fallback_both_miss',
-            reason: functionsAnswer ? 'genkit_no_better_answer' : fallbackDecision.reason,
-            decisionPath: 'functions_miss->genkit_operational_miss->genkit_general_knowledge_miss->return_functions',
-            functionsRefusal: functionsMetadata?.refusal ?? null,
-            refusalReason: functionsMetadata?.refusalReason ?? null,
-            genkitAttempted: true,
-            genkitOperationalOutcome: operationalOutcome,
-            genkitGeneralKnowledgeOutcome: generalOutcome,
-            upstreamFailureKind,
-            upstreamStatus,
-        });
-
-        if (functionsAnswer) {
-            return NextResponse.json({ answer: functionsAnswer }, { status: 200 });
-        }
-
-        const terminalError =
-            upstreamFailureKind === 'non_json'
-                ? 'Ogeemo Assistant returned a non-JSON response and fallback could not provide an answer.'
-                : upstreamFailureKind === 'http_error'
-                    ? 'Ogeemo Assistant upstream error and fallback could not provide an answer.'
-                    : upstreamFailureKind === 'fetch_error'
-                        ? 'Could not reach Ogeemo Assistant upstream and fallback could not provide an answer.'
-                        : 'No answer returned from Ogeemo Assistant or fallback.';
 
         return NextResponse.json(
             {
-                error: terminalError,
+                error: 'Ogeemo Assistant could not provide an answer.',
                 details: {
-                    upstreamFailureKind,
-                    upstreamStatus,
                     genkitOperationalOutcome: operationalOutcome,
                     genkitGeneralKnowledgeOutcome: generalOutcome,
                 },

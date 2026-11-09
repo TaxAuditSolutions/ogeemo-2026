@@ -20,7 +20,6 @@ type VerificationResult = {
     answer: string;
 };
 
-const DEFAULT_API_URL = "https://ogeemoassistant-qsckasljxq-uc.a.run.app";
 const VERIFIED_OWNER = "copilot-auto-verify";
 const CRITICALITY_FILTER = (process.env.VERIFY_CRITICALITY ?? "critical").toLowerCase();
 const STATUS_FILTER = (process.env.VERIFY_STATUS ?? "draft").toLowerCase();
@@ -191,7 +190,13 @@ async function askAssistant(apiUrl: string, question: string): Promise<string> {
 }
 
 async function main() {
-    const apiUrl = process.env.OGEEMO_API_URL ?? DEFAULT_API_URL;
+    // The guide-answering Cloud Function this script used to call (ogeemoAssistant) was retired, so there is no
+    // default address any more. Point OGEEMO_API_URL at an endpoint that accepts { question } and returns { answer }.
+    const apiUrl = process.env.OGEEMO_API_URL;
+    if (!apiUrl) {
+        console.error("OGEEMO_API_URL is not set. The ogeemoAssistant function was retired and there is no default endpoint to verify against.");
+        process.exit(1);
+    }
     const coveragePath = path.join(process.cwd(), "docs", "guides", "coverage-matrix.csv");
     const reportPath = path.join(process.cwd(), "docs", "guides", REPORT_FILE);
 

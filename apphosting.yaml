@@ -8,10 +8,6 @@ env:
     secret: GEMINI_API_KEY
     availability:
       - RUNTIME
-  - variable: OGEEMO_ASSISTANT_URL
-    secret: OGEEMO_ASSISTANT_URL
-    availability:
-      - RUNTIME
   - variable: SMTP_USER
     secret: SMTP_USER
     availability:

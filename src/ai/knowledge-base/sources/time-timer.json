@@ -8,7 +8,7 @@
       "intents": ["how-to", "timer", "sessions"],
       "keywords": ["timer", "start session", "start new session", "pause session", "resume session", "stop and log", "log session", "session notes", "active session", "time sessions", "track time"],
       "audiences": ["all"],
-      "content": "Open an activity in Activity Manager and find the Time Sessions card. Choose Start New Session to run the timer; if the activity has not been saved yet, Ogeemo first saves it as an In Progress activity (untitled ones are named Untitled Session). While it runs the card shows an Active session clock; choose Pause Session and Resume Session as needed, and the paused time is not counted. Add notes in Active Session Notes. Choose Stop & Log, or Log Session, to record the elapsed time as a session on the activity and clear the timer. Logging with no elapsed time is refused. You can also start a timer from a calendar event's menu using Start Timer.",
+      "content": "Open an activity in Activity Manager and find the Time Sessions card. Choose Start New Session to run the timer; if the activity has not been saved yet, Ogeemo first saves it as an In Progress activity (untitled ones are named Untitled Session). While it runs the card shows an Active session clock; choose Pause Session and Resume Session as needed, and the paused time is not counted. Add notes in Active Session Notes. Choose Stop & Log, or Log Session, to record the elapsed time as a session on the activity and clear the timer. Logging with no elapsed time is refused. Only one timer can run at a time: starting a second on another activity is refused and names the one already running, because the first one You can also start a timer from a calendar event's menu using Start Timer.",
       "sourceFiles": ["src/components/time/time-manager-view.tsx", "src/components/calendar/CalendarEvent.tsx"]
     },
     {
@@ -30,7 +30,7 @@
       "intents": ["how-to", "sessions", "edit"],
       "keywords": ["edit session", "delete session", "recorded session", "edit recorded session", "apply changes", "hours minutes", "session notes", "total on this event", "save"],
       "audiences": ["all"],
-      "content": "Each recorded session in the Time Sessions list shows its duration and notes. Use the pencil to open Edit Recorded Session, change the Hours, Minutes and Session Notes, and choose Apply Changes (a duration of zero is ignored); use the trash can to remove a session. These changes apply to the form and are stored only when you save the activity, so choose Save afterwards. The header shows Total on this event, the sum of all sessions. Deleting the whole activity removes all its sessions and cannot be undone.",
+      "content": "Each recorded session in the Time Sessions list shows its duration and notes. Use the pencil to open Edit Recorded Session, change the Hours, Minutes and Session Notes, and choose Apply Changes; the length must be whole hours and minutes, at least one minute, with minutes up to 59 and at most 24 hours in one session, and otherwise a message says what to correct; use the trash can to remove a session. These changes apply to the form and are stored only when you save the activity, so choose Save afterwards. The header shows Total on this event, the sum of all sessions. Deleting the whole activity removes all its sessions and cannot be undone.",
       "sourceFiles": ["src/components/time/time-manager-view.tsx"]
     },
     {

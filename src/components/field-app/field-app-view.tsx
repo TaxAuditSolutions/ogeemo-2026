@@ -15,6 +15,7 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/context/auth-context';
 import { getUserProfile, type UserProfile } from '@/core/user-profile-service';
 import { addTimeLog, getTimeLogs, type TimeLog } from '@/services/timelog-service';
+import { parseTimerState, timerElapsedSeconds } from '@/lib/timer-state';
 import { getWorkers, type Worker } from '@/services/payroll-service';
 import { getContactById } from '@/services/contact-service';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,25 @@ interface TimerState {
     pauseTime: number | null;
     totalPausedDuration: number;
     location: string;
+}
+
+/** Reads the saved shift timer; anything damaged (corrupt, hand-edited) is null instead of a crash. */
+function parseFieldTimer(raw: string | null): TimerState | null {
+    if (!raw) return null;
+    try {
+        const value = JSON.parse(raw) as Partial<TimerState> | null;
+        if (!value || typeof value !== 'object') return null;
+        if (typeof value.startTime !== 'number' || !Number.isFinite(value.startTime)) return null;
+        return {
+            startTime: value.startTime,
+            isPaused: value.isPaused === true,
+            pauseTime: typeof value.pauseTime === 'number' && Number.isFinite(value.pauseTime) ? value.pauseTime : null,
+            totalPausedDuration: typeof value.totalPausedDuration === 'number' && value.totalPausedDuration > 0 ? value.totalPausedDuration : 0,
+            location: typeof value.location === 'string' ? value.location : '',
+        };
+    } catch {
+        return null;
+    }
 }
 
 export function FieldAppView() {
@@ -87,15 +107,15 @@ export function FieldAppView() {
             // Load saved timer state
             const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
             if (savedTimer) {
-                const state: TimerState = JSON.parse(savedTimer);
-                setIsClockedIn(true);
-                setIsTimerPaused(state.isPaused);
-                setLocation(state.location);
-                
-                const now = Date.now();
-                const pausedDuration = state.isPaused && state.pauseTime ? Math.floor((now - state.pauseTime) / 1000) : 0;
-                const totalElapsed = Math.floor((now - state.startTime) / 1000) - state.totalPausedDuration - pausedDuration;
-                setElapsedTime(totalElapsed > 0 ? totalElapsed : 0);
+                const state = parseFieldTimer(savedTimer);
+                if (state) {
+                    setIsClockedIn(true);
+                    setIsTimerPaused(state.isPaused);
+                    setLocation(state.location);
+                    setElapsedTime(timerElapsedSeconds({ ...state, eventId: 'field', notes: '', isActive: true }));
+                } else {
+                    localStorage.removeItem(FIELD_TIMER_KEY);
+                }
             }
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Error", description: "Failed to load worker session." });
@@ -120,6 +140,7 @@ export function FieldAppView() {
     }, [isClockedIn, isTimerPaused]);
 
     const handleClockIn = () => {
+        if (localStorage.getItem(FIELD_TIMER_KEY) && isClockedIn) return;
         if (!location.trim()) {
             toast({ variant: 'destructive', title: "Location Required", description: "Please enter your work location before clocking in." });
             return;
@@ -142,7 +163,8 @@ export function FieldAppView() {
     const handlePauseResume = () => {
         const savedTimer = localStorage.getItem(FIELD_TIMER_KEY);
         if (!savedTimer) return;
-        const state: TimerState = JSON.parse(savedTimer);
+        const state = parseFieldTimer(savedTimer);
+        if (!state) return;
 
         if (isTimerPaused) {
             const pausedDuration = state.pauseTime ? Math.floor((Date.now() - state.pauseTime) / 1000) : 0;
@@ -174,10 +196,21 @@ export function FieldAppView() {
             setIsSubmitting(false);
             return;
         }
-        const state: TimerState = JSON.parse(savedTimer);
+        const state = parseFieldTimer(savedTimer);
+        if (!state) {
+            // A damaged timer cannot be turned into a log; clear it so the worker is not stuck clocked in.
+            localStorage.removeItem(FIELD_TIMER_KEY);
+            setIsClockedIn(false);
+            setIsTimerPaused(false);
+            setElapsedTime(0);
+            toast({ variant: 'destructive', title: 'Shift could not be saved', description: 'The saved timer was damaged. Clock in again.' });
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
-            const endTime = new Date();
+            // A paused shift ended when the pause began; clocking out later must not add the paused time.
+            const endTime = new Date(state.isPaused && state.pauseTime ? state.pauseTime : Date.now());
             const startTime = new Date(state.startTime);
             
             const logData: Omit<TimeLog, 'id'> = {
@@ -185,7 +218,7 @@ export function FieldAppView() {
                 workerName: profile?.displayName || user.displayName || user.email || 'Worker',
                 startTime,
                 endTime,
-                durationSeconds: elapsedTime,
+                durationSeconds: Math.min(timerElapsedSeconds({ ...state, eventId: 'field', notes: '', isActive: true }), Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 1000))),
                 location: state.location,
                 notes: `Mobile session logged via Field App at ${state.location}.`,
                 userId: user.uid,
@@ -193,6 +226,14 @@ export function FieldAppView() {
                 isBillable: false,
             };
 
+            if (logData.durationSeconds < 60) {
+                localStorage.removeItem(FIELD_TIMER_KEY);
+                setIsClockedIn(false);
+                setIsTimerPaused(false);
+                setElapsedTime(0);
+                toast({ title: 'Shift too short to log', description: 'Less than a minute was worked, so nothing was saved.' });
+                return;
+            }
             await addTimeLog(logData);
             
             localStorage.removeItem(FIELD_TIMER_KEY);

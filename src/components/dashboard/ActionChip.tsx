@@ -7,6 +7,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { Button } from '@/components/ui/button';
 import { type ActionChipData } from '@/types/calendar';
 import { cn } from '@/lib/utils';
+import { openModeFor } from '@/lib/action-links';
 import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -85,18 +86,12 @@ export const ActionChip = React.forwardRef<HTMLDivElement, ActionChipProps>(
         onChipClick();
         return;
       }
-      if (!href) return;
-      
-      const hrefValue = typeof href === 'string' ? href : href.pathname;
-
-      if (hrefValue && (hrefValue.startsWith('http://') || hrefValue.startsWith('https://'))) {
-        window.open(hrefValue, '_blank', 'noopener,noreferrer');
-      } else if (typeof href === 'string') {
-        router.push(href);
-      } else if (typeof href === 'object' && href.pathname) {
-        const query = new URLSearchParams(href.query as Record<string, string>).toString();
-        const url = query ? `${href.pathname}?${query}` : href.pathname;
-        router.push(url);
+      // A link that is not a page here or an http(s) address (a stored "//other-site", "javascript:") does nothing.
+      const { mode, target } = openModeFor(href);
+      if (mode === 'external') {
+        window.open(target, '_blank', 'noopener,noreferrer');
+      } else if (mode === 'internal') {
+        router.push(target);
       }
     };
     

@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "time.entries.invoiced-lock",
+      "module": "Activity Manager",
+      "title": "Invoiced time and activities cannot be deleted or changed",
+      "routes": ["/event-manager", "/reports/time-log"],
+      "intents": ["business-rule", "troubleshooting", "billing", "delete"],
+      "keywords": ["invoiced", "on an invoice", "cannot be deleted", "cannot be changed", "locked", "billed", "time log", "activity", "delete project", "release", "audit trail", "rate", "client", "hours"],
+      "audiences": ["all"],
+      "content": "When time is put on an invoice, the time log or activity is stamped as billed and the invoice line points back at it. To keep the invoice and the work it was built from in agreement, an invoiced time log or activity cannot be deleted, and the things the invoice depends on cannot be changed: the time or time sessions, the start and end of a time log, the billable setting, the rate and the client (and the worker on a time log). The message says which of those you tried to change. Notes, subject, title, status and the schedule can still be edited. A project that contains an invoiced activity cannot be deleted, and a bulk delete or bulk project delete is all or nothing, so nothing is removed if any chosen item is on an invoice. Converting an activity to a project or archiving it is refused first for the same reason, so it does not leave a copy behind. To release an entry, delete the invoice or take the line off it; the entry then becomes billable again and can be changed or deleted. A time log must end after it starts, its recorded length cannot be longer than the time between the two (it may be shorter, for a break), and a rate cannot be negative. Time logs are also checked when the Field App clock-out saves one; a shift under a minute is not logged, and a paused shift ends when the pause began.",
+      "sourceFiles": ["src/lib/time-entry-lock.ts", "src/services/timelog-service.ts", "src/services/project-service.ts"]
+    },
+    {
+      "id": "action-manager.shortcuts.links",
+      "module": "Activity Manager",
+      "title": "My Shortcuts: custom links, labels and duplicates",
+      "routes": ["/action-manager/manage", "/action-manager"],
+      "intents": ["how-to", "business-rule"],
+      "keywords": ["my shortcuts", "custom url", "shortcut link", "add shortcut", "label", "duplicate shortcut", "https", "internal page", "path", "javascript", "another site", "customize shortcuts"],
+      "audiences": ["all"],
+      "content": "On Customize My Shortcuts, Create Shortcut offers an Internal Page from a list or a Custom URL. A custom link is either a page path that starts with a single slash, such as /contacts, or a full http or https web address with a real site name, such as https://example.com. Anything else is refused with a message: a path that starts with two slashes (a browser reads it as another website), javascript: and data: links, other schemes, a bare word, a web address with no site name or with a user name and password in it, and links with spaces. A web address opens in a new tab. A label must not be blank, is trimmed to one line and can have at most 40 characters. If you already have a shortcut to the same page, ignoring capital letters and a trailing slash, you are told which one instead of getting a second. A shortcut already stored with an unsafe link does nothing when clicked. The same dialog is used for the Accounting and HR shortcut menus. Saving your daily or weekly planning ritual replaces only your own ritual entries, not other people's.",
+      "sourceFiles": ["src/lib/action-links.ts", "src/components/dashboard/AddActionDialog.tsx", "src/components/dashboard/ActionChip.tsx"]
+    }
+  ]
+}

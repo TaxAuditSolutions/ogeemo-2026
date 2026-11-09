@@ -46,6 +46,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { billedDeleteProblem } from '@/lib/time-entry-lock';
 import { getProjectById, updateProject, addTask, updateTask, type Project, type ProjectStep, type ProjectTemplate, addProject, getTasksForProject, deleteTask, addProjectTemplate } from '@/services/project-service';
 import { DraggableStep } from './DraggableStep';
 import { cn } from '@/lib/utils';
@@ -301,6 +302,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
       if (!user || !taskToConvert) return;
       try {
+          const lockedReason = billedDeleteProblem(taskToConvert as any, 'activity');
+          if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
           const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
           await deleteTask(taskToConvert.id);
           toast({ title: "Project Created", description: `"${newProject.name}" has been successfully created.` });
@@ -332,6 +335,8 @@ export default function ProjectStepsView({ projectId }: { projectId: string }) {
         const task = tasks.find(t => t.stepId === step.id);
         if (!user || !task) return;
         try {
+            const lockedReason = billedDeleteProblem(task as any, 'activity');
+            if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
             await archiveTaskAsFile(user.uid, task);
             await deleteTask(task.id);
             toast({ title: 'Step Archived', description: 'Step content saved to File Manager.' });

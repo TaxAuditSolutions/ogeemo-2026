@@ -23,6 +23,8 @@ import type { LucideIcon } from 'lucide-react';
 import { accountingMenuItems } from '@/data/accounting-menu-items';
 import hrMenuItems from '@/data/hr-menu-items';
 import { allMenuItems } from '@/lib/menu-items';
+import { billedDeleteProblem, billedUpdateProblem, checkBillableRate, projectDeleteProblem } from '@/lib/time-entry-lock';
+import { chunkItems } from '@/lib/contact-merge';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -300,39 +302,58 @@ export async function updateProject(projectId: string, projectData: Partial<Omit
 export async function deleteProject(projectId: string, taskIds: string[]): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
     const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     const projectSnap = await getDoc(projectRef);
-    if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) return;
+    if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) throw new Error('That project no longer exists.');
 
     const tasksSnapshot = await getDocs(query(collection(db, TASKS_COLLECTION), where('orgId', '==', orgId), where('projectId', '==', projectId)));
-    tasksSnapshot.forEach(taskDoc => batch.delete(taskDoc.ref));
+    // Invoices point back at the activities in a project; deleting them would break that trail.
+    const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data()));
+    if (blocked) throw new Error(blocked);
 
-    taskIds.forEach(taskId => {
-        const taskRef = doc(db, TASKS_COLLECTION, taskId);
-        batch.delete(taskRef);
-    });
+    // The caller's extra ids are checked too: only activities of THIS workspace and this project are removed.
+    const refs = new Map<string, ReturnType<typeof doc>>();
+    tasksSnapshot.forEach((taskDoc) => refs.set(taskDoc.id, taskDoc.ref));
+    for (const taskId of taskIds) {
+        if (refs.has(taskId)) continue;
+        const taskSnap = await getDoc(doc(db, TASKS_COLLECTION, taskId));
+        if (taskSnap.exists() && taskSnap.data().orgId === orgId && taskSnap.data().projectId === projectId) {
+            refs.set(taskId, taskSnap.ref);
+        }
+    }
 
-    batch.delete(projectRef);
-    await batch.commit();
+    const all = [projectRef, ...refs.values()];
+    // The project goes in the last batch, so a failure part way leaves it in place rather than orphaning its activities.
+    const chunks = chunkItems(all);
+    for (const chunk of chunks.slice(0, -1)) {
+        const batch = writeBatch(db);
+        chunk.forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
+    const last = writeBatch(db);
+    (chunks[chunks.length - 1] ?? []).forEach((ref) => last.delete(ref));
+    last.delete(projectRef);
+    await last.commit();
 }
 
 export async function deleteProjects(projectIds: string[]): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
-    for (const projectId of projectIds) {
+    const refs: ReturnType<typeof doc>[] = [];
+    for (const projectId of Array.from(new Set(projectIds))) {
         const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
         const projectSnap = await getDoc(projectRef);
         if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) continue;
-        batch.delete(projectRef);
-        const tasksQuery = query(collection(db, TASKS_COLLECTION), where("orgId", "==", orgId), where("projectId", "==", projectId));
-        const tasksSnapshot = await getDocs(tasksQuery);
-        tasksSnapshot.forEach(taskDoc => {
-            batch.delete(taskDoc.ref);
-        });
+        const tasksSnapshot = await getDocs(query(collection(db, TASKS_COLLECTION), where("orgId", "==", orgId), where("projectId", "==", projectId)));
+        const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data()));
+        if (blocked) throw new Error(`"${projectSnap.data().name || 'A project'}": ${blocked}`);
+        refs.push(projectRef, ...tasksSnapshot.docs.map((taskDoc) => taskDoc.ref));
     }
-    await batch.commit();
+    for (const chunk of chunkItems(refs)) {
+        const batch = writeBatch(db);
+        chunk.forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
 }
 
 /**
@@ -447,7 +468,15 @@ export async function updateTask(taskId: string, taskData: Partial<Omit<TaskEven
     const orgId = await getCurrentOrgId();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
-    if (!taskSnap.exists() || taskSnap.data().orgId !== orgId) return;
+    if (!taskSnap.exists() || taskSnap.data().orgId !== orgId) throw new Error('That activity no longer exists.');
+
+    const blocked = billedUpdateProblem(taskSnap.data(), taskData, 'activity');
+    if (blocked) throw new Error(blocked);
+    if ('billableRate' in taskData) {
+        const rate = checkBillableRate(taskData.billableRate);
+        if (!rate.ok) throw new Error(rate.error);
+    }
+
     const dataToUpdate = { ...taskData };
     if ('projectId' in dataToUpdate && dataToUpdate.projectId === undefined) {
         dataToUpdate.projectId = null;
@@ -479,35 +508,46 @@ export async function deleteTask(taskId: string): Promise<void> {
     const orgId = await getCurrentOrgId();
     const taskRef = doc(db, TASKS_COLLECTION, taskId);
     const taskSnap = await getDoc(taskRef);
-    if (taskSnap.exists()) {
-        const taskData = docToTask(taskSnap);
-        if (taskData.orgId !== orgId) return;
-        if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
-            const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
-            const projectSnap = await getDoc(projectRef);
-            if (projectSnap.exists()) {
-                const projectData = docToProject(projectSnap);
-                const updatedSteps = (projectData.steps || []).filter(step => step.id !== taskData.stepId);
-                await updateDoc(projectRef, { steps: updatedSteps });
-            }
+    if (!taskSnap.exists() || taskSnap.data().orgId !== orgId) throw new Error('That activity no longer exists.');
+
+    // An invoiced activity is the record the invoice line points back at; deleting it breaks the audit trail.
+    const blocked = billedDeleteProblem(taskSnap.data(), 'activity');
+    if (blocked) throw new Error(blocked);
+
+    const batch = writeBatch(db);
+    const taskData = docToTask(taskSnap);
+    if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
+        const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+            const projectData = docToProject(projectSnap);
+            const updatedSteps = (projectData.steps || []).filter(step => step.id !== taskData.stepId);
+            batch.update(projectRef, { steps: updatedSteps });
         }
     }
-    await deleteDoc(taskRef);
+    batch.delete(taskRef);
+    await batch.commit();
 }
 
 export async function deleteTodos(todoIds: string[]): Promise<void> {
     if (todoIds.length === 0) return;
     const db = getDb();
     const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
-    for (const id of todoIds) {
+    const refs: ReturnType<typeof doc>[] = [];
+    for (const id of Array.from(new Set(todoIds))) {
         const docRef = doc(db, TASKS_COLLECTION, id);
         const snap = await getDoc(docRef);
-        if (snap.exists() && snap.data().orgId === orgId) {
-            batch.delete(docRef);
-        }
+        if (!snap.exists() || snap.data().orgId !== orgId) continue;
+        // Nothing is deleted if any chosen activity is on an invoice, so a bulk delete is all or nothing.
+        const blocked = billedDeleteProblem(snap.data(), 'activity');
+        if (blocked) throw new Error(`"${snap.data().title || 'An activity'}": ${blocked}`);
+        refs.push(docRef);
     }
-    await batch.commit();
+    for (const chunk of chunkItems(refs)) {
+        const batch = writeBatch(db);
+        chunk.forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
 }
 
 export async function getProjectTemplates(_userId: string): Promise<ProjectTemplate[]> {
@@ -777,13 +817,18 @@ export async function updateActionChip(userId: string, chip: ActionChipData, typ
 export async function deleteRitualTasks(userId: string, ritualType: 'daily' | 'weekly'): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
+    // A ritual belongs to the person who set it up. Without the user filter, saving YOUR daily ritual deleted
+    // every colleague's too.
     const q = query(
         collection(db, TASKS_COLLECTION),
         where("orgId", "==", orgId),
+        where("userId", "==", userId),
         where("ritualType", "==", ritualType)
     );
     const snapshot = await getDocs(q);
-    const batch = writeBatch(db);
-    snapshot.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+    for (const chunk of chunkItems(snapshot.docs)) {
+        const batch = writeBatch(db);
+        chunk.forEach((ritual) => batch.delete(ritual.ref));
+        await batch.commit();
+    }
 }

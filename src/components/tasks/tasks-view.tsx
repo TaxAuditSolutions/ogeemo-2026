@@ -33,6 +33,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { billedDeleteProblem } from '@/lib/time-entry-lock';
 import { getTasksForUser, addProject, updateTask, updateTaskPositions, deleteTask, deleteTodos } from '@/services/project-service';
 import { updateTodosStatus } from '@/services/todo-service';
 import { getProjects } from '@/services/project-service';
@@ -191,6 +192,8 @@ export function ToDoListView() {
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
     if (!user) return;
     try {
+      const lockedReason = billedDeleteProblem(taskToConvert as any, 'activity');
+      if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
       const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
       if (taskToConvert) {
         await deleteTask(taskToConvert.id);
@@ -208,6 +211,8 @@ export function ToDoListView() {
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {
+      const lockedReason = billedDeleteProblem(task as any, 'activity');
+      if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
       await archiveTaskAsFile(user.uid, task);
       await deleteTask(task.id);
       loadData();

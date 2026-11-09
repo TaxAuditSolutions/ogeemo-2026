@@ -17,6 +17,7 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { billedDeleteProblem, billedUpdateProblem, timeLogProblem } from '@/lib/time-entry-lock';
 
 export interface TimeLog {
   id: string;
@@ -123,6 +124,8 @@ export async function getTimeLogs(userId?: string): Promise<TimeLog[]> {
 }
 
 export async function addTimeLog(data: Omit<TimeLog, 'id'>): Promise<TimeLog> {
+  const problem = timeLogProblem(data);
+  if (problem) throw new Error(problem);
   const db = getDb();
   const orgId = await getCurrentOrgId();
   const currentUser = getCurrentAuthContext();
@@ -150,6 +153,10 @@ export async function updateTimeLog(id: string, data: Partial<Omit<TimeLog, 'id'
   if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
     throw new Error('Time log not found for the current organization.');
   }
+  const blocked = billedUpdateProblem(snapshot.data(), data, 'time log');
+  if (blocked) throw new Error(blocked);
+  const problem = timeLogProblem(data, snapshot.data());
+  if (problem) throw new Error(problem);
 
   await updateDoc(logRef, {
     ...data,
@@ -167,6 +174,9 @@ export async function deleteTimeLog(id: string): Promise<void> {
   if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
     throw new Error('Time log not found for the current organization.');
   }
+  // An invoiced log is the record the invoice line points back at; deleting it breaks the audit trail.
+  const blocked = billedDeleteProblem(snapshot.data(), 'time log');
+  if (blocked) throw new Error(blocked);
 
   await deleteDoc(logRef);
 }
@@ -179,10 +189,13 @@ export async function updateTimeLogsStatus(logIds: string[], status: TimeLog['st
   const orgId = await getCurrentOrgId();
   const currentUser = getCurrentAuthContext();
   const batch = writeBatch(db);
-  logIds.forEach(id => {
+  // Only this workspace's logs: an id from anywhere else is skipped, not written.
+  for (const id of logIds) {
     const logRef = doc(db, TIME_LOGS_COLLECTION, id);
-    batch.update(logRef, { status, updatedBy: currentUser.uid, updatedAt: new Date() });
-  });
-
+    const snapshot = await getDoc(logRef);
+    if (snapshot.exists() && snapshot.data()?.orgId === orgId) {
+      batch.update(logRef, { status, updatedBy: currentUser.uid, updatedAt: new Date() });
+    }
+  }
   await batch.commit();
 }

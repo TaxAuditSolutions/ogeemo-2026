@@ -34,6 +34,7 @@ import { getFolders as getContactFolders } from '@/services/contact-folder-servi
 import { Textarea } from '../ui/textarea';
 import { cn, formatTime } from '@/lib/utils';
 import { computeDurationAndSource, type DurationSource } from '@/lib/duration-source';
+import { parseTimerState, sessionEndMs, sessionSecondsFrom, startTimerBlock, timerElapsedSeconds } from '@/lib/timer-state';
 import { useActivityForm } from '@/hooks/use-activity-form';
 import { useActivityReferenceData } from '@/hooks/use-activity-reference-data';
 import { ActivityFormFields } from '@/components/time/activity-form-fields';
@@ -182,6 +183,13 @@ export function TimeManagerView() {
     }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, activityType, toast]);
 
     const handleStartTimer = useCallback(async () => {
+        const running = parseTimerState(localStorage.getItem(TIMER_STORAGE_KEY));
+        const block = startTimerBlock(running, eventToEdit?.id ?? '');
+        if (block && running && (!eventToEdit || running.eventId !== eventToEdit.id)) {
+            toast({ variant: 'destructive', title: 'A timer is already running', description: block });
+            return;
+        }
+        if (block && running && eventToEdit && running.eventId === eventToEdit.id) return;
         let currentEvent = eventToEdit;
         if (!currentEvent) currentEvent = await createAndSaveNewEvent();
         if (currentEvent) {
@@ -196,7 +204,7 @@ export function TimeManagerView() {
             };
             broadcastTimerState(storedState);
         }
-    }, [eventToEdit, createAndSaveNewEvent]);
+    }, [eventToEdit, createAndSaveNewEvent, toast]);
     
     const handlePauseTimer = useCallback(() => {
         const savedStateRaw = localStorage.getItem(TIMER_STORAGE_KEY);
@@ -275,7 +283,8 @@ export function TimeManagerView() {
         const newSession: TimeSession = {
             id: `session_${Date.now()}`,
             startTime: new Date(timerState.startTime),
-            endTime: new Date(),
+            // A paused timer stopped when the pause began; logging it later must not add the paused time.
+            endTime: new Date(sessionEndMs(timerState)),
             durationSeconds: elapsedSeconds,
             notes: currentSessionNotes,
         };
@@ -300,9 +309,12 @@ export function TimeManagerView() {
 
     const handleSaveSession = () => {
         if (!sessionToEdit) return;
-        const newDurationSeconds = (Number(editSessionHours) * 3600) + (Number(editSessionMinutes) * 60);
-        if (newDurationSeconds <= 0) return;
-        setSessions(prev => prev.map(s => s.id === sessionToEdit.id ? { ...sessionToEdit, durationSeconds: newDurationSeconds, notes: editSessionNotes } : s));
+        const length = sessionSecondsFrom(editSessionHours, editSessionMinutes);
+        if (!length.ok) {
+            toast({ variant: 'destructive', title: 'Check the session length', description: length.error });
+            return;
+        }
+        setSessions(prev => prev.map(s => s.id === sessionToEdit.id ? { ...sessionToEdit, durationSeconds: length.seconds, notes: editSessionNotes } : s));
         setIsEditSessionDialogOpen(false);
     };
 
@@ -385,21 +397,14 @@ export function TimeManagerView() {
     }, [searchParams, eventToEdit, handleStartTimer]);
 
     const syncWithGlobalTimer = useCallback(() => {
-        try {
-            const savedStateRaw = localStorage.getItem(TIMER_STORAGE_KEY);
-            if (savedStateRaw) {
-                const savedState: StoredTimerState = JSON.parse(savedStateRaw);
-                if (eventToEdit && savedState.eventId === eventToEdit.id) {
-                    setTimerState(savedState);
-                    if (savedState.isActive) {
-                        const now = Date.now();
-                        const pausedDuration = savedState.isPaused && savedState.pauseTime ? Math.floor((now - savedState.pauseTime) / 1000) : 0;
-                        const elapsed = Math.floor((now - savedState.startTime) / 1000) - savedState.totalPausedDuration - pausedDuration;
-                        setElapsedSeconds(elapsed > 0 ? elapsed : 0);
-                    }
-                } else { setTimerState(null); setElapsedSeconds(0); }
-            } else { setTimerState(null); setElapsedSeconds(0); }
-        } catch (e) {}
+        const savedState = parseTimerState(localStorage.getItem(TIMER_STORAGE_KEY));
+        if (savedState && eventToEdit && savedState.eventId === eventToEdit.id) {
+            setTimerState(savedState);
+            setElapsedSeconds(timerElapsedSeconds(savedState));
+        } else {
+            setTimerState(null);
+            setElapsedSeconds(0);
+        }
     }, [eventToEdit]);
     
     useEffect(() => {

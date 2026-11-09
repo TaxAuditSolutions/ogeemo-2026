@@ -38,21 +38,22 @@ import { allMenuItems } from '@/lib/menu-items';
 import accountingMenuItems from '@/data/accounting-menu-items';
 import type { ActionChipData } from '@/types/calendar-types';
 import { Wand2 } from 'lucide-react';
+import { checkChipLabel, checkCustomLink, findDuplicateChip } from '@/lib/action-links';
 
 const addActionSchema = z.discriminatedUnion("linkType", [
   z.object({
     linkType: z.literal("internal"),
-    label: z.string().min(1, { message: "Label is required." }),
+    label: z.string().refine((value) => checkChipLabel(value).ok, { message: "Enter a label of up to 40 characters." }),
     targetPage: z.string().min(1, "Please select a page."),
     customUrl: z.string().optional(),
   }),
   z.object({
     linkType: z.literal("custom"),
-    label: z.string().min(1, { message: "Label is required." }),
+    label: z.string().refine((value) => checkChipLabel(value).ok, { message: "Enter a label of up to 40 characters." }),
     targetPage: z.string().optional(),
     customUrl: z.string().min(1, { message: "URL or path is required." }).refine(
-        (value) => value.startsWith('/') || value.startsWith('http://') || value.startsWith('https://'),
-        { message: "Please enter a valid URL (e.g., https://...) or an internal path (e.g., /dashboard)." }
+        (value) => checkCustomLink(value).ok,
+        { message: "Enter a full web address such as https://example.com, or a page path such as /contacts." }
     ),
   }),
 ]);
@@ -120,6 +121,12 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
       return;
     }
 
+    const labelCheck = checkChipLabel(values.label);
+    if (!labelCheck.ok) {
+      toast({ variant: "destructive", title: "Check the label", description: labelCheck.error });
+      return;
+    }
+
     let href: string;
     let icon: ActionChipData['icon'];
 
@@ -132,16 +139,27 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
         href = selectedManager.href;
         icon = selectedManager.icon;
     } else {
-        href = values.customUrl;
+        const checked = checkCustomLink(values.customUrl);
+        if (!checked.ok) {
+            toast({ variant: "destructive", title: "Check the link", description: checked.error });
+            return;
+        }
+        href = checked.href;
         const urlIcon = allMenuItems.find(item => item.href.includes('google'))?.icon || Wand2;
         icon = urlIcon; 
     }
 
     try {
+      // The same page twice is clutter; say which shortcut already goes there.
+      const duplicate = findDuplicateChip(existingChips, href, chipToEdit?.id);
+      if (duplicate) {
+        toast({ variant: "destructive", title: "You already have this shortcut", description: `"${duplicate.label}" already opens this page.` });
+        return;
+      }
       if (chipToEdit) {
         const updatedActionData: ActionChipData = {
             ...chipToEdit,
-            label: values.label,
+            label: labelCheck.label,
             href: href,
             icon: icon,
         };
@@ -150,7 +168,7 @@ export default function AddActionDialog({ isOpen, onOpenChange, onActionAdded, o
         toast({ title: "Shortcut Updated" });
       } else {
          const newActionData: Omit<ActionChipData, 'id'> = {
-            label: values.label,
+            label: labelCheck.label,
             icon: icon,
             href: href,
             userId: user.uid,

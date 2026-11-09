@@ -8,6 +8,8 @@
 //   delete-dead-memberships  memberships in workspaces that no longer exist
 //   repair-references        a worker id holding a sign-in id becomes that person's contact; a task's vanished client is cleared
 //   delete-empty-identities  login-less profiles and completely empty workspaces nobody can use
+//   grant-owner-access       a workspace with data and no Super Admin: make its recorded owner (who can sign in) the Super Admin
+//   delete-unscoped-files    folders and files with no workspace that nothing uses (Cloud Storage uploads are left in place)
 //
 // Never touched, only listed: invoiced or paid records, records with no workspace, workspaces that still hold data.
 // Every change is first written to scratch/access-cleanup-backup-<time>.json.

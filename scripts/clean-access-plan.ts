@@ -4,7 +4,9 @@ import {
   deadMemberships, ownerlessOrgs, planIdentityCleanup, staleAccounts,
   type IdentityPlan, type MembershipInfo, type OrgInfo, type OwnerlessOrg,
 } from '../src/lib/data-cleanup-identity';
+import { planUnscopedCleanup, type UnscopedPlan } from '../src/lib/data-cleanup-unscoped';
 import type { Gathered } from './clean-access-gather';
+import { gatherUnscoped, type UnscopedDocs } from './clean-access-unscoped';
 
 export interface CleanupPlan {
   g: Gathered;
@@ -15,6 +17,8 @@ export interface CleanupPlan {
   identity: IdentityPlan;
   orgInfos: OrgInfo[];
   ownerless: OwnerlessOrg[];
+  unscoped: UnscopedPlan;
+  unscopedDocs: UnscopedDocs;
 }
 
 export const short = (value: unknown) => String(value ?? '-').slice(0, 8);
@@ -43,7 +47,9 @@ export async function buildPlan(g: Gathered): Promise<CleanupPlan> {
   g.memberships.forEach((m) => { if (m.data.accessLevel === 'super_admin') superOrgs.add(m.orgId); });
   const signIn = new Set(g.accounts.filter((a) => !a.disabled).map((a) => a.uid));
   const ownerless = ownerlessOrgs(orgInfos, superOrgs, signIn, new Set(identity.deleteOrgs.map((o) => o.id)));
-  return { g, stale, dead, repairs, kept, identity, orgInfos, ownerless };
+  const unscopedDocs = await gatherUnscoped();
+  const unscoped = planUnscopedCleanup(unscopedDocs.folderRows, unscopedDocs.fileRows, unscopedDocs.namedElsewhere);
+  return { g, stale, dead, repairs, kept, identity, orgInfos, ownerless, unscoped, unscopedDocs };
 }
 
 function tally<T>(items: readonly T[], key: (item: T) => string): [string, number][] {
@@ -53,7 +59,7 @@ function tally<T>(items: readonly T[], key: (item: T) => string): [string, numbe
 }
 
 export function printReport(plan: CleanupPlan): void {
-  const { g, stale, dead, repairs, kept, identity, orgInfos, ownerless } = plan;
+  const { g, stale, dead, repairs, kept, identity, orgInfos, ownerless, unscoped, unscopedDocs } = plan;
   console.log(`Read ${g.accounts.length} accounts, ${g.profiles.size} profiles, ${g.orgs.size} workspaces, ${g.memberships.length} memberships, ${g.contacts.size} contacts, ${g.refRows.length} contact references.\n`);
   console.log(`1. revoke-stale-accounts: ${stale.length} account(s) keep a workspace role with no profile`);
   stale.forEach((a) => console.log(`     ${short(a.uid)}  workspace ${short(a.orgId)} (${g.orgs.get(a.orgId as string)?.name ?? 'workspace deleted'})  role ${a.accessLevel}`));
@@ -66,6 +72,10 @@ export function printReport(plan: CleanupPlan): void {
   identity.deleteProfiles.forEach((p) => console.log(`     profile ${short(p.uid)}: ${p.reason}`));
   identity.deleteOrgs.forEach((o) => console.log(`     workspace ${short(o.id)} (${g.orgs.get(o.id)?.name}): ${o.reason}`));
   identity.keptProfiles.forEach((p) => console.log(`     kept profile ${short(p.uid)}: ${p.reason}`));
-  console.log(`\nWorkspaces with data and no Super Admin (listed only; never changed here): ${ownerless.length}`);
-  ownerless.forEach((o) => console.log(`     ${short(o.id)} "${g.orgs.get(o.id)?.name}" (${orgInfos.find((x) => x.id === o.id)?.recordCount} records), recorded owner ${short(o.ownerUid)} can sign in`));
+  console.log(`5. grant-owner-access: ${ownerless.length} workspace(s) have data and no Super Admin, and the recorded owner can sign in`);
+  ownerless.forEach((o) => console.log(`     ${short(o.id)} "${g.orgs.get(o.id)?.name}" (${orgInfos.find((x) => x.id === o.id)?.recordCount} records): make ${short(o.ownerUid)} its Super Admin`));
+  console.log(`6. delete-unscoped-files: ${unscoped.deleteFolders.length} folder(s) and ${unscoped.deleteFiles.length} file(s) have no workspace and nothing uses them`);
+  tally(unscoped.kept, (k) => `${k.kind}: ${k.reason}`).forEach(([reason, n]) => console.log(`     kept: ${reason}  x${n}`));
+  const uploads = unscoped.deleteFiles.filter((id) => String(unscopedDocs.files.get(id)?.storagePath ?? '').startsWith('userFiles/')).length;
+  console.log(`     ${uploads} of those file(s) have an uploaded copy in Cloud Storage; this step leaves the uploads in place`);
 }

@@ -21,7 +21,6 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { getFirebaseServices } from '@/firebase';
 import type { FileItem as FileItemType, FolderItem } from '@/data/files';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/core/file-manager-folders';
-import { type Event as TaskEvent } from '@/types/calendar-types';
 import { fetchFileContent } from '@/app/actions/file-actions';
 
 const FILES_COLLECTION = 'files';
@@ -194,16 +193,6 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
         content: content, // Initially we might keep it client-side
     };
     return addFileRecord(newFileRecord);
-}
-
-export async function archiveIdeaAsFile(userId: string, title: string, description: string): Promise<FileItem> {
-    const folder = await findOrCreateGenericFolder(userId, 'Archived Ideas');
-    return addTextFileClient(userId, folder.id, `Archived Idea - ${title}.txt`);
-}
-
-export async function archiveTaskAsFile(userId: string, task: TaskEvent): Promise<FileItem> {
-    const folder = await findOrCreateGenericFolder(userId, 'Archived Tasks');
-    return addTextFileClient(userId, folder.id, `Archived Task - ${task.title}.txt`);
 }
 
 export async function deleteFiles(fileIds: string[]): Promise<void> {

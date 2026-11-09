@@ -34,6 +34,7 @@ import {
   Info,
   Save,
   BookOpen,
+  Undo2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,8 @@ import { type FileItem, type FolderItem } from '@/data/files';
 import { useToast } from '@/hooks/use-toast';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureDocumentSystemFolders } from '@/core/file-manager-folders';
 import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/core/file-service';
+import { restoreArchive } from '@/services/restore-service';
+import { isArchiveFileName } from '@/lib/task-restore';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import {
@@ -465,6 +468,20 @@ export function FilesView() {
       }
   };
 
+  // Brings an archived task or idea back. The archive file goes with it, so it cannot be restored twice.
+  const handleRestoreArchive = async (file: FileItem) => {
+      try {
+          const result = await restoreArchive(file.id);
+          setFiles(prev => prev.filter(f => f.id !== file.id));
+          toast({
+              title: result.kind === 'task' ? 'Task restored' : 'Idea restored',
+              description: `"${result.title}" is back.${result.notes.length ? ' Note: ' + result.notes.join('; ') + '.' : ''}`,
+          });
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: 'Could not restore', description: e.message });
+      }
+  };
+
   const handleConfirmDeleteFile = async () => {
       if (!fileToDelete) return;
       try {
@@ -696,6 +713,9 @@ export function FilesView() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onSelect={() => { setRenamingFile(file); setRenameFileValue(file.name); }}><Pencil className="mr-2 h-4 w-4"/>Rename</DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => { setFileToLink(file); setDriveFileLink(file.driveLink || ''); setIsDriveFileLinkDialogOpen(true); }}><LinkIcon className="mr-2 h-4 w-4"/>Link Google Drive File</DropdownMenuItem>
+                                    {isArchiveFileName(file.name) && (
+                                        <DropdownMenuItem onSelect={() => handleRestoreArchive(file)}><Undo2 className="mr-2 h-4 w-4"/>Restore</DropdownMenuItem>
+                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onSelect={() => setFileToDelete(file)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -789,7 +809,7 @@ export function FilesView() {
 
     <AlertDialog open={!!fileToDelete} onOpenChange={(open) => setFileToDelete(open ? fileToDelete : null)}>
         <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>Delete File?</AlertDialogTitle><AlertDialogDescription>Permanently delete "{fileToDelete?.name}"?{isArchiveFileName(fileToDelete?.name) ? " This archive holds the task or idea you archived. Once it is deleted it cannot be restored." : ""}</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmDeleteFile} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>

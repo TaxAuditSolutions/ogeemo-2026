@@ -18,7 +18,7 @@ import {
 import EditIdeaDialog from './edit-idea-dialog';
 import IdeaBoardInstructionsDialog from './idea-board-instructions-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { archiveIdeaAsFile } from '@/core/file-service';
+import { archiveIdea } from '@/services/archive-service';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -282,8 +282,7 @@ export function OrganizeIdeasView() {
             return;
         }
         try {
-            await archiveIdeaAsFile(user.uid, idea.title, idea.description || '');
-            await deleteIdeaFromDb(idea.id);
+            await archiveIdea(idea.id);
             setIdeas(prev => prev.filter(i => i.id !== idea.id));
             toast({ title: 'Archived', description: 'Idea saved to File Manager.' });
         } catch (error: any) {

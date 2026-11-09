@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getIdeas, addIdea, deleteIdea, updateIdea } from '@/core/ideas-service';
 import { type Idea, type Project, type Event as TaskEvent } from '@/types/calendar-types';
-import { archiveIdeaAsFile } from '@/core/file-service';
+import { archiveIdea } from '@/services/archive-service';
 import { addProject, addTask } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
@@ -194,8 +194,7 @@ export function IdeaListView() {
   const handleArchive = async (idea: Idea) => {
     if (!user) return;
     try {
-      await archiveIdeaAsFile(user.uid, idea.title, idea.description || '');
-      await deleteIdea(idea.id);
+      await archiveIdea(idea.id);
       loadData();
       toast({ title: 'Archived', description: 'Idea saved to File Manager.' });
     } catch (error: any) {

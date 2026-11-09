@@ -33,12 +33,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { billedDeleteProblem } from '@/lib/time-entry-lock';
-import { getTasksForUser, addProject, updateTask, updateTaskPositions, deleteTask, deleteTodos } from '@/services/project-service';
+import { getTasksForUser, addProject, updateTask, updateTaskPositions, deleteTask, taskRemovalProblem, deleteTodos } from '@/services/project-service';
 import { updateTodosStatus } from '@/services/todo-service';
 import { getProjects } from '@/services/project-service';
 import { type Event as TaskEvent, type TaskStatus, type Project, type ProjectStep } from '@/types/calendar-types';
-import { archiveTaskAsFile } from '@/core/file-service';
+import { archiveTask } from '@/services/archive-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
@@ -177,7 +176,7 @@ export function ToDoListView() {
       loadData();
       toast({ title: 'Task Deleted' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+      toast({ variant: 'destructive', title: 'Cannot delete this activity', description: error?.message || 'Could not delete the task.' });
     } finally {
       setTaskToDelete(null);
     }
@@ -192,8 +191,8 @@ export function ToDoListView() {
   const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: Omit<TaskEvent, 'id' | 'userId' | 'projectId'>[]) => {
     if (!user) return;
     try {
-      const lockedReason = billedDeleteProblem(taskToConvert as any, 'activity');
-      if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
+      const lockedReason = taskToConvert?.id ? await taskRemovalProblem(taskToConvert.id) : null;
+      if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot turn this into a project', description: lockedReason }); return; }
       const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
       if (taskToConvert) {
         await deleteTask(taskToConvert.id);
@@ -211,10 +210,7 @@ export function ToDoListView() {
   const handleArchive = async (task: TaskEvent) => {
     if (!user) return;
     try {
-      const lockedReason = billedDeleteProblem(task as any, 'activity');
-      if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
-      await archiveTaskAsFile(user.uid, task);
-      await deleteTask(task.id);
+      await archiveTask(task.id);
       loadData();
       toast({ title: 'Archived', description: 'Task saved to File Manager.' });
     } catch (error: any) {

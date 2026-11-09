@@ -25,6 +25,7 @@ import hrMenuItems from '@/data/hr-menu-items';
 import { allMenuItems } from '@/lib/menu-items';
 import { billedDeleteProblem, billedUpdateProblem, checkBillableRate, projectDeleteProblem } from '@/lib/time-entry-lock';
 import { chunkItems } from '@/lib/contact-merge';
+import { taskDeleteProblem, workedSecondsOf, type TaskLinks } from '@/lib/task-links';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
@@ -299,6 +300,19 @@ export async function updateProject(projectId: string, projectData: Partial<Omit
     await updateDoc(projectRef, updatedData);
 }
 
+/**
+ * A project's delete removes all its activities, so each must be free of what the single-task delete refuses:
+ * quote lines, an open work order, and recorded time. Returns the first problem found, naming the activity.
+ */
+async function projectTaskLinksProblem(taskDocs: { id: string; data: () => Record<string, any> }[]): Promise<string | null> {
+    const checked = await Promise.all(taskDocs.map(async (taskDoc) => {
+        const data = taskDoc.data();
+        const problem = taskDeleteProblem(await getTaskLinks(taskDoc.id, data));
+        return problem ? `Activity "${data.title || 'Untitled'}": ${problem}` : null;
+    }));
+    return checked.find((message) => message !== null) ?? null;
+}
+
 export async function deleteProject(projectId: string, taskIds: string[]): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
@@ -308,7 +322,7 @@ export async function deleteProject(projectId: string, taskIds: string[]): Promi
 
     const tasksSnapshot = await getDocs(query(collection(db, TASKS_COLLECTION), where('orgId', '==', orgId), where('projectId', '==', projectId)));
     // Invoices point back at the activities in a project; deleting them would break that trail.
-    const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data()));
+    const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data())) ?? await projectTaskLinksProblem(tasksSnapshot.docs);
     if (blocked) throw new Error(blocked);
 
     // The caller's extra ids are checked too: only activities of THIS workspace and this project are removed.
@@ -345,7 +359,7 @@ export async function deleteProjects(projectIds: string[]): Promise<void> {
         const projectSnap = await getDoc(projectRef);
         if (!projectSnap.exists() || projectSnap.data().orgId !== orgId) continue;
         const tasksSnapshot = await getDocs(query(collection(db, TASKS_COLLECTION), where("orgId", "==", orgId), where("projectId", "==", projectId)));
-        const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data()));
+        const blocked = projectDeleteProblem(tasksSnapshot.docs.map((taskDoc) => taskDoc.data())) ?? await projectTaskLinksProblem(tasksSnapshot.docs);
         if (blocked) throw new Error(`"${projectSnap.data().name || 'A project'}": ${blocked}`);
         refs.push(projectRef, ...tasksSnapshot.docs.map((taskDoc) => taskDoc.ref));
     }
@@ -503,6 +517,56 @@ export async function updateTaskPositions(tasksToUpdate: { id: string; position:
     await batch.commit();
 }
 
+/**
+ * Everything that still depends on a task: invoice and quote lines built from it, the work order it schedules,
+ * and the time recorded on it. `taskData` saves a second read when the caller already has the record.
+ */
+export async function getTaskLinks(taskId: string, taskData?: Record<string, any>): Promise<TaskLinks> {
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const data = taskData ?? (await getDoc(doc(db, TASKS_COLLECTION, taskId))).data() ?? {};
+    const [invoiceLines, quoteLines] = await Promise.all([
+        getDocs(query(collection(db, 'invoiceLineItems'), where('orgId', '==', orgId), where('sourceEntryId', '==', taskId))),
+        getDocs(query(collection(db, 'quoteLineItems'), where('orgId', '==', orgId), where('sourceEntryId', '==', taskId))),
+    ]);
+    let workOrder: TaskLinks['workOrder'] = null;
+    if (typeof data.workOrderId === 'string' && data.workOrderId) {
+        const woSnap = await getDoc(doc(db, 'workOrders', data.workOrderId));
+        if (woSnap.exists() && woSnap.data().orgId === orgId) {
+            workOrder = { number: woSnap.data().workOrderNumber, status: String(woSnap.data().status ?? 'pending') };
+        }
+    }
+    return {
+        invoiceLines: invoiceLines.size,
+        quoteLines: quoteLines.size,
+        billed: Boolean(data.billedInvoiceId),
+        workOrder,
+        workedSeconds: workedSecondsOf(data),
+    };
+}
+
+/** Why a task cannot be deleted outright (so a screen can check BEFORE it creates anything), or null. */
+export async function taskRemovalProblem(taskId: string): Promise<string | null> {
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const snap = await getDoc(doc(db, TASKS_COLLECTION, taskId));
+    if (!snap.exists() || snap.data().orgId !== orgId) return 'That activity no longer exists.';
+    return billedDeleteProblem(snap.data(), 'activity') ?? taskDeleteProblem(await getTaskLinks(taskId, snap.data()));
+}
+
+/** Adds the removal of a task's project step to a batch, so the step and the task go together. */
+export async function queueStepRemoval(batch: ReturnType<typeof writeBatch>, taskData: TaskEvent): Promise<void> {
+    const db = getDb();
+    if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
+        const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+            const projectData = docToProject(projectSnap);
+            batch.update(projectRef, { steps: (projectData.steps || []).filter(step => step.id !== taskData.stepId) });
+        }
+    }
+}
+
 export async function deleteTask(taskId: string): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
@@ -511,20 +575,12 @@ export async function deleteTask(taskId: string): Promise<void> {
     if (!taskSnap.exists() || taskSnap.data().orgId !== orgId) throw new Error('That activity no longer exists.');
 
     // An invoiced activity is the record the invoice line points back at; deleting it breaks the audit trail.
-    const blocked = billedDeleteProblem(taskSnap.data(), 'activity');
+    // Recorded time and open work orders also block: archive the activity instead (it keeps the time).
+    const blocked = billedDeleteProblem(taskSnap.data(), 'activity') ?? taskDeleteProblem(await getTaskLinks(taskId, taskSnap.data()));
     if (blocked) throw new Error(blocked);
 
     const batch = writeBatch(db);
-    const taskData = docToTask(taskSnap);
-    if (taskData.projectId && taskData.projectId !== 'inbox' && taskData.stepId) {
-        const projectRef = doc(db, PROJECTS_COLLECTION, taskData.projectId);
-        const projectSnap = await getDoc(projectRef);
-        if (projectSnap.exists()) {
-            const projectData = docToProject(projectSnap);
-            const updatedSteps = (projectData.steps || []).filter(step => step.id !== taskData.stepId);
-            batch.update(projectRef, { steps: updatedSteps });
-        }
-    }
+    await queueStepRemoval(batch, docToTask(taskSnap));
     batch.delete(taskRef);
     await batch.commit();
 }
@@ -538,9 +594,9 @@ export async function deleteTodos(todoIds: string[]): Promise<void> {
         const docRef = doc(db, TASKS_COLLECTION, id);
         const snap = await getDoc(docRef);
         if (!snap.exists() || snap.data().orgId !== orgId) continue;
-        // Nothing is deleted if any chosen activity is on an invoice, so a bulk delete is all or nothing.
-        const blocked = billedDeleteProblem(snap.data(), 'activity');
-        if (blocked) throw new Error(`"${snap.data().title || 'An activity'}": ${blocked}`);
+        // Nothing is deleted if any chosen activity is in use, so a bulk delete is all or nothing.
+        const problem = billedDeleteProblem(snap.data(), 'activity') ?? taskDeleteProblem(await getTaskLinks(id, snap.data()));
+        if (problem) throw new Error(`"${snap.data().title || 'An activity'}": ${problem}`);
         refs.push(docRef);
     }
     for (const chunk of chunkItems(refs)) {

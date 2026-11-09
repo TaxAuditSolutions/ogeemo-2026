@@ -16,7 +16,8 @@ import {
 } from 'firebase/firestore';
 import { getFirebaseServices } from '@/firebase';
 import { type Event as TaskEvent } from '@/types/calendar-types';
-import { archiveTaskAsFile } from '@/core/file-service';
+import { archiveTask } from '@/services/archive-service';
+import { deleteTask as deleteTaskGuarded, deleteTodos as deleteTodosGuarded } from '@/services/project-service';
 
 
 const TASKS_COLLECTION = 'tasks';
@@ -141,39 +142,19 @@ export async function updateTodo(todoId: string, dataToUpdate: Partial<Omit<Task
 }
 
 export async function deleteTodo(todoId: string): Promise<void> {
-    const db = getDb();
-    const orgId = await getCurrentOrgId();
-    const todoRef = doc(db, TASKS_COLLECTION, todoId);
-    const snap = await getDoc(todoRef);
-    if (!snap.exists() || snap.data().orgId !== orgId) return;
-    await deleteDoc(todoRef);
+    await deleteTaskGuarded(todoId);
 }
 
+/** Same guarded delete as the Task Board: nothing in use is deleted, and nothing at all if any chosen one is. */
 export async function deleteTodos(todoIds: string[]): Promise<void> {
-    const db = getDb();
-    if (todoIds.length === 0) return;
-    const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
-    for (const id of todoIds) {
-        const docRef = doc(db, TASKS_COLLECTION, id);
-        const snap = await getDoc(docRef);
-        if (snap.exists() && snap.data().orgId === orgId) {
-            batch.delete(docRef);
-        }
-    }
-    await batch.commit();
+    await deleteTodosGuarded(todoIds);
 }
 
-export async function archiveTodos(userId: string, tasksToArchive: TaskEvent[]): Promise<void> {
-    if (tasksToArchive.length === 0) return;
-
-    // Archive each file
+/** Archives each activity (contents kept, restorable) through the one guarded archive. */
+export async function archiveTodos(_userId: string, tasksToArchive: TaskEvent[]): Promise<void> {
     for (const task of tasksToArchive) {
-        await archiveTaskAsFile(userId, task);
+        await archiveTask(task.id);
     }
-
-    // Then bulk delete from the tasks collection
-    await deleteTodos(tasksToArchive.map(t => t.id));
 }
 
 export async function updateTodoPositions(updates: { id: string; position: number; status: string }[]): Promise<void> {

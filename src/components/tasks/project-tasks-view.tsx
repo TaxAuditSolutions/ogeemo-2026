@@ -44,11 +44,10 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { billedDeleteProblem } from '@/lib/time-entry-lock';
-import { getProjects, getTasksForProject, addProject, addTask, updateProject, updateTask, updateTaskPositions, deleteTask, getProjectById } from '@/services/project-service';
+import { getProjects, getTasksForProject, addProject, addTask, updateProject, updateTask, updateTaskPositions, deleteTask, taskRemovalProblem, getProjectById } from '@/services/project-service';
 import { getContacts, type Contact } from '@/services/contact-service';
 import { type Event as TaskEvent, type Project, type ProjectStep, type TaskStatus } from '@/types/calendar-types';
-import { archiveTaskAsFile } from '@/core/file-service';
+import { archiveTask } from '@/services/archive-service';
 import { TaskColumn } from './TaskColumn';
 import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { ProjectManagementHeader } from './ProjectManagementHeader';
@@ -246,7 +245,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             toast({ title: 'Task Deleted' });
             loadData();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the task.' });
+            toast({ variant: 'destructive', title: 'Cannot delete this activity', description: error?.message || 'Could not delete the task.' });
         } finally {
             setTaskToDelete(null);
         }
@@ -332,7 +331,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
             toast({ title: 'Step Deleted' });
             loadData(); // Reload all data for consistency
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: 'Could not delete the step and associated task.' });
+            toast({ variant: 'destructive', title: 'Delete Failed', description: error?.message || 'Could not delete the step and associated task.' });
         } finally {
             setStepToDelete(null);
         }
@@ -356,8 +355,8 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleProjectCreated = async (projectData: Omit<Project, 'id' | 'createdAt' | 'userId'>, tasks: []) => {
         if (!user) return;
         try {
-            const lockedReason = billedDeleteProblem(taskToConvert as any, 'activity');
-            if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
+            const lockedReason = taskToConvert?.id ? await taskRemovalProblem(taskToConvert.id) : null;
+            if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot turn this into a project', description: lockedReason }); return; }
             const newProject = await addProject({ ...projectData, status: 'planning', userId: user.uid, createdAt: new Date() });
             if (taskToConvert) {
                 await deleteTask(taskToConvert.id);
@@ -375,10 +374,7 @@ export function ProjectTasksView({ projectId }: { projectId: string }) {
     const handleArchive = async (task: TaskEvent) => {
         if (!user) return;
         try {
-            const lockedReason = billedDeleteProblem(task as any, 'activity');
-            if (lockedReason) { toast({ variant: 'destructive', title: 'Cannot do this', description: lockedReason }); return; }
-            await archiveTaskAsFile(user.uid, task);
-            await deleteTask(task.id);
+            await archiveTask(task.id);
             loadData();
             toast({ title: 'Archived', description: 'Task saved to File Manager.' });
         } catch (error: any) {

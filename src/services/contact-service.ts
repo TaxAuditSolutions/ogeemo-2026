@@ -319,7 +319,7 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
         const userId = currentData.userId;
 
         if (finalFolderId && userId) {
-            const docFolderId = await provisionWorkerDocumentNode(userId, finalName, finalFolderId);
+            const docFolderId = await provisionWorkerDocumentNode(userId, finalName, finalFolderId, currentData.documentFolderId);
             if (docFolderId) {
                 cleanedData.documentFolderId = docFolderId;
             }

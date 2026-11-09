@@ -58,7 +58,8 @@ export function checkFolderName(
   name: string,
   parentId: string | null | undefined,
   folders: readonly FolderLike[],
-  excludeId?: string
+  excludeId?: string,
+  systemFolders: readonly { name: string }[] = SYSTEM_FOLDERS
 ): string | null {
   const clean = name.trim().replace(/\s+/g, ' ');
   if (!clean) return 'Enter a folder name.';
@@ -66,7 +67,7 @@ export function checkFolderName(
   if (/[\/\\]/.test(clean)) return 'A folder name cannot contain / or \\.';
   const key = norm(clean);
 
-  const systemMatch = SYSTEM_FOLDERS.find((system) => norm(system.name) === key);
+  const systemMatch = systemFolders.find((system) => norm(system.name) === key);
   const existingSystem = folders.find((folder) => folder.isSystem && norm(folder.name) === key);
   if (systemMatch && (!excludeId || existingSystem?.id !== excludeId)) {
     return `"${systemMatch.name}" is a system folder name. Choose a different name.`;

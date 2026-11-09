@@ -15,6 +15,7 @@ import {
     Timestamp,
     getDoc,
     setDoc,
+    deleteField,
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -22,8 +23,12 @@ import { getFirebaseServices } from '@/firebase';
 import type { FileItem as FileItemType, FolderItem } from '@/data/files';
 import { findOrCreateFileFolder as findOrCreateGenericFolder } from '@/core/file-manager-folders';
 import { fetchFileContent } from '@/app/actions/file-actions';
+import { chunkItems } from '@/lib/contact-merge';
+import { checkOptionalDriveLink } from '@/lib/drive-links';
+import { checkFileName, cleanName, fileMoveProblem } from '@/lib/document-folder-rules';
 
 const FILES_COLLECTION = 'files';
+const FOLDERS_COLLECTION = 'fileManagerFolders';
 
 function getDb() {
     const { db } = getFirebaseServices();
@@ -149,7 +154,15 @@ export async function addFileRecord(fileData: Omit<FileItem, 'id'>): Promise<Fil
     const orgId = await getCurrentOrgId();
     const currentUser = getCurrentAuthContext();
     const now = new Date();
-    const dataWithKeywords = { ...fileData, orgId, createdBy: currentUser.uid, updatedBy: currentUser.uid, createdAt: fileData.createdAt ?? now, updatedAt: now, modifiedAt: fileData.modifiedAt ?? now, keywords: generateKeywords(fileData.name) };
+    const nameProblem = checkFileName(fileData.name ?? '');
+    if (nameProblem) throw new Error(nameProblem);
+    const folderSnap = fileData.folderId ? await getDoc(doc(db, FOLDERS_COLLECTION, fileData.folderId)) : null;
+    if (!folderSnap || !folderSnap.exists() || folderSnap.data()?.orgId !== orgId) throw new Error('Choose a folder that exists.');
+    const link = checkOptionalDriveLink(fileData.driveLink);
+    if (!link.ok) throw new Error(link.error);
+    const name = cleanName(fileData.name);
+    const { driveLink: _ignored, ...rest } = fileData;
+    const dataWithKeywords = { ...rest, name, ...(link.href ? { driveLink: link.href } : {}), orgId, createdBy: currentUser.uid, updatedBy: currentUser.uid, createdAt: fileData.createdAt ?? now, updatedAt: now, modifiedAt: fileData.modifiedAt ?? now, keywords: generateKeywords(name) };
     const docRef = await addDoc(collection(db, FILES_COLLECTION), dataWithKeywords);
     return { id: docRef.id, ...dataWithKeywords };
 }
@@ -167,16 +180,32 @@ export async function updateFile(fileId: string, data: Partial<Omit<FileItem, 'i
 
     const metadataToUpdate: { [key: string]: any } = { ...data, updatedBy: currentUser.uid, updatedAt: new Date() };
 
-    if (data.name && !data.keywords) {
-        metadataToUpdate.keywords = generateKeywords(data.name);
+    if (data.name !== undefined) {
+        const nameProblem = checkFileName(data.name);
+        if (nameProblem) throw new Error(nameProblem);
+        metadataToUpdate.name = cleanName(data.name);
+        if (!data.keywords) metadataToUpdate.keywords = generateKeywords(metadataToUpdate.name);
+    }
+
+    // A file must always sit in a folder that exists in this workspace, or it can never be found again.
+    if ('folderId' in data) {
+        const folderId = data.folderId ?? null;
+        const folderSnap = folderId ? await getDoc(doc(db, FOLDERS_COLLECTION, folderId)) : null;
+        const problem = fileMoveProblem(folderSnap && folderSnap.exists() && folderSnap.data()?.orgId === orgId ? [{ id: folderId as string, name: '' }] : [], folderId);
+        if (problem) throw new Error(problem);
+    }
+
+    // Firestore refuses undefined, so removing a link deletes the field.
+    if ('driveLink' in data) {
+        const link = checkOptionalDriveLink(data.driveLink);
+        if (!link.ok) throw new Error(link.error);
+        metadataToUpdate.driveLink = link.href ?? deleteField();
     }
 
     metadataToUpdate.modifiedAt = new Date();
     delete metadataToUpdate.content;
 
-    if (Object.keys(metadataToUpdate).length > 0) {
-        await updateDoc(fileRef, metadataToUpdate);
-    }
+    await updateDoc(fileRef, metadataToUpdate);
 }
 
 
@@ -198,16 +227,20 @@ export async function addTextFileClient(userId: string, folderId: string, fileNa
 export async function deleteFiles(fileIds: string[]): Promise<void> {
     const db = getDb();
     const orgId = await getCurrentOrgId();
-    const batch = writeBatch(db);
-    for (const fileId of fileIds) {
+    const refs: ReturnType<typeof doc>[] = [];
+    for (const fileId of Array.from(new Set(fileIds))) {
         const fileRef = doc(db, FILES_COLLECTION, fileId);
         const snapshot = await getDoc(fileRef);
         if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
             continue;
         }
-        batch.delete(fileRef);
+        refs.push(fileRef);
     }
-    await batch.commit();
+    for (const chunk of chunkItems(refs, 400)) {
+        const batch = writeBatch(db);
+        chunk.forEach((ref) => batch.delete(ref));
+        await batch.commit();
+    }
 }
 export async function findOrCreateFileFolder(userId: string, folderName: string): Promise<FolderItem> {
     return findOrCreateGenericFolder(userId, folderName);

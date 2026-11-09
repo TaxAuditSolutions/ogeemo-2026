@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "document-manager.folders.rules",
+      "module": "Document Manager",
+      "title": "Document Manager folders: system folders, moving, deleting and links",
+      "routes": ["/document-manager"],
+      "intents": ["how-to", "business-rule", "troubleshooting", "delete"],
+      "keywords": ["document manager", "folder", "system folder", "protected folder", "rename folder", "move folder", "delete folder", "duplicate folder", "all files", "drag and drop", "drive link", "google drive", "link", "subfolder", "miscellaneous", "workers", "employees", "contractors", "knowledge base", "new file link"],
+      "audiences": ["all"],
+      "content": "The Document Manager at /document-manager keeps a folder tree and a list of file links; it does not upload files or create Google Docs. New File Link registers a file that already lives in Google Drive: a name, an http or https web address and a folder. New Folder and the folder menu add folders, rename them and link them to a Drive folder. A link that is not a plain web address is refused (javascript:, data: and file: links, a link with a user name or password, spaces, or no site name), and a stored link is only opened if it is safe. Fourteen system folders are protected: Workers (with Employees and Contractors inside it), Clients, Prospects, Suppliers, Family, Friends, Miscellaneous, Ogeemo Users, Images, Marketing, Ogeemo Notes and Knowledge Base. They cannot be deleted, renamed or moved, and no other folder can be given one of those names. Two folders in the same place cannot share a name, ignoring capitals and extra spaces; a name is at most 60 characters and cannot contain a slash or backslash. If duplicate system folders exist (they were once created when two people opened the page at the same moment), the next visit merges them: the copy already marked as a system folder and in the right place is kept, and the files and subfolders of the others are moved into it before the extras are removed. Folders or files left pointing at a deleted folder are brought back, files into Miscellaneous and folders to the top level. Drag a folder onto another folder to move it, or onto All Files to put it at the top level. A folder cannot be moved into itself or one of its own subfolders. Drag a file onto a folder to move it; a file cannot be dropped on All Files, because that is a view of every folder and not a place to keep files. Deleting a folder never deletes what is inside it: its files and subfolders move up one level, or to Miscellaneous when it was at the top level, and a message says how many moved. A contact whose Document Manager folder is deleted no longer shows View Documents until the folder is made again. Renaming a worker renames their folder, and changing a worker from Employee to Contractor moves the same folder under Contractors, so their files stay with them.",
+      "sourceFiles": ["src/lib/document-folder-rules.ts", "src/lib/document-folder-delete.ts", "src/lib/document-folder-system.ts", "src/lib/drive-links.ts", "src/core/file-manager-folders.ts", "src/core/file-service.ts", "src/components/files/files-view.tsx"]
+    },
+    {
+      "id": "document-manager.files.links",
+      "module": "Document Manager",
+      "title": "Opening a contact, worker or time log folder in the Document Manager",
+      "routes": ["/document-manager", "/contacts", "/reports/time-log"],
+      "intents": ["how-to", "troubleshooting"],
+      "keywords": ["view documents", "document folder", "highlight", "open folder", "contact documents", "worker documents", "time log documents", "folder not found", "evidence", "file name", "rename file", "sort files"],
+      "audiences": ["all"],
+      "content": "View Documents on a contact, a worker, the payroll run and the time log opens the Document Manager at that contact's own folder: the folder is selected, its parents are expanded and its files are listed. If the folder was deleted since, a message says the folder no longer exists instead of showing an empty page. The link is applied once, so choosing another folder afterwards is not undone. A file name must have some text, at most 200 characters and no control characters; several files may share a name. Files sort by name (capitals ignored, Invoice 2 before Invoice 10) or by date modified, and the file menu has Rename, Link Google Drive File and Delete. Deleting a file removes only Ogeemo's link record, never the file in Google Drive. The Document Manager guide at /learn/guides/document-manager explains mirroring your Ogeemo folders in a Google Drive master folder.",
+      "sourceFiles": ["src/components/files/files-view.tsx", "src/core/file-service.ts", "src/lib/document-folder-rules.ts", "src/lib/document-folder-delete.ts"]
+    }
+  ]
+}

@@ -75,11 +75,11 @@ export default function DocumentManagerInstructionsPage() {
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <div className="prose prose-sm dark:prose-invert max-w-none pl-9">
-                                        <p>Ogeemo has 13 "Protected" folders that cannot be deleted. You must create matching folders inside your GDrive "Ogeemo" folder:</p>
+                                        <p>Ogeemo has 14 "Protected" folders that cannot be deleted, renamed or moved (Employees and Contractors sit inside Workers). You must create matching folders inside your GDrive "Ogeemo" folder:</p>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-4">
                                             {[
                                                 "Clients", "Family", "Friends", "Miscellaneous", "Ogeemo Users", 
-                                                "Prospects", "Suppliers", "Contract Workers", "Employee Workers", 
+                                                "Prospects", "Suppliers", "Workers", "Employees", "Contractors", 
                                                 "Images", "Marketing", "Ogeemo Notes", "Knowledge Base"
                                             ].map(f => (
                                                 <div key={f} className="flex items-center gap-2 text-xs font-mono bg-muted p-1 rounded">
@@ -126,8 +126,9 @@ export default function DocumentManagerInstructionsPage() {
                                         <ul>
                                             <li><strong>Quick Access:</strong> Click any folder in Ogeemo to see its contents or jump to the GDrive location.</li>
                                             <li><strong>File Linking:</strong> Link individual high-traffic files (like a specific spreadsheet) in the same way for even faster access.</li>
-                                            <li><strong>New Files:</strong> Use the <strong>"New File"</strong> button in Ogeemo to create fresh Google Docs or Sheets—Ogeemo will handle the linking for you automatically.</li>
+                                            <li><strong>New File Link:</strong> Use <strong>"New File Link"</strong> to register a file that already lives in Google Drive: give it a name, paste its web address and choose a folder. Ogeemo does not create Google Docs or Sheets for you and does not upload files; it keeps the link. Only http and https addresses are accepted.</li>
                                         </ul>
+                                        <p><strong>Good to know:</strong> Deleting a folder never deletes what is inside it. Its files and subfolders move up one level (or to Miscellaneous at the top). You cannot drop a file on All Files, move a folder into itself, or give two folders in the same place the same name.</p>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

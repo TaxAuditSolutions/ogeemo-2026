@@ -45,6 +45,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureDocumentSystemFolders } from '@/core/file-manager-folders';
 import { getFiles, deleteFiles, updateFile, addTextFileClient, addFileRecord } from '@/core/file-service';
 import { restoreArchive } from '@/services/restore-service';
+import { safeDriveHref } from '@/lib/drive-links';
+import { pathToFolder, sortFiles } from '@/lib/document-folder-delete';
 import { isArchiveFileName } from '@/lib/task-restore';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -208,8 +210,8 @@ const FolderTreeItem = ({
                 )}
             </div>
             <div className="flex items-center">
-                {folder.driveLink && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(folder.driveLink!, '_blank', 'noopener,noreferrer'); }}>
+                {safeDriveHref(folder.driveLink) && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => { e.stopPropagation(); window.open(safeDriveHref(folder.driveLink)!, '_blank', 'noopener,noreferrer'); }}>
                     <LinkIcon className="h-4 w-4 text-blue-500" />
                   </Button>
                 )}
@@ -297,6 +299,7 @@ export function FilesView() {
   const searchParams = useSearchParams();
   const highlightedId = searchParams ? searchParams.get('highlight') : null;
   const fileRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const appliedHighlight = useRef<string | null>(null);
 
   const form = useForm<NewFileFormData>({
     resolver: zodResolver(newFileSchema),
@@ -323,35 +326,38 @@ export function FilesView() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filesInSelectedFolder = useMemo(() => {
-    let list = selectedFolderId === 'all' ? files : files.filter(f => f.folderId === selectedFolderId);
-    return list.sort((a, b) => {
-        const { key, direction } = fileSortConfig;
-        const valA = a[key];
-        const valB = b[key];
-        return direction === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
-    });
+    const list = selectedFolderId === 'all' ? files : files.filter(f => f.folderId === selectedFolderId);
+    return sortFiles(list, fileSortConfig.key, fileSortConfig.direction);
   }, [files, selectedFolderId, fileSortConfig]);
 
   const allVisibleSelected = filesInSelectedFolder.length > 0 && selectedFileIds.length === filesInSelectedFolder.length;
 
+  // Contacts, workers and the time log open this page with a FOLDER id (their documentFolderId); older links
+  // carry a file id. Either way the right folder is opened and shown, once per link.
   useEffect(() => {
-    if (highlightedId && !isLoading && files.length > 0) {
-        const file = files.find(f => f.id === highlightedId);
-        if (file) {
-            setSelectedFolderId(file.folderId);
-            const folder = folders.find(f => f.id === file.folderId);
-            if (folder?.parentId) setExpandedFolders(p => new Set([...p, folder.parentId!]));
-            
-            const timeoutId = setTimeout(() => {
-                const rowElement = fileRefs.current.get(highlightedId);
-                if (rowElement) {
-                    rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 300);
-            return () => clearTimeout(timeoutId);
-        }
+    if (!highlightedId || isLoading || appliedHighlight.current === highlightedId) return;
+    const folder = folders.find(f => f.id === highlightedId);
+    if (folder) {
+        appliedHighlight.current = highlightedId;
+        setSelectedFolderId(folder.id);
+        setSelectedFileIds([]);
+        setExpandedFolders(p => new Set([...p, ...pathToFolder(folders, folder.id)]));
+        return;
     }
-  }, [highlightedId, isLoading, files, folders]);
+    const file = files.find(f => f.id === highlightedId);
+    if (file) {
+        appliedHighlight.current = highlightedId;
+        setSelectedFolderId(file.folderId);
+        setExpandedFolders(p => new Set([...p, ...pathToFolder(folders, file.folderId)]));
+        const timeoutId = setTimeout(() => {
+            const rowElement = fileRefs.current.get(highlightedId);
+            if (rowElement) rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }
+    appliedHighlight.current = highlightedId;
+    toast({ variant: 'destructive', title: 'Folder not found', description: 'The folder this link points to no longer exists.' });
+  }, [highlightedId, isLoading, files, folders, toast]);
 
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolderId(folderId);
@@ -457,10 +463,15 @@ export function FilesView() {
   const handleConfirmDeleteFolder = async () => {
       if (!user || !folderToDelete) return;
       try {
-          await deleteFolders([folderToDelete.id]);
-          setFolders(prev => prev.filter(f => f.id !== folderToDelete.id));
+          const moved = await deleteFolders([folderToDelete.id]);
+          const [allFolders, allFiles] = await Promise.all([getFolders(user.uid), getFiles(user.uid)]);
+          setFolders(allFolders);
+          setFiles(allFiles);
           if (selectedFolderId === folderToDelete.id) setSelectedFolderId('all');
-          toast({ title: "Folder Deleted" });
+          toast({
+              title: "Folder Deleted",
+              description: moved.movedFiles || moved.movedFolders ? `${moved.movedFiles} file(s) and ${moved.movedFolders} subfolder(s) moved up one level.` : undefined,
+          });
       } catch (e: any) {
           toast({ variant: 'destructive', title: 'Error', description: e.message });
       } finally {
@@ -515,11 +526,10 @@ export function FilesView() {
           await updateFolder(folderToLink.id, { driveLink: driveFolderLink.trim() || undefined });
           setFolders(prev => prev.map(f => f.id === folderToLink.id ? { ...f, driveLink: driveFolderLink.trim() || undefined } : f));
           toast({ title: "Drive Link Updated" });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: error.message });
-      } finally {
           setIsDriveLinkDialogOpen(false);
           setFolderToLink(null);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
   };
 
@@ -530,11 +540,10 @@ export function FilesView() {
           await updateFile(fileToLink.id, { driveLink: driveFileLink.trim() || undefined, type });
           setFiles(prev => prev.map(f => f.id === fileToLink.id ? { ...f, driveLink: driveFileLink.trim() || undefined, type } : f));
           toast({ title: "Drive Link Updated" });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Error', description: error.message });
-      } finally {
           setIsDriveFileLinkDialogOpen(false);
           setFileToLink(null);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
   };
 
@@ -683,7 +692,7 @@ export function FilesView() {
                                 />
                               <div className="flex items-center flex-1 min-w-0 h-full">
                                   <div className="flex items-center flex-1 min-w-0 cursor-pointer" onClick={() => {
-                                      if (file.driveLink) window.open(file.driveLink, '_blank', 'noopener,noreferrer');
+                                      if (safeDriveHref(file.driveLink)) window.open(safeDriveHref(file.driveLink)!, '_blank', 'noopener,noreferrer');
                                       else { setFileToLink(file); setDriveFileLink(''); setIsDriveFileLinkDialogOpen(true); }
                                   }}>
                                     <FileIconLucide className="h-4 w-4 text-primary" />
@@ -799,7 +808,7 @@ export function FilesView() {
 
     <AlertDialog open={!!folderToDelete} onOpenChange={(open) => setFolderToDelete(open ? folderToDelete : null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}" and all subfolders?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{folderToDelete?.name}"? Nothing inside is deleted: its files and subfolders move up one level.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDeleteFolder} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>

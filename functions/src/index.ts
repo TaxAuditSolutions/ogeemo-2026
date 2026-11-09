@@ -1,6 +1,8 @@
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+import { asRole, isStrongPassword, mayChangePassword } from "./password-access";
 import { getStorage } from "firebase-admin/storage";
 import {
   AUTH_EXPORT_FOLDER_PREFIX,
@@ -38,7 +40,7 @@ const BACKUP_BUCKET = `${PROJECT_ID}-backups`;
 export const updateUserAuth = onCall(async (request) => {
   const auth = getAuth();
   const uid = typeof request.data?.uid === "string" ? request.data.uid : undefined;
-  const password = typeof request.data?.password === "string" ? request.data.password : undefined;
+  const password = request.data?.password;
 
   if (!uid) {
     throw new HttpsError("invalid-argument", "A valid user id is required.");
@@ -48,28 +50,38 @@ export const updateUserAuth = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "You must be signed in to change a password.");
   }
 
-  const callerUid = request.auth.uid;
-  const callerClaims = request.auth.token ?? {} as any;
-  const isCallerSelf = callerUid === uid;
-  const isAdmin = callerClaims.accessLevel === "super_admin" || callerClaims.accessLevel === "org_admin";
-
-  if (!isCallerSelf && !isAdmin) {
-    throw new HttpsError("permission-denied", "You are not allowed to change this password.");
-  }
-
-  const isStrongPassword =
-    !!password &&
-    password.length >= 8 &&
-    /[A-Z]/.test(password) &&
-    /[a-z]/.test(password) &&
-    /[0-9]/.test(password) &&
-    /[^A-Za-z0-9\s]/.test(password);
-
-  if (!isStrongPassword) {
+  if (!isStrongPassword(password)) {
     throw new HttpsError(
       "invalid-argument",
       "Password must be at least 8 characters and include uppercase, lowercase, numeric, and special characters."
     );
+  }
+
+  // The caller's role and workspace come from their LIVE profile, not their token (which can be an hour stale and
+  // still say "admin" after they were demoted or removed), and the target must be in the same workspace.
+  const db = getFirestore();
+  const callerUid = request.auth.uid;
+  const callerClaims = (request.auth.token ?? {}) as any;
+  const [callerSnap, targetSnap] = await Promise.all([
+    db.collection("users").doc(callerUid).get(),
+    callerUid === uid ? Promise.resolve(null) : db.collection("users").doc(uid).get(),
+  ]);
+  const callerRole = asRole(callerSnap.data()?.accessLevel);
+  const decision = mayChangePassword(
+    {
+      uid: callerUid,
+      role: callerRole,
+      orgId: typeof callerSnap.data()?.orgId === "string" ? callerSnap.data()?.orgId : undefined,
+      isPlatformAdmin: callerClaims.isMasterTenant === true && callerRole === "super_admin",
+    },
+    {
+      uid,
+      role: asRole(targetSnap?.data()?.accessLevel),
+      orgId: typeof targetSnap?.data()?.orgId === "string" ? targetSnap?.data()?.orgId : undefined,
+    }
+  );
+  if (!decision.ok) {
+    throw new HttpsError("permission-denied", decision.message);
   }
 
   await auth.updateUser(uid, { password });

@@ -117,7 +117,12 @@ service cloud.firestore {
         // .get(..., null) instead of direct field access: a profile doc missing
         // accessLevel would otherwise ERROR the whole rule and silently deny
         // every self-update (prefs like activeWorkflowId never persist).
-        (request.auth.uid == userId && request.resource.data.get('accessLevel', null) == resource.data.get('accessLevel', null)) ||
+        (request.auth.uid == userId
+          && request.resource.data.get('accessLevel', null) == resource.data.get('accessLevel', null)
+          // The workspace may not be changed, except to fill in an EMPTY one with the workspace already in the person's own token (the sign-in backfill).
+          && (request.resource.data.get('orgId', null) == resource.data.get('orgId', null)
+              || (resource.data.get('orgId', null) == null && request.resource.data.get('orgId', null) == request.auth.token.get('orgId', null)))
+          && request.resource.data.get('isMasterTenant', null) == resource.data.get('isMasterTenant', null)) ||
         (isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel) && canManageTargetRole(request.resource.data.accessLevel))
       );
       allow delete: if isOrgAdmin() && isRightTenant(resource.data.orgId) && canManageTargetRole(resource.data.accessLevel);
@@ -131,11 +136,11 @@ service cloud.firestore {
         isRightTenant(resource.data.orgId) ||
         (isMasterTenant() && isSuperAdmin())
       );
-      allow write: if isSignedIn() && (
-        request.auth.uid == userId ||
-        isRightTenant(resource.data.orgId) && isOrgAdmin() ||
-        (isMasterTenant() && isSuperAdmin())
-      );
+      // Memberships are created and changed ONLY by the server (Admin SDK bypasses these rules): they decide which
+      // workspace and role switchActiveOrg() grants, so a member must never be able to write one. A person may
+      // still delete their own membership to leave a workspace.
+      allow create, update: if false;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     // ---------------------------------------------------------

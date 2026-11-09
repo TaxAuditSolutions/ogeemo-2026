@@ -1,0 +1,26 @@
+{
+  "documents": [
+    {
+      "id": "permissions.roles.what-each-can-do",
+      "module": "Settings",
+      "title": "User roles: what Viewer, Editor, Admin and Super Admin can do",
+      "routes": ["/settings", "/user-manager"],
+      "intents": ["business-rule", "how-to", "troubleshooting"],
+      "keywords": ["role", "roles", "permission", "permissions", "viewer", "editor", "admin", "org admin", "super admin", "access", "read only", "team", "invite", "remove user", "change role", "cannot", "user manager", "authority"],
+      "audiences": ["all"],
+      "content": "Every person in a workspace has one of four roles. A Viewer can read the workspace's records but not change anything. An Editor can read and create, change and delete business records (contacts, projects, tasks, invoices and so on) and can invite Viewers. An Admin (org_admin) can also manage the team: invite people, change roles and remove people who hold a lower role than their own, and edit menu access. The Super Admin is the workspace owner and holds the top role; that role cannot be changed or removed, so every workspace always has an owner. You can only manage people whose role is strictly below yours, nobody can change their own role, and you can only assign a role below your own. Team members are managed under Settings (Team & Authority). A change applies immediately: when a role is lowered or a person is removed, their open sign-ins are ended and the next request uses the new role, so a removed person cannot keep working for the rest of the hour. Removing someone deletes their profile and their membership in the workspace and clears the workspace from their account; their login account remains because they may belong to other workspaces, and their contact record is kept when work (tasks, invoices, time logs) still refers to it. Menu access for a person can be set to follow their role or limited to chosen menu items. Editing a person's details, role or menu access is checked completely before anything is saved, so a refused change does not half-apply.",
+      "sourceFiles": ["src/lib/access-rules.ts", "src/core/rbac.ts", "src/app/actions/user-actions.ts", "src/app/actions/org-actions.ts", "src/app/actions/actor.ts"]
+    },
+    {
+      "id": "permissions.invitations.and-passwords",
+      "module": "Settings",
+      "title": "Inviting people, setup emails and changing passwords",
+      "routes": ["/settings"],
+      "intents": ["how-to", "troubleshooting", "business-rule"],
+      "keywords": ["invite", "invitation", "setup link", "set password", "password reset", "change password", "email", "new user", "team member", "weak password", "another workspace", "workspace"],
+      "audiences": ["all"],
+      "content": "Inviting a team member from Settings creates their login and profile in your workspace with the role you choose (a role below your own) and emails them a one-time link to choose their own password. The link goes only to the invited person's address; it is never written to a log or shown to the person who invited them. If the email cannot be sent the person is still created and an administrator can resend a link by resetting the password. Creating a user directly with a password requires a strong password: at least 8 characters with an uppercase letter, a lowercase letter, a number and a special character. An administrator can change a team member's password only for people in their own workspace and with a lower role than their own; they cannot change an equal or higher role, an Admin cannot change the Super Admin's password, and an administrator of one workspace can never change the password of anyone in another workspace. Anyone can change their own password. A person can belong to several workspaces and switch between them from the workspace switcher; they can only switch into a workspace where they have a membership, and the role there is the role that membership records. Memberships are created by the server when a workspace is set up for them, and a person can leave a workspace but cannot give themselves access to one.",
+      "sourceFiles": ["src/app/actions/org-actions.ts", "src/app/actions/user-actions.ts", "functions/src/password-access.ts", "src/core/email-service.ts", "firestore.rules"]
+    }
+  ]
+}

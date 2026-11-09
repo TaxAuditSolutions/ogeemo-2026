@@ -263,6 +263,41 @@ export function buildWelcomeToOgeemoEmail(input: {
   };
 }
 
+
+export interface InvitationEmailInput {
+  to: string;
+  orgName: string;
+  /** The one-time link that lets the invited person set a password. It goes to this one email and nowhere else. */
+  setupLink: string;
+}
+
+/**
+ * The invitation a new team member receives (pure builder - unit tested). The setup link is a credential:
+ * anyone holding it can set the account's password, so it is only ever placed in this message and is never logged.
+ */
+export function buildInvitationEmail(input: InvitationEmailInput): EmailMessage {
+  const subject = `You have been invited to ${input.orgName} on Ogeemo`;
+  const link = escapeHtml(input.setupLink);
+  const text = [
+    `You have been invited to join ${input.orgName} on Ogeemo.`,
+    '',
+    'Choose your password to finish setting up your account:',
+    input.setupLink,
+    '',
+    'If you were not expecting this invitation, you can ignore this email.',
+    '',
+    '- The Ogeemo Team',
+  ].join('\n');
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;">
+  <h2 style="color:#4f46e5;margin:0 0 12px 0;">${escapeHtml(subject)}</h2>
+  <p style="color:#0f172a;font-size:14px;margin:0 0 16px 0;">Choose your password to finish setting up your account.</p>
+  <p style="margin:0 0 20px 0;"><a href="${link}" style="background:#4f46e5;color:#ffffff;padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px;">Set my password</a></p>
+  <p style="color:#64748b;font-size:12px;margin:0 0 8px 0;">If you were not expecting this invitation, you can ignore this email.</p>
+  <p style="color:#0f172a;font-size:14px;margin:0;">&mdash; The Ogeemo Team</p>
+</div>`;
+  return { to: [input.to], subject, text, html, replyTo: REGISTRATION_NOTIFY_EMAIL };
+}
+
 export interface ReceiptEmailInput {
   /** Client recipient address (validated by the caller). */
   to: string;

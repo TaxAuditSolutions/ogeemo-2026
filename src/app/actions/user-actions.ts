@@ -1,10 +1,14 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AccessLevel, SidebarAccessConfig } from '@/core/user-profile-service';
-import { canManageTargetRole } from '@/core/rbac';
+import { isAdminRole, mayChangeRole, mayEditUser, mayInvite } from '@/lib/access-rules';
+import { oneLine } from '@/lib/ai-input';
+import { strongPasswordSchema } from '@/lib/password-policy';
+import { refreshSessionsAfterRoleChange, requireActor } from '@/app/actions/actor';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Formats a user-friendly error message when an email is already registered in Firebase Auth.
@@ -51,112 +55,63 @@ export async function updateUserInTenant(data: {
     newRole?: AccessLevel | 'none';
     sidebarAccess?: SidebarAccessConfig;
 }) {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    if (!adminAuth || !adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
-    }
-
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) {
-        throw new Error('Unauthorized: No session cookie found.');
-    }
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
-    const requestingOrgId = decodedToken.orgId as string;
-
-    if (!requestingAccessLevel || !requestingOrgId) {
-        throw new Error('Unauthorized: Missing custom claims.');
-    }
+    const { actor, adminAuth, adminDb } = await requireActor();
 
     const userRef = adminDb.collection('users').doc(data.targetUid);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
         throw new Error('Target user not found.');
     }
+    const target = {
+        uid: data.targetUid,
+        orgId: userSnap.data()?.orgId as string | undefined,
+        accessLevel: userSnap.data()?.accessLevel as AccessLevel | undefined,
+    };
 
-    const targetOrgId = userSnap.data()?.orgId as string | undefined;
-    const currentTargetRole = userSnap.data()?.accessLevel as AccessLevel | undefined;
-
-    if (!targetOrgId || targetOrgId !== requestingOrgId) {
-        throw new Error('Unauthorized: Cross-tenant update attempted.');
+    // Every check runs BEFORE anything is written. This used to save the profile edits first and only then refuse the
+    // role change, so a refused request still changed the person's name, notes and menu access.
+    const mayEdit = mayEditUser(actor, target);
+    if (!mayEdit.ok) throw new Error(mayEdit.error);
+    const roleChange = data.newRole !== undefined && data.newRole !== (target.accessLevel || 'none');
+    if (roleChange) {
+        const mayRole = mayChangeRole(actor, target, data.newRole as AccessLevel | 'none');
+        if (!mayRole.ok) throw new Error(mayRole.error);
+    }
+    if (data.sidebarAccess !== undefined && actor.uid === target.uid && !isAdminRole(actor.accessLevel)) {
+        throw new Error('Unauthorized: Only an administrator can change menu access.');
     }
 
-    // Don't allow editing super admins unless you are a super admin
-    if (currentTargetRole === 'super_admin' && requestingAccessLevel !== 'super_admin') {
-        throw new Error('Unauthorized: Cannot edit a super admin.');
-    }
-
-    // Build update object
     const updateData: { [key: string]: any } = {
         updatedAt: FieldValue.serverTimestamp(),
     };
-
-    if (data.displayName !== undefined) updateData.displayName = data.displayName;
-    if (data.employeeNumber !== undefined) updateData.employeeNumber = data.employeeNumber;
-    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.displayName !== undefined) updateData.displayName = oneLine(data.displayName, 120);
+    if (data.employeeNumber !== undefined) updateData.employeeNumber = oneLine(data.employeeNumber, 40);
+    if (data.notes !== undefined) updateData.notes = String(data.notes).slice(0, 2000);
     if (data.sidebarAccess !== undefined) {
         updateData.sidebarAccess = data.sidebarAccess.mode === 'inherit' ? { mode: 'inherit' } : data.sidebarAccess;
     }
+    if (roleChange) {
+        updateData.accessLevel = data.newRole === 'none' ? FieldValue.delete() : data.newRole;
+    }
 
-    // Update the profile
     await userRef.update(updateData);
 
-    // Update auth user display name if provided
     if (data.displayName !== undefined) {
         try {
-            await adminAuth.updateUser(data.targetUid, { displayName: data.displayName });
+            await adminAuth.updateUser(data.targetUid, { displayName: updateData.displayName });
         } catch (e) {
             console.error('Failed to update Auth display name:', e);
         }
     }
 
-    // Update access level if changed
-    if (data.newRole !== undefined && data.newRole !== (currentTargetRole || 'none')) {
-        if (currentTargetRole === 'super_admin') {
-            throw new Error('The Super Admin authority level cannot be changed.');
-        }
-
-        if (data.targetUid === decodedToken.uid) {
-            throw new Error('Unauthorized: Use another admin account to change your own role.');
-        }
-
-        if (!canManageTargetRole(requestingAccessLevel, currentTargetRole || 'viewer')) {
-            throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot manage a ${currentTargetRole} user.`);
-        }
-
-        if (data.newRole !== 'none' && !canManageTargetRole(requestingAccessLevel, data.newRole)) {
-            throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot assign the ${data.newRole} role.`);
-        }
-
-        if (data.newRole === 'none') {
-            await userRef.update({
-                accessLevel: FieldValue.delete(),
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-            await adminAuth.setCustomUserClaims(data.targetUid, {
-                orgId: requestingOrgId,
-                isMasterTenant: false,
-            });
-        } else {
-            await userRef.update({
-                accessLevel: data.newRole,
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-            await adminAuth.setCustomUserClaims(data.targetUid, {
-                orgId: requestingOrgId,
-                accessLevel: data.newRole,
-                isMasterTenant: false,
-            });
-        }
+    if (roleChange) {
+        await adminAuth.setCustomUserClaims(data.targetUid, {
+            orgId: target.orgId,
+            ...(data.newRole === 'none' ? {} : { accessLevel: data.newRole }),
+            isMasterTenant: false,
+        });
+        // The person's open sign-ins carry the old role; end them so the new role is what applies next.
+        await refreshSessionsAfterRoleChange(adminAuth, data.targetUid);
     }
 
     return { success: true };
@@ -175,57 +130,38 @@ export async function createUserInTenant(data: {
     accessLevel: AccessLevel;
     sidebarAccess?: SidebarAccessConfig;
 }) {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    if (!adminAuth || !adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
-    }
+    const { actor, adminAuth, adminDb } = await requireActor();
 
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) {
-        throw new Error('Unauthorized: No session cookie found.');
-    }
+    const allowed = mayInvite(actor, actor.orgId, data.accessLevel);
+    if (!allowed.ok) throw new Error(allowed.error);
 
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
-    const requestingOrgId = decodedToken.orgId as string;
-
-    if (!requestingAccessLevel || !requestingOrgId) {
-        throw new Error('Unauthorized: Missing custom claims.');
-    }
-
-    if (!canManageTargetRole(requestingAccessLevel, data.accessLevel)) {
-        throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot assign the ${data.accessLevel} role.`);
-    }
+    const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : '';
+    if (!EMAIL_PATTERN.test(email) || email.length > 254) throw new Error('Enter a valid email address.');
+    const strength = strongPasswordSchema.safeParse(data.password);
+    if (!strength.success) throw new Error(strength.error.issues[0]?.message ?? 'Choose a stronger password.');
+    const requestingOrgId = actor.orgId as string;
 
     // Pre-check: Firebase Auth requires unique email addresses across the entire project.
-    if (await isEmailAlreadyInUse(adminAuth, data.email)) {
-        throw new Error(formatEmailExistsError(data.email));
+    if (await isEmailAlreadyInUse(adminAuth, email)) {
+        throw new Error(formatEmailExistsError(email));
     }
 
     let createdUid: string | null = null;
     try {
         const userRecord = await adminAuth.createUser({
-            email: data.email,
+            email,
             password: data.password,
-            displayName: data.name,
+            displayName: data.name ? oneLine(data.name, 120) : undefined,
         });
         createdUid = userRecord.uid;
 
         const userRef = adminDb.collection('users').doc(createdUid);
         await userRef.set({
             id: createdUid,
-            email: data.email,
-            displayName: data.name || '',
-            employeeNumber: data.employeeNumber || '',
-            notes: data.notes || '',
+            email,
+            displayName: oneLine(data.name, 120),
+            employeeNumber: oneLine(data.employeeNumber, 40),
+            notes: String(data.notes ?? '').slice(0, 2000),
             orgId: requestingOrgId,
             accessLevel: data.accessLevel,
             sidebarAccess: data.sidebarAccess && data.sidebarAccess.mode !== 'inherit' ? data.sidebarAccess : { mode: 'inherit' },
@@ -248,9 +184,14 @@ export async function createUserInTenant(data: {
             } catch (rollbackError) {
                 console.error('CRITICAL: Failed to rollback user creation', rollbackError);
             }
+            try {
+                await adminDb.collection('users').doc(createdUid).delete();
+            } catch (rollbackError) {
+                console.error('CRITICAL: Failed to roll back the profile of a failed user creation', rollbackError);
+            }
         }
         if (error.code === 'auth/email-already-exists') {
-            throw new Error(formatEmailExistsError(data.email));
+            throw new Error(formatEmailExistsError(email));
         }
         throw new Error(error.message || 'Failed to create user');
     }

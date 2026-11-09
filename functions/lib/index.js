@@ -5,6 +5,8 @@ exports.getDownloadUrl = exports.restoreFirestoreBackup = exports.listBackups = 
 const https_1 = require("firebase-functions/v2/https");
 const app_1 = require("firebase-admin/app");
 const auth_1 = require("firebase-admin/auth");
+const firestore_1 = require("firebase-admin/firestore");
+const password_access_1 = require("./password-access");
 const storage_1 = require("firebase-admin/storage");
 const backup_utils_1 = require("./backup-utils");
 if (!(0, app_1.getApps)().length) {
@@ -15,31 +17,41 @@ const REGION = "us-central1";
 /** Backups bucket; must live in the Firestore database region (northamerica-northeast2). */
 const BACKUP_BUCKET = `${PROJECT_ID}-backups`;
 exports.updateUserAuth = (0, https_1.onCall)(async (request) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const auth = (0, auth_1.getAuth)();
     const uid = typeof ((_a = request.data) === null || _a === void 0 ? void 0 : _a.uid) === "string" ? request.data.uid : undefined;
-    const password = typeof ((_b = request.data) === null || _b === void 0 ? void 0 : _b.password) === "string" ? request.data.password : undefined;
+    const password = (_b = request.data) === null || _b === void 0 ? void 0 : _b.password;
     if (!uid) {
         throw new https_1.HttpsError("invalid-argument", "A valid user id is required.");
     }
     if (!request.auth) {
         throw new https_1.HttpsError("unauthenticated", "You must be signed in to change a password.");
     }
-    const callerUid = request.auth.uid;
-    const callerClaims = (_c = request.auth.token) !== null && _c !== void 0 ? _c : {};
-    const isCallerSelf = callerUid === uid;
-    const isAdmin = callerClaims.accessLevel === "super_admin" || callerClaims.accessLevel === "org_admin";
-    if (!isCallerSelf && !isAdmin) {
-        throw new https_1.HttpsError("permission-denied", "You are not allowed to change this password.");
-    }
-    const isStrongPassword = !!password &&
-        password.length >= 8 &&
-        /[A-Z]/.test(password) &&
-        /[a-z]/.test(password) &&
-        /[0-9]/.test(password) &&
-        /[^A-Za-z0-9\s]/.test(password);
-    if (!isStrongPassword) {
+    if (!(0, password_access_1.isStrongPassword)(password)) {
         throw new https_1.HttpsError("invalid-argument", "Password must be at least 8 characters and include uppercase, lowercase, numeric, and special characters.");
+    }
+    // The caller's role and workspace come from their LIVE profile, not their token (which can be an hour stale and
+    // still say "admin" after they were demoted or removed), and the target must be in the same workspace.
+    const db = (0, firestore_1.getFirestore)();
+    const callerUid = request.auth.uid;
+    const callerClaims = ((_c = request.auth.token) !== null && _c !== void 0 ? _c : {});
+    const [callerSnap, targetSnap] = await Promise.all([
+        db.collection("users").doc(callerUid).get(),
+        callerUid === uid ? Promise.resolve(null) : db.collection("users").doc(uid).get(),
+    ]);
+    const callerRole = (0, password_access_1.asRole)((_d = callerSnap.data()) === null || _d === void 0 ? void 0 : _d.accessLevel);
+    const decision = (0, password_access_1.mayChangePassword)({
+        uid: callerUid,
+        role: callerRole,
+        orgId: typeof ((_e = callerSnap.data()) === null || _e === void 0 ? void 0 : _e.orgId) === "string" ? (_f = callerSnap.data()) === null || _f === void 0 ? void 0 : _f.orgId : undefined,
+        isPlatformAdmin: callerClaims.isMasterTenant === true && callerRole === "super_admin",
+    }, {
+        uid,
+        role: (0, password_access_1.asRole)((_g = targetSnap === null || targetSnap === void 0 ? void 0 : targetSnap.data()) === null || _g === void 0 ? void 0 : _g.accessLevel),
+        orgId: typeof ((_h = targetSnap === null || targetSnap === void 0 ? void 0 : targetSnap.data()) === null || _h === void 0 ? void 0 : _h.orgId) === "string" ? (_j = targetSnap === null || targetSnap === void 0 ? void 0 : targetSnap.data()) === null || _j === void 0 ? void 0 : _j.orgId : undefined,
+    });
+    if (!decision.ok) {
+        throw new https_1.HttpsError("permission-denied", decision.message);
     }
     await auth.updateUser(uid, { password });
     return { success: true, uid };

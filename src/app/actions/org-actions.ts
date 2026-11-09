@@ -1,11 +1,13 @@
 'use server';
 
+import { getCurrentSessionContext } from '@/app/actions';
 import { cookies } from 'next/headers';
 import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AccessLevel } from '@/core/user-profile-service';
-import { canManageTargetRole } from '@/core/rbac';
-import { buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMessage, sendFormNotification } from '@/core/email-service';
+import { isAccessLevel, mayChangeRole, mayInvite, mayRemove } from '@/lib/access-rules';
+import { refreshSessionsAfterRoleChange, requireActor, revokeWorkspaceAccess } from '@/app/actions/actor';
+import { buildInvitationEmail, buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMessage, sendFormNotification } from '@/core/email-service';
 import type { NumberingConfig } from '@/core/document-numbering';
 import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 import type { PayrollSettings } from '@/lib/payroll-settings';
@@ -43,26 +45,18 @@ async function requireMasterTenantSuperAdmin() {
     const adminAuth = getAdminAuth();
     if (!adminAuth) throw new Error('Firebase Admin SDK is not initialized.');
 
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const accessLevel = decodedToken.accessLevel as AccessLevel | undefined;
-    const isMasterTenant = decodedToken.isMasterTenant === true;
-
-    if (accessLevel !== 'super_admin' || !isMasterTenant) {
+    // The role comes from the LIVE profile (getCurrentSessionContext), not from the cookie's claims, which can be
+    // an hour stale: a platform administrator who was demoted kept tenant-lifecycle powers until the cookie expired.
+    const session = await getCurrentSessionContext();
+    if (!session) throw new Error('Unauthorized: Please sign in again.');
+    if (session.accessLevel !== 'super_admin' || !session.isMasterTenant) {
         throw new Error('Unauthorized: Master tenant super admin required.');
     }
 
-    return decodedToken;
+    return session;
 }
+
+const INVITE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Formats a user-friendly error message when an email is already registered in Firebase Auth.
@@ -200,96 +194,68 @@ export async function registerOrganization(data: { orgName: string; email: strin
 }
 
 export async function inviteUser(data: { invitedEmail: string; targetRole: AccessLevel; orgId: string }) {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
+    const { actor, adminAuth, adminDb } = await requireActor();
 
-    if (!adminAuth || !adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
-    }
+    // Strict hierarchy: the person invited must hold a role strictly below the inviter's, in the inviter's own
+    // workspace (a platform administrator may invite into any workspace).
+    const allowed = mayInvite(actor, data.orgId, data.targetRole);
+    if (!allowed.ok) throw new Error(allowed.error);
+    const workspaceId = actor.isMasterTenant && actor.accessLevel === 'super_admin' ? data.orgId : (actor.orgId as string);
+    const orgSnap = await adminDb.collection('organizations').doc(workspaceId).get();
+    if (!orgSnap.exists) throw new Error('That workspace does not exist.');
 
-    // 1. Authentication & Authorization
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-
-    if (!sessionCookie) {
-        throw new Error("Unauthorized: No session cookie found.");
-    }
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch (error) {
-        throw new Error("Unauthorized: Invalid session cookie.");
-    }
-
-    const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
-    const requestingOrgId = decodedToken.orgId as string;
-    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
-
-    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
-        throw new Error("Unauthorized: Missing custom claims.");
-    }
-
-    if (!isMasterTenantAdmin && requestingOrgId !== data.orgId) {
-        throw new Error("Unauthorized: Cross-tenant invitation attempted.");
-    }
-
-    // 2. Hierarchy Check: strict matrix, target role must be strictly below the requester's role
-    // (a super_admin may invite another super_admin within their own tenant).
-    if (!canManageTargetRole(requestingAccessLevel, data.targetRole)) {
-        throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot invite a ${data.targetRole} role.`);
-    }
+    const invitedEmail = typeof data.invitedEmail === 'string' ? data.invitedEmail.trim().toLowerCase() : '';
+    if (!INVITE_EMAIL_PATTERN.test(invitedEmail) || invitedEmail.length > 254) throw new Error('Enter a valid email address.');
 
     // Pre-check: Firebase Auth requires unique email addresses across the entire project.
-    if (await findExistingUserByEmail(adminAuth, data.invitedEmail)) {
-        throw new Error(formatEmailExistsError(data.invitedEmail));
+    if (await findExistingUserByEmail(adminAuth, invitedEmail)) {
+        throw new Error(formatEmailExistsError(invitedEmail));
     }
 
     let createdUid: string | null = null;
 
     try {
-        // 3. User Creation
         const userRecord = await adminAuth.createUser({
-            email: data.invitedEmail,
+            email: invitedEmail,
             // Password is intentionally omitted to require a reset/setup flow
         });
 
         createdUid = userRecord.uid;
 
-        const batch = adminDb.batch();
-
-        // 4. Create Profile
-        const userRef = adminDb.collection('users').doc(createdUid);
-        batch.set(userRef, {
+        // The profile is written in the INVITED workspace (this used to write the platform administrator's own
+        // workspace even when the invitation was for another one).
+        await adminDb.collection('users').doc(createdUid).set({
             id: createdUid,
-            email: data.invitedEmail,
+            email: invitedEmail,
             displayName: '', // They can set this later
-            orgId: requestingOrgId,
+            orgId: workspaceId,
             accessLevel: data.targetRole,
             mentorshipRole: 'Apprentice', // Default business logic role
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        await batch.commit();
-
-        // 5. Set Claims
         await adminAuth.setCustomUserClaims(createdUid, {
-            orgId: requestingOrgId,
+            orgId: workspaceId,
             accessLevel: data.targetRole,
             isMasterTenant: false,
         });
 
-        // 6. Send Email (Generate Password Reset Link)
-        const passwordResetLink = await adminAuth.generatePasswordResetLink(data.invitedEmail);
+        // The setup link is for the invited person only. It used to be written to the server log, where anyone
+        // with log access could use it to take over the new account.
+        const passwordResetLink = await adminAuth.generatePasswordResetLink(invitedEmail);
+        const emailed = await sendEmailMessage(buildInvitationEmail({
+            to: invitedEmail,
+            orgName: String(orgSnap.data()?.name ?? 'your Ogeemo workspace'),
+            setupLink: passwordResetLink,
+        }));
+        if (!emailed.sent) {
+            console.warn(`[Invite] Invitation email to ${invitedEmail} was not sent (${emailed.error}). The user was created.`);
+        }
 
-        // TODO: Integrate with an email provider (SendGrid, Postmark, etc.) here.
-        // Example: await sendEmail(data.invitedEmail, 'You have been invited!', `Click here to join: ${passwordResetLink}`);
-        console.log(`[INVITATION LINK GENERATED] -> ${data.invitedEmail}: ${passwordResetLink}`);
-
-        return { success: true, uid: createdUid };
+        return { success: true, uid: createdUid, emailSent: emailed.sent };
     } catch (error: any) {
-        console.error("Error inviting user:", error);
+        console.error("Error inviting user:", error?.message ?? error);
 
         if (createdUid) {
             try {
@@ -297,9 +263,14 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
             } catch (rollbackError) {
                 console.error("CRITICAL: Failed to rollback user creation", rollbackError);
             }
+            try {
+                await adminDb.collection('users').doc(createdUid).delete();
+            } catch (rollbackError) {
+                console.error("CRITICAL: Failed to roll back the profile of a failed invitation", rollbackError);
+            }
         }
         if (error.code === 'auth/email-already-exists') {
-            throw new Error(formatEmailExistsError(data.invitedEmail));
+            throw new Error(formatEmailExistsError(invitedEmail));
         }
         throw new Error(error.message || 'Failed to invite user');
     }
@@ -310,82 +281,50 @@ export async function inviteUser(data: { invitedEmail: string; targetRole: Acces
  * target-role matrix, and keeps Firestore + custom claims in sync (fixes prior claims drift).
  */
 export async function updateUserAccess(data: { targetUid: string; newRole: AccessLevel | 'none' }) {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    if (!adminAuth || !adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
-    }
-
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) {
-        throw new Error('Unauthorized: No session cookie found.');
-    }
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
-    const requestingOrgId = decodedToken.orgId as string;
-    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
-
-    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
-        throw new Error('Unauthorized: Missing custom claims.');
-    }
+    const { actor, adminAuth, adminDb } = await requireActor();
 
     const userRef = adminDb.collection('users').doc(data.targetUid);
     const userSnap = await userRef.get();
+            const hasHomeWorkspace = userSnap.exists && typeof userSnap.data()?.orgId === 'string' && userSnap.data()?.orgId !== '';
     if (!userSnap.exists) {
         throw new Error('Target user not found.');
     }
-    const targetOrgId = userSnap.data()?.orgId as string | undefined;
-    const currentTargetRole = userSnap.data()?.accessLevel as AccessLevel | undefined;
+    const target = {
+        uid: data.targetUid,
+        orgId: userSnap.data()?.orgId as string | undefined,
+        accessLevel: userSnap.data()?.accessLevel as AccessLevel | undefined,
+    };
 
-    if (!targetOrgId || (!isMasterTenantAdmin && targetOrgId !== requestingOrgId)) {
-        throw new Error('Unauthorized: Cross-tenant access change attempted.');
-    }
-    if (data.targetUid === decodedToken.uid) {
-        throw new Error('Unauthorized: Use another admin account to change your own role.');
-    }
-    // Every tenant must retain its super admin, so that role is immutable once granted.
-    if (currentTargetRole === 'super_admin') {
-        throw new Error('The Super Admin authority level cannot be changed. Every tenant must keep at least one Super Admin.');
-    }
-    if (!canManageTargetRole(requestingAccessLevel, currentTargetRole || 'viewer')) {
-        throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot manage a ${currentTargetRole} user.`);
-    }
-    // 'none' (revoked access) is always below every real role, so any actor who can
-    // manage the target's current role may also revoke it.
-    if (data.newRole !== 'none' && !canManageTargetRole(requestingAccessLevel, data.newRole)) {
-        throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot assign the ${data.newRole} role.`);
-    }
+    // One shared decision: own workspace, never yourself, the Super Admin is immutable, and the actor must outrank
+    // both the current and the new role.
+    const allowed = mayChangeRole(actor, target, data.newRole);
+    if (!allowed.ok) throw new Error(allowed.error);
 
+    // The claims are written in the TARGET's workspace. They used to take the actor's, so a platform administrator
+    // changing a role in another workspace stamped their own workspace on that person.
+    const targetOrgId = target.orgId as string;
     if (data.newRole === 'none') {
         await userRef.update({
             accessLevel: FieldValue.delete(),
             updatedAt: FieldValue.serverTimestamp(),
         });
         await adminAuth.setCustomUserClaims(data.targetUid, {
-            orgId: requestingOrgId,
+            orgId: targetOrgId,
             isMasterTenant: false,
         });
-        return { success: true };
+    } else {
+        await userRef.update({
+            accessLevel: data.newRole,
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+        await adminAuth.setCustomUserClaims(data.targetUid, {
+            orgId: targetOrgId,
+            accessLevel: data.newRole,
+            isMasterTenant: false,
+        });
     }
-
-    await userRef.update({
-        accessLevel: data.newRole,
-        updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    await adminAuth.setCustomUserClaims(data.targetUid, {
-        orgId: requestingOrgId,
-        accessLevel: data.newRole,
-        isMasterTenant: false,
-    });
+    // End their open sign-ins so the old role cannot be used for another hour.
+    await refreshSessionsAfterRoleChange(adminAuth, data.targetUid);
 
     return { success: true };
 }
@@ -412,35 +351,7 @@ async function countContactLinks(
  * Removes a user's profile from the tenant, enforcing the same target-role matrix as updateUserAccess.
  */
 export async function removeUser(targetUid: string) {
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-    if (!adminAuth || !adminDb) {
-        throw new Error('Firebase Admin SDK is not initialized.');
-    }
-
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) {
-        throw new Error('Unauthorized: No session cookie found.');
-    }
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const requestingAccessLevel = decodedToken.accessLevel as AccessLevel;
-    const requestingOrgId = decodedToken.orgId as string;
-    const isMasterTenantAdmin = decodedToken.isMasterTenant === true && requestingAccessLevel === 'super_admin';
-
-    if (!requestingAccessLevel || (!isMasterTenantAdmin && !requestingOrgId)) {
-        throw new Error('Unauthorized: Missing custom claims.');
-    }
-    if (targetUid === decodedToken.uid) {
-        throw new Error('Unauthorized: Cannot remove your own account.');
-    }
+    const { actor, adminAuth, adminDb } = await requireActor();
 
     const userRef = adminDb.collection('users').doc(targetUid);
     const userSnap = await userRef.get();
@@ -448,13 +359,13 @@ export async function removeUser(targetUid: string) {
         return { success: true }; // Already gone.
     }
     const targetData = userSnap.data() || {};
-
-    if (!isMasterTenantAdmin && targetData.orgId !== requestingOrgId) {
-        throw new Error('Unauthorized: Cross-tenant removal attempted.');
-    }
-    if (!canManageTargetRole(requestingAccessLevel, targetData.accessLevel as AccessLevel)) {
-        throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot remove a ${targetData.accessLevel} user.`);
-    }
+    const allowed = mayRemove(actor, {
+        uid: targetUid,
+        orgId: targetData.orgId as string | undefined,
+        accessLevel: targetData.accessLevel as AccessLevel | undefined,
+    });
+    if (!allowed.ok) throw new Error(allowed.error);
+    const requestingOrgId = (targetData.orgId as string) || (actor.orgId as string);
 
     // The team member's contact is deleted with the profile ONLY when nothing refers to it. Tasks, invoices,
     // time logs and the like store the contact id, so deleting it would leave them pointing at nobody. When
@@ -463,8 +374,7 @@ export async function removeUser(targetUid: string) {
     let contactUse = '';
     const batch = adminDb.batch();
     if (targetData.contactId) {
-        const orgForLinks = (targetData.orgId as string) || requestingOrgId;
-        const counts = await countContactLinks(adminDb, orgForLinks, targetData.contactId as string);
+        const counts = await countContactLinks(adminDb, requestingOrgId, targetData.contactId as string);
         if (totalLinks(counts) > 0) {
             contactKept = true;
             contactUse = summarizeReassignments(counts);
@@ -473,7 +383,13 @@ export async function removeUser(targetUid: string) {
         }
     }
     batch.delete(userRef);
+    // Their membership in this workspace goes too, or the workspace switcher would still offer it.
+    batch.delete(userRef.collection('orgMemberships').doc(requestingOrgId));
     await batch.commit();
+
+    // Deleting the profile alone left the person signed in with their old role (their token still said so) and
+    // their claims intact. Now their sessions end and the workspace is cleared from their account.
+    await revokeWorkspaceAccess(adminAuth, targetUid, requestingOrgId);
 
     return { success: true, contactKept, contactUse };
 }
@@ -516,6 +432,7 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             const batch = adminDb.batch();
             const userRef = adminDb.collection('users').doc(existingUser.uid);
             const userSnap = await userRef.get();
+            const hasHomeWorkspace = userSnap.exists && typeof userSnap.data()?.orgId === 'string' && userSnap.data()?.orgId !== '';
 
             batch.set(orgRef, {
                 id: orgId,
@@ -525,16 +442,18 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
                 isMasterTenant: false,
             });
 
-            batch.set(userRef, {
-                id: existingUser.uid,
-                email: existingUser.email || data.email,
-                displayName: existingUser.displayName || data.name || '',
-                orgId,
-                accessLevel: 'super_admin',
-                mentorshipRole: 'Apprentice',
-                updatedAt: FieldValue.serverTimestamp(),
-                ...(userSnap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
-            }, { merge: true });
+            if (!hasHomeWorkspace) {
+                batch.set(userRef, {
+                    id: existingUser.uid,
+                    email: existingUser.email || data.email,
+                    displayName: existingUser.displayName || data.name || '',
+                    orgId,
+                    accessLevel: 'super_admin',
+                    mentorshipRole: 'Apprentice',
+                    updatedAt: FieldValue.serverTimestamp(),
+                    ...(userSnap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+                }, { merge: true });
+            }
 
             batch.set(userRef.collection('orgMemberships').doc(orgId), {
                 orgId,
@@ -545,11 +464,16 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
             });
 
             await batch.commit();
-            await adminAuth.setCustomUserClaims(existingUser.uid, {
-                orgId,
-                accessLevel: 'super_admin',
-                isMasterTenant: false,
-            });
+            // A person who already works in a workspace keeps it: their profile and claims are LEFT UNTOUCHED and they
+            // reach the new one through the membership above (switchActiveOrg). This used to overwrite their profile
+            // and claims with the new workspace, moving an administrator of another company out of it.
+            if (!hasHomeWorkspace) {
+                await adminAuth.setCustomUserClaims(existingUser.uid, {
+                    orgId,
+                    accessLevel: 'super_admin',
+                    isMasterTenant: false,
+                });
+            }
             return { success: true, orgId, uid: existingUser.uid, reusedExistingAccount: true };
         } catch (error: any) {
             throw new Error(error.message || 'Failed to create tenant');
@@ -608,7 +532,12 @@ export async function createTenantWithSuperAdmin(data: { companyName: string; em
 
         if (!data.password) {
             const passwordResetLink = await adminAuth.generatePasswordResetLink(data.email);
-            console.log(`[TENANT ADMIN INVITE LINK] -> ${data.email}: ${passwordResetLink}`);
+            const emailed = await sendEmailMessage(buildInvitationEmail({
+                to: data.email,
+                orgName: data.companyName,
+                setupLink: passwordResetLink,
+            }));
+            if (!emailed.sent) console.warn(`[Tenant] Setup email to ${data.email} was not sent (${emailed.error}). The account was created.`);
         }
 
         return { success: true, orgId, uid: createdUid };
@@ -648,6 +577,7 @@ export async function listMyOrgMemberships(): Promise<Array<{ orgId: string; com
     }
 
     const activeOrgId = decodedToken.orgId as string | undefined;
+    const liveSession = await getCurrentSessionContext();
     const membershipsSnap = await adminDb.collection('users').doc(decodedToken.uid).collection('orgMemberships').get();
 
     const memberships = new Map<string, { orgId: string; companyName: string; accessLevel: AccessLevel; isMasterTenant: boolean }>();
@@ -674,8 +604,8 @@ export async function listMyOrgMemberships(): Promise<Array<{ orgId: string; com
         memberships.set(activeOrgId, {
             orgId: activeOrgId,
             companyName: (orgSnap.data()?.name as string) || 'Unknown',
-            accessLevel: decodedToken.accessLevel as AccessLevel,
-            isMasterTenant: decodedToken.isMasterTenant === true,
+            accessLevel: (liveSession?.accessLevel ?? 'viewer') as AccessLevel,
+            isMasterTenant: liveSession?.isMasterTenant === true,
         });
     }
 
@@ -712,11 +642,15 @@ export async function switchActiveOrg(orgId: string): Promise<{ success: true }>
         throw new Error('Unauthorized: You are not a member of that organization.');
     }
     const membership = membershipSnap.data()!;
+    if (!isAccessLevel(membership.accessLevel)) throw new Error('Unauthorized: Your role in that organization is not valid.');
+    const targetOrg = await adminDb.collection('organizations').doc(orgId).get();
+    if (!targetOrg.exists) throw new Error('That organization no longer exists.');
+    if (targetOrg.data()?.status === 'suspended') throw new Error('That organization is suspended.');
 
     await adminAuth.setCustomUserClaims(decodedToken.uid, {
         orgId,
         accessLevel: membership.accessLevel,
-        isMasterTenant: membership.isMasterTenant === true,
+        isMasterTenant: membership.isMasterTenant === true && targetOrg.data()?.isMasterTenant === true && membership.accessLevel === 'super_admin',
     });
 
     return { success: true };

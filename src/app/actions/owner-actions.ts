@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { getCurrentSessionContext } from '@/app/actions';
 import { getAdminAuth, getAdminDb } from '@/core/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AccessLevel } from '@/core/user-profile-service';
@@ -52,25 +52,15 @@ async function requireMasterTenantSuperAdmin() {
     const adminAuth = getAdminAuth();
     if (!adminAuth) throw new Error('Firebase Admin SDK is not initialized.');
 
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-
-    let decodedToken;
-    try {
-        decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
-
-    const accessLevel = decodedToken.accessLevel as AccessLevel | undefined;
-    const isMasterTenant = decodedToken.isMasterTenant === true;
-
-    if (accessLevel !== 'super_admin' || !isMasterTenant) {
+    // The role comes from the LIVE profile (getCurrentSessionContext), not from the cookie's claims, which can be
+    // an hour stale: a platform administrator who was demoted kept tenant-lifecycle powers until the cookie expired.
+    const session = await getCurrentSessionContext();
+    if (!session) throw new Error('Unauthorized: Please sign in again.');
+    if (session.accessLevel !== 'super_admin' || !session.isMasterTenant) {
         throw new Error('Unauthorized: Master tenant super admin required.');
     }
 
-    return decodedToken;
+    return session;
 }
 
 // ─── Server Actions ────────────────────────────────────────────────────────────────

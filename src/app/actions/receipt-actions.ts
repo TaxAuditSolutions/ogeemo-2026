@@ -1,7 +1,8 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { getAdminAuth } from '@/core/firebase-admin';
+import { getCurrentSessionContext } from '@/app/actions';
+import { canWrite } from '@/lib/access-rules';
+import { createRateLimiter } from '@/lib/ai-rate-limit';
 import {
     buildReceiptEmail,
     isEmailServiceConfigured,
@@ -33,19 +34,17 @@ export interface SendReceiptEmailPayload {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// A receipt email goes to a client, so it needs a writer role (a viewer may only read) and is rate limited: a
+// signed-in script could otherwise use it to send email to anyone from Ogeemo's address.
+const receiptLimiter = createRateLimiter({ max: 20, windowMs: 60_000 });
+
 async function requireSessionUid(): Promise<string> {
-    const adminAuth = getAdminAuth();
-    if (!adminAuth) throw new Error('Firebase Admin SDK is not initialized.');
-
-    const sessionCookie = (await cookies()).get('session')?.value;
-    if (!sessionCookie) throw new Error('Unauthorized: No session cookie found.');
-
-    try {
-        const decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
-        return decodedToken.uid as string;
-    } catch {
-        throw new Error('Unauthorized: Invalid session cookie.');
-    }
+    const session = await getCurrentSessionContext();
+    if (!session) throw new Error('Unauthorized: Please sign in again.');
+    if (!canWrite(session.accessLevel)) throw new Error('Unauthorized: Your role cannot send receipts.');
+    const limit = receiptLimiter.check(session.userId);
+    if (!limit.ok) throw new Error(`Please wait ${limit.retryAfterSeconds} seconds before sending another receipt.`);
+    return session.userId;
 }
 
 /** Emails a payment receipt to the client. Returns { sent, error } - never throws for mail issues. */

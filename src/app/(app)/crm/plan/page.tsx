@@ -34,6 +34,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getContacts, updateContact, deleteContacts, type Contact } from '@/services/contact-service';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
+import { ContactInUseDialog, blockedContactsFrom } from '@/components/contacts/contact-in-use-dialog';
+import type { BlockedContact } from '@/lib/contact-links';
 import { getAllCrmActions, type Action as CrmAction } from '@/services/crm-action-service';
 
 const ItemTypes = {
@@ -166,6 +168,7 @@ function CrmPlanContent() {
   const [prospects, setProspects] = useState<Contact[]>([]);
   const [allCrmActions, setAllCrmActions] = useState<CrmAction[]>([]);
   const [leadToDelete, setLeadToDelete] = useState<Contact | null>(null);
+  const [blockedContacts, setBlockedContacts] = useState<BlockedContact[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
@@ -247,8 +250,11 @@ function CrmPlanContent() {
         await deleteContacts([leadToDelete.id]);
         setProspects(prev => prev.filter(l => l.id !== leadToDelete.id));
         toast({ title: "Prospect Deleted" });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Delete Failed' });
+    } catch (error: any) {
+        // Work (a scheduled follow-up, a quote) may still name this prospect; say so instead of a bare failure.
+        const blocked = blockedContactsFrom(error);
+        if (blocked) setBlockedContacts(blocked);
+        else toast({ variant: 'destructive', title: 'Delete Failed', description: error?.message });
     } finally {
         setLeadToDelete(null);
     }
@@ -321,6 +327,7 @@ function CrmPlanContent() {
         </div>
       </div>
 
+      <ContactInUseDialog blocked={blockedContacts} onClose={() => setBlockedContacts(null)} />
        <AlertDialog open={!!leadToDelete} onOpenChange={() => setLeadToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>

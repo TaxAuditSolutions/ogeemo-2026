@@ -9,6 +9,8 @@ import { buildRegistrationNotification, buildWelcomeToOgeemoEmail, sendEmailMess
 import type { NumberingConfig } from '@/core/document-numbering';
 import type { ReceiptOcrSettings } from '@/lib/receipt-ocr-options';
 import type { PayrollSettings } from '@/lib/payroll-settings';
+import { CONTACT_REFERENCES, summarizeReassignments } from '@/lib/contact-merge';
+import { tallyLinks, totalLinks, type LinkCounts, type LinkHit } from '@/lib/contact-links';
 
 // Canonical tenant shape. isMasterTenant is true only for the single "Ogeemo"
 // organization whose super_admins manage tenant lifecycle (see createTenantWithSuperAdmin).
@@ -388,6 +390,24 @@ export async function updateUserAccess(data: { targetUid: string; newRole: Acces
     return { success: true };
 }
 
+/** Records that still name a contact, per collection (the same list the contact merge re-points). */
+async function countContactLinks(
+    adminDb: NonNullable<ReturnType<typeof getAdminDb>>,
+    orgId: string,
+    contactId: string
+): Promise<LinkCounts> {
+    const hits: LinkHit[] = [];
+    for (const reference of CONTACT_REFERENCES) {
+        const snapshot = await adminDb
+            .collection(reference.collection)
+            .where('orgId', '==', orgId)
+            .where(reference.field, '==', contactId)
+            .get();
+        snapshot.forEach((found) => hits.push({ contactId, collection: reference.collection, docId: found.id }));
+    }
+    return tallyLinks(hits)[contactId] ?? {};
+}
+
 /**
  * Removes a user's profile from the tenant, enforcing the same target-role matrix as updateUserAccess.
  */
@@ -436,14 +456,26 @@ export async function removeUser(targetUid: string) {
         throw new Error(`Unauthorized: An ${requestingAccessLevel} cannot remove a ${targetData.accessLevel} user.`);
     }
 
+    // The team member's contact is deleted with the profile ONLY when nothing refers to it. Tasks, invoices,
+    // time logs and the like store the contact id, so deleting it would leave them pointing at nobody. When
+    // work is linked the contact is kept (the person simply loses access) and the caller is told why.
+    let contactKept = false;
+    let contactUse = '';
     const batch = adminDb.batch();
     if (targetData.contactId) {
-        batch.delete(adminDb.collection('contacts').doc(targetData.contactId));
+        const orgForLinks = (targetData.orgId as string) || requestingOrgId;
+        const counts = await countContactLinks(adminDb, orgForLinks, targetData.contactId as string);
+        if (totalLinks(counts) > 0) {
+            contactKept = true;
+            contactUse = summarizeReassignments(counts);
+        } else {
+            batch.delete(adminDb.collection('contacts').doc(targetData.contactId));
+        }
     }
     batch.delete(userRef);
     await batch.commit();
 
-    return { success: true };
+    return { success: true, contactKept, contactUse };
 }
 
 /**

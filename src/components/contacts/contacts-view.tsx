@@ -36,6 +36,8 @@ import { getContacts, getContactById, deleteContacts, updateContact, addContact,
 import { summarizeReassignments } from '@/lib/contact-merge';
 import { descendantFolderIds, wouldCreateCycle } from '@/lib/contact-folder-rules';
 import { filterContacts } from '@/lib/contact-search';
+import { ContactInUseDialog, blockedContactsFrom } from '@/components/contacts/contact-in-use-dialog';
+import type { BlockedContact } from '@/lib/contact-links';
 import MergeContactsDialog from '@/components/contacts/MergeContactsDialog';
 import { getFolders, addFolder, updateFolder, deleteFolders, ensureSystemFolders, type FolderData } from '@/services/contact-folder-service';
 import { getCompanies, type Company } from '@/core/accounting-service';
@@ -280,6 +282,7 @@ export function ContactsView() {
   const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [blockedContacts, setBlockedContacts] = useState<BlockedContact[] | null>(null);
   const [isLogTimeDialogOpen, setIsLogTimeDialogOpen] = useState(false);
   const [preselectedContactId, setPreselectedContactId] = useState<string | null>(null);
   const [workersForDialog, setWorkersForSelection] = useState<Worker[]>([]);
@@ -481,8 +484,12 @@ export function ContactsView() {
       await deleteContacts([contactToDelete.id]);
       setContacts(prev => prev.filter(c => c.id !== contactToDelete.id));
       toast({ title: "Contact Deleted" });
-    } catch (error: any) { toast({ variant: 'destructive', title: 'Delete Failed', description: error.message }); }
-    finally { setContactToDelete(null); }
+    } catch (error: any) {
+      // A contact that work still refers to is explained in a dialog, with Merge as the way out.
+      const blocked = blockedContactsFrom(error);
+      if (blocked) setBlockedContacts(blocked);
+      else toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+    } finally { setContactToDelete(null); }
   };
 
   const handleMergeConfirm = async (sourceContactId: string, masterContactId: string) => {
@@ -513,8 +520,12 @@ export function ContactsView() {
       setContacts(contacts.filter(c => !selectedContactIds.includes(c.id)));
       toast({ title: `${selectedContactIds.length} Contacts Deleted` });
       setSelectedContactIds([]);
-    } catch (error: any) { toast({ variant: "destructive", title: "Delete Failed", description: error.message }); }
-    finally { setIsBulkDeleteAlertOpen(false); }
+    } catch (error: any) {
+      // Nothing is deleted when any chosen contact is in use, so the selection is kept for the user to adjust.
+      const blocked = blockedContactsFrom(error);
+      if (blocked) setBlockedContacts(blocked);
+      else toast({ variant: "destructive", title: "Delete Failed", description: error.message });
+    } finally { setIsBulkDeleteAlertOpen(false); }
   };
 
   const handleCreateFolder = async () => {
@@ -733,7 +744,7 @@ export function ContactsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Selected?</AlertDialogTitle>
-                  <AlertDialogDescription>Permanently delete {selectedContactIds.length} contact{selectedContactIds.length === 1 ? '' : 's'}? This cannot be undone. A contact linked to a sign-in account is refused, and tasks, invoices or time logs that name a contact keep pointing at it, so merge duplicates instead of deleting them.</AlertDialogDescription>
+                  <AlertDialogDescription>Permanently delete {selectedContactIds.length} contact{selectedContactIds.length === 1 ? '' : 's'}? This cannot be undone. A contact that tasks, invoices, time logs or other work still refer to cannot be deleted, and nothing is deleted if any chosen contact is in use. Merge duplicates instead.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -741,6 +752,15 @@ export function ContactsView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        <ContactInUseDialog
+          blocked={blockedContacts}
+          onClose={() => setBlockedContacts(null)}
+          onMerge={(contactId) => {
+            const target = contacts.find((c) => c.id === contactId);
+            setBlockedContacts(null);
+            if (target) setContactToMerge(target);
+          }}
+        />
       {contactToMerge && (
         <MergeContactsDialog
           isOpen={!!contactToMerge}

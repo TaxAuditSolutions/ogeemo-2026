@@ -73,6 +73,7 @@ import { type DateRange } from 'react-day-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { getWorkers, addWorker, updateWorker, savePayrollRun, deleteWorker, type Worker } from '@/services/payroll-service';
+import { blockedContactsFrom } from '@/components/contacts/contact-in-use-dialog';
 import { getTimeLogs } from '@/services/timelog-service';
 import { getTasksForUser } from '@/services/project-service';
 import { WorkerFormDialog } from '@/components/accounting/WorkerFormDialog';
@@ -313,7 +314,7 @@ export function RunPayrollView() {
           toast({ title: "Worker Deleted" });
           loadData();
       } catch (error: any) {
-          toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+          toast({ variant: 'destructive', title: blockedContactsFrom(error) ? 'Worker is still in use' : 'Delete Failed', description: error.message });
       } finally {
           setWorkerToDelete(null);
       }

@@ -209,10 +209,10 @@ export default function OwnerConsolePage() {
         if (!selectedTenant) return;
         try {
             const { removeUser } = await import('@/app/actions/org-actions');
-            await removeUser(userId);
+            const result = await removeUser(userId);
             toast({
                 title: 'User Removed',
-                description: `${userName} was removed from ${selectedTenant.name}.`,
+                description: `${userName} was removed from ${selectedTenant.name}.${result.contactKept ? ` Their contact record was kept because it is still used by ${result.contactUse}.` : ''}`,
             });
             await loadTenantUsers(selectedTenant);
         } catch (error: any) {

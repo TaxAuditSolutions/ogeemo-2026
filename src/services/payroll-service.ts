@@ -16,7 +16,7 @@ import {
 import { getFirebaseServices } from '@/firebase';
 import { type Contact } from '@/data/contacts';
 import { ensureSystemFolders } from '@/services/contact-folder-service';
-import { mergeContacts, type MergeContactsResult } from '@/services/contact-service';
+import { deleteContacts, mergeContacts, type MergeContactsResult } from '@/services/contact-service';
 import { omitUndefined, replaceUndefinedWithNull } from '@/lib/write-payload';
 import { todayDateKey } from '@/lib/ledger-date';
 import { alreadyPaid, alreadyPaidMessage, newestFirst } from '@/lib/payroll-history';
@@ -232,27 +232,12 @@ export async function updateWorker(id: string, data: Partial<Omit<Worker, 'id' |
 }
 
 export async function deleteWorker(id: string): Promise<void> {
-    const db = getDb();
-    const orgId = await getCurrentOrgId();
-    const workerRef = doc(db, CONTACTS_COLLECTION, id);
-    const snapshot = await getDoc(workerRef);
-
-    if (!snapshot.exists() || snapshot.data()?.orgId !== orgId) {
-        throw new Error('Worker not found for the current organization.');
-    }
-
-    await deleteDoc(workerRef);
+    await deleteContacts([id]);
 }
 
+/** Workers are contacts, so deleting them is the guarded contact delete: nothing in use can be removed. */
 export async function deleteWorkers(workerIds: string[]): Promise<void> {
-    const db = getDb();
-    if (workerIds.length === 0) return;
-    const batch = writeBatch(db);
-    workerIds.forEach(id => {
-        const docRef = doc(db, CONTACTS_COLLECTION, id);
-        batch.delete(docRef);
-    });
-    await batch.commit();
+    await deleteContacts(workerIds);
 }
 
 /**

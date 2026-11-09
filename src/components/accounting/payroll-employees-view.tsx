@@ -27,6 +27,7 @@ import { PlusCircle, MoreVertical, Pencil, Trash2, LoaderCircle, Info, ExternalL
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { getWorkers, addWorker, updateWorker, deleteWorker, type Worker, deleteWorkers, mergeWorkers } from '@/services/payroll-service';
+import { blockedContactsFrom } from '@/components/contacts/contact-in-use-dialog';
 import { getUsers } from '@/core/user-profile-service';
 import { AddUserDialog } from '@/components/data/add-user-dialog';
 import { WorkerFormDialog } from './WorkerFormDialog';
@@ -135,7 +136,7 @@ export function PayrollEmployeesView() {
             setWorkerToDelete(null);
             loadWorkers();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: error.message });
+            toast({ variant: 'destructive', title: blockedContactsFrom(error) ? 'Worker is still in use' : 'Delete Failed', description: error.message });
         }
     };
 

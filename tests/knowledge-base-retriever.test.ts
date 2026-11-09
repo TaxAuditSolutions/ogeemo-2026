@@ -90,6 +90,8 @@ const cases = [
   ['Can I invoice a work order twice?', 'bks.workorders.invoicing'],
   ['What order do work order statuses go in?', 'bks.workorders.invoicing'],
   ['Which account do reconciled bank statement entries go to?', 'bks.bank.matching'],
+  ['Why can I not delete a contact that has invoices?', 'contacts.edit.delete'],
+  ['Why does Ogeemo say a contact is still in use when I delete it?', 'contacts.edit.delete'],
   ['How do I search for a contact by phone number?', 'contacts.search.and-checks'],
   ['Why does Ogeemo say a contact is a possible duplicate?', 'contacts.search.and-checks'],
   ['Why is my SIN rejected when I save a contact?', 'contacts.search.and-checks'],

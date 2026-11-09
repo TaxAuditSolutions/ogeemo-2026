@@ -118,8 +118,8 @@ export function TeamManagementCard() {
     if (!confirm("Are you sure you want to remove this user profile? The user's login account will remain but they will lose access to this workspace.")) return;
 
     try {
-      await removeUser(userId);
-      toast({ title: "Member Removed", description: "The user profile has been deleted." });
+      const result = await removeUser(userId);
+      toast({ title: "Member Removed", description: result.contactKept ? `Their access was removed. Their contact record was kept because it is still used by ${result.contactUse}.` : "The user profile has been deleted." });
       loadTeam();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Removal Failed', description: error.message });

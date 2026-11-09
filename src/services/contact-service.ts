@@ -21,6 +21,7 @@ import type { Contact } from '@/data/contacts';
 import { provisionWorkerDocumentNode } from '@/core/file-manager-folders';
 import { isBlankRequiredContactField } from '@/lib/contact-update';
 import { cleanContactInput } from '@/lib/contact-clean';
+import { ContactInUseError, planContactDelete, tallyLinks, type LinkCounts, type LinkHit } from '@/lib/contact-links';
 import { CONTACT_REFERENCES, buildMergePatch, chunkItems, groupReassignments } from '@/lib/contact-merge';
 
 export type { Contact };
@@ -339,28 +340,67 @@ export async function updateContact(contactId: string, contactData: Partial<Omit
     }
 }
 
+/**
+ * Counts the records that still name each contact, across every collection that stores a contact id
+ * (the same list the merge re-points). One query per collection and field, not per contact, so this
+ * stays fast for a bulk delete. A record that names the contact in two fields counts once.
+ */
+export async function getContactLinks(contactIds: readonly string[]): Promise<Record<string, LinkCounts>> {
+    if (contactIds.length === 0) return {};
+    const db = getDb();
+    const orgId = await getCurrentOrgId();
+    const wanted = new Set(contactIds);
+    const hits: LinkHit[] = [];
+
+    for (const reference of CONTACT_REFERENCES) {
+        const snapshot = await getDocs(query(collection(db, reference.collection), where('orgId', '==', orgId)));
+        snapshot.forEach((found) => {
+            const value = found.data()[reference.field];
+            if (typeof value === 'string' && wanted.has(value)) {
+                hits.push({ contactId: value, collection: reference.collection, docId: found.id });
+            }
+        });
+    }
+    return tallyLinks(hits);
+}
+
+/**
+ * Deletes contacts, but only ones nothing depends on. A contact that is still named by a task, project,
+ * quote, invoice, work order, time log, leave request or inventory item is refused with a
+ * ContactInUseError that says what uses it, and NOTHING is deleted in that case (not even the free ones
+ * in the same call), so a bulk delete is all or nothing. Merge the contact into another one instead.
+ */
 export async function deleteContacts(contactIds: string[]): Promise<void> {
     const db = getDb();
-    if (contactIds.length === 0) return;
+    const ids = Array.from(new Set(contactIds));
+    if (ids.length === 0) return;
     const orgId = await getCurrentOrgId();
 
+    const snaps = await Promise.all(ids.map((id) => getDoc(doc(db, CONTACTS_COLLECTION, id))));
+    const mine = snaps.flatMap((snap) => {
+        const data = snap.data();
+        return snap.exists() && data && data.orgId === orgId ? [{ id: snap.id, name: String(data.name ?? '') }] : [];
+    });
+    if (mine.length === 0) return;
+
     // A sign-in account linked to the contact would be left pointing at nothing.
-    for (const id of contactIds) {
-        const linked = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('contactId', '==', id)));
+    for (const person of mine) {
+        const linked = await getDocs(query(collection(db, 'users'), where('orgId', '==', orgId), where('contactId', '==', person.id)));
         if (!linked.empty) {
             const who = linked.docs[0].data().displayName || linked.docs[0].data().email || 'a sign-in account';
-            throw new Error(`That contact is linked to ${who} and cannot be deleted. Remove the sign-in account first.`);
+            throw new Error(`"${person.name}" is linked to ${who} and cannot be deleted. Remove the sign-in account first.`);
         }
     }
 
+    // Work that still names the contact: refuse, and say what.
+    const links = await getContactLinks(mine.map((person) => person.id));
+    const plan = planContactDelete(mine, links);
+    if (plan.blocked.length > 0) throw new ContactInUseError(plan.blocked);
+
     // Several batches, because one batch holds at most 500 writes.
-    for (const chunk of chunkItems(contactIds)) {
+    for (const chunk of chunkItems(plan.deletable)) {
         const batch = writeBatch(db);
-        for (const id of chunk) {
-            const contactRef = doc(db, CONTACTS_COLLECTION, id);
-            const contactSnap = await getDoc(contactRef);
-            if (contactSnap.exists() && contactSnap.data().orgId === orgId) batch.delete(contactRef);
-        }
+        for (const id of chunk) batch.delete(doc(db, CONTACTS_COLLECTION, id));
         await batch.commit();
     }
 }

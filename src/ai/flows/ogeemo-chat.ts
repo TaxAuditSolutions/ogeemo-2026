@@ -10,6 +10,7 @@ import { getReceiptsFolderPdfs } from '@/services/google-service';
 import { searchContactsHandler, searchGlobalHandler, syncReceiptsHandler } from '@/ai/agent-tools';
 import { createTaskHandler } from '@/ai/agent-task-tool';
 import { createContactHandler } from '@/ai/agent-contact-tool';
+import { createAppointmentHandler, getCalendarHandler } from '@/ai/agent-calendar-tool';
 import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/lib/ai-runtime';
 import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
@@ -138,6 +139,46 @@ const createContactTool = ai.defineTool(
   async (input, { context }) => createContactHandler(getAdminDb(), readToolContext(context), input)
 );
 
+const createAppointmentTool = ai.defineTool(
+  {
+    name: 'createAppointment',
+    description: 'Books an appointment on the signed-in user\'s Calendar and saves it. Use it when the user asks you to book, schedule or set up an appointment, meeting or call. It needs a title and a start date AND time of day. The length defaults to one hour. It refuses a time in the past and a time that overlaps one of the user\'s own unfinished events (unless allowDoubleBooking is true), and then suggests the next free time. For a to-do with no time, use createTask.',
+  inputSchema: z.object({
+      title: z.string().describe('What the appointment is for'),
+      startTime: z.string().describe('ISO date-time with a time of day, such as 2026-11-10T15:00:00-05:00; without an offset it is read in the user\'s time zone'),
+      endTime: z.string().optional().describe('ISO date-time for the end; use this or durationMinutes, not both'),
+      durationMinutes: z.number().optional().describe('Length in minutes (5 to 720); one hour when omitted'),
+      contactId: z.string().optional().describe('The ID of the contact the appointment is with, from searchContacts'),
+      location: z.string().optional().describe('Where it takes place'),
+      notes: z.string().optional(),
+      allowDoubleBooking: z.boolean().optional().describe('Set true only after the user said to book it although it overlaps something'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      appointmentId: z.string().optional(),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => createAppointmentHandler(getAdminDb(), readToolContext(context), input)
+);
+
+const getCalendarTool = ai.defineTool(
+  {
+    name: 'getCalendar',
+    description: 'Reads the signed-in user\'s own Calendar for one day or up to 14 days: their scheduled events with the time, in their time zone. Use it to answer what is on, or whether a time is free, and to check before booking. Read-only.',
+    inputSchema: z.object({
+      date: z.string().optional().describe('The first day, as YYYY-MM-DD in the user\'s time zone; today when omitted'),
+      days: z.number().optional().describe('How many days to read, 1 to 14; 1 when omitted'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      events: z.array(z.object({ title: z.string(), when: z.string(), status: z.string() })),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => getCalendarHandler(getAdminDb(), readToolContext(context), input)
+);
+
 
 // --- Agent Logic ---
 
@@ -222,6 +263,9 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 15. **Honest Results**: Only say a task was created if createTask returned success. If it failed, give the reason in plain words.
 16. **Adding Contacts**: When the user asks you to add a contact, call createContact yourself; do not send them to the form. Only the name is needed. If the name is missing, ask for it. Pass an email, phone, company or address only if the user gave it, and a folder only if the user named one. Never ask for or save a SIN, pay rate or employment dates; tell the user to enter those in Contacts Hub. Employees and Contractors are added on the Workers page (/workers), not by you.
 17. **Duplicates**: If createContact says a similar contact exists, nothing was added. Tell the user who matched and ask whether to add another anyway. Call createContact again with allowDuplicate true only if they say yes. Only say a contact was added if createContact returned success.
+18. **Appointments**: When the user asks you to book, schedule, make or set up an appointment, meeting or call at a day and time, call createAppointment yourself. It needs a title and a day AND a time of day; if either is missing, ask one short question. The length defaults to an hour; use the length the user gave. To tie it to a person, call searchContacts first and pass that contact's real id. Only say it is booked if createAppointment returned success. A plain to-do or a reminder with no time is a task: use createTask.
+19. **Overlaps**: If createAppointment says the time overlaps something, nothing was booked. Tell the user what it overlaps, offer the free time it suggests or ask for another, and call it again with allowDoubleBooking true only if the user says to book it anyway.
+20. **Reading the Calendar**: For "what is on tomorrow", "am I free at 3" or "what do I have this week", call getCalendar (a date as YYYY-MM-DD and a number of days) and answer only from what it returns. It shows only the signed-in person's own events. You cannot change or cancel an existing event yet; say so and point to the Calendar (/calendar).
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -553,7 +597,7 @@ const ogeemoAgentFlow = ai.defineFlow(
       const result = await ai.generate({
         model: STABLE_GEMINI_MODEL,
         messages: scrubbedMessages,
-        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createContactTool, syncReceiptsTool],
+        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createContactTool, createAppointmentTool, getCalendarTool, syncReceiptsTool],
         system: finalSystemPrompt,
         // The tools learn who is asking from here, never from the model's arguments. Without this they received an
         // empty context and every tool except the search refused with "not authenticated".

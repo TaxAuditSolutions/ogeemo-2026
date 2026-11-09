@@ -40,8 +40,34 @@
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
+      "name": "createAppointment",
+      "description": "Books an appointment on the signed-in user's Calendar and saves it.",
+      "inputs": {
+        "title": "string (required)",
+        "startTime": "ISO date-time WITH a time of day (required; without an offset it is read in the user's time zone; a date alone is refused)",
+        "endTime": "ISO date-time (optional) - use this or durationMinutes",
+        "durationMinutes": "number 5 to 720 (optional; one hour when neither length is given)",
+        "contactId": "string (optional) - must be a contact in this workspace, from searchContacts",
+        "location": "string (optional)",
+        "notes": "string (optional)",
+        "allowDoubleBooking": "boolean (optional) - true only after the user said to book it although it overlaps something"
+      },
+      "sideEffects": "WRITES a document to the Firestore 'tasks' collection with activityType 'appointment', scheduled, stamped with the workspace and the person who asked, so it shows on the Calendar and is never flagged overdue. Planned time only: it is never worked or billable time. It refuses a time in the past, an end before the start, and a length over 12 hours. It refuses a time that overlaps one of the user's OWN unfinished timed events (nothing is written), names the clash and suggests the next free time inside 9:00 to 17:00 in the user's time zone, until allowDoubleBooking is true. If the database is unavailable nothing is written and the reply says the appointment was NOT booked.",
+      "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
+    },
+    {
+      "name": "getCalendar",
+      "description": "Reads the signed-in user's own Calendar for one day or up to 14 days.",
+      "inputs": {
+        "date": "YYYY-MM-DD (optional; today in the user's time zone when omitted)",
+        "days": "number 1 to 14 (optional; 1 when omitted)"
+      },
+      "sideEffects": "Read-only (Firestore tasks, scoped to the user's workspace). Returns up to 30 of the user's own scheduled events with the time written in their time zone. It never shows other people's events.",
+      "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
+    },
+    {
       "name": "createTask",
-      "description": "Creates a task or calendar event in the Activity Manager.",
+      "description": "Creates a task in the Activity Manager: a to-do, or a scheduled task. For an appointment, meeting or call at a set time, use createAppointment instead.",
       "inputs": {
         "title": "string (required)",
         "description": "string (optional)",
@@ -104,9 +130,9 @@
     ]
   },
   "cannotYet": [
-    "Query business data: time logs, unbilled totals, invoice lists, payroll runs and calendar contents cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md.",
+    "Query business data: time logs, unbilled totals, invoice lists and payroll runs cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. The user's own Calendar CAN be read with getCalendar.",
     "Create or edit invoices, quotes, receipts or payroll directly as writes. Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
     "Send emails, notifications or file changes; manage users, tenants or settings.",
-    "Modify or delete existing tasks/events (createTask only creates)."
+    "Modify, move, cancel or delete existing tasks, events or appointments (createTask and createAppointment only create); point the user to the Calendar (/calendar), where an event can be dragged or deleted. Invite or notify other people, or see anyone else's calendar."
   ]
 }

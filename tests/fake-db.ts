@@ -23,12 +23,18 @@ export function fakeDb(seed: Record<string, Record<string, Record<string, any>>>
       return {
         doc: (id: string) => docRef(name, id),
         where(field: string, _op: string, value: unknown) {
-          return {
+          const filters: Array<[string, unknown]> = [[field, value]];
+          const query = {
+            where(nextField: string, _nextOp: string, nextValue: unknown) {
+              filters.push([nextField, nextValue]);
+              return query;
+            },
             async get() {
-              const rows = Object.entries(store[name] ?? {}).filter(([, data]) => data[field] === value);
+              const rows = Object.entries(store[name] ?? {}).filter(([, data]) => filters.every(([f, v]) => data[f] === v));
               return { docs: rows.map(([id, data]) => ({ id, data: () => data })) };
             },
           };
+          return query;
         },
         async add(data: Record<string, any>) {
           if (failWrites.value) throw new Error('write refused');

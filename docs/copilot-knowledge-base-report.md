@@ -84,7 +84,19 @@ The recipe, per capability (for example "log time", "create an invoice", "create
 6. **Probe it live** against a throwaway user and clean up after, as in section 4. `npm run kb:eval` runs the golden questions (`docs/agent-knowledge-eval.md`; question 11 is the contact write).
 7. Commit, then `npm run knowledge:sync`.
 
-Good next candidates, in rough order of value and safety: read-only tools for time logs, unbilled totals and invoice lists (the biggest gap); update and cancel for tasks and events; contact edit as a direct tool; then writes that touch money (invoices, quotes, payroll), which should keep a confirm step.
+The calendar has since been done the same way (section 5a). Good next candidates, in rough order of value and safety: read-only tools for time logs, unbilled totals and invoice lists (the biggest gap); move and cancel for appointments; contact edit as a direct tool; then writes that touch money (invoices, quotes, payroll), which should keep a confirm step.
+
+## 5a. Second use of the recipe: appointments and the calendar
+
+Done with the same seven steps (`src/ai/agent-calendar-tool.ts`, `src/lib/ai-appointment.ts`, `src/lib/ai-calendar.ts`). Worth knowing, because it is where the recipe needed a decision rather than a copy:
+
+- **`createTask` already wrote a scheduled event, but as a plain task.** The Calendar flags an unfinished task amber once its time passes; an appointment is never flagged (`isOverdue` in `src/lib/calendar-quick-entry.ts`). So `createAppointment` writes `activityType: 'appointment'`, `isTodoItem: false`, `duration: 0` (planned time, never billable) and no `workerId`.
+- **It reads before it writes.** It checks the person's own unfinished, timed events and refuses an overlap (nothing written), names the clash and suggests a free time. `getCalendar` is the read-only companion ("what is on tomorrow?").
+- **"Mine" is subtle.** An event belongs to its `workerId`, which holds either the sign-in id or the person's contact id (the app has used both), or to its creator when unassigned. `calendarItemsFor` handles both and is tested.
+- **Time zones are the risk.** The server runs in UTC, the user does not. Times without an offset are read in the user's zone with the offset valid ON THAT DATE (daylight saving), the day for `getCalendar` is the local day, and the free-slot search reads 9:00 to 17:00 in the user's zone. The existing `findNextFreeSlot` reads working hours in the machine's own zone (right in a browser, wrong on the server), so `suggestFreeSlot` was written for the server. Worth unifying later.
+- **Routing.** The chat sent "book a meeting with Dana" to the command processor, which only produced a link to the Activity Manager. `isAppointmentRequest` and `isCalendarQuestion` in `src/lib/copilot-routing.ts` now send those to the assistant, and a reply to a booking question ("book it anyway") stays in the conversation.
+
+Live check against a throwaway user (48 tasks before and after, test records deleted): a viewer was refused; an editor's booking saved with the right type, workspace, owner and UTC time and the reply gave the local time; an overlapping request was held back with a free-time suggestion; "what is on tomorrow?" listed it; no time of day got a question; a past time was refused. 44 new tests (1,284 in total).
 
 ## 6. What is not done, and where I would like your help
 
@@ -92,7 +104,7 @@ Good next candidates, in rough order of value and safety: read-only tools for ti
 2. **Prompt size.** All four files are loaded on every request (about 27 KB). `agent-knowledge-eval.md` sets a budget of under 6k tokens; we should measure before adding much more.
 3. **Two sources of truth.** The four files and the 95 entries overlap. The tests keep the four files honest, but nothing yet checks the 95 entries against the code.
 4. **Contact editing is still UI-assisted** (the older form flow). It is the next obvious tool.
-5. **The Co-Pilot cannot read business data** (time logs, invoices, payroll) or edit and delete tasks. Listed in `cannotYet`.
+5. **The Co-Pilot cannot read business data** (time logs, invoices, payroll) or move, cancel or delete tasks and appointments. Listed in `cannotYet`. It can now book appointments and read the user's own calendar (section 5a).
 6. **Browser end-to-end check** of the chat is still to do, and the latest rollout (`cf3d5080`) has not been started.
 7. **Housekeeping:** `ogeemoAssistant` is retired; the `OGEEMO_ASSISTANT_URL` secret can be deleted from Secret Manager; `scripts/verify-critical-guides.ts` now needs `OGEEMO_API_URL`.
 

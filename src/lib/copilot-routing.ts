@@ -62,6 +62,46 @@ export function isContactCreationRequest(message: string): boolean {
 }
 
 /**
+ * Appointment requests ("book a meeting with Dana tomorrow at 3pm", "schedule an appointment") belong in the
+ * Co-Pilot conversation, where createAppointment books them on the Calendar. Left to the command processor they
+ * were only turned into a link to the Activity Manager. "appointment" alone is enough; "meeting" or "call" also
+ * needs a day or time in the sentence, so "open the Meetings page" and "create a meeting agenda" stay as they were.
+ */
+const BOOKING_VERB = /\b(book|schedule|set\s*up|arrange|make|create|add|plan|put)\b/i;
+const APPOINTMENT_NOUN = /\bappointments?\b/i;
+const MEETING_NOUN = /\b(meeting|call|catch-?up|consultation)\b/i;
+const NOT_AN_APPOINTMENT = /\b(agenda|meeting\s+(minutes|notes)|template|invoice|quote)\b/i;
+const TIME_CUE = new RegExp(
+    '\\b(\\d{1,2}(:\\d{2})?\\s*(am|pm|a\\.m\\.|p\\.m\\.)|at\\s+\\d{1,2}(:\\d{2})?|noon|midnight|tomorrow|today|tonight|' +
+        'monday|tuesday|wednesday|thursday|friday|saturday|sunday|next\\s+(week|month|\\w+day)|on\\s+(the\\s+)?\\d{1,2}|\\d{4}-\\d{2}-\\d{2})\\b',
+    'i',
+);
+
+export function isAppointmentRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!text || NOT_AN_APPOINTMENT.test(text) || !BOOKING_VERB.test(text)) return false;
+    if (APPOINTMENT_NOUN.test(text)) return true;
+    return MEETING_NOUN.test(text) && TIME_CUE.test(text);
+}
+
+/**
+ * Questions about the user's own calendar ("what's on my calendar tomorrow", "what do I have this week", "am I free
+ * at 3") are answered by the Co-Pilot from getCalendar. The command processor used to answer the first as a plain
+ * link to the Calendar.
+ */
+const CALENDAR_QUESTION = /\b(am i (free|busy|available)|do i have (anything|any|a)|what(?:'s|\s+is|\s+do i have|\s+am i doing)|anything (on|scheduled))\b/i;
+const CALENDAR_TOPIC = new RegExp(
+    '\\b(calendar|schedule|today|tomorrow|tonight|this (week|morning|afternoon|evening)|next week|free|busy|available|' +
+        'monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b',
+    'i',
+);
+
+export function isCalendarQuestion(message: string): boolean {
+    const text = (message || '').trim();
+    return CALENDAR_QUESTION.test(text) && CALENDAR_TOPIC.test(text);
+}
+
+/**
  * Outside an open assistant question the command processor still decides; inside
  * one only an explicit command verb may interrupt the conversation.
  */
@@ -69,7 +109,13 @@ export function shouldProcessAsCommand(message: string, history: CopilotRoutingM
     const text = (message || '').trim();
     if (!text) return false;
     if (isContactCreationRequest(text) || isContactEditRequest(text)) return false;
+    if (isAppointmentRequest(text) || isCalendarQuestion(text)) return false;
     if (!isAwaitingAssistantReply(history)) return true;
+    // Answering "book it anyway?" or "which time?" is part of the booking, not a new command.
+    const activeAppointmentWorkflow = history.slice(-8).some((entry) =>
+        /\b(appointment|booked|nothing was booked|overlaps|free time|next free|double.?book|what time)\b/i.test(entry.content)
+    );
+    if (activeAppointmentWorkflow) return false;
     const activeContactWorkflow = history.slice(-8).some((entry) =>
         /\b(contact|full legal name|folder\/category|create it|which contact|confirm|save)\b/i.test(entry.content)
     );

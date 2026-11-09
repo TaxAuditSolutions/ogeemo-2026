@@ -60,7 +60,9 @@ The Co-Pilot is the assistant in the side panel and on its own page. You must be
 ### What it can do
 - **Answer how-to questions** about Ogeemo, using the knowledge base. Ask "How do I add a contact?" or "Where do I find time logs?" and it should give the real steps and screen names.
 - **Search** your contacts and projects by name, company, email or phone.
-- **Create a task or a calendar event.** Say "book a meeting with Dana tomorrow at 3pm for 30 minutes." It works out "tomorrow" from your own clock and time zone, and asks if the time is unclear.
+- **Create a task.** A to-do, or a task with a date. It works out "tomorrow" from your own clock and time zone, and asks if the time is unclear.
+- **Book an appointment.** This is new. Say "book a meeting with Dana tomorrow at 3pm for 30 minutes" and it saves an appointment on your Calendar.
+- **Read your calendar.** Ask "what is on tomorrow?" or "am I free at 3?" and it answers from your own calendar.
 - **Add a contact.** This is new. Say "add a contact named Jane Doe, jane@acme.com" and it saves the contact straight away.
 
 ### How adding a contact should behave
@@ -77,10 +79,25 @@ The Co-Pilot is the assistant in the side panel and on its own page. You must be
 
 Two things to watch for: it should say "added" **only** when the contact really appears in Contacts Hub, and it should never invent a contact that is not there.
 
+### How booking an appointment should behave
+| Say this | You should see |
+|---|---|
+| "Book an appointment called Zz Test Meeting tomorrow at 3pm for 30 minutes" | It says it is booked, with the day and time **in your own time zone**, and it appears on your Calendar at that time |
+| Ask for the same hour again, or a time that overlaps (for example 3:15pm) | **Nothing is booked.** It names what it overlaps and suggests the next free time |
+| "Book it anyway" | Booked over the top |
+| "Book Zz Test NoTime tomorrow" (no time of day) | It asks what time. It does not guess |
+| "Book Zz Test Past yesterday at 9am" | Refused: that time has passed |
+| "Book a meeting with Dana tomorrow at 2pm" (Dana is one of your contacts) | Booked, and the reply names Dana |
+| "What is on my calendar tomorrow?" | Lists your events for that day, with times, and nothing else |
+| As a **Viewer**: "book an appointment" | Refused. It says an editor or administrator must do it |
+
+Things to look for: the time on your Calendar must match the time it told you (this is the most likely thing to go wrong, so check it every time), it should say "booked" **only** when the appointment really appears on the Calendar, and it must never show or book into anyone else's calendar.
+
 ### What it cannot do yet
 It will tell you plainly if you ask. This is on purpose:
 - It cannot read your time logs, invoices, unbilled totals or payroll. It points you to the right report instead.
-- It cannot edit or delete a task or an event, and it cannot cancel an appointment.
+- It cannot move, change, cancel or delete an existing task, event or appointment. It points you to the Calendar, where you can drag an event to move it or delete it from its three-dot menu.
+- It reads only **your own** calendar, never anyone else's, and it does not invite or notify other people.
 - It cannot create invoices, quotes or payroll.
 - Editing an existing contact still opens the contact form for you to save.
 - It cannot send emails or change settings or users.
@@ -101,7 +118,7 @@ Use the **Feedback** screen in Ogeemo (`/feedback`) or message me directly. A bu
 
 ## 6. Known limits, and when the new version arrives
 
-- **The Co-Pilot's add-a-contact feature is ready in the code but only reaches the live site when I start the update.** I will tell you when it is live. Until then the Co-Pilot may still work the older way, walking you through the contact form, and the "how adding a contact should behave" table above will not match. Ask me which version you are on before you start that part.
+- **The Co-Pilot's add-a-contact and appointment features are ready in the code but only reach the live site when I start the update.** I will tell you when it is live. Until then the Co-Pilot may still work the older way, walking you through the contact form, and the "how adding a contact should behave" and "how booking an appointment should behave" tables above will not match. Ask me which version you are on before you start that part.
 - The Co-Pilot answers from a short set of reference files. If it gives a vague or wrong how-to answer, report it with the question you asked. That tells us which entry to improve.
 - Ogeemo does not upload files into the Document Manager. It registers links to files that already live in Google Drive.
 - The Co-Pilot and Knowledge Base are limited to about 30 messages a minute per person. If you hit it, wait a few seconds.

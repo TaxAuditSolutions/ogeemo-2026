@@ -107,6 +107,8 @@ export const AssistantApiResponseSchema = z.object({
     action: AssistantMessageActionSchema.optional(),
     /** True when the answer came from the deterministic fallback instead of the AI capability flow. */
     degraded: z.boolean().optional(),
+    /** Which screens' data the Co-Pilot's tools changed this turn, so an open screen can reload. */
+    changed: z.array(z.enum(['calendar', 'contacts', 'projects'])).optional(),
 }).strict();
 
 /** The only destinations a capability flow may offer; the model never supplies a raw path. */

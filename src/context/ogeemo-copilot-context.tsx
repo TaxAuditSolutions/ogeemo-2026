@@ -11,6 +11,7 @@ import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile } from '@/core/user-profile-service';
 import { parseAssistantMessageAction } from '@/ai/assistant-actions';
 import { isProjectFormTarget } from '@/lib/ai-open-record';
+import { parseChangedAreas } from '@/lib/ai-tool-reply';
 import {
     createAssistantChatThread,
     deleteAssistantChatThreads,
@@ -189,6 +190,8 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             // Set only when a typed request resolved to a screen: opened below once the reply is saved, and the reply
             // keeps its button so a blocked or failed navigation still leaves a way in.
             let dispatchReply: DispatchReply | null = null;
+            // Which screens' data the Co-Pilot's tools changed this turn (from the server, read off the tools' results).
+            let changedAreas: ReturnType<typeof parseChangedAreas> = [];
 
             if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
@@ -226,6 +229,7 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 }
                 assistantAction = parseAssistantMessageAction(data?.action);
                 assistantDegraded = data?.degraded === true;
+                changedAreas = parseChangedAreas(data?.changed);
                 assistantContent = typeof data?.answer === 'string' && data.answer.trim()
                     ? data.answer
                     : 'No answer returned from Ogeemo Co-Pilot.';
@@ -243,6 +247,10 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 messages: normalizeMessages([...messagesWithUserTurn, assistantMessage]),
             };
             await persistThread(completedThread);
+
+            // Something the Co-Pilot just saved or changed may be on screen right now (the Calendar after a move). Tell
+            // the screens, so they reload instead of showing the old data until the page is refreshed.
+            if (changedAreas.length > 0) dispatchCopilotWorkflowEvent('copilot:data_changed', { areas: changedAreas });
 
             if (assistantAction?.type === 'dispatch' && assistantAction.target === '/contacts?action=new') {
                 dispatchCopilotWorkflowEvent('copilot:navigate', { target: assistantAction.target });

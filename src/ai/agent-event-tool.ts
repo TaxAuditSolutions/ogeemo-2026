@@ -26,7 +26,11 @@ import type { DbLike } from '@/ai/agent-tools';
 
 export type ChangeStatus = 'preview' | 'done' | 'refused';
 
-const result = (status: ChangeStatus, message: string) => ({ success: status === 'done', status, message });
+/**
+ * `message` is what the MODEL is told (it may include instructions to it). `userText`, when given, is the user-facing
+ * part, shown word for word for a preview or a finished change (see src/lib/ai-tool-reply.ts).
+ */
+const result = (status: ChangeStatus, message: string, userText?: string) => ({ success: status === 'done', status, message, ...(userText ? { userText } : {}) });
 
 /** Why the plan cannot be carried out under the Calendar's own rules, or null. */
 async function rulesProblem(db: DbLike, ctx: ToolContext, plan: ChangePlan, data: Record<string, any>, now: Date): Promise<string | null> {
@@ -109,7 +113,8 @@ export async function changeEventHandler(
     if (!(opts.confirmed === true && madeBeforeThisTurn && matchesPending(saved, fresh, now))) {
       // A first ask, a changed request, a stale preview, or a "yes" that did not answer this preview: show it and save it.
       await pendingRef.set(fresh);
-      return result('preview', `${describePlan(plan, ctx.timeZone)} Show the user exactly this, including that nothing has changed yet, and ask whether to go ahead. Do not call changeEvent again until they have replied.`);
+      const shown = describePlan(plan, ctx.timeZone);
+      return result('preview', `${shown} The user will be shown exactly this and asked whether to go ahead, so do not repeat it. Do not call changeEvent again until they have replied.`, shown);
     }
 
     // Confirmed. The event must still be exactly as it was when the preview was made.
@@ -122,13 +127,15 @@ export async function changeEventHandler(
       await ref.delete();
       await pendingRef.delete();
       const note = await removeProjectStep(db, orgId, data);
-      return result('done', `${describeDone(plan, ctx.timeZone)}${note}`);
+      const shown = `${describeDone(plan, ctx.timeZone)}${note}`;
+      return result('done', shown, shown);
     }
 
     const to = plan.to as { start: Date; end: Date };
     await ref.update({ start: to.start, end: to.end, isScheduled: true, updatedBy: userId, updatedAt: now });
     await pendingRef.delete();
-    return result('done', describeDone(plan, ctx.timeZone));
+    const shown = describeDone(plan, ctx.timeZone);
+    return result('done', shown, shown);
   } catch (error: any) {
     return result('refused', `The change could not be made, so assume nothing changed: ${oneLine(error?.message, 160)}`);
   }

@@ -180,7 +180,12 @@ export async function POST(request: NextRequest) {
                 // A contact or project saved while answering opens its own form, so the person can check it and add details.
                 const opened = openActionFor(genkitResult?.saved);
                 const note = openedFormNote(genkitResult?.saved);
-                return NextResponse.json({ answer: note ? `${genkitAnswer}\n\n${note}` : genkitAnswer, ...(opened ? { action: opened } : {}) }, { status: 200 });
+                return NextResponse.json({
+                    answer: note ? `${genkitAnswer}\n\n${note}` : genkitAnswer,
+                    ...(opened ? { action: opened } : {}),
+                    // Which screens' data changed, so an open screen reloads instead of showing the old data.
+                    ...(genkitResult?.changed?.length ? { changed: genkitResult.changed } : {}),
+                }, { status: 200 });
             }
 
             operationalOutcome = genkitAnswer ? 'refusal_pattern' : 'empty_reply';

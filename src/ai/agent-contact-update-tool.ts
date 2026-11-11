@@ -21,7 +21,11 @@ import type { DbLike } from '@/ai/agent-tools';
 
 export type ContactChangeStatus = 'preview' | 'done' | 'refused';
 
-const result = (status: ContactChangeStatus, message: string) => ({ success: status === 'done', status, message });
+/**
+ * `message` is what the MODEL is told (it may include instructions to it). `userText`, when given, is the user-facing
+ * part, shown word for word for a preview or a finished change (see src/lib/ai-tool-reply.ts).
+ */
+const result = (status: ContactChangeStatus, message: string, userText?: string) => ({ success: status === 'done', status, message, ...(userText ? { userText } : {}) });
 
 const asText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
@@ -67,7 +71,8 @@ export async function updateContactHandler(
 
     if (!(opts.confirmed === true && madeBeforeThisTurn && matchesPendingContact(saved, fresh, now))) {
       await pendingRef.set(fresh);
-      return result('preview', `${describeContactPlan(plan)} Show the user exactly this, including that nothing has changed yet, and ask whether to go ahead. Do not call updateContact again until they have replied.`);
+      const shown = describeContactPlan(plan);
+      return result('preview', `${shown} The user will be shown exactly this and asked whether to go ahead, so do not repeat it. Do not call updateContact again until they have replied.`, shown);
     }
 
     // Confirmed. The fields must still hold what they held when the preview was made.
@@ -79,7 +84,8 @@ export async function updateContactHandler(
     const patch: Record<string, unknown> = { ...plan.patch, updatedBy: userId, updatedAt: now, keywords: generateContactKeywords({ ...stored, ...plan.patch }) };
     await db.collection('contacts').doc(contactId).update(patch);
     await pendingRef.delete();
-    return result('done', describeContactDone(plan));
+    const shown = describeContactDone(plan);
+    return result('done', shown, shown);
   } catch (error: any) {
     return result('refused', `The contact could not be changed, so assume nothing changed: ${oneLine(error?.message, 160)}`);
   }

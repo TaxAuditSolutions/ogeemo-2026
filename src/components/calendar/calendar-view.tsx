@@ -54,6 +54,7 @@ import { CustomCalendar } from '@/components/ui/custom-calendar';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/context/auth-context';
+import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { useToast } from '@/hooks/use-toast';
 import {
   addTask,
@@ -279,6 +280,11 @@ export function CalendarView() {
   React.useEffect(() => {
     loadEvents(false);
   }, [loadEvents]);
+
+  // The Co-Pilot moved, cancelled or booked something: reload in place (no skeleton) so the Calendar is not stale.
+  React.useEffect(() => subscribeToCopilotWorkflowEvent('copilot:data_changed', ({ areas }) => {
+    if (areas.includes('calendar')) void loadEvents(true);
+  }), [loadEvents]);
 
   React.useEffect(() => {
     if (!isClient) return;

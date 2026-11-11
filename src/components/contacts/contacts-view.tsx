@@ -381,6 +381,12 @@ export function ContactsView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // The Co-Pilot just changed a contact: reload so the list shows it without a page refresh. The form it may open for
+  // that contact is left alone (the reload only replaces the list).
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:data_changed', ({ areas }) => {
+    if (areas.includes('contacts')) void loadData();
+  }), [loadData]);
+
   const handleContactSave = (savedContact: Contact, isEditing: boolean) => {
     if (isEditing) {
       setContacts(prev => prev.map(c => c.id === savedContact.id ? savedContact : c));

@@ -27,6 +27,7 @@ import { buildScrubbedMessages } from '@/ai/capability-history';
 import { NOTHING_WAITING_NOTE, UNBACKED_PREVIEW_MESSAGE, UNBACKED_PREVIEW_NUDGE, describeToolsCalled, emptyReplyMessage, isUnbackedPreview, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
 import { savedRecord, type SavedRecord } from '@/lib/ai-open-record';
 import { pendingPreviewNote } from '@/lib/ai-pending-note';
+import { changedAreas, toolOwnReply, type ChangedArea } from '@/lib/ai-tool-reply';
 import { describeToolLimits, toolNamesForRole, unofferedToolReply } from '@/ai/tool-access';
 import fs from 'fs';
 import path from 'path';
@@ -289,6 +290,7 @@ const changeEventTool = ai.defineTool(
       success: z.boolean(),
       status: z.enum(['preview', 'done', 'refused']),
       message: z.string(),
+      userText: z.string().optional(),
     }),
   },
   // `confirmed` is the SERVER's reading of the user's own message, never an argument the model can set.
@@ -321,6 +323,7 @@ const updateContactTool = ai.defineTool(
       success: z.boolean(),
       status: z.enum(['preview', 'done', 'refused']),
       message: z.string(),
+      userText: z.string().optional(),
     }),
   },
   // `confirmed` is the SERVER's reading of the user's own message, never an argument the model can set.
@@ -770,6 +773,8 @@ const ogeemoAgentFlow = ai.defineFlow(
       toolsCalled: z.array(z.string()).optional(),
       // The contact or project saved while answering, so the browser can open its form (see src/lib/ai-open-record.ts).
       saved: z.object({ kind: z.enum(['contact', 'project']), id: z.string() }).optional(),
+      // Which screens' data the tools changed this turn, so an open screen can reload (see src/lib/ai-tool-reply.ts).
+      changed: z.array(z.enum(['calendar', 'contacts', 'projects'])).optional(),
     }),
   },
   async (input) => {
@@ -850,7 +855,12 @@ const ogeemoAgentFlow = ai.defineFlow(
       console.info(`[ogeemoAgentFlow] tools called: ${describeToolsCalled(called)}`);
       // The id of a contact or project a tool saved, read from the tool's own result (never from the model's words).
       const saved = savedRecord(result.messages);
-      return { reply: reply.trim() ? reply : emptyReplyMessage(called), toolsCalled: called, ...(saved ? { saved } : {}) };
+      // For a preview or a finished change the reply is the tool's own text, word for word: the model's retelling once
+      // leaked the tool's private note into the preview and once asked "Shall I go ahead?" after the move was done.
+      const exact = toolOwnReply(result.messages);
+      if (exact) reply = exact;
+      const changed = changedAreas(result.messages);
+      return { reply: reply.trim() ? reply : emptyReplyMessage(called), toolsCalled: called, ...(saved ? { saved } : {}), ...(changed.length > 0 ? { changed } : {}) };
     } catch (error: any) {
       // The model asked for a tool this role was not offered. That is a role limit, not an outage.
       const unoffered = unofferedToolReply(error);
@@ -894,7 +904,7 @@ const ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow(
  * Runs the Co-Pilot agent. `runtimeContext` must come from the server session (see trustedRuntimeContext), because
  * the tools act on its workspace and the model reads its role as a fact.
  */
-export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string; toolsCalled?: string[]; saved?: SavedRecord }> {
+export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string; toolsCalled?: string[]; saved?: SavedRecord; changed?: ChangedArea[] }> {
   return ogeemoAgentFlow(input);
 }
 

@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
+import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { useToast } from '@/hooks/use-toast';
 import { getProjects, deleteProject, getTasksForProject, addProject, updateProject, type Project, deleteProjects, addProjectTemplate, getTasksForUser } from '@/services/project-service';
 import { getContacts, type Contact, mergeContacts } from '@/services/contact-service';
@@ -133,6 +134,11 @@ export function ProjectListView() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // The Co-Pilot just saved a project (or an event): reload so this list is not stale until the page is refreshed.
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:data_changed', ({ areas }) => {
+    if (areas.includes('projects') || areas.includes('calendar')) void loadData();
+  }), [loadData]);
 
   const handleToggleSelect = (projectId: string) => {
     setSelectedProjectIds(prev =>

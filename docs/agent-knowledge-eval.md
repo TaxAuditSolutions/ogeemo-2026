@@ -179,6 +179,19 @@ to ask again, instead of guessing an id. Measured against the live database with
 now end with a real preview saved (before: 0 of 4, then 3 of 6 saved nothing). `kb:tools` should be re-run once, since the
 retry adds one model call on those turns.
 
+**Three more faults from the same live test (11 Nov 2026).** After the "yes" worked, the reply and the Calendar were still
+wrong: (1) the preview shown to the user had the tool's private note to the model pasted into it ("Show the user exactly
+this... Do not call changeEvent again"), (2) the finished move ended with "Shall I go ahead?", and (3) the Calendar still
+showed the old time until the page was refreshed. Causes and fixes: the reply was the model's retelling of the tool's
+result, and models garble that. For a PREVIEW or a finished change from `changeEvent` / `updateContact` the reply is now the
+tool's own user-facing text (`userText`), word for word (`toolOwnReply`, `src/lib/ai-tool-reply.ts`): a preview always
+ends with "Nothing has changed yet." plus "Shall I go ahead?" added by the server, a finished change never asks anything.
+Refusals, searches and everything else are still the model's own words. For the stale screen, the server now reports which
+screens' data the tools changed (`changedAreas`, read off the tools' successful results) and the chat tells open screens to
+reload in place (`copilot:data_changed`): the Calendar, the Contacts Hub and the Project List. Verified live with the real
+20-message history: preview exact and unchanged on the Calendar, then "yes" moved it, with the exact "Moved..." reply and
+`changed=["calendar"]`.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

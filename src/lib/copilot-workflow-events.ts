@@ -4,6 +4,8 @@ import type { AssistantContactDraft, AssistantContactDraftPatch } from '@/ai/ass
 
 type CopilotWorkflowEventMap = {
     'copilot:navigate': { target: string };
+    /** The Co-Pilot's tools changed this data, so an open screen showing it should reload (silently). */
+    'copilot:data_changed': { areas: Array<'calendar' | 'contacts' | 'projects'> };
     'copilot:open_contact_form': { draft?: Partial<AssistantContactDraft> };
     'copilot:open_contact': { contactId: string; patch?: AssistantContactDraftPatch };
     'copilot:update_contact_draft': { patch: AssistantContactDraftPatch };

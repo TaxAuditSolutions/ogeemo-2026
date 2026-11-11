@@ -76,6 +76,26 @@ test('requests that START something keep their prefilled link, and nothing becom
   assert.equal(processCommand('create a contact').type, 'unknown', 'contact creation is the Co-Pilot\'s job, not a link');
 });
 
+test('a question is answered, not opened, even with no question mark and no "is/are/do" (found live: payroll year end)', () => {
+  const questions = [
+    'What happens to my payroll deductions at year end',
+    'What happens to my payroll deductions at year end?',
+    'when is payroll due',
+    'which quotes need follow-up',
+    'where do I find the ledger',
+    'who owes me money',
+    'does payroll include vacation pay',
+    'can I print an invoice',
+    'is there a way to export contacts',
+    'what time log report shows billable hours',
+  ];
+  for (const q of questions) assert.equal(processCommand(q).type, 'unknown', q);
+  // ...and the plain requests that share their nouns still open the screen
+  for (const [q, href] of [['payroll', '/accounting/payroll/run'], ['open payroll', '/accounting/payroll/run'], ['open the quote manager', '/accounting/quotes'], ['open the ledger', '/accounting/ledgers'], ['do my taxes', '/accounting/tax']] as const) {
+    assert.equal(processCommand(q).target, href, q);
+  }
+});
+
 test('an exact screen name is used only for a plain screen request, never for a question or a creation request', () => {
   assert.equal(processCommand('how do I open the Quote Manager?').type, 'unknown');
   assert.equal(processCommand('what is the Idea Board').type, 'unknown');

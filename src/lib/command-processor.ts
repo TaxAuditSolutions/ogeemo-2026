@@ -208,6 +208,14 @@ const QUESTION_PATTERNS = [
     /\bhow\s+(to|do|does|did|can|could|should|would|might|i|you|we)\b/i,
     /\b(what|where|why|when|who)\s+(is|are|was|were|do|does|did|should|can|would)\b/i,
     /^(explain|describe|tell\s+me)\b/i,
+    // A sentence that opens with a question word is a question even with no "?" and no "is/are/do" after it
+    // ("What happens to my payroll deductions at year end"). Auto-open made this matter: it used to cost a
+    // button, now it would cost a page jump away from the answer.
+    /^(what|what's|whats|why|when|who|who's|whose|which|where|where's)\b/i,
+    // "does/did/is/are" never start a command ("does payroll include vacation pay"); "do" is left out on purpose
+    // ("do my taxes" is a request) and "can/could/should/would/will" only count with a subject ("can I print...").
+    /^(does|did|is|are)\s+\w+/i,
+    /^(can|could|should|would|will)\s+(i|we|my|there|the|it|this|that)\b/i,
 ];
 
 export function isQuestion(input: string): boolean {

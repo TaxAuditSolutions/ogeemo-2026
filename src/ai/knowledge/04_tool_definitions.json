@@ -104,6 +104,31 @@
       "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
     },
     {
+      "name": "getInvoices",
+      "description": "Lists and totals the workspace's invoices as Accounts Receivable does: balance owed, overdue invoices and days overdue, what a client owes, whether an invoice is paid, invoices in a date range.",
+      "inputs": {
+        "status": "'outstanding' (default: a balance is still owed, oldest due first), 'overdue', 'paid', 'draft' or 'all'",
+        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
+        "number": "string (optional) - part of an invoice number such as INV-1042",
+        "from": "YYYY-MM-DD (optional) - earliest invoice date, in the user's time zone",
+        "to": "YYYY-MM-DD (optional) - latest invoice date, inclusive; today when only from is given"
+      },
+      "sideEffects": "Read-only (Firestore invoices, scoped to the user's workspace). It uses the Accounts Receivable rules for balance, paid and overdue (overdue = due date before today in the user's time zone, money still owed, not a draft); drafts are only listed when asked for. It returns totals and at most 15 invoices with number, client, dates, amounts and status; never notes, addresses, business numbers or line items. It cannot post a payment or change an invoice.",
+      "auth": "Requires a signed-in editor, org_admin or super_admin in a workspace; a viewer is refused, and so is a person whose menu access hides Accounts Receivable."
+    },
+    {
+      "name": "getQuotes",
+      "description": "Lists and totals the workspace's quotes as the Quote Manager does: open quotes, quotes needing attention, a client's quotes, a quote's status, with their values.",
+      "inputs": {
+        "status": "'open' (default: requested, draft, sent or approved), 'all', or one of requested, draft, sent, approved, declined, invoiced, in_progress, completed, paid",
+        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
+        "number": "string (optional) - part of a quote number",
+        "needsAttention": "boolean (optional) - only quotes stale in Sent for 14 days or more, approved but not yet converted, or expiring within 7 days"
+      },
+      "sideEffects": "Read-only (Firestore quotes, scoped to the user's workspace). It returns totals, a count per status and at most 15 quotes with number, client, dates, value, status and why one needs attention; never notes, addresses or line items. It cannot approve, send, convert or change a quote.",
+      "auth": "Requires a signed-in editor, org_admin or super_admin in a workspace; a viewer is refused, and so is a person whose menu access hides the Quote Manager."
+    },
+    {
       "name": "searchKnowledge",
       "description": "Searches the reviewed Knowledge Base entries (every module's how-to and business rules) and returns up to three short passages.",
       "inputs": {
@@ -163,8 +188,8 @@
     ]
   },
   "cannotYet": [
-    "Query invoice lists, quotes, ledgers and payroll runs, or list individual time entries: these cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. Time TOTALS (worked, billable and unbilled hours) CAN be read with getTimeSummary, and the user's own Calendar with getCalendar.",
-    "Create or edit invoices, quotes, receipts or payroll directly as writes. Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
+    "Query ledgers, bank, tax, inventory and payroll runs, or list individual time entries: these cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. Time TOTALS CAN be read with getTimeSummary, invoices with getInvoices, quotes with getQuotes, and the user's own Calendar with getCalendar.",
+    "Create, edit, send, convert or post payments on invoices and quotes, or create receipts or payroll, directly as writes (invoices and quotes can only be READ with getInvoices and getQuotes). Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
     "Send emails, notifications or file changes; manage users, tenants or settings.",
     "Modify, move, cancel or delete existing tasks, events or appointments (createTask and createAppointment only create); point the user to the Calendar (/calendar), where an event can be dragged or deleted. Invite or notify other people, or see anyone else's calendar."
   ]

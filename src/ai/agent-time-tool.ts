@@ -8,8 +8,8 @@
  */
 import { oneLine } from '@/lib/ai-input';
 import type { ToolContext } from '@/lib/ai-runtime';
-import { addDaysToDateString, localDateOf } from '@/lib/ai-calendar';
-import { parseWhenInZone } from '@/lib/ai-time';
+import { localDateOf } from '@/lib/ai-calendar';
+import { readDayRange } from '@/lib/ai-range';
 import {
   canSeeWorkspaceTime,
   entryFromTask,
@@ -23,7 +23,7 @@ import type { DbLike } from '@/ai/agent-tools';
 
 const MAX_CLIENTS = 10;
 const FIRESTORE_ID = /^[A-Za-z0-9_-]{1,128}$/;
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 
 export interface TimeSummaryInput {
   /** First day, YYYY-MM-DD in the user's time zone. All dates when omitted. */
@@ -69,25 +69,6 @@ function describeTotals(totals: TimeTotals, whose: string, span: string): string
   return parts.join(' ');
 }
 
-/** A range of YYYY-MM-DD days in the user's zone as [from, to) moments, or an error message. */
-function readRange(fromText: string, toText: string, ctx: ToolContext, now: Date): { from: Date | null; to: Date | null } | string {
-  for (const [label, value] of [['from', fromText], ['to', toText]] as const) {
-    if (value && !DAY.test(value)) return `The "${label}" date must be YYYY-MM-DD, for example 2026-11-01.`;
-  }
-  let from: Date | null = null;
-  let to: Date | null = null;
-  if (fromText) {
-    from = parseWhenInZone(fromText, ctx.timeZone, now);
-    to = parseWhenInZone(addDaysToDateString(toText || localDateOf(now, ctx.timeZone), 1), ctx.timeZone, now);
-    if (!from || !to) return 'That date range is not one I can use. Give dates as YYYY-MM-DD.';
-    if (to.getTime() <= from.getTime()) return 'The "to" date must not be before the "from" date.';
-  } else if (toText) {
-    to = parseWhenInZone(addDaysToDateString(toText, 1), ctx.timeZone, now);
-    if (!to) return 'That date is not one I can use. Give it as YYYY-MM-DD.';
-  }
-  return { from, to };
-}
-
 export async function getTimeSummaryHandler(db: DbLike | null, ctx: ToolContext, input: TimeSummaryInput, now: Date = new Date()) {
   if (!ctx.userId || !ctx.orgId) return fail('User or workspace not authenticated.');
   if (!db) return fail('The database is not available, so time could not be read.');
@@ -97,7 +78,7 @@ export async function getTimeSummaryHandler(db: DbLike | null, ctx: ToolContext,
 
   const fromText = oneLine(input.from, 20);
   const toText = oneLine(input.to, 20);
-  const range = readRange(fromText, toText, ctx, now);
+  const range = readDayRange(fromText, toText, ctx.timeZone, now);
   if (typeof range === 'string') return fail(range);
 
   const contactId = oneLine(input.contactId, 128);

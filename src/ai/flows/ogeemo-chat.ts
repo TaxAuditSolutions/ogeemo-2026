@@ -13,6 +13,8 @@ import { createContactHandler } from '@/ai/agent-contact-tool';
 import { createAppointmentHandler, getCalendarHandler } from '@/ai/agent-calendar-tool';
 import { createProjectHandler } from '@/ai/agent-project-tool';
 import { getTimeSummaryHandler } from '@/ai/agent-time-tool';
+import { getInvoicesHandler } from '@/ai/agent-invoice-tool';
+import { getQuotesHandler } from '@/ai/agent-quote-tool';
 import { searchKnowledgeHandler } from '@/ai/agent-knowledge-tool';
 import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
 import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/lib/ai-runtime';
@@ -223,6 +225,47 @@ const getTimeSummaryTool = ai.defineTool(
   async (input, { context }) => getTimeSummaryHandler(getAdminDb(), readToolContext(context), input)
 );
 
+const getInvoicesTool = ai.defineTool(
+  {
+    name: 'getInvoices',
+    description: 'Lists and totals the workspace\'s invoices the way Accounts Receivable does: how much is owed, which invoices are overdue and by how many days, what a client owes, whether an invoice is paid. Use it for "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "how much did I invoice in October". Defaults to outstanding invoices (balance still owed, oldest due first). Read-only; it cannot post a payment or change an invoice. Editors and administrators only. Convert words like "last month" into from/to dates (the invoice date) using the Runtime Operating Context.',
+    inputSchema: z.object({
+      status: z.enum(['outstanding', 'overdue', 'paid', 'draft', 'all']).optional().describe('outstanding = still owed (default); overdue = past due with a balance; paid; draft; all'),
+      contactId: z.string().optional().describe('Only this client\'s invoices: the contact id from searchContacts'),
+      number: z.string().optional().describe('Part of an invoice number such as INV-1042'),
+      from: z.string().optional().describe('Earliest invoice date, YYYY-MM-DD in the user\'s time zone'),
+      to: z.string().optional().describe('Latest invoice date, inclusive, YYYY-MM-DD; today when only from is given'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      totals: z.any().nullable(),
+      invoices: z.array(z.any()),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => getInvoicesHandler(getAdminDb(), readToolContext(context), input)
+);
+
+const getQuotesTool = ai.defineTool(
+  {
+    name: 'getQuotes',
+    description: 'Lists and totals the workspace\'s quotes the way the Quote Manager does: what is open, what was approved but not yet invoiced, what is sent and gone quiet, what is about to expire, and the value of each. Use it for "what quotes are open", "which quotes need follow-up", "did Dana approve the quote", "what is the status of QUO-1042". Defaults to open quotes (requested, draft, sent, approved). Read-only; it cannot approve, send or convert a quote. Editors and administrators only.',
+    inputSchema: z.object({
+      status: z.enum(['open', 'all', 'requested', 'draft', 'sent', 'approved', 'declined', 'invoiced', 'in_progress', 'completed', 'paid']).optional().describe('open = requested, draft, sent or approved (default); or one status; or all'),
+      contactId: z.string().optional().describe('Only this client\'s quotes: the contact id from searchContacts'),
+      number: z.string().optional().describe('Part of a quote number'),
+      needsAttention: z.boolean().optional().describe('true = only quotes that are stale in Sent, approved but not converted, or expiring within 7 days'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      totals: z.any().nullable(),
+      quotes: z.array(z.any()),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => getQuotesHandler(getAdminDb(), readToolContext(context), input)
+);
+
 const searchKnowledgeTool = ai.defineTool(
   {
     name: 'searchKnowledge',
@@ -329,6 +372,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 21. **To-Dos and Tasks**: When the user asks you to make, add or create a to-do, a task or a reminder ("make a to-do", "add a to-do: call the bank", "remind me to call Dana on Friday"), call createTask yourself; do not send them to a screen. It needs only a title; if the title is missing, ask one short question ("What should the to-do say?"). With no date and no project it lands on the To-Do List (/to-do). Pass startTime only if the user gave a day, and then it needs a time of day too. To tie it to a person or project, call searchContacts or searchGlobal first and pass the real id. Only say it was created if createTask returned success, and name where it is (the To-Do List, or the Calendar for a timed one).
 22. **Projects**: When the user asks you to add, create, make or start a project ("add a new project", "create a project called Website Redesign"), call createProject yourself. It needs only a name; if the name is missing, ask "What should the project be called?". Pass a description or a client only if the user gave one, and look the client up with searchContacts first. The project is saved with Planning status; tell the user it is on the Project List (/projects/all) and that its steps are planned in the Project Planner. If createProject says the name already exists, nothing was created: tell the user and call it again with allowDuplicate true only if they say yes. Only say a project was created if createProject returned success. You cannot yet edit, move, complete or delete a project; point to the Project List or the Project Board (/project-status).
 24. **Hours and Unbilled Time**: For "how many hours did I work", "what is unbilled", "how much can I bill Dana" or similar, call getTimeSummary and answer only from its figures; never add up or estimate hours yourself. Work out "this week", "last month" or "this year" as from/to dates from the current date in the Runtime Operating Context. For one client call searchContacts first and pass the real id. It returns the user's OWN time; only if the user is an org_admin or super_admin and asks about the whole workspace or everyone, pass scope "workspace". If the tool says the figures are the user's own because only an administrator can see the workspace, tell them so. Quote hours to two decimals and money in dollars. "Unbilled" means worked, billable, with a client and not yet on an invoice; mention the separate lines it reports for billable time with no client (cannot be invoiced yet) and for scheduled-but-not-worked time (not counted). It cannot show individual entries, invoice lists or payroll: point to the Time Log Report (/reports/time-log) for the rows.
+25. **Invoices and Quotes**: For "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "what quotes are open" or "which quotes need follow-up", call getInvoices or getQuotes and answer only from what they return; never add up amounts or work out overdue days yourself. For one client call searchContacts first and pass the real id. Quote money to the cent in dollars and give the invoice or quote number so the user can find it. "Overdue" means the due date is past and money is still owed. These are for editors and administrators; if the tool says the role or menu access does not allow it, say so plainly and do not guess. You can only read them: you cannot post a payment, send, approve, convert or change an invoice or quote; point to Accounts Receivable (/accounting/accounts-receivable) or the Quote Manager (/accounting/quotes) for that.
 23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests.
 
 **Knowledge Base:**
@@ -661,7 +705,7 @@ const ogeemoAgentFlow = ai.defineFlow(
       const result = await ai.generate({
         model: STABLE_GEMINI_MODEL,
         messages: scrubbedMessages,
-        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createProjectTool, createContactTool, createAppointmentTool, getCalendarTool, getTimeSummaryTool, searchKnowledgeTool, syncReceiptsTool],
+        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createProjectTool, createContactTool, createAppointmentTool, getCalendarTool, getTimeSummaryTool, getInvoicesTool, getQuotesTool, searchKnowledgeTool, syncReceiptsTool],
         system: finalSystemPrompt,
         // The tools learn who is asking from here, never from the model's arguments. Without this they received an
         // empty context and every tool except the search refused with "not authenticated".

@@ -37,7 +37,8 @@ via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
 | 26 | "Update Dana's email to [another contact's email]" | Held back: names the contact it would match and asks; nothing is previewed or saved until you say to go ahead |
 | 27 | "Change Dana's SIN to 046 454 286", "Set Sam's pay rate to 30", "Delete Dana" | Declined with where to do it (the contact form, the Workers page); never a preview, never a tool call that writes |
 | 28 | "Rename [an Employee]" or "Move [an Employee] to Clients" | Declined: the Workers page. A plain detail of an Employee (phone) CAN be changed |
-| 7 | "Start a timer" (action request) | Opens `/event-manager?startTimer=true` (command processor) |
+| 7 | "Start a timer" (action request) | Says "Opening Activity Manager Timer..." and **opens** `/event-manager?startTimer=true` (command processor); the button stays in the reply as a fallback. **This one starts a timer and creates an activity with no click** (see "The timer" below), so check it by hand |
+| 29 | "Open contact hub", "open the calendar", "go to Quote Manager", "take me to Project Status" | The reply says **"Opening X. If it does not open, click 'X' below."** and the screen opens by itself; the button is still in the reply. Typing a screen's exact name opens THAT screen, not a similar one. Reopening or reloading the chat does NOT navigate again. Asking while already on that screen does nothing. "How do I open the Quote Manager?" is answered, not opened |
 | 8 | "What is BKS?" | Bookkeeping Kept Simple; cash-basis; BKS Ledger `/accounting/ledgers` |
 | 9 | "How do workflows work?" | `/workflows`; apply/restore sidebar; default five listed correctly |
 | 10 | "Who is [a contact name]?" | `searchGlobal` **first** (search-first rule), then launcher tags |
@@ -140,6 +141,33 @@ run model plus real Firestore plus a browser.** Do questions 25 to 28 by hand fi
 every tool's own schema with every request, so the model was reading each parameter twice; removing them took about
 4,500 characters (about 1,100 tokens) out of every request. The pass above was run after the trim and found no
 regression, and it is the largest single step toward the 6,000-token goal.
+
+**"Open X" requests: the button and the wrong screens (found in testing, audited 11 Nov 2026).** Typing "open contact
+hub" used to answer "X is ready. Click 'X' below to open it." and wait for a click. It now opens the screen at once and
+keeps the button in the reply as a fallback (the choice made after the audit). The audit of all 66 menu screens found a
+second, older fault behind the same symptom: **14 screens opened a neighbour** because short aliases were matched loosely
+and beat the exact name (Project Status opened the Project List, Quote Manager opened Create Quote, Idea Board opened
+Project Status, Client Statement opened Contacts, both Time Log reports opened the Activity Manager, Payroll History
+opened Run Payroll, and so on). An exact screen name now wins, with or without "open", "go to the", "take me to", "page".
+`tests/command-processor-screens.test.ts` pins all 66 screens six ways each, so a new menu entry that collides with an
+alias fails the build. One alias was also wrong on purpose and is fixed: "time log" now opens the Worker Time Log
+Report (the knowledge base already said so), not the Activity Manager. A stray "?" on "new invoice" with no client is gone.
+
+What does NOT auto-open, deliberately: advice the command processor wrote ("You can create a contact in Contacts Hub.
+Click ..."), a link to another site (a pop-up, blocked by browsers), asking for the page you are already on, and anything
+that is a question ("how do I open ...") or a contact request (those go to the Co-Pilot's tools and show previews).
+
+**The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
+saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
+the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a
+timer and writes an activity by itself**. That is what was asked for, and the Activity Manager already refuses a second
+timer while one is running, but it is the one auto-open with a side effect, so it is listed here on purpose. To keep the
+click for it alone, make `describeDispatch` return `autoOpen: false` for a target containing `startTimer=true`.
+
+Costs of auto-opening that you chose to accept, so you know them: (1) leaving a screen with unsaved work in a form loses
+that work, because the page changes at once; (2) asking from the full Co-Pilot page takes you off the chat (the button in
+the reply is how you come back to it from the chat history). If either bites, the place to change it is
+`describeDispatch` in `src/lib/copilot-dispatch.ts`.
 
 **Prompt-size budget:** the knowledge files load with every request. The goal above (under 6,000 tokens) is **not met**:
 measured on 11 Nov 2026 the four files are about 9,500 tokens, the system prompt rules about 2,600 and the 12 tool

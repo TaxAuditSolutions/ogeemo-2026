@@ -50,7 +50,8 @@ const commandMap: Record<string, { target: string; label: string; category: stri
     'eventmanager': { target: '/event-manager', label: 'Activity Manager', category: 'Workspace' },
     'activitymanager': { target: '/event-manager', label: 'Activity Manager', category: 'Workspace' },
     'timemanager': { target: '/event-manager', label: 'Activity Manager', category: 'Workspace' },
-    'timelog': { target: '/event-manager', label: 'Activity Manager', category: 'Workspace' },
+    // "Time log" is the Worker Time Log Report (the knowledge base says so too), not the Activity Manager.
+    'timelog': { target: '/reports/time-log', label: 'Worker Time Log Report', category: 'Workspace' },
     'timesheet': { target: '/event-manager', label: 'Activity Manager', category: 'Workspace' },
     'timer': { target: '/event-manager?startTimer=true', label: 'Activity Manager Timer', category: 'Workspace' },
     'starttimer': { target: '/event-manager?startTimer=true', label: 'Activity Manager Timer', category: 'Workspace' },
@@ -137,6 +138,43 @@ function collectPhrases(tokens: string[]): Set<string> {
     }
 
     return phrases;
+}
+
+/** Words that may stand in front of or after a screen's name without changing which screen it is. */
+const LEADING_FILLER = /^(?:(?:to|me|us|the|my|our|a|please|up)\s+)+/i;
+const TRAILING_FILLER = /\s+(?:page|screen)$/i;
+/** The ways people ask to be taken to a screen. The verbs the processor already knows are included so a bare phrase works too. */
+const NAVIGATION_PHRASE = /^(?:take me to|bring me to|bring up|pull up|switch to|jump to|head to|navigate to|go to|goto|open up|open|show me|show|view|launch|go)\s+/i;
+
+/**
+ * The menu screen whose name is EXACTLY what was typed ("Quote Manager", "the Image Manager", "Idea Board page").
+ *
+ * The short aliases below are shortcuts for people who do not know the name, but they are matched loosely (a token
+ * that starts with one, or one inside a longer word), so they used to beat the real name: "Project Status" opened the
+ * Project List (it contains "projects"), "Quote Manager" opened Create Quote, "Image Manager" opened the image
+ * generator, and 11 other screens opened a neighbour. When someone types a screen's exact name, that screen wins.
+ */
+function exactMenuItem(text: string): (typeof allMenuItems)[number] | undefined {
+    // Try the name as typed first, then without leading filler: "My Shortcuts" is a real name, "my calendar" is not.
+    const asTyped = text.trim().replace(NAVIGATION_PHRASE, '').replace(TRAILING_FILLER, '');
+    for (const candidate of [asTyped, asTyped.replace(LEADING_FILLER, '')]) {
+        const wanted = normalize(candidate);
+        if (!wanted) continue;
+        const found = allMenuItems.find((item) => normalize(item.label) === wanted);
+        if (found) return found;
+    }
+    return undefined;
+}
+
+function menuNavigation(item: (typeof allMenuItems)[number]): CommandResult {
+    return {
+        type: 'navigation',
+        target: item.href,
+        label: item.label,
+        message: `Ready: [Open ${item.label}]`,
+        description: 'Your requested hub is ready.',
+        category: 'Navigation',
+    };
 }
 
 function findExactOrAliasCommand(text: string): { target: string; label: string; category: string } | undefined {
@@ -277,10 +315,9 @@ export function processCommand(input: string): CommandResult {
 
         if (normalizedParam.includes('invoice')) {
             const invoiceName = cleanParam(param.replace(/invoice/i, ''));
-            const customerName = invoiceName ? `&contactName=${encodeURIComponent(invoiceName)}` : '';
             return {
                 type: 'action',
-                target: `/accounting/invoices/create?${customerName ? 'contactName=' + encodeURIComponent(invoiceName) : ''}`,
+                target: `/accounting/invoices/create${invoiceName ? '?contactName=' + encodeURIComponent(invoiceName) : ''}`,
                 label: 'Invoice Generator',
                 message: 'Action: [New Invoice]',
                 description: invoiceName ? `An invoice for "${invoiceName}" is ready to prepare.` : 'Invoice generator is ready.',
@@ -334,6 +371,11 @@ export function processCommand(input: string): CommandResult {
                 description: 'Routing contact editing to Ogeemo Co-Pilot.',
             };
         }
+
+        // An exact screen name beats every alias (see exactMenuItem). `remaining` is used, not `cleaned`, because
+        // cleanParam strips words like "manager" and "list" that are part of real screen names.
+        const exact = exactMenuItem(remaining);
+        if (exact) return menuNavigation(exact);
 
         const routeMatch = findExactOrAliasCommand(searchTarget) || findExactOrAliasCommand(cleaned);
         if (routeMatch) {
@@ -422,6 +464,9 @@ export function processCommand(input: string): CommandResult {
             category: 'Relationships',
         };
     }
+
+    const exactBare = exactMenuItem(rawInput);
+    if (exactBare) return menuNavigation(exactBare);
 
     const directCmd = findExactOrAliasCommand(rawInput);
     if (directCmd) {

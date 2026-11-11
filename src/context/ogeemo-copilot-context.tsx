@@ -6,6 +6,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { processCommand } from '@/lib/command-processor';
 import { shouldProcessAsCommand } from '@/lib/copilot-routing';
+import { autoOpenTarget, describeDispatch, type DispatchReply } from '@/lib/copilot-dispatch';
 import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile } from '@/core/user-profile-service';
 import { parseAssistantMessageAction } from '@/ai/assistant-actions';
@@ -184,11 +185,14 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             let assistantContent: string;
             let assistantAction: AssistantChatMessage['action'];
             let assistantDegraded = false;
+            // Set only when a typed request resolved to a screen: opened below once the reply is saved, and the reply
+            // keeps its button so a blocked or failed navigation still leaves a way in.
+            let dispatchReply: DispatchReply | null = null;
 
             if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
-                assistantContent = command.assistantMessage
-                    || `${label} is ready. Click '${label}' below to open it.`;
+                dispatchReply = describeDispatch(command);
+                assistantContent = dispatchReply.content;
                 assistantAction = {
                     type: 'dispatch',
                     target: command.target,
@@ -242,6 +246,15 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             if (assistantAction?.type === 'dispatch' && assistantAction.target === '/contacts?action=new') {
                 dispatchCopilotWorkflowEvent('copilot:navigate', { target: assistantAction.target });
                 router.push(assistantAction.target);
+            } else if (assistantAction?.type === 'dispatch' && dispatchReply) {
+                // A typed "open the calendar" opens it now. The reply is already saved with its button, so the chat
+                // is intact if the person comes back. Done here, not in an effect, so reopening or reloading a chat
+                // never navigates again.
+                const destination = autoOpenTarget(dispatchReply, assistantAction.target, pathname);
+                if (destination) {
+                    dispatchCopilotWorkflowEvent('copilot:navigate', { target: destination });
+                    router.push(destination);
+                }
             } else if (assistantAction?.type === 'open_contact_form') {
                 if (pathname === '/contacts') {
                     dispatchCopilotWorkflowEvent('copilot:open_contact_form', { draft: assistantAction.draft });

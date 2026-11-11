@@ -92,6 +92,20 @@
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
+      "name": "changeEvent",
+      "description": "Moves (reschedules) or cancels one of the signed-in user's OWN calendar events, in two steps: a preview that changes nothing, then the change after the user says yes.",
+      "inputs": {
+        "eventId": "string (required) - the event id exactly as getCalendar returned it",
+        "action": "'move' or 'cancel' (required)",
+        "startTime": "ISO date-time WITH a time of day (a move only; without an offset it is read in the user's time zone)",
+        "endTime": "ISO date-time (a move only, optional) - use this or durationMinutes; the old length is kept when neither is given",
+        "durationMinutes": "number 5 to 720 (a move only, optional)",
+        "allowDoubleBooking": "boolean (optional) - true only after the user said to move it although it overlaps something"
+      },
+      "sideEffects": "WRITES to the Firestore 'tasks' collection: a move changes only start and end; a cancel deletes the event and its project step. The first call NEVER changes anything: it saves a pending plan and returns a preview saying nothing has changed yet. It is applied only when the server read the user's next message as a plain yes (not something the model can set), the call is exactly the pending plan, the plan is under 10 minutes old and the event is unchanged. An event on an invoice or quote line, with recorded time, or with an open work order cannot be cancelled; a move that overlaps another of the user's events is held back until they say to go ahead. It cannot change a title, client or project, or touch anyone else's event.",
+      "auth": "Editor, org_admin or super_admin; a viewer is not offered the tool. Only the user's OWN scheduled events."
+    },
+    {
       "name": "getTimeSummary",
       "description": "Adds up recorded time: hours worked, billable hours, unbilled hours and their value, hours already invoiced, and unbilled hours per client, for a date range and optionally one client.",
       "inputs": {
@@ -191,6 +205,6 @@
     "Query ledgers, bank, tax, inventory and payroll runs, or list individual time entries: these cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. Time TOTALS CAN be read with getTimeSummary, invoices with getInvoices, quotes with getQuotes, and the user's own Calendar with getCalendar.",
     "Create, edit, send, convert or post payments on invoices and quotes, or create receipts or payroll, directly as writes (invoices and quotes can only be READ with getInvoices and getQuotes). Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
     "Send emails, notifications or file changes; manage users, tenants or settings.",
-    "Modify, move, cancel or delete existing tasks, events or appointments (createTask and createAppointment only create); point the user to the Calendar (/calendar), where an event can be dragged or deleted. Invite or notify other people, or see anyone else's calendar."
+    "Delete a task, to-do, project or invoice, or change a task's title, client or project (changeEvent only MOVES or CANCELS the person's own scheduled calendar events, after a preview and a yes); point the user to the Calendar (/calendar), the To-Do List or the Project List. Invite or notify other people, or see anyone else's calendar."
   ]
 }

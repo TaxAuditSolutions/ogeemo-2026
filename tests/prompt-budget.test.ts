@@ -14,7 +14,9 @@ import test from 'node:test';
  * These ceilings sit just above today's size. They fail when a change adds more than a little, so the author has to
  * either trim something or raise the number here on purpose, in the same commit, and say why.
  */
-const KNOWLEDGE_CEILING_CHARS = 40_000;
+// Raised from 40,000 on 11 Nov 2026 for the changeEvent entry in 04_tool_definitions.json (+about 1,000 characters,
+// already trimmed once). The goal of under 6,000 tokens is still not met; trimming 04 is the way back.
+const KNOWLEDGE_CEILING_CHARS = 41_000;
 const RULES_CEILING_CHARS = 11_500;
 const TOOLS_CEILING_CHARS = 7_500;
 

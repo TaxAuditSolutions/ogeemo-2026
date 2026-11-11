@@ -10,6 +10,8 @@ import { oneLine } from '@/lib/ai-input';
 import { describeNow, parseWhenInZone, validTimeZone } from '@/lib/ai-time';
 
 export interface CalendarItem {
+  /** The record's id, when the rows came with one (`__id`). Never shown to the model. */
+  id?: string;
   title: string;
   start: Date;
   end: Date;
@@ -64,6 +66,7 @@ export function calendarItemsFor(rows: ReadonlyArray<Record<string, any>>, owner
     const assignee = typeof row.workerId === 'string' && row.workerId ? row.workerId : null;
     if (!(assignee ? own.has(assignee) : row.userId === owner.userId)) continue;
     items.push({
+      ...(typeof row.__id === 'string' && row.__id ? { id: row.__id } : {}),
       title: oneLine(row.title, 120) || '(untitled)',
       start,
       end,

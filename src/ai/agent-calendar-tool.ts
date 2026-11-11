@@ -15,8 +15,8 @@ import type { DbLike } from '@/ai/agent-tools';
 
 const MAX_LISTED = 30;
 
-/** The person's own scheduled events. `workerId` may hold their contact id, so that is looked up from their profile. */
-async function myCalendar(db: DbLike, userId: string, orgId: string) {
+/** Who "me" is on the calendar: the sign-in id and, when the profile links one, the person's contact id. */
+export async function calendarOwner(db: DbLike, userId: string) {
   let contactId: string | null = null;
   try {
     const profile = await db.collection('users').doc(userId).get();
@@ -25,8 +25,14 @@ async function myCalendar(db: DbLike, userId: string, orgId: string) {
   } catch {
     // Without the profile only events assigned to the sign-in id are found, which is the common case.
   }
+  return { userId, contactId };
+}
+
+/** The person's own scheduled events, each with its record id. `workerId` may hold their contact id (see calendarOwner). */
+export async function myCalendar(db: DbLike, userId: string, orgId: string) {
+  const owner = await calendarOwner(db, userId);
   const snap = await db.collection('tasks').where('orgId', '==', orgId).where('isScheduled', '==', true).get();
-  return calendarItemsFor(snap.docs.map((doc: any) => doc.data()), { userId, contactId });
+  return calendarItemsFor(snap.docs.map((doc: any) => ({ ...doc.data(), __id: doc.id })), owner);
 }
 
 export async function createAppointmentHandler(db: DbLike | null, ctx: ToolContext, input: AiAppointmentInput, now: Date = new Date()) {
@@ -78,7 +84,7 @@ export async function createAppointmentHandler(db: DbLike | null, ctx: ToolConte
 
 
 export async function getCalendarHandler(db: DbLike | null, ctx: ToolContext, input: { date?: string; days?: number }, now: Date = new Date()) {
-  const none = [] as Array<{ title: string; when: string; status: string }>;
+  const none = [] as Array<{ id?: string; title: string; when: string; status: string }>;
   if (!ctx.userId || !ctx.orgId) return { success: false, events: none, message: 'User or workspace not authenticated.' };
   if (!db) return { success: false, events: none, message: 'Database not available.' };
 
@@ -95,6 +101,8 @@ export async function getCalendarHandler(db: DbLike | null, ctx: ToolContext, in
   try {
     const found = itemsBetween(await myCalendar(db, ctx.userId, ctx.orgId), from, to);
     const events = found.slice(0, MAX_LISTED).map((item) => ({
+      // The id lets the model name exactly which event to change; changeEvent checks it is this person's own.
+      ...(item.id ? { id: item.id } : {}),
       title: item.title,
       when: describeSlot(item.start, item.end, ctx.timeZone, item.allDay),
       status: item.status === 'done' ? 'done' : 'open',

@@ -15,6 +15,8 @@ import { createProjectHandler } from '@/ai/agent-project-tool';
 import { getTimeSummaryHandler } from '@/ai/agent-time-tool';
 import { getInvoicesHandler } from '@/ai/agent-invoice-tool';
 import { getQuotesHandler } from '@/ai/agent-quote-tool';
+import { changeEventHandler } from '@/ai/agent-event-tool';
+import { isConfirmingPreview, readTurnStartedAt, readUserConfirmed } from '@/lib/ai-confirm';
 import { searchKnowledgeHandler } from '@/ai/agent-knowledge-tool';
 import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
 import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/lib/ai-runtime';
@@ -209,7 +211,7 @@ const createProjectTool = ai.defineTool(
 const getTimeSummaryTool = ai.defineTool(
   {
     name: 'getTimeSummary',
-    description: 'Adds up the user\'s recorded time: hours worked, billable hours, UNBILLED hours and their dollar value (what is ready to invoice), hours already invoiced, and unbilled hours per client. Use it for "how many hours did I work this week", "how much can I bill Dana", and "what is unbilled" / "what do I have unbilled" (that is a question about the user\'s own figures, not a definition: answer it with this tool). It reads the same time as the Time Log Report with the same billing rules, and counts only time actually worked (scheduled-but-not-worked is reported separately). By default it is the user\'s OWN time; scope \'workspace\' is for an administrator asking about everyone. Read-only. Convert words like "this week" or "last month" into from/to dates using the Runtime Operating Context.',
+    description: 'Adds up the user\'s recorded time: hours worked, billable hours, UNBILLED hours and their dollar value (what is ready to invoice), hours already invoiced, and unbilled hours per client. Use it for "how many hours did I work this week", "how much can I bill Dana", and "what is unbilled" / "what do I have unbilled" (that is a question about the user\'s own figures, not a definition: answer it with this tool). Same time and billing rules as the Time Log Report; counts only time actually worked. Defaults to the user\'s OWN time; scope \'workspace\' is for an administrator asking about everyone. Read-only. Turn "this week" or "last month" into from/to dates using the Runtime Operating Context.',
     inputSchema: z.object({
       from: z.string().optional().describe('First day, YYYY-MM-DD in the user\'s time zone; all dates when omitted'),
       to: z.string().optional().describe('Last day, inclusive, YYYY-MM-DD; today when only from is given'),
@@ -268,6 +270,28 @@ const getQuotesTool = ai.defineTool(
   async (input, { context }) => getQuotesHandler(getAdminDb(), readToolContext(context), input)
 );
 
+const changeEventTool = ai.defineTool(
+  {
+    name: 'changeEvent',
+    description: 'Moves or cancels one of the user\'s OWN calendar events: "move my 3pm to 4pm", "cancel my 2pm meeting". Find the event with getCalendar first and use its id. Two steps: the first call only PREVIEWS and changes nothing; show the preview and ask. After the user says yes, call again with the same arguments to apply it. Refuses an event on an invoice, with recorded time or an open work order, and a move onto another event unless allowDoubleBooking. Editors and administrators only.',
+    inputSchema: z.object({
+      eventId: z.string().describe('The event id, exactly as getCalendar returned it'),
+      action: z.enum(['move', 'cancel']).describe('move = new time; cancel = remove the event'),
+      startTime: z.string().optional().describe('Move only: new start, ISO date-time with a time of day, e.g. 2026-11-10T16:00:00-05:00 (no offset = the user\'s time zone)'),
+      endTime: z.string().optional().describe('Move only: new end, or use durationMinutes; the old length is kept if neither'),
+      durationMinutes: z.number().optional().describe('Move only: new length in minutes'),
+      allowDoubleBooking: z.boolean().optional().describe('True only after the user said to move it anyway despite an overlap'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      status: z.enum(['preview', 'done', 'refused']),
+      message: z.string(),
+    }),
+  },
+  // `confirmed` is the SERVER's reading of the user's own message, never an argument the model can set.
+  async (input, { context }) => changeEventHandler(getAdminDb(), readToolContext(context), input, { confirmed: readUserConfirmed(context), turnStartedAt: readTurnStartedAt(context) })
+);
+
 const searchKnowledgeTool = ai.defineTool(
   {
     name: 'searchKnowledge',
@@ -296,6 +320,7 @@ const AGENT_TOOLS: Record<string, any> = {
   createContact: createContactTool,
   createAppointment: createAppointmentTool,
   getCalendar: getCalendarTool,
+  changeEvent: changeEventTool,
   getTimeSummary: getTimeSummaryTool,
   getInvoices: getInvoicesTool,
   getQuotes: getQuotesTool,
@@ -386,12 +411,13 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 17. **Duplicates**: If createContact says a similar contact exists, nothing was added. Tell the user who matched and ask whether to add another anyway. Call createContact again with allowDuplicate true only if they say yes. Only say a contact was added if createContact returned success.
 18. **Appointments**: When the user asks you to book, schedule, make or set up an appointment, meeting or call at a day and time, call createAppointment yourself. It needs a title and a day AND a time of day; if either is missing, ask one short question. The length defaults to an hour; use the length the user gave. To tie it to a person, call searchContacts first and pass that contact's real id. Only say it is booked if createAppointment returned success. A plain to-do or a reminder with no time is a task: use createTask.
 19. **Overlaps**: If createAppointment says the time overlaps something, nothing was booked. Tell the user what it overlaps, offer the free time it suggests or ask for another, and call it again with allowDoubleBooking true only if the user says to book it anyway.
-20. **Reading the Calendar**: For "what is on tomorrow", "am I free at 3" or "what do I have this week", call getCalendar (a date as YYYY-MM-DD and a number of days) and answer only from what it returns. It shows only the signed-in person's own events. You cannot change or cancel an existing event yet; say so and point to the Calendar (/calendar).
+20. **Reading the Calendar**: For "what is on tomorrow", "am I free at 3" or "what do I have this week", call getCalendar (a date as YYYY-MM-DD and a number of days) and answer only from what it returns. It shows only the signed-in person's own events, and gives each event's id. To move or cancel one, see rule 26.
 21. **To-Dos and Tasks**: When the user asks you to make, add or create a to-do, a task or a reminder ("make a to-do", "add a to-do: call the bank", "remind me to call Dana on Friday"), call createTask yourself; do not send them to a screen. It needs only a title; if the title is missing, ask one short question ("What should the to-do say?"). With no date and no project it lands on the To-Do List (/to-do). Pass startTime only if the user gave a day, and then it needs a time of day too. To tie it to a person or project, call searchContacts or searchGlobal first and pass the real id. Only say it was created if createTask returned success, and name where it is (the To-Do List, or the Calendar for a timed one).
 22. **Projects**: When the user asks you to add, create, make or start a project ("add a new project", "create a project called Website Redesign"), call createProject yourself. It needs only a name; if the name is missing, ask "What should the project be called?". Pass a description or a client only if the user gave one, and look the client up with searchContacts first. The project is saved with Planning status; tell the user it is on the Project List (/projects/all) and that its steps are planned in the Project Planner. If createProject says the name already exists, nothing was created: tell the user and call it again with allowDuplicate true only if they say yes. Only say a project was created if createProject returned success. You cannot yet edit, move, complete or delete a project; point to the Project List or the Project Board (/project-status).
 23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests, and do not use it when the user is asking about their own figures or records ("what is unbilled", "who owes me", "what is on my calendar"): use the matching data tool instead.
 24. **Hours and Unbilled Time**: For "how many hours did I work", "what is unbilled", "how much can I bill Dana" or similar, call getTimeSummary and answer only from its figures; never add up or estimate hours yourself. Work out "this week", "last month" or "this year" as from/to dates from the current date in the Runtime Operating Context. For one client call searchContacts first and pass the real id. It returns the user's OWN time; only if the user is an org_admin or super_admin and asks about the whole workspace or everyone, pass scope "workspace". If the tool says the figures are the user's own because only an administrator can see the workspace, tell them so. Quote hours to two decimals and money in dollars. "Unbilled" means worked, billable, with a client and not yet on an invoice; mention the separate lines it reports for billable time with no client (cannot be invoiced yet) and for scheduled-but-not-worked time (not counted). It cannot show individual entries, invoice lists or payroll: point to the Time Log Report (/reports/time-log) for the rows.
 25. **Invoices and Quotes**: For "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "what quotes are open" or "which quotes need follow-up", call getInvoices or getQuotes and answer only from what they return; never add up amounts or work out overdue days yourself. For one client call searchContacts first and pass the real id. Quote money to the cent in dollars and give the invoice or quote number so the user can find it. "Overdue" means the due date is past and money is still owed. These are for editors and administrators; if the tool says the role or menu access does not allow it, say so plainly and do not guess. You can only read them: you cannot post a payment, send, approve, convert or change an invoice or quote; point to Accounts Receivable (/accounting/accounts-receivable) or the Quote Manager (/accounting/quotes) for that.
+26. **Moving and Cancelling Events**: For "move my 3pm to 4pm", "reschedule the call with Dana" or "cancel my 2pm", call getCalendar to find the event (use its id; if several match, ask which), then changeEvent. The first call only PREVIEWS: show it word for word, keeping the sentence that nothing has changed yet, and ask whether to go ahead. When the user says yes, call changeEvent again with the same arguments. If they say no or ask for something different, do not call it again for the old change. Only say it was moved or cancelled if changeEvent returned status done. You can change only the user's own events, only their time or cancel them, and cannot delete a task, project or invoice.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -710,6 +736,7 @@ const ogeemoAgentFlow = ai.defineFlow(
   },
   async (input) => {
     const { message, history, runtimeContext } = input;
+    const turnStartedAt = Date.now();
     const scrubbedMessages = buildScrubbedMessages(history, message);
 
     const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/co-pilot');
@@ -734,6 +761,11 @@ const ogeemoAgentFlow = ai.defineFlow(
           orgId: runtimeContext?.orgId,
           accessLevel: runtimeContext?.accessLevel,
           timeZone: runtimeContext?.timeZone,
+          // Whether the user's own message is a plain yes to a preview the Co-Pilot just showed. Decided here, on the
+          // server, from what the user typed: the model cannot claim it, so it cannot confirm a cancel for the user.
+          userConfirmed: isConfirmingPreview(history, message),
+          // When this message arrived. A preview made during this turn cannot be confirmed in this turn.
+          turnStartedAt,
         },
         config: { temperature: 0.1 },
       });

@@ -26,7 +26,7 @@ export interface ToolEvalGrade {
   reason: string;
 }
 
-export const WRITE_TOOLS = ['createTask', 'createProject', 'createContact', 'createAppointment'] as const;
+export const WRITE_TOOLS = ['createTask', 'createProject', 'createContact', 'createAppointment', 'changeEvent'] as const;
 export const DATA_TOOLS = ['getTimeSummary', 'getInvoices', 'getQuotes', 'getCalendar'] as const;
 
 export function gradeToolChoice(testCase: ToolEvalCase, called: readonly string[]): ToolEvalGrade {

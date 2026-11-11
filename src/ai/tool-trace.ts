@@ -25,7 +25,7 @@ export function toolsCalled(messages: unknown): string[] {
 }
 
 /** Tools that save something. After one of these ran, running the request again could save it twice. */
-const WRITES = new Set(['createTask', 'createProject', 'createContact', 'createAppointment']);
+const WRITES = new Set(['createTask', 'createProject', 'createContact', 'createAppointment', 'changeEvent']);
 
 /**
  * True when the model came back with no words and had not called any tool, so nothing has happened yet and asking

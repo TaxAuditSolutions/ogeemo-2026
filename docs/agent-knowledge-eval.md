@@ -30,6 +30,9 @@ via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
 | 19 | "Who owes me money?" (editor) | Calls getInvoices (default outstanding); quotes the count, the balance due and the overdue part from the tool; names invoice numbers; never adds up amounts itself. Read-only; safe on any workspace |
 | 20 | "What is overdue?" then "Has Dana paid?" (editor) | Calls getInvoices with status overdue, then searchContacts followed by getInvoices for that client; days overdue come from the tool. A **viewer** is told an editor must ask; a person whose menu hides Accounts Receivable is told so |
 | 21 | "Which quotes need follow-up?" (editor) | Calls getQuotes with needsAttention and gives the reason for each (sent N days ago, approved not invoiced, expires in N days). Does NOT claim it can send or approve a quote |
+| 22 | "Move my 3pm meeting tomorrow to 4pm" (**editor**, with a real 3pm event) | Reads the calendar, then shows a preview that says **"Nothing has changed yet"** and asks whether to go ahead. Open the Calendar: the event has NOT moved. Reply "yes": it moves, and the Calendar shows the new time. Writes: use a throwaway workspace |
+| 23 | "Cancel my 2pm meeting tomorrow", then "no, leave it" | Preview, then the event is still on the Calendar. Ask again and reply "yes but make it Friday": it does NOT cancel (a yes that adds anything starts over) |
+| 24 | "Cancel [an event that is on an invoice]" | Refused with the reason, and no preview is offered. Also try one with recorded time, and a move onto another of your events (held back with a free time) |
 | 7 | "Start a timer" (action request) | Opens `/event-manager?startTimer=true` (command processor) |
 | 8 | "What is BKS?" | Bookkeeping Kept Simple; cash-basis; BKS Ledger `/accounting/ledgers` |
 | 9 | "How do workflows work?" | `/workflows`; apply/restore sidebar; default five listed correctly |
@@ -79,6 +82,32 @@ other phrasings of the same question are stable.
   confirm and the user should check before asking again.
 - The prompt's Rules were numbered 1 to 22, then 24, 25, then 23, and one rule refers to others by number. They now run
   1 to 25 in order and `npm test` keeps them that way.
+
+**Moving and cancelling events: why the confirmation is on the server.** A cancel cannot be undone, and the model reads
+event titles that anyone could have typed, so "ask the model to wait for a yes" is not a safeguard. `changeEvent`
+(`src/ai/agent-event-tool.ts`) makes the model unable to skip it:
+
+1. The first call only previews, saves the plan as the person's one pending change (`aiPendingChanges/<userId>`), and
+   returns "Nothing has changed yet".
+2. The change is applied only when ALL of these hold: the **server** read the person's own message as a plain yes
+   (`isConfirmingPreview`, never a tool argument, checked by a test that no tool schema offers one); the call is exactly
+   the pending plan (same event, action and times); the plan is under 10 minutes old; the event is unchanged; and the
+   plan was saved **before this turn began** (so the model cannot preview and confirm in one breath).
+3. "Plain yes" means eight words or fewer, starting with yes/ok/go ahead/do it/confirm, with no number and none of
+   no/but/instead/wait/unless. "Yes but make it 5pm" is a new request.
+4. The last Co-Pilot reply must be a preview (it contains "nothing has changed yet"). If the model rewords that away,
+   the yes cannot confirm anything: the safe direction.
+5. Only the person's own scheduled events can be changed (another person's, another workspace's and a made-up id all
+   get the same refusal), and the Calendar's own rules apply: an event on an invoice or quote line, with recorded time,
+   or with an open work order cannot be cancelled.
+
+While building it I found that the gate as first written could be walked through in one turn: with a yes already read
+from the user, the model could call the tool twice and the second call applied what the first had just previewed. A
+regression test now covers that (`tests/agent-event-pending.test.ts`).
+
+**What this eval cannot show for `changeEvent`:** the gate is proven by 21 handler tests against a fake database (plus 15 on the yes-detection and routing), and the
+model's choices by `kb:tools` (find first, never book a new event in its place, answer "no" without a tool). Nothing
+has run the whole thing, model plus real Firestore plus a browser, end to end. Do questions 22 to 24 by hand first.
 
 **Prompt-size budget:** the knowledge files load with every request. The goal above (under 6,000 tokens) is **not met**:
 measured on 11 Nov 2026 the four files are about 9,500 tokens, the system prompt rules about 2,600 and the 12 tool

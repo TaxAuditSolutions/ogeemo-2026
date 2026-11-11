@@ -27,6 +27,7 @@ export const TOOL_ACCESS: Readonly<Record<string, ToolAudience>> = {
   createProject: 'editor',
   createContact: 'editor',
   createAppointment: 'editor',
+  changeEvent: 'editor',
   getInvoices: 'editor',
   getQuotes: 'editor',
 };
@@ -46,6 +47,7 @@ const WITHHELD_FOR: Readonly<Record<string, string>> = {
   createProject: 'add a project',
   createContact: 'add a contact',
   createAppointment: 'book an appointment',
+  changeEvent: 'move or cancel an event',
   getInvoices: 'read invoices',
   getQuotes: 'read quotes',
 };

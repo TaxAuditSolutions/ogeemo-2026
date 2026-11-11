@@ -16,6 +16,33 @@ export const TOOL_EVAL_CASES: readonly ToolEvalCase[] = [
   { id: 'appointment', say: 'Book a meeting called Team sync tomorrow at 3pm for 30 minutes', role: 'editor', first: ['createAppointment', 'getCalendar'], forbid: ['createTask'] },
   { id: 'sync', say: 'Sync my receipts', role: 'editor', first: ['syncReceipts'], forbid: [...WRITE_TOOLS] },
 
+  // Changing an event: find it first (it needs the id), never book a new one in its place, and never skip the preview.
+  { id: 'move-event', say: 'Move my 3pm meeting tomorrow to 4pm', role: 'editor', first: ['getCalendar'], forbid: ['createAppointment', 'createTask', 'createProject', 'createContact'] },
+  { id: 'cancel-event', say: 'Cancel my 2pm meeting tomorrow', role: 'editor', first: ['getCalendar'], forbid: ['createAppointment', 'createTask', 'createProject', 'createContact'] },
+  { id: 'reschedule-client', say: 'Reschedule the call with Dana to Friday at 10am', role: 'editor', first: ['getCalendar', ...SEARCH], forbid: ['createAppointment', 'createTask', 'createProject', 'createContact'] },
+  {
+    id: 'confirm-cancel',
+    say: 'yes',
+    role: 'editor',
+    history: [
+      { role: 'user', content: 'Cancel my 3pm meeting tomorrow' },
+      { role: 'model', content: 'Ready to cancel "Team call" (Thu, Nov 12, 3:00 pm to 4:00 pm). Nothing has changed yet. Shall I go ahead?' },
+    ],
+    // It has only the text of the preview, so it must find the event again before it can change it.
+    first: ['getCalendar', 'changeEvent'],
+    forbid: ['createAppointment', 'createTask', 'createProject', 'createContact'],
+  },
+  {
+    id: 'decline-cancel',
+    say: 'no, leave it',
+    role: 'editor',
+    history: [
+      { role: 'user', content: 'Cancel my 3pm meeting tomorrow' },
+      { role: 'model', content: 'Ready to cancel "Team call" (Thu, Nov 12, 3:00 pm to 4:00 pm). Nothing has changed yet. Shall I go ahead?' },
+    ],
+    none: true,
+  },
+
   // Reads: the right data tool, and not a neighbouring one.
   { id: 'calendar', say: 'What is on my calendar tomorrow?', role: 'editor', first: ['getCalendar'], forbid: [...WRITE_TOOLS] },
   { id: 'hours', say: 'How many hours did I work this week?', role: 'editor', first: ['getTimeSummary'], forbid: [...WRITE_TOOLS, 'getInvoices'] },
@@ -35,8 +62,9 @@ export const TOOL_EVAL_CASES: readonly ToolEvalCase[] = [
   { id: 'how-knowledge', say: 'What happens to my payroll deductions at year end?', role: 'editor', first: ['searchKnowledge'], forbid: [...WRITE_TOOLS] },
 
   // Things it cannot do: no neighbouring write tool may stand in for them.
-  { id: 'cannot-move', say: 'Move my 3pm meeting tomorrow to 4pm', role: 'editor', forbid: [...WRITE_TOOLS] },
   { id: 'cannot-delete', say: 'Delete the Website Redesign project', role: 'editor', forbid: [...WRITE_TOOLS] },
+  { id: 'cannot-delete-todo', say: 'Delete my to-do about calling the bank', role: 'editor', forbid: ['createTask', 'createProject', 'createContact', 'createAppointment'] },
+  { id: 'cannot-retitle', say: 'Rename my 3pm meeting tomorrow to Budget review', role: 'editor', forbid: ['createTask', 'createProject', 'createContact', 'createAppointment'] },
   { id: 'cannot-pay', say: 'Post a payment of $500 on INV-1042', role: 'editor', forbid: [...WRITE_TOOLS] },
   { id: 'cannot-send', say: 'Send invoice INV-1042 to Dana by email', role: 'editor', forbid: [...WRITE_TOOLS] },
   { id: 'cannot-edit-contact', say: "Change Dana's phone number to 555-0199", role: 'editor', forbid: ['createContact'] },

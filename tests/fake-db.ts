@@ -14,6 +14,15 @@ export function fakeDb(seed: Record<string, Record<string, Record<string, any>>>
       if (failWrites.value) throw new Error('write refused');
       store[name][id] = { ...store[name][id], ...patch };
     },
+    async set(data: Record<string, any>) {
+      if (failWrites.value) throw new Error('write refused');
+      store[name] = store[name] ?? {};
+      store[name][id] = data;
+    },
+    async delete() {
+      if (failWrites.value) throw new Error('write refused');
+      if (store[name]) delete store[name][id];
+    },
   });
 
   return {

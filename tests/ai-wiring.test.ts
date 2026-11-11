@@ -18,10 +18,23 @@ test('the reply sanitizer keeps real Ogeemo links and removes protocol-relative 
 test('the agent gives the tools a context: the generate call passes the server-supplied identity', () => {
   const source = read('src/ai/flows/ogeemo-chat.ts');
   // The flow once called ai.generate with no context, so every tool saw {} and refused as "not authenticated".
-  assert.match(source, /context: \{\s*userId: runtimeContext\?\.userId,\s*orgId: runtimeContext\?\.orgId,\s*accessLevel: runtimeContext\?\.accessLevel,\s*timeZone: runtimeContext\?\.timeZone,\s*\}/);
+  assert.match(source, /context: \{\s*userId: runtimeContext\?\.userId,\s*orgId: runtimeContext\?\.orgId,\s*accessLevel: runtimeContext\?\.accessLevel,\s*timeZone: runtimeContext\?\.timeZone,(\s*\/\/[^\n]*)*\s*userConfirmed: isConfirmingPreview\(history, message\),(\s*\/\/[^\n]*)*\s*turnStartedAt,\s*\}/);
   for (const handler of ['searchContactsHandler', 'searchGlobalHandler', 'syncReceiptsHandler', 'createTaskHandler']) {
     assert.ok(source.includes(`${handler}(`), `${handler} is not used by the agent`);
   }
+});
+
+test('whether the user said yes is decided by the server from their own message, and no tool takes it from the model', () => {
+  const source = code('src/ai/flows/ogeemo-chat.ts');
+  // The context carries it, computed from the history and the user's message (never from tool arguments).
+  assert.match(source, /userConfirmed: isConfirmingPreview\(history, message\)/);
+  // The only tool that acts on it reads it from the context, and no tool schema offers a confirm-style argument.
+  assert.match(source, /confirmed: readUserConfirmed\(context\), turnStartedAt: readTurnStartedAt\(context\)/);
+  // The turn start is taken as the flow begins, before the model is called, so it is older than anything the model saves.
+  assert.ok(source.indexOf('const turnStartedAt = Date.now()') > 0 && source.indexOf('const turnStartedAt = Date.now()') < source.indexOf('const generateOnce'), 'the turn start must be taken before the model runs');
+  const schemas = [...source.matchAll(/inputSchema: z\.object\(\{([\s\S]*?)\n    \}\),\n    outputSchema/g)].map((m) => m[1]).join('\n');
+  assert.ok(schemas.length > 500, 'could not read the tool input schemas');
+  assert.ok(!/\b(confirm|confirmed|userConfirmed|approved|force)\b\s*:/.test(schemas), 'a tool schema lets the model set its own confirmation');
 });
 
 test('the agent no longer accepts an identity from the browser or invents contacts', () => {

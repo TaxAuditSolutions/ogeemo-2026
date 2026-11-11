@@ -3,6 +3,8 @@
  * reply inside an ongoing assistant-led exchange.
  */
 
+import { isPreviewReply, isUserConfirmation } from '@/lib/ai-confirm';
+
 export interface CopilotRoutingMessage {
     role: 'user' | 'model';
     content: string;
@@ -139,12 +141,31 @@ function isAnsweringTaskOrProjectQuestion(history: CopilotRoutingMessage[]): boo
 }
 
 /**
+ * Moving or cancelling an event ("move my 3pm to 4pm", "reschedule the call with Dana", "cancel my 2pm meeting")
+ * belongs in the conversation, where changeEvent previews it and waits for a yes. "Cancel" and "move" are not command
+ * words, so these already went to the assistant; this makes it explicit and tested.
+ */
+const CHANGE_VERB = /\b(move|reschedule|re-?book|push|postpone|delay|cancel|call off)\b/i;
+const EVENT_NOUN = /\b(meeting|appointment|call|event|catch-?up|consultation|session|booking|[0-9]{1,2}(:[0-9]{2})?\s*(am|pm)|noon)\b/i;
+
+export function isEventChangeRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!text || NOT_A_RECORD_REQUEST.test(text)) return false;
+    return CHANGE_VERB.test(text) && EVENT_NOUN.test(text);
+}
+
+/**
  * Outside an open assistant question the command processor still decides; inside
  * one only an explicit command verb may interrupt the conversation.
  */
 export function shouldProcessAsCommand(message: string, history: CopilotRoutingMessage[]): boolean {
     const text = (message || '').trim();
     if (!text) return false;
+    // "go ahead" and "do it" start with command words. After the Co-Pilot showed a preview that changes nothing yet,
+    // they are the user's yes and must reach the assistant, not be turned into a link.
+    const lastReply = [...history].reverse().find((entry) => entry.role === 'model');
+    if (lastReply && isPreviewReply(lastReply.content) && isUserConfirmation(text)) return false;
+    if (isEventChangeRequest(text)) return false;
     if (isContactCreationRequest(text) || isContactEditRequest(text)) return false;
     if (isAppointmentRequest(text) || isCalendarQuestion(text)) return false;
     if (isTaskRequest(text) || isProjectCreationRequest(text)) return false;

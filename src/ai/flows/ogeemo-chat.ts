@@ -16,6 +16,7 @@ import { getTimeSummaryHandler } from '@/ai/agent-time-tool';
 import { getInvoicesHandler } from '@/ai/agent-invoice-tool';
 import { getQuotesHandler } from '@/ai/agent-quote-tool';
 import { changeEventHandler } from '@/ai/agent-event-tool';
+import { updateContactHandler } from '@/ai/agent-contact-update-tool';
 import { isConfirmingPreview, readTurnStartedAt, readUserConfirmed } from '@/lib/ai-confirm';
 import { searchKnowledgeHandler } from '@/ai/agent-knowledge-tool';
 import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
@@ -232,7 +233,7 @@ const getTimeSummaryTool = ai.defineTool(
 const getInvoicesTool = ai.defineTool(
   {
     name: 'getInvoices',
-    description: 'Lists and totals the workspace\'s invoices the way Accounts Receivable does: how much is owed, which invoices are overdue and by how many days, what a client owes, whether an invoice is paid. Use it for "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "how much did I invoice in October". Defaults to outstanding invoices (balance still owed, oldest due first). Read-only; it cannot post a payment or change an invoice. Editors and administrators only. Convert words like "last month" into from/to dates (the invoice date) using the Runtime Operating Context.',
+    description: 'Lists and totals the workspace\'s invoices as Accounts Receivable does: what is owed, what is overdue and by how many days, what a client owes, whether one is paid. For "who owes me money", "what is overdue", "has Dana paid", "status of INV-1042", "how much did I invoice in October". Defaults to outstanding invoices, oldest due first. Read-only. Editors and administrators only. Turn "last month" into from/to dates (the invoice date) using the Runtime Operating Context.',
     inputSchema: z.object({
       status: z.enum(['outstanding', 'overdue', 'paid', 'draft', 'all']).optional().describe('outstanding = still owed (default); overdue = past due with a balance; paid; draft; all'),
       contactId: z.string().optional().describe('Only this client\'s invoices: the contact id from searchContacts'),
@@ -292,10 +293,42 @@ const changeEventTool = ai.defineTool(
   async (input, { context }) => changeEventHandler(getAdminDb(), readToolContext(context), input, { confirmed: readUserConfirmed(context), turnStartedAt: readTurnStartedAt(context) })
 );
 
+const updateContactTool = ai.defineTool(
+  {
+    name: 'updateContact',
+    description: 'Changes plain details of ONE existing contact (email, phones, company, website, address, name, folder) or clears a detail. Find it with searchContacts first and use its id. Two steps: the first call only PREVIEWS and changes nothing; show the preview and ask; after the user says yes, call again with the same arguments. Not notes, SIN, pay or dates, nor renaming or moving an Employee or Contractor. Holds back a match with another contact unless allowDuplicate. Editors and administrators only.',
+    inputSchema: z.object({
+      contactId: z.string().describe('The contact id, exactly as searchContacts returned it'),
+      name: z.string().optional().describe('New full name'),
+      email: z.string().optional().describe('New email address'),
+      folder: z.string().optional().describe('Name of the contact folder to move it to'),
+      businessName: z.string().optional(),
+      businessPhone: z.string().optional(),
+      cellPhone: z.string().optional(),
+      homePhone: z.string().optional(),
+      website: z.string().optional(),
+      streetAddress: z.string().optional(),
+      city: z.string().optional(),
+      provinceState: z.string().optional(),
+      postalCode: z.string().optional(),
+      country: z.string().optional(),
+      clearFields: z.array(z.string()).optional().describe('Details to remove, e.g. ["cellPhone"]; never name or folder'),
+      allowDuplicate: z.boolean().optional().describe('True only after the user said to go ahead although it matches another contact'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      status: z.enum(['preview', 'done', 'refused']),
+      message: z.string(),
+    }),
+  },
+  // `confirmed` is the SERVER's reading of the user's own message, never an argument the model can set.
+  async (input, { context }) => updateContactHandler(getAdminDb(), readToolContext(context), input, { confirmed: readUserConfirmed(context), turnStartedAt: readTurnStartedAt(context) })
+);
+
 const searchKnowledgeTool = ai.defineTool(
   {
     name: 'searchKnowledge',
-    description: 'Searches the reviewed Ogeemo Knowledge Base for how a feature works, the business rules behind it and the screen to use. Use it ONLY to explain how Ogeemo works (how-to and "why" questions, such as "how does payroll work" or "why can I not delete this"). Do NOT use it to answer a question about the user\'s own figures or records (hours, unbilled time, invoices, quotes, calendar, contacts): those have their own tools, such as getTimeSummary, getInvoices, getQuotes and getCalendar. Read-only. Answer only from what it returns.',
+    description: 'Searches the reviewed Ogeemo Knowledge Base for how a feature works, the business rules behind it and the screen to use. Use it ONLY to explain how Ogeemo works ("how does payroll work", "why can I not delete this"). NOT for the user\'s own figures or records (hours, unbilled time, invoices, quotes, calendar, contacts): those have their own tools. Read-only. Answer only from what it returns.',
     inputSchema: z.object({
       question: z.string().describe('The user\'s question or the topic, in a few words'),
     }),
@@ -321,6 +354,7 @@ const AGENT_TOOLS: Record<string, any> = {
   createAppointment: createAppointmentTool,
   getCalendar: getCalendarTool,
   changeEvent: changeEventTool,
+  updateContact: updateContactTool,
   getTimeSummary: getTimeSummaryTool,
   getInvoices: getInvoicesTool,
   getQuotes: getQuotesTool,
@@ -415,9 +449,10 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 21. **To-Dos and Tasks**: When the user asks you to make, add or create a to-do, a task or a reminder ("make a to-do", "add a to-do: call the bank", "remind me to call Dana on Friday"), call createTask yourself; do not send them to a screen. It needs only a title; if the title is missing, ask one short question ("What should the to-do say?"). With no date and no project it lands on the To-Do List (/to-do). Pass startTime only if the user gave a day, and then it needs a time of day too. To tie it to a person or project, call searchContacts or searchGlobal first and pass the real id. Only say it was created if createTask returned success, and name where it is (the To-Do List, or the Calendar for a timed one).
 22. **Projects**: When the user asks you to add, create, make or start a project ("add a new project", "create a project called Website Redesign"), call createProject yourself. It needs only a name; if the name is missing, ask "What should the project be called?". Pass a description or a client only if the user gave one, and look the client up with searchContacts first. The project is saved with Planning status; tell the user it is on the Project List (/projects/all) and that its steps are planned in the Project Planner. If createProject says the name already exists, nothing was created: tell the user and call it again with allowDuplicate true only if they say yes. Only say a project was created if createProject returned success. You cannot yet edit, move, complete or delete a project; point to the Project List or the Project Board (/project-status).
 23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests, and do not use it when the user is asking about their own figures or records ("what is unbilled", "who owes me", "what is on my calendar"): use the matching data tool instead.
-24. **Hours and Unbilled Time**: For "how many hours did I work", "what is unbilled", "how much can I bill Dana" or similar, call getTimeSummary and answer only from its figures; never add up or estimate hours yourself. Work out "this week", "last month" or "this year" as from/to dates from the current date in the Runtime Operating Context. For one client call searchContacts first and pass the real id. It returns the user's OWN time; only if the user is an org_admin or super_admin and asks about the whole workspace or everyone, pass scope "workspace". If the tool says the figures are the user's own because only an administrator can see the workspace, tell them so. Quote hours to two decimals and money in dollars. "Unbilled" means worked, billable, with a client and not yet on an invoice; mention the separate lines it reports for billable time with no client (cannot be invoiced yet) and for scheduled-but-not-worked time (not counted). It cannot show individual entries, invoice lists or payroll: point to the Time Log Report (/reports/time-log) for the rows.
-25. **Invoices and Quotes**: For "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "what quotes are open" or "which quotes need follow-up", call getInvoices or getQuotes and answer only from what they return; never add up amounts or work out overdue days yourself. For one client call searchContacts first and pass the real id. Quote money to the cent in dollars and give the invoice or quote number so the user can find it. "Overdue" means the due date is past and money is still owed. These are for editors and administrators; if the tool says the role or menu access does not allow it, say so plainly and do not guess. You can only read them: you cannot post a payment, send, approve, convert or change an invoice or quote; point to Accounts Receivable (/accounting/accounts-receivable) or the Quote Manager (/accounting/quotes) for that.
+24. **Hours and Unbilled Time**: For "how many hours did I work", "what is unbilled" or "how much can I bill Dana", call getTimeSummary and answer only from its figures; never add up or estimate hours yourself. Work out "this week" or "last month" as from/to dates from the current date in the Runtime Operating Context. For one client call searchContacts first and pass the real id. It returns the user's OWN time; only an org_admin or super_admin asking about the whole workspace gets scope "workspace", and if the tool says the figures are the user's own, tell them so. Quote hours to two decimals and money in dollars. "Unbilled" means worked, billable, with a client and not yet invoiced; also mention its separate lines for billable time with no client and for scheduled-but-not-worked time (not counted). For the individual entries, point to the Time Log Report (/reports/time-log).
+25. **Invoices and Quotes**: For "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "what quotes are open" or "which quotes need follow-up", call getInvoices or getQuotes and answer only from what they return; never add up amounts or work out overdue days yourself. For one client call searchContacts first. Quote money to the cent and give the invoice or quote number. "Overdue" means past due with money still owed. If the tool says the role or menu access does not allow it, say so and do not guess. You can only read them: you cannot post a payment, send, approve, convert or change one; point to Accounts Receivable (/accounting/accounts-receivable) or the Quote Manager (/accounting/quotes).
 26. **Moving and Cancelling Events**: For "move my 3pm to 4pm", "reschedule the call with Dana" or "cancel my 2pm", call getCalendar to find the event (use its id; if several match, ask which), then changeEvent. The first call only PREVIEWS: show it word for word, keeping the sentence that nothing has changed yet, and ask whether to go ahead. When the user says yes, call changeEvent again with the same arguments. If they say no or ask for something different, do not call it again for the old change. Only say it was moved or cancelled if changeEvent returned status done. You can change only the user's own events, only their time or cancel them, and cannot delete a task, project or invoice.
+27. **Changing Contacts**: For "update Dana's phone to 555-0199", "add an email to Jane" or "remove Sam's fax", call searchContacts to find the contact (use its id; if several match, ask which), then updateContact. Preview, confirm and "only say it was changed if status done" work as in rule 26. It cannot change notes, SIN, pay or dates (send the user to the contact form), rename or move an Employee or Contractor (Workers page), or delete a contact.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -622,14 +657,10 @@ When the conversation concerns editing an existing contact:
     5. Click "Save Changes" at the bottom of the form.
     Return open_destination with destination "contacts_hub".
   - If the user asks broadly to edit a contact without naming who or what to change, ask whether they want step-by-step instructions or want you to find and edit it for them. Return no action.
-  - If the request already names the target contact (e.g., "i want to add an email address to the contact 'Cookie Monster'" or "update Jane Doe's phone to 555-1234"), skip the intent choice turn and go straight to Turn 2 (identifying the target).
-- Turn 2, identify the target: Look up the contact in the Available Tenant Contacts catalog below by name or details. Never invent a contactId; it must come from the catalog.
-  - No matches: state clearly that the contact was not found in the directory and offer open_destination with destination "contacts_hub". Return no other action.
-  - Multiple matches: list each candidate's name plus a distinguishing detail (email or business name) and ask the user which one they mean. Return no action.
-  - Exactly one match:
-    - If the change value was ALREADY provided (e.g., "update Jane Doe's phone to 555-1234"): put the change in draftSnapshot, return submit_contact_form (or open_contact with the patch to be submitted), and confirm that the update has been performed and saved (e.g. "I've updated Jane Doe's phone to 555-1234 and saved the changes."). Do NOT ask for confirmation.
-    - If the change value is NOT YET provided (e.g., "i want to add an email address to the contact 'Cookie Monster'"): return open_contact with its real contactId (and no patch yet). State that you found and opened the contact record for editing, and ask the user what email address (or value) they want to add/set.
-- Turn 3, field changes & direct save: once the target contact is open and the user provides the new value (e.g., provides the email address "cookie@sesame.org"), put the changed field in draftSnapshot (e.g. { email: 'cookie@sesame.org' }) and immediately return submit_contact_form. Do NOT ask for confirmation. State clearly in your reply that the field has been updated and the changes have been saved (e.g. "I've updated Cookie Monster's email address to cookie@sesame.org and saved the changes.").
+  - Doing it for them: when the user asks you to change, update, correct, add to or remove a detail of an existing contact (for example "update Jane Doe's phone to 555-1234", "add an email address to the contact 'Cookie Monster'", "remove Sam's fax number", "move Dana to the Clients folder"), return handled=false with an empty reply and no action. The main assistant has an updateContact tool that shows the user exactly what would change, waits for a yes, and then saves it, so do not open or fill the form for a request like that.
+  - If the user asks broadly to edit a contact without naming who or what to change, ask whether they want step-by-step instructions or want the Co-Pilot to make the change for them. Return no action.
+- Only when an EARLIER turn already opened an Edit Contact form (an open_contact action in the history) and the user is still working on that open form, keep helping with that form: put the changed field in draftSnapshot (for example { email: 'cookie@sesame.org' }) and return update_contact_draft, or return submit_contact_form when they say to save it. The user can see that form on screen, which is why this path may save without a further question. Never start this path yourself.
+- Looking a contact up without an editing intent: check the Available Tenant Contacts catalog below by name or details. Never invent a contactId; it must come from the catalog. No match: say the contact was not found and offer open_destination with destination "contacts_hub". Several matches: list each with a distinguishing detail and ask which one.
 - The user can edit contacts: ${canCreate ? 'yes' : 'no'}. If no, provide instructions and explain that editor access or higher is required. Never return an action.
 - Before soliciting or accepting SIN, pay rate, employment dates, emergency contacts, or other confidential HR/payroll details, warn that chat history is saved and obtain explicit consent. Without consent, leave those fields out and ask the user to enter them directly in the form.
 - Use only folder IDs from the catalog. Never place a folder name in folderId.
@@ -673,7 +704,7 @@ ${contactCatalog}
 Important for this retry turn: Continue the exact state machine from history. Do not ask the user for confirmation; execute the requested change and return submit_contact_form as soon as the details are ready.
 - Always return draftSnapshot with every known field value (name, folderId, and so on) once the form is open.
 - When the folder is chosen (or was already given) for a new contact, return submit_contact_form and state that the contact has been created.
-- When a field value is provided for an existing contact, return submit_contact_form and state that the change has been saved.`;
+- When a field value is provided for a contact whose Edit form is ALREADY open in the history, return submit_contact_form. If no Edit form is open, return handled=false instead: the main assistant changes contacts with its own tool.`;
 
     const retryResult = await ai.generate({
       ...baseOptions,

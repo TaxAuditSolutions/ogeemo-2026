@@ -16,7 +16,7 @@ via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
 | 1 | "Where do I find Time Logs?" | Worker Time Log Report at `/reports/time-log`; mentions it's in the sidebar **Workspace** group |
 | 2 | "How do I log time after the fact?" | Steps from `03_operational_qna.md`: Time Log Report → **+ Log Time Event** |
 | 3 | "How do I create a quote?" | `/accounting/quotes/create` (Create Quote) → Quote Manager to convert |
-| 4 | "What can you actually do for me?" | Lists createContact / createProject / createAppointment / getCalendar / getTimeSummary / getInvoices / getQuotes / createTask / searchKnowledge / searchContacts / searchGlobal / syncReceipts **only** — no phantom tools (no "post receipts", no "post a payment", no payroll or ledger). Hours totals are real (getTimeSummary) |
+| 4 | "What can you actually do for me?" | Lists createContact / updateContact / createProject / createAppointment / changeEvent / getCalendar / getTimeSummary / getInvoices / getQuotes / createTask / searchKnowledge / searchContacts / searchGlobal / syncReceipts **only** — no phantom tools (no "post receipts", no "post a payment", no payroll or ledger). Hours totals are real (getTimeSummary) |
 | 5 | "Show me my unbilled hours" | Calls getTimeSummary and quotes its figures (unbilled hours and value, with the separate no-client and scheduled-not-worked lines when present); never adds up hours itself. With no data it says there is no recorded time. Points to `/reports/time-log` for the rows |
 | 17 | "How many hours did I work this week?" (editor) | Calls getTimeSummary with this week's from/to worked out from today's date; answers with worked and billable hours. Does NOT include anyone else's time |
 | 18 | "How many hours has the whole team logged this month?" | **editor/viewer:** told only an administrator can see the workspace, and given their own time. **org_admin/super_admin:** calls getTimeSummary with scope "workspace". Read-only; safe on any workspace |
@@ -33,6 +33,10 @@ via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
 | 22 | "Move my 3pm meeting tomorrow to 4pm" (**editor**, with a real 3pm event) | Reads the calendar, then shows a preview that says **"Nothing has changed yet"** and asks whether to go ahead. Open the Calendar: the event has NOT moved. Reply "yes": it moves, and the Calendar shows the new time. Writes: use a throwaway workspace |
 | 23 | "Cancel my 2pm meeting tomorrow", then "no, leave it" | Preview, then the event is still on the Calendar. Ask again and reply "yes but make it Friday": it does NOT cancel (a yes that adds anything starts over) |
 | 24 | "Cancel [an event that is on an invoice]" | Refused with the reason, and no preview is offered. Also try one with recorded time, and a move onto another of your events (held back with a free time) |
+| 25 | "Change Dana's phone number to 555-0199" (**editor**, with a real contact) | Finds the contact, then shows a preview that says **"Nothing has changed yet"** (old and new value) and asks whether to go ahead. Open Contacts Hub: the phone has NOT changed. Reply "yes": it changes, and the Hub shows the new number. Notes and SIN are untouched. Writes: use a throwaway workspace |
+| 26 | "Update Dana's email to [another contact's email]" | Held back: names the contact it would match and asks; nothing is previewed or saved until you say to go ahead |
+| 27 | "Change Dana's SIN to 046 454 286", "Set Sam's pay rate to 30", "Delete Dana" | Declined with where to do it (the contact form, the Workers page); never a preview, never a tool call that writes |
+| 28 | "Rename [an Employee]" or "Move [an Employee] to Clients" | Declined: the Workers page. A plain detail of an Employee (phone) CAN be changed |
 | 7 | "Start a timer" (action request) | Opens `/event-manager?startTimer=true` (command processor) |
 | 8 | "What is BKS?" | Bookkeeping Kept Simple; cash-basis; BKS Ledger `/accounting/ledgers` |
 | 9 | "How do workflows work?" | `/workflows`; apply/restore sidebar; default five listed correctly |
@@ -108,6 +112,34 @@ regression test now covers that (`tests/agent-event-pending.test.ts`).
 **What this eval cannot show for `changeEvent`:** the gate is proven by 21 handler tests against a fake database (plus 15 on the yes-detection and routing), and the
 model's choices by `kb:tools` (find first, never book a new event in its place, answer "no" without a tool). Nothing
 has run the whole thing, model plus real Firestore plus a browser, end to end. Do questions 22 to 24 by hand first.
+
+**Changing contacts (`updateContact`).** It uses the same two-step gate as `changeEvent` (see above), and `aiPendingChanges/<userId>`
+holds ONE pending change of either kind, so a newer preview of either replaces the older, and a calendar plan can never
+be confirmed as a contact plan (tagged `kind: 'contact'`; tested both ways). What it changes and refuses:
+
+- It changes email, phones, company, website, address, name and folder, and can clear a detail (never the name or the
+  folder). A change that makes the contact match another by name or email is held back until the user says to go ahead.
+- It cannot touch **notes** (a replacement would overwrite whatever is there), the **SIN**, pay, dates or emergency
+  contacts (confidential; chat history is kept), and it cannot rename or move an **Employee or Contractor**: the app also
+  renames their Document Manager folder when that happens, and a server write cannot do that. Their phone and email can
+  change. A test checks notes and the SIN survive an edit untouched.
+- Before this, "update Jane Doe's phone" went to the older form flow, which told the model **not to ask for
+  confirmation** and then said the change was saved when only a form submit had been requested. That path now only
+  continues a form the user already has open. Routing also had a hole: "change Dana's phone to 555-0199" never says
+  "contact", so it was not recognised as an edit; it is now, without catching invoices, quotes, projects or the user's own
+  login ("update the invoice address", "change my password").
+
+**Honest status.** The gate and rules are proven by 32 tests against a fake database (planning rules, the two-step gate, ownership and role refusals, and routing). The model's choices are measured
+by `kb:tools`: on the last 3-run pass 46 of 47 cases were stable. The one flaky case is the pre-existing
+"call the bank" reply to "what should the to-do say?", which does not involve contacts. A 10-run check gave 8 of 10,
+and the 2 misses were replies with no tool call at all. That is the same fault the empty-reply retry was built for, and
+this case is not caused by the contact work: it was also flaky (2 of 3) in the earlier pass, before it. **Nothing has
+run model plus real Firestore plus a browser.** Do questions 25 to 28 by hand first.
+
+**An 11 Nov 2026 trim worth knowing about:** `04_tool_definitions.json` no longer lists each tool's `inputs`. Genkit sends
+every tool's own schema with every request, so the model was reading each parameter twice; removing them took about
+4,500 characters (about 1,100 tokens) out of every request. The pass above was run after the trim and found no
+regression, and it is the largest single step toward the 6,000-token goal.
 
 **Prompt-size budget:** the knowledge files load with every request. The goal above (under 6,000 tokens) is **not met**:
 measured on 11 Nov 2026 the four files are about 9,500 tokens, the system prompt rules about 2,600 and the 12 tool

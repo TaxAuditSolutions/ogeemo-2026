@@ -14,11 +14,16 @@ import test from 'node:test';
  * These ceilings sit just above today's size. They fail when a change adds more than a little, so the author has to
  * either trim something or raise the number here on purpose, in the same commit, and say why.
  */
-// Raised from 40,000 on 11 Nov 2026 for the changeEvent entry in 04_tool_definitions.json (+about 1,000 characters,
-// already trimmed once). The goal of under 6,000 tokens is still not met; trimming 04 is the way back.
-const KNOWLEDGE_CEILING_CHARS = 41_000;
+// Knowledge files: LOWERED on 11 Nov 2026 from 41,000 to 37,500. The per-tool "inputs" blocks in
+// 04_tool_definitions.json (about 4,500 characters) were removed because Genkit already sends each tool's own schema
+// with every request, so the model was reading every parameter twice. The measured size is now about 36,800 characters
+// (about 9,200 tokens). The goal of under 6,000 tokens is still NOT met.
+const KNOWLEDGE_CEILING_CHARS = 37_500;
 const RULES_CEILING_CHARS = 11_500;
-const TOOLS_CEILING_CHARS = 7_500;
+// Tool text: raised from 7,500 to 8,200 on 11 Nov 2026 for the 14th tool (updateContact). Each tool needs a description
+// the model reads to choose it, and this is the only place a tool's purpose and limits are stated to it, so unlike the
+// knowledge files this cannot be removed, only kept short. Measured about 7,980 after trimming the longest descriptions.
+const TOOLS_CEILING_CHARS = 8_200;
 
 const read = (file: string) => fs.readFileSync(file, 'utf8');
 

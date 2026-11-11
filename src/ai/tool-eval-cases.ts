@@ -43,6 +43,39 @@ export const TOOL_EVAL_CASES: readonly ToolEvalCase[] = [
     none: true,
   },
 
+  // Changing a contact: find it first (it needs the id), never add a new one in its place, never skip the preview.
+  { id: 'edit-contact-phone', say: "Change Dana's phone number to 555-0199", role: 'editor', first: [...SEARCH], forbid: ['createContact', 'createTask', 'createProject', 'createAppointment', 'changeEvent'] },
+  { id: 'edit-contact-email', say: "Update Jane's email to jane@newco.com", role: 'editor', first: [...SEARCH], forbid: ['createContact', 'createTask', 'createProject', 'createAppointment', 'changeEvent'] },
+  { id: 'edit-contact-remove', say: 'Remove the fax number from Sam', role: 'editor', first: [...SEARCH], forbid: ['createContact', 'createTask', 'createProject', 'createAppointment', 'changeEvent'] },
+  { id: 'edit-contact-move', say: 'Move Dana to the Clients folder', role: 'editor', first: [...SEARCH], forbid: ['createContact', 'createTask', 'createProject', 'createAppointment', 'changeEvent'] },
+  { id: 'edit-contact-howto', say: 'How do I change a contact\'s phone number?', role: 'editor', forbid: [...WRITE_TOOLS] },
+  { id: 'cannot-edit-sin', say: "Change Dana's SIN to 046 454 286", role: 'editor', forbid: [...WRITE_TOOLS] },
+  { id: 'cannot-edit-pay', say: "Set Sam's hourly pay rate to 30 dollars", role: 'org_admin', forbid: [...WRITE_TOOLS] },
+  { id: 'cannot-delete-contact', say: 'Delete the contact Dana Whitfield', role: 'editor', forbid: [...WRITE_TOOLS] },
+  { id: 'viewer-edit-contact', say: "Change Dana's phone number to 555-0199", role: 'viewer', forbid: ['updateContact', 'createContact'] },
+  {
+    id: 'confirm-edit-contact',
+    say: 'yes',
+    role: 'editor',
+    history: [
+      { role: 'user', content: "Change Dana's phone to 555-0199" },
+      { role: 'model', content: 'Ready to change Dana Whitfield: cell phone from "(705) 555-0142" to "555-0199". Nothing has changed yet. Shall I go ahead?' },
+    ],
+    // It has only the text of the preview, so it must find the contact again before it can change it.
+    first: [...SEARCH, 'updateContact'],
+    forbid: ['createContact', 'createTask', 'createProject', 'createAppointment', 'changeEvent'],
+  },
+  {
+    id: 'decline-edit-contact',
+    say: 'no, leave it',
+    role: 'editor',
+    history: [
+      { role: 'user', content: "Change Dana's phone to 555-0199" },
+      { role: 'model', content: 'Ready to change Dana Whitfield: cell phone from "(705) 555-0142" to "555-0199". Nothing has changed yet. Shall I go ahead?' },
+    ],
+    none: true,
+  },
+
   // Reads: the right data tool, and not a neighbouring one.
   { id: 'calendar', say: 'What is on my calendar tomorrow?', role: 'editor', first: ['getCalendar'], forbid: [...WRITE_TOOLS] },
   { id: 'hours', say: 'How many hours did I work this week?', role: 'editor', first: ['getTimeSummary'], forbid: [...WRITE_TOOLS, 'getInvoices'] },

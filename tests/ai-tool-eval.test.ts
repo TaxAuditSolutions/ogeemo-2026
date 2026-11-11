@@ -98,5 +98,5 @@ test('every tool named in a case really exists, so a typo cannot make a check pa
 
 test('the write cases cover the viewer refusal and the "cannot do yet" requests', () => {
   assert.ok(TOOL_EVAL_CASES.some((c) => c.role === 'viewer'), 'no viewer case');
-  for (const id of ['move-event', 'cancel-event', 'confirm-cancel', 'decline-cancel', 'cannot-delete', 'cannot-delete-todo', 'cannot-pay', 'cannot-send']) assert.ok(TOOL_EVAL_CASES.some((c) => c.id === id), `${id} missing`);
+  for (const id of ['move-event', 'cancel-event', 'confirm-cancel', 'decline-cancel', 'cannot-delete', 'cannot-delete-todo', 'cannot-pay', 'cannot-send', 'cannot-edit-sin', 'cannot-delete-contact', 'confirm-edit-contact', 'decline-edit-contact']) assert.ok(TOOL_EVAL_CASES.some((c) => c.id === id), `${id} missing`);
 });

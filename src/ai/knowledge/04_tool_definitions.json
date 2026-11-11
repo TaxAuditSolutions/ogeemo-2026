@@ -1,153 +1,87 @@
 {
-  "about": "Tool truth for the Co-Pilot. Generated from src/ai/flows/ogeemo-chat.ts and src/lib/command-processor.ts - document ONLY what exists. Enforced by tests/knowledge-base.test.ts; update in the same commit as agent changes.",
+  "about": "Tool truth for the Co-Pilot. Generated from src/ai/flows/ogeemo-chat.ts and src/lib/command-processor.ts - document ONLY what exists. Enforced by tests/knowledge-base.test.ts; update in the same commit as agent changes. Tool inputs are NOT listed here: each tool's own schema, sent with every request, already carries them.",
   "tools": [
     {
       "name": "syncReceipts",
       "description": "Lists PDF files in the Google Drive \"Receipts\" folder, when Drive is connected.",
-      "inputs": {},
       "sideEffects": "Read-only. Google Drive is not connected yet, so it returns an empty list and says so; point the user to Receipt Intake (/accounting/receipt-processor).",
       "auth": "Requires a signed-in user."
     },
     {
       "name": "searchContacts",
       "description": "Searches the workspace's contacts by name, company, email or phone number and returns their ids.",
-      "inputs": {
-        "searchTerm": "string - name, company, email or phone fragment (every word must match)"
-      },
       "sideEffects": "Read-only (Firestore contacts, scoped to the user's workspace). At most 20 results are returned.",
       "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
     },
     {
       "name": "searchGlobal",
       "description": "Searches Ogeemo pages and the workspace's contacts and projects by name, and returns real record ids.",
-      "inputs": {
-        "query": "string - search query or keyword"
-      },
       "sideEffects": "Read-only search; no writes, no web search. It never invents people.",
       "auth": "Pages are searched for everyone; contacts and projects only for a signed-in user, inside their own workspace."
     },
     {
       "name": "createContact",
       "description": "Adds a contact to the workspace's Contacts Hub and saves it.",
-      "inputs": {
-        "name": "string (required, at least 2 characters)",
-        "folder": "string (optional) - a contact folder name in this workspace; the default folder is used when omitted",
-        "email": "string (optional, must look like an email address)",
-        "businessName, businessPhone, cellPhone, homePhone, website, streetAddress, city, provinceState, postalCode, country, notes": "string (optional)",
-        "allowDuplicate": "boolean (optional) - true only after the user said to add it although a similar contact exists"
-      },
       "sideEffects": "WRITES a document to the Firestore 'contacts' collection, stamped with the workspace, the creator and search keywords, exactly as the Contacts Hub does. It refuses a contact with the same email address or the same name as an existing one (nothing is written) until allowDuplicate is true. It never adds Employees or Contractors (those need pay and document setup: use the Workers page, /workers) and never accepts a SIN, pay rate or employment dates. If the database is unavailable nothing is written and the reply says the contact was NOT added.",
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
       "name": "createAppointment",
       "description": "Books an appointment on the signed-in user's Calendar and saves it.",
-      "inputs": {
-        "title": "string (required)",
-        "startTime": "ISO date-time WITH a time of day (required; without an offset it is read in the user's time zone; a date alone is refused)",
-        "endTime": "ISO date-time (optional) - use this or durationMinutes",
-        "durationMinutes": "number 5 to 720 (optional; one hour when neither length is given)",
-        "contactId": "string (optional) - must be a contact in this workspace, from searchContacts",
-        "location": "string (optional)",
-        "notes": "string (optional)",
-        "allowDoubleBooking": "boolean (optional) - true only after the user said to book it although it overlaps something"
-      },
       "sideEffects": "WRITES a document to the Firestore 'tasks' collection with activityType 'appointment', scheduled, stamped with the workspace and the person who asked, so it shows on the Calendar and is never flagged overdue. Planned time only: it is never worked or billable time. It refuses a time in the past, an end before the start, and a length over 12 hours. It refuses a time that overlaps one of the user's OWN unfinished timed events (nothing is written), names the clash and suggests the next free time inside 9:00 to 17:00 in the user's time zone, until allowDoubleBooking is true. If the database is unavailable nothing is written and the reply says the appointment was NOT booked.",
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
       "name": "getCalendar",
       "description": "Reads the signed-in user's own Calendar for one day or up to 14 days.",
-      "inputs": {
-        "date": "YYYY-MM-DD (optional; today in the user's time zone when omitted)",
-        "days": "number 1 to 14 (optional; 1 when omitted)"
-      },
       "sideEffects": "Read-only (Firestore tasks, scoped to the user's workspace). Returns up to 30 of the user's own scheduled events with the time written in their time zone. It never shows other people's events.",
       "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
     },
     {
       "name": "createTask",
       "description": "Creates a task in the Activity Manager: a to-do, or a scheduled task. For an appointment, meeting or call at a set time, use createAppointment instead.",
-      "inputs": {
-        "title": "string (required)",
-        "description": "string (optional)",
-        "startTime": "ISO date-time (optional; presence makes it a scheduled event; without an offset it is read in the user's time zone)",
-        "endTime": "ISO date-time (optional; one hour after the start when omitted)",
-        "contactId": "string (optional) - must be a contact in this workspace, from searchContacts",
-        "projectId": "string (optional) - must be a project in this workspace; the task also becomes a step of the project"
-      },
       "sideEffects": "WRITES a document to the Firestore 'tasks' collection with status 'todo', stamped with the workspace so the app lists it. A task with no date and no project is a To-Do List item. If the database is unavailable nothing is written and the reply says the task was NOT created.",
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
       "name": "createProject",
       "description": "Creates a project in the workspace's Project List and saves it with Planning status.",
-      "inputs": {
-        "name": "string (required)",
-        "description": "string (optional)",
-        "contactId": "string (optional) - the client; must be a contact in this workspace, from searchContacts",
-        "allowDuplicate": "boolean (optional) - true only after the user said to create it although a project with that name exists"
-      },
       "sideEffects": "WRITES a document to the Firestore 'projects' collection with the same fields the New Project screen saves (Planning status, no steps, the workspace and the creator). It refuses a project whose name matches an existing one (case and spacing ignored) and writes nothing until allowDuplicate is true. It never plans steps: those are added in the Project Planner (/project-plan). If the database is unavailable nothing is written and the reply says the project was NOT created.",
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
       "name": "changeEvent",
       "description": "Moves (reschedules) or cancels one of the signed-in user's OWN calendar events, in two steps: a preview that changes nothing, then the change after the user says yes.",
-      "inputs": {
-        "eventId": "string (required) - the event id exactly as getCalendar returned it",
-        "action": "'move' or 'cancel' (required)",
-        "startTime": "ISO date-time WITH a time of day (a move only; without an offset it is read in the user's time zone)",
-        "endTime": "ISO date-time (a move only, optional) - use this or durationMinutes; the old length is kept when neither is given",
-        "durationMinutes": "number 5 to 720 (a move only, optional)",
-        "allowDoubleBooking": "boolean (optional) - true only after the user said to move it although it overlaps something"
-      },
-      "sideEffects": "WRITES to the Firestore 'tasks' collection: a move changes only start and end; a cancel deletes the event and its project step. The first call NEVER changes anything: it saves a pending plan and returns a preview saying nothing has changed yet. It is applied only when the server read the user's next message as a plain yes (not something the model can set), the call is exactly the pending plan, the plan is under 10 minutes old and the event is unchanged. An event on an invoice or quote line, with recorded time, or with an open work order cannot be cancelled; a move that overlaps another of the user's events is held back until they say to go ahead. It cannot change a title, client or project, or touch anyone else's event.",
+      "sideEffects": "WRITES to 'tasks': a move changes only start and end; a cancel deletes the event and its project step. The first call NEVER changes anything: it saves a pending plan and previews it (nothing has changed yet). It is applied only after the server reads the user's next message as a plain yes, for exactly that plan, within 10 minutes. An event on an invoice or quote line, with recorded time, or with an open work order cannot be cancelled; a move onto another of the user's events is held back until they say to go ahead. It cannot change a title, client or project, or touch anyone else's event.",
       "auth": "Editor, org_admin or super_admin; a viewer is not offered the tool. Only the user's OWN scheduled events."
+    },
+    {
+      "name": "updateContact",
+      "description": "Changes plain details of ONE existing contact (email, phones, company, website, address, name, folder) or clears a detail, in two steps: a preview that changes nothing, then the change after the user says yes.",
+      "sideEffects": "WRITES only the named fields of one 'contacts' document. The first call NEVER changes anything: it saves a pending plan and previews it (nothing has changed yet). It is applied only after the server reads the user's next message as a plain yes, for exactly that plan, within 10 minutes. A change that makes the contact match another by name or email is held back until the user says to go ahead. It never changes notes, SIN, pay or dates, never renames or moves an Employee or Contractor (Workers page), never deletes a contact.",
+      "auth": "Editor, org_admin or super_admin; a viewer is not offered the tool. Only a contact of the user's own workspace."
     },
     {
       "name": "getTimeSummary",
       "description": "Adds up recorded time: hours worked, billable hours, unbilled hours and their value, hours already invoiced, and unbilled hours per client, for a date range and optionally one client.",
-      "inputs": {
-        "from": "YYYY-MM-DD (optional; all dates when omitted), in the user's time zone",
-        "to": "YYYY-MM-DD (optional; inclusive; today when only from is given)",
-        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
-        "scope": "'mine' or 'workspace' (optional) - 'workspace' is honoured for org_admin and super_admin only; everyone else always gets their own time"
-      },
       "sideEffects": "Read-only (Firestore timeLogs and tasks, scoped to the user's workspace). It uses the Time Log Report's billing rules: unbilled means worked, billable, with a client and not yet on an invoice; scheduled-but-not-worked time is reported separately and never counted. By default a person sees only their OWN time because the figures carry billing rates; the whole workspace needs an administrator. It returns totals only (no individual entries) and at most 10 clients.",
       "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
     },
     {
       "name": "getInvoices",
       "description": "Lists and totals the workspace's invoices as Accounts Receivable does: balance owed, overdue invoices and days overdue, what a client owes, whether an invoice is paid, invoices in a date range.",
-      "inputs": {
-        "status": "'outstanding' (default: a balance is still owed, oldest due first), 'overdue', 'paid', 'draft' or 'all'",
-        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
-        "number": "string (optional) - part of an invoice number such as INV-1042",
-        "from": "YYYY-MM-DD (optional) - earliest invoice date, in the user's time zone",
-        "to": "YYYY-MM-DD (optional) - latest invoice date, inclusive; today when only from is given"
-      },
       "sideEffects": "Read-only (Firestore invoices, scoped to the user's workspace). It uses the Accounts Receivable rules for balance, paid and overdue (overdue = due date before today in the user's time zone, money still owed, not a draft); drafts are only listed when asked for. It returns totals and at most 15 invoices with number, client, dates, amounts and status; never notes, addresses, business numbers or line items. It cannot post a payment or change an invoice.",
       "auth": "Requires a signed-in editor, org_admin or super_admin in a workspace; a viewer is refused, and so is a person whose menu access hides Accounts Receivable."
     },
     {
       "name": "getQuotes",
       "description": "Lists and totals the workspace's quotes as the Quote Manager does: open quotes, quotes needing attention, a client's quotes, a quote's status, with their values.",
-      "inputs": {
-        "status": "'open' (default: requested, draft, sent or approved), 'all', or one of requested, draft, sent, approved, declined, invoiced, in_progress, completed, paid",
-        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
-        "number": "string (optional) - part of a quote number",
-        "needsAttention": "boolean (optional) - only quotes stale in Sent for 14 days or more, approved but not yet converted, or expiring within 7 days"
-      },
       "sideEffects": "Read-only (Firestore quotes, scoped to the user's workspace). It returns totals, a count per status and at most 15 quotes with number, client, dates, value, status and why one needs attention; never notes, addresses or line items. It cannot approve, send, convert or change a quote.",
       "auth": "Requires a signed-in editor, org_admin or super_admin in a workspace; a viewer is refused, and so is a person whose menu access hides the Quote Manager."
     },
     {
       "name": "searchKnowledge",
       "description": "Searches the reviewed Knowledge Base entries (every module's how-to and business rules) and returns up to three short passages.",
-      "inputs": {
-        "question": "string - the user's question or topic in a few words"
-      },
       "sideEffects": "Read-only. Returns only entries the user's role may read. It cannot read the user's own business data (time logs, invoices, payroll) - it explains how Ogeemo works. When nothing matches it says so and the Co-Pilot must not guess.",
       "auth": "Requires a signed-in user."
     }
@@ -155,7 +89,7 @@
   "flows": [
     {
       "name": "contactCapability",
-      "description": "Structured contact form flow, used to edit an existing contact, to fill a New Contact form the user has already opened, and to explain how to add a contact. Asking Co-Pilot to ADD a contact is handled by the createContact tool, which saves it directly. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
+      "description": "Structured contact form flow, used to fill a form the user has ALREADY opened (New Contact or Edit Contact) and to explain how to add or edit a contact. Asking Co-Pilot to ADD a contact is handled by the createContact tool, and asking it to CHANGE a contact's details by the updateContact tool, which previews first; neither opens the form. Never choose tenant/audit/folder IDs for the user. Confidential HR fields (SIN, pay rate) require explicit consent because chat history is retained.",
       "inputs": [
         "message",
         "history?",
@@ -203,7 +137,7 @@
   },
   "cannotYet": [
     "Query ledgers, bank, tax, inventory and payroll runs, or list individual time entries: these cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. Time TOTALS CAN be read with getTimeSummary, invoices with getInvoices, quotes with getQuotes, and the user's own Calendar with getCalendar.",
-    "Create, edit, send, convert or post payments on invoices and quotes, or create receipts or payroll, directly as writes (invoices and quotes can only be READ with getInvoices and getQuotes). Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
+    "Create, edit, send, convert or post payments on invoices and quotes, or create receipts or payroll, directly as writes (invoices and quotes can only be READ with getInvoices and getQuotes). Adding a contact is possible (createContact) and so is changing a contact's plain details (updateContact), but notes, SIN, pay and dates are entered on the contact form, and Employees and Contractors are added, renamed and moved on the Workers page (/workers). A contact cannot be deleted by the Co-Pilot.",
     "Send emails, notifications or file changes; manage users, tenants or settings.",
     "Delete a task, to-do, project or invoice, or change a task's title, client or project (changeEvent only MOVES or CANCELS the person's own scheduled calendar events, after a preview and a yes); point the user to the Calendar (/calendar), the To-Do List or the Project List. Invite or notify other people, or see anyone else's calendar."
   ]

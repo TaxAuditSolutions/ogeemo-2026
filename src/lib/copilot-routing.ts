@@ -38,12 +38,35 @@ export function isAwaitingAssistantReply(history: CopilotRoutingMessage[]): bool
  */
 const CONTACT_EDIT_PATTERN = /\bcontact\b/i;
 
+/**
+ * "Change Dana's phone to 555-0199", "update Jane's email", "remove the fax number from Sam" name a person and a
+ * detail but never say "contact", so the word alone missed them. A contact detail word plus a change verb counts.
+ * "Move" and "add" are left out here: they also mean moving a file or adding a task, and are read with "contact".
+ */
+const CONTACT_DETAIL = /\b(e-?mail|phone|cell|mobile|fax|extension|website|web ?site|address|postal code|zip|city|company name|business name|telephone|number)\b/i;
+const CHANGE_WORD = /\b(change|update|correct|fix|edit|modify|set|replace|remove|delete|clear|erase|drop)\b/i;
+/** Things a detail word can be about that are not a contact: invoices, quotes, ledgers, the user's own login. */
+const NOT_A_CONTACT_DETAIL = /\b(invoice|quote|receipt|ledger|payroll|password|account number|po box number|order number|work order|tax number|business number|gst|hst|sin|project|task|folder|template|workflow|shortcut)\b/i;
+/** "Dana's name" (a person's own name), as opposed to a project name or a folder name. */
+const PERSONS_NAME = /\b[A-Za-z]+['\u2019]s (full |last |first )?name\b/i;
+
+export function isContactDetailChange(message: string): boolean {
+    const text = (message || '').trim();
+    if (!text || NOT_A_CONTACT_DETAIL.test(text)) return false;
+    if (/^\s*(how|what|where|why|when|can you explain)\b/i.test(text) || /\?\s*$/.test(text)) return false;
+    if (!CHANGE_WORD.test(text) || !(CONTACT_DETAIL.test(text) || PERSONS_NAME.test(text))) return false;
+    return /\b\w+['\u2019]s\b|\b(for|of|from|to|on)\s+[A-Z][a-z]+/.test(text);
+}
+
 export function isContactEditRequest(message: string): boolean {
     const text = (message || '').trim();
+    if (isContactDetailChange(text)) return true;
     if (!CONTACT_EDIT_PATTERN.test(text)) return false;
     if (/\b(edit|update|modify|change)\b/i.test(text)) return true;
     // Phrases like "add [an email / a phone] to the contact ..." are editing requests
     if (/\badd\b[\s\S]+\bto\s+(?:the\s+)?contact\b/i.test(text)) return true;
+    // ...and so is "add a phone number to Jane Doe's contact" (a possessive, so it is a person and not "my contacts")
+    if (/\badd\b[\s\S]+\bto\s+(?:the\s+)?[A-Za-z][A-Za-z.\- ]{0,40}['\u2019]s\s+contact\b/i.test(text)) return true;
     return false;
 }
 

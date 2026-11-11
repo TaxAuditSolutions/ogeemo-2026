@@ -166,6 +166,19 @@ repeat. It adds no power: the call must still equal the saved plan, be under 10 
 follow a yes the server read from the user's own message. The same note covers a contact change. Replaying the failing
 conversation against the live database afterwards moved the event.
 
+**The real cause of the failed "yes" (second find, same day).** The first fix above was not enough: the "yes" still failed in
+the browser. The saved chat showed why. In the real chat the model sometimes called only `getCalendar` and then WROTE the
+preview itself ("I can move ... Nothing has been changed yet. Shall I go ahead?"), so `changeEvent` never ran, nothing was
+saved to `aiPendingChanges`, and the "yes" had nothing to confirm. It happened with a long real history and not with a short
+test one, which is why the first replay passed. Fixed in two layers: (1) `isUnbackedPreview` (`src/ai/tool-trace.ts`): a reply
+that reads like a preview but followed no `changeEvent`/`updateContact` call is not shown; the agent is reminded once, in the
+same conversation, to call the tool, and if it still will not, the user gets "I could not prepare that change properly,
+nothing was changed" and never an unbacked preview. It is skipped whenever a tool that saves something already ran, so the
+retry cannot save a thing twice. (2) A "yes" with no saved preview behind it tells the model to say nothing was changed and
+to ask again, instead of guessing an id. Measured against the live database with the real 20-message history: 8 of 8 runs
+now end with a real preview saved (before: 0 of 4, then 3 of 6 saved nothing). `kb:tools` should be re-run once, since the
+retry adds one model call on those turns.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

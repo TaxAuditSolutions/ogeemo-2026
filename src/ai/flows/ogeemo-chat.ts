@@ -24,7 +24,7 @@ import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/
 import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
 import { buildScrubbedMessages } from '@/ai/capability-history';
-import { describeToolsCalled, emptyReplyMessage, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
+import { NOTHING_WAITING_NOTE, UNBACKED_PREVIEW_MESSAGE, UNBACKED_PREVIEW_NUDGE, describeToolsCalled, emptyReplyMessage, isUnbackedPreview, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
 import { savedRecord, type SavedRecord } from '@/lib/ai-open-record';
 import { pendingPreviewNote } from '@/lib/ai-pending-note';
 import { describeToolLimits, toolNamesForRole, unofferedToolReply } from '@/ai/tool-access';
@@ -786,6 +786,9 @@ const ogeemoAgentFlow = ai.defineFlow(
       try {
         const saved = await getAdminDb()?.collection('aiPendingChanges').doc(runtimeContext.userId).get();
         waiting = pendingPreviewNote(saved?.data(), runtimeContext.orgId);
+        // A yes with no saved preview behind it: the "preview" was never made by a tool (or has expired). Say so, so the
+        // model does not guess an id and call the tool; the user is simply asked to make the request again.
+        if (!waiting && saved) waiting = NOTHING_WAITING_NOTE;
       } catch (error) {
         console.warn('[ogeemoAgentFlow] could not read the waiting preview; the model will look it up instead');
       }
@@ -797,9 +800,9 @@ const ogeemoAgentFlow = ai.defineFlow(
     });
 
     try {
-      const generateOnce = () => ai.generate({
+      const generateOnce = (continueFrom?: any[]) => ai.generate({
         model: STABLE_GEMINI_MODEL,
-        messages: scrubbedMessages,
+        messages: continueFrom ?? scrubbedMessages,
         // Only the tools this role may use. Each tool still checks the role itself; not offering it is the stronger layer.
         tools: toolNamesForRole(runtimeContext?.accessLevel, Object.keys(AGENT_TOOLS)).map((name) => AGENT_TOOLS[name]),
         system: finalSystemPrompt,
@@ -829,11 +832,25 @@ const ogeemoAgentFlow = ai.defineFlow(
         called = toolsCalled(result.messages);
       }
 
+      // A preview is only real when changeEvent or updateContact made it: that call saves the plan the user's yes will
+      // confirm. With a long history the model sometimes read the calendar and then WROTE the preview itself, so the
+      // yes had nothing behind it (found live). Nothing has been written yet, so ask once more, pointing at the tool;
+      // and if it still will not, never show the unbacked preview.
+      let reply = result.text;
+      if (isUnbackedPreview(reply, called)) {
+        console.warn('[ogeemoAgentFlow] reply is a preview no tool made; retrying once with a reminder');
+        // The turns so far, without any system message (the system prompt is sent as its own option), plus the reminder.
+        const turnsSoFar = result.messages.filter((m: any) => m?.role !== 'system');
+        result = await generateOnce([...turnsSoFar, { role: 'user', content: [{ text: UNBACKED_PREVIEW_NUDGE }] }]);
+        called = toolsCalled(result.messages);
+        reply = isUnbackedPreview(result.text, called) ? UNBACKED_PREVIEW_MESSAGE : result.text;
+      }
+
       // Which tools it chose, by name only (never the arguments, which can hold client names and amounts).
       console.info(`[ogeemoAgentFlow] tools called: ${describeToolsCalled(called)}`);
       // The id of a contact or project a tool saved, read from the tool's own result (never from the model's words).
       const saved = savedRecord(result.messages);
-      return { reply: result.text.trim() ? result.text : emptyReplyMessage(called), toolsCalled: called, ...(saved ? { saved } : {}) };
+      return { reply: reply.trim() ? reply : emptyReplyMessage(called), toolsCalled: called, ...(saved ? { saved } : {}) };
     } catch (error: any) {
       // The model asked for a tool this role was not offered. That is a role limit, not an outage.
       const unoffered = unofferedToolReply(error);

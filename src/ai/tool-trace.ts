@@ -6,6 +6,8 @@
  * called, so the server can log them and the eval can check them. Only names leave here: never the arguments, which can
  * hold client names and amounts.
  */
+import { isPreviewReply } from '@/lib/ai-confirm';
+
 const NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
 
 /** The tool names called in `messages`, in order, repeats kept. Anything that is not a plain tool name is dropped. */
@@ -47,6 +49,34 @@ export function emptyReplyMessage(called: readonly string[]): string {
   }
   return 'I could not put together an answer to that, and nothing was changed. Please try asking again, or say it a little differently.';
 }
+
+/** The tools that make a PREVIEW of a change (and, after a yes, make the change). */
+const PREVIEW_TOOLS = ['changeEvent', 'updateContact'];
+
+/**
+ * True when the reply reads like a preview ("Nothing has been changed yet. Shall I go ahead?") but neither preview tool
+ * ran. A preview is only real when the tool made it: the tool saves the exact plan that the user's next "yes" confirms.
+ * Found live on 11 Nov 2026: with a long chat history the model called only getCalendar and WROTE the preview itself,
+ * so the "yes" had nothing to confirm and was refused. Never true for a reply that followed a tool that saves something
+ * else, so the caller can retry without risk of a repeated write.
+ */
+export function isUnbackedPreview(text: unknown, called: readonly string[]): boolean {
+  if (typeof text !== 'string' || !isPreviewReply(text)) return false;
+  if (called.some((name) => PREVIEW_TOOLS.includes(name))) return false;
+  return !called.some((name) => WRITES.has(name));
+}
+
+/** The extra instruction for the one retry: what went wrong and the only way to put it right. */
+export const UNBACKED_PREVIEW_NUDGE =
+  '[System reminder, not from the user] You wrote a preview in words without calling changeEvent (or updateContact). A preview only exists when that tool makes it, because the tool saves the plan the user\'s yes will confirm. Call changeEvent now (or updateContact) for the change the user asked for, using the id you just read, and show only what the tool returns.';
+
+/** What the user is told when even the retry produced no real preview. It never shows an unbacked preview. */
+export const UNBACKED_PREVIEW_MESSAGE =
+  'I could not prepare that change properly, so nothing was changed and there is nothing to confirm. Please ask again, for example "Move my 4pm meeting tomorrow to 5pm".';
+
+/** What the model is told on a plain yes to a preview when the server holds no saved preview for it. */
+export const NOTHING_WAITING_NOTE =
+  'The user said yes to a preview, but no preview is saved for them (it may have expired, or was never made by a tool). Do not call changeEvent or updateContact. Tell the user plainly that nothing was changed and ask them to make the request again.';
 
 /** "searchContacts, getInvoices" for a log line, or "none". */
 export function describeToolsCalled(names: readonly string[]): string {

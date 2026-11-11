@@ -22,7 +22,7 @@ import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
 import { buildScrubbedMessages } from '@/ai/capability-history';
 import { describeToolsCalled, emptyReplyMessage, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
-import { toolNamesForRole } from '@/ai/tool-access';
+import { describeToolLimits, toolNamesForRole, unofferedToolReply } from '@/ai/tool-access';
 import fs from 'fs';
 import path from 'path';
 
@@ -713,8 +713,9 @@ const ogeemoAgentFlow = ai.defineFlow(
     const scrubbedMessages = buildScrubbedMessages(history, message);
 
     const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/co-pilot');
+    const limits = describeToolLimits(runtimeContext?.accessLevel, Object.keys(AGENT_TOOLS));
     const finalSystemPrompt = fillTemplate(systemPromptTemplate, {
-      runtimeContext: describeRuntime(runtimeContext, runtimeContext?.userId),
+      runtimeContext: [describeRuntime(runtimeContext, runtimeContext?.userId), limits].filter(Boolean).join('\n'),
       pageGuidance,
       knowledgeBase: getKnowledgeBase(),
     });
@@ -751,6 +752,12 @@ const ogeemoAgentFlow = ai.defineFlow(
       console.info(`[ogeemoAgentFlow] tools called: ${describeToolsCalled(called)}`);
       return { reply: result.text.trim() ? result.text : emptyReplyMessage(called), toolsCalled: called };
     } catch (error: any) {
+      // The model asked for a tool this role was not offered. That is a role limit, not an outage.
+      const unoffered = unofferedToolReply(error);
+      if (unoffered) {
+        console.warn(`[ogeemoAgentFlow] model asked for ${unoffered.tool}, which this role is not offered`);
+        return { reply: unoffered.reply, toolsCalled: [] };
+      }
       console.error("[ogeemoAgentFlow] Model call failed:", error);
       throw new Error(friendlyAiError(error));
     }

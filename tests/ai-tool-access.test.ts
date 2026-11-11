@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
-import { TOOL_ACCESS, toolNamesForRole } from '../src/ai/tool-access';
+import { TOOL_ACCESS, describeToolLimits, toolNamesForRole, unofferedToolReply } from '../src/ai/tool-access';
 
 const ALL = Object.keys(TOOL_ACCESS);
 const WRITES = ['createTask', 'createProject', 'createContact', 'createAppointment'];
@@ -45,4 +45,35 @@ test('the agent offers tools through this filter, not a fixed list', () => {
   const source = fs.readFileSync('src/ai/flows/ogeemo-chat.ts', 'utf8');
   assert.match(source, /toolNamesForRole\(\s*runtimeContext\?\.accessLevel/);
   assert.ok(!/tools:\s*\[searchGlobalTool/.test(source), 'a fixed tools list is back in the agent');
+});
+
+test('a viewer is told in the prompt what their role cannot do, and an editor is told nothing', () => {
+  const limits = describeToolLimits('viewer', ALL);
+  for (const phrase of ['make a to-do or task', 'add a project', 'add a contact', 'book an appointment', 'read invoices', 'read quotes']) assert.match(limits, new RegExp(phrase));
+  assert.match(limits, /editor or administrator/);
+  for (const role of ['editor', 'org_admin', 'super_admin']) assert.equal(describeToolLimits(role, ALL), '', role);
+  assert.match(describeToolLimits(undefined, ALL), /make a to-do or task/, 'an unknown role is limited like a viewer');
+  assert.equal(describeToolLimits('viewer', ['searchGlobal', 'getCalendar']), '', 'nothing withheld, nothing said');
+});
+
+test('a request for a tool the role was not offered is answered as a role limit, never as an outage', () => {
+  const thrown = { originalMessage: 'Tool getInvoices not found', status: 'NOT_FOUND', code: 404 };
+  const reply = unofferedToolReply(thrown);
+  assert.equal(reply?.tool, 'getInvoices');
+  assert.match(reply?.reply ?? '', /cannot read invoices/);
+  assert.ok(!/unresponsive|service/i.test(reply?.reply ?? ''), 'must not blame the AI service');
+  assert.equal(unofferedToolReply({ message: 'Tool createTask not found' })?.tool, 'createTask', 'the message field works too');
+  assert.match(unofferedToolReply(new Error('Tool createContact not found'))?.reply ?? '', /cannot add a contact/);
+});
+
+test('any other error is left alone, including a not-found for something that is not one of our tools', () => {
+  for (const other of [new Error('429 resource exhausted'), new Error('Tool exploitTool not found'), { originalMessage: 'Tool  not found' }, { originalMessage: 'The Tool getInvoices not found' }, null, undefined, 'Tool getInvoices not found', 42]) {
+    assert.equal(unofferedToolReply(other), null, String(JSON.stringify(other)));
+  }
+});
+
+test('the agent passes the role limits to the model and catches a request for an unoffered tool', () => {
+  const source = fs.readFileSync('src/ai/flows/ogeemo-chat.ts', 'utf8');
+  assert.match(source, /describeToolLimits\(runtimeContext\?\.accessLevel/);
+  assert.match(source, /unofferedToolReply\(error\)/);
 });

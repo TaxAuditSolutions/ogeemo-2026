@@ -63,6 +63,16 @@ other phrasings of the same question are stable.
 - A viewer asking for a to-do made the model call `createTask` anyway (the tool refused, but it was tried). A viewer is
   now simply **not offered** the write tools or the invoice and quote tools (`src/ai/tool-access.ts`); the tools keep
   their own checks as a second layer. `npm test` fails if a tool is added without being classified there.
+- Taking the tools away exposed two follow-on problems, found by asking a viewer questions by hand (the eval cannot see
+  them, because it grades tool calls and not the words): (1) the model reads the tool names in the knowledge files and
+  sometimes still asks for one it was not given, and Genkit's "Tool getInvoices not found" reached the user as "the
+  Google AI service is currently unresponsive", an outage that never happened; it is now caught and answered as a role
+  limit. (2) The knowledge files describe every tool, so a viewer was told "I can add contacts and make tasks"; the
+  prompt now carries a `toolLimits:` line naming what that role cannot do. After the change a viewer asking what the
+  Co-Pilot can do is told only search, calendar, time and explaining; asking to book, add a contact or add a project is
+  declined (twice out of twice in the last spot check; the model sometimes asks for the title first, which is harmless
+  because nothing can be saved). **Open item:** "what can you do?" still shows "Syncing receipts" to a viewer, which
+  is correct (the tool is offered to everyone) but unverified in practice.
 - The model sometimes returned no words and no tool call, and the server then said "I processed your request",
   claiming success it had not checked. It now retries once **only if no tool ran** (a retry after a write could save
   the record twice), and otherwise says plainly that nothing was changed, or, if a saving tool ran, that it cannot

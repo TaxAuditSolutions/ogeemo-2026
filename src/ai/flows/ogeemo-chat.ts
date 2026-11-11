@@ -26,6 +26,7 @@ import { allMenuItems } from '@/lib/menu-items';
 import { buildScrubbedMessages } from '@/ai/capability-history';
 import { describeToolsCalled, emptyReplyMessage, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
 import { savedRecord, type SavedRecord } from '@/lib/ai-open-record';
+import { pendingPreviewNote } from '@/lib/ai-pending-note';
 import { describeToolLimits, toolNamesForRole, unofferedToolReply } from '@/ai/tool-access';
 import fs from 'fs';
 import path from 'path';
@@ -778,8 +779,19 @@ const ogeemoAgentFlow = ai.defineFlow(
 
     const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/co-pilot');
     const limits = describeToolLimits(runtimeContext?.accessLevel, Object.keys(AGENT_TOOLS));
+    // On a plain yes to a preview, say which change is waiting. The history holds only the preview's words, so without
+    // this the model had no event id to pass and sometimes made one up (the server refused it; nothing was lost).
+    let waiting = '';
+    if (isConfirmingPreview(history, message) && runtimeContext?.userId) {
+      try {
+        const saved = await getAdminDb()?.collection('aiPendingChanges').doc(runtimeContext.userId).get();
+        waiting = pendingPreviewNote(saved?.data(), runtimeContext.orgId);
+      } catch (error) {
+        console.warn('[ogeemoAgentFlow] could not read the waiting preview; the model will look it up instead');
+      }
+    }
     const finalSystemPrompt = fillTemplate(systemPromptTemplate, {
-      runtimeContext: [describeRuntime(runtimeContext, runtimeContext?.userId), limits].filter(Boolean).join('\n'),
+      runtimeContext: [describeRuntime(runtimeContext, runtimeContext?.userId), limits, waiting].filter(Boolean).join('\n'),
       pageGuidance,
       knowledgeBase: getKnowledgeBase(),
     });

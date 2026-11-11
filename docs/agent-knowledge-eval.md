@@ -157,6 +157,15 @@ What does NOT auto-open, deliberately: advice the command processor wrote ("You 
 Click ..."), a link to another site (a pop-up, blocked by browsers), asking for the page you are already on, and anything
 that is a question ("how do I open ...") or a contact request (those go to the Co-Pilot's tools and show previews).
 
+**"Yes" after a preview (found live, 11 Nov 2026).** "Move my 3pm meeting tomorrow to 4pm" previewed correctly, but the
+"yes" got "I was unable to move ... not one of your own scheduled events". The server's checks were right to refuse: the
+chat history holds only the preview's WORDS, never the event's id, so on the "yes" turn the model had no id and passed a
+wrong one. Fixed by `pendingPreviewNote` (`src/lib/ai-pending-note.ts`): on a plain yes to a preview, the server reads
+the plan it saved itself (`aiPendingChanges/<user>`) and tells the model, for that one turn, the exact id and times to
+repeat. It adds no power: the call must still equal the saved plan, be under 10 minutes old, be for this workspace, and
+follow a yes the server read from the user's own message. The same note covers a contact change. Replaying the failing
+conversation against the live database afterwards moved the event.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

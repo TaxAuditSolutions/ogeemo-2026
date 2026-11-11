@@ -21,6 +21,8 @@ import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/
 import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
 import { buildScrubbedMessages } from '@/ai/capability-history';
+import { describeToolsCalled, emptyReplyMessage, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
+import { toolNamesForRole } from '@/ai/tool-access';
 import fs from 'fs';
 import path from 'path';
 
@@ -207,7 +209,7 @@ const createProjectTool = ai.defineTool(
 const getTimeSummaryTool = ai.defineTool(
   {
     name: 'getTimeSummary',
-    description: 'Adds up the user\'s recorded time: hours worked, billable hours, UNBILLED hours and their dollar value (what is ready to invoice), hours already invoiced, and unbilled hours per client. Use it for "how many hours did I work this week", "what is unbilled", "how much can I bill Dana". It reads the same time as the Time Log Report with the same billing rules, and counts only time actually worked (scheduled-but-not-worked is reported separately). By default it is the user\'s OWN time; scope \'workspace\' is for an administrator asking about everyone. Read-only. Convert words like "this week" or "last month" into from/to dates using the Runtime Operating Context.',
+    description: 'Adds up the user\'s recorded time: hours worked, billable hours, UNBILLED hours and their dollar value (what is ready to invoice), hours already invoiced, and unbilled hours per client. Use it for "how many hours did I work this week", "how much can I bill Dana", and "what is unbilled" / "what do I have unbilled" (that is a question about the user\'s own figures, not a definition: answer it with this tool). It reads the same time as the Time Log Report with the same billing rules, and counts only time actually worked (scheduled-but-not-worked is reported separately). By default it is the user\'s OWN time; scope \'workspace\' is for an administrator asking about everyone. Read-only. Convert words like "this week" or "last month" into from/to dates using the Runtime Operating Context.',
     inputSchema: z.object({
       from: z.string().optional().describe('First day, YYYY-MM-DD in the user\'s time zone; all dates when omitted'),
       to: z.string().optional().describe('Last day, inclusive, YYYY-MM-DD; today when only from is given'),
@@ -269,7 +271,7 @@ const getQuotesTool = ai.defineTool(
 const searchKnowledgeTool = ai.defineTool(
   {
     name: 'searchKnowledge',
-    description: 'Searches the reviewed Ogeemo Knowledge Base for how a feature works, the business rules behind it and the screen to use. Use it for how-to and "why" questions, and before telling a user how to do something the four built-in knowledge documents do not cover in detail (invoices, quotes, payroll, time, workflows, documents and so on). Read-only. Answer only from what it returns.',
+    description: 'Searches the reviewed Ogeemo Knowledge Base for how a feature works, the business rules behind it and the screen to use. Use it ONLY to explain how Ogeemo works (how-to and "why" questions, such as "how does payroll work" or "why can I not delete this"). Do NOT use it to answer a question about the user\'s own figures or records (hours, unbilled time, invoices, quotes, calendar, contacts): those have their own tools, such as getTimeSummary, getInvoices, getQuotes and getCalendar. Read-only. Answer only from what it returns.',
     inputSchema: z.object({
       question: z.string().describe('The user\'s question or the topic, in a few words'),
     }),
@@ -284,6 +286,22 @@ const searchKnowledgeTool = ai.defineTool(
 
 
 // --- Agent Logic ---
+
+/** Every tool by name, so the ones offered can be chosen by role (see src/ai/tool-access.ts). */
+const AGENT_TOOLS: Record<string, any> = {
+  searchGlobal: searchGlobalTool,
+  searchContacts: searchContactsTool,
+  createTask: createTaskTool,
+  createProject: createProjectTool,
+  createContact: createContactTool,
+  createAppointment: createAppointmentTool,
+  getCalendar: getCalendarTool,
+  getTimeSummary: getTimeSummaryTool,
+  getInvoices: getInvoicesTool,
+  getQuotes: getQuotesTool,
+  searchKnowledge: searchKnowledgeTool,
+  syncReceipts: syncReceiptsTool,
+};
 
 function getKnowledgeBase(): string {
   try {
@@ -356,7 +374,7 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 7. **Intelligence Launcher**: If the user searches for a name (via searchGlobal or searchContacts) and a result is a Contact, you MUST append the following tag to the very end of your response for each matching contact: [[LAUNCH_REGISTRY:contact-id]], using the real id from the tool result and never an id you made up. Keep your text response very brief (e.g., "I found 2 matches for Dana:"). Let the Launcher Chips handle all the details. If nothing was found, say so and add no tag.
 8. **Operating Awareness**: Stay within the user's active tenant and role. Do not claim access you do not have. If the user asks for a cross-tenant or restricted action, explain the limitation and suggest the correct tenant or route.
 9. **Screen-Scoped Advice**: Use the Page Guidance above to tailor your answer to the current screen. Do not suggest a tenant-management or super-admin action from a regular user page unless the user explicitly has the proper access and asks for it.
-10. **Questions vs. Requests**: Distinguish information questions from action requests. If the user asks "how do I...", "how do you...", "what is...", "where is...", or any other informational question, ANSWER it with clear step-by-step instructions from the Knowledge Base. Do NOT call tools or launch navigation for questions. When the message is an action request or operational command (e.g., "create a contact", "update Jane's phone", "schedule a meeting"), execute the action directly without asking for confirmation each time, and send clear feedback that the action or change has been performed after it has been completed.
+10. **Questions vs. Requests**: Distinguish information questions from action requests. If the user asks "how do I...", "how do you...", "what is BKS", "where is...", or any other question about how Ogeemo works, ANSWER it with clear step-by-step instructions from the Knowledge Base. Do NOT call tools or launch navigation for how-to questions. A question about the user's OWN figures or records ("what is unbilled", "what is overdue", "what is on my calendar", "how many hours did I work") is not a how-to question: answer it by calling the matching data tool (rules 20, 24 and 25). When the message is an action request or operational command (e.g., "create a contact", "update Jane's phone", "schedule a meeting"), execute the action directly without asking for confirmation each time, and send clear feedback that the action or change has been performed after it has been completed.
 
 11. **Knowledge Base Authority**: Treat the knowledge documents as the single source of truth: 02_ui_navigation_map.json for module names, labels and routes; 04_tool_definitions.json for which actions are executable. Never invent routes or tools. For anything listed under "cannotYet", say it is not available yet and answer with the UI path from 03_operational_qna.md instead.
 
@@ -371,9 +389,9 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 20. **Reading the Calendar**: For "what is on tomorrow", "am I free at 3" or "what do I have this week", call getCalendar (a date as YYYY-MM-DD and a number of days) and answer only from what it returns. It shows only the signed-in person's own events. You cannot change or cancel an existing event yet; say so and point to the Calendar (/calendar).
 21. **To-Dos and Tasks**: When the user asks you to make, add or create a to-do, a task or a reminder ("make a to-do", "add a to-do: call the bank", "remind me to call Dana on Friday"), call createTask yourself; do not send them to a screen. It needs only a title; if the title is missing, ask one short question ("What should the to-do say?"). With no date and no project it lands on the To-Do List (/to-do). Pass startTime only if the user gave a day, and then it needs a time of day too. To tie it to a person or project, call searchContacts or searchGlobal first and pass the real id. Only say it was created if createTask returned success, and name where it is (the To-Do List, or the Calendar for a timed one).
 22. **Projects**: When the user asks you to add, create, make or start a project ("add a new project", "create a project called Website Redesign"), call createProject yourself. It needs only a name; if the name is missing, ask "What should the project be called?". Pass a description or a client only if the user gave one, and look the client up with searchContacts first. The project is saved with Planning status; tell the user it is on the Project List (/projects/all) and that its steps are planned in the Project Planner. If createProject says the name already exists, nothing was created: tell the user and call it again with allowDuplicate true only if they say yes. Only say a project was created if createProject returned success. You cannot yet edit, move, complete or delete a project; point to the Project List or the Project Board (/project-status).
+23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests, and do not use it when the user is asking about their own figures or records ("what is unbilled", "who owes me", "what is on my calendar"): use the matching data tool instead.
 24. **Hours and Unbilled Time**: For "how many hours did I work", "what is unbilled", "how much can I bill Dana" or similar, call getTimeSummary and answer only from its figures; never add up or estimate hours yourself. Work out "this week", "last month" or "this year" as from/to dates from the current date in the Runtime Operating Context. For one client call searchContacts first and pass the real id. It returns the user's OWN time; only if the user is an org_admin or super_admin and asks about the whole workspace or everyone, pass scope "workspace". If the tool says the figures are the user's own because only an administrator can see the workspace, tell them so. Quote hours to two decimals and money in dollars. "Unbilled" means worked, billable, with a client and not yet on an invoice; mention the separate lines it reports for billable time with no client (cannot be invoiced yet) and for scheduled-but-not-worked time (not counted). It cannot show individual entries, invoice lists or payroll: point to the Time Log Report (/reports/time-log) for the rows.
 25. **Invoices and Quotes**: For "who owes me money", "what is overdue", "has Dana paid", "what is the status of INV-1042", "what quotes are open" or "which quotes need follow-up", call getInvoices or getQuotes and answer only from what they return; never add up amounts or work out overdue days yourself. For one client call searchContacts first and pass the real id. Quote money to the cent in dollars and give the invoice or quote number so the user can find it. "Overdue" means the due date is past and money is still owed. These are for editors and administrators; if the tool says the role or menu access does not allow it, say so plainly and do not guess. You can only read them: you cannot post a payment, send, approve, convert or change an invoice or quote; point to Accounts Receivable (/accounting/accounts-receivable) or the Quote Manager (/accounting/quotes) for that.
-23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -688,7 +706,7 @@ const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
     inputSchema: OgeemoAgentInputSchema,
-    outputSchema: z.object({ reply: z.string() }),
+    outputSchema: z.object({ reply: z.string(), toolsCalled: z.array(z.string()).optional() }),
   },
   async (input) => {
     const { message, history, runtimeContext } = input;
@@ -702,10 +720,11 @@ const ogeemoAgentFlow = ai.defineFlow(
     });
 
     try {
-      const result = await ai.generate({
+      const generateOnce = () => ai.generate({
         model: STABLE_GEMINI_MODEL,
         messages: scrubbedMessages,
-        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createProjectTool, createContactTool, createAppointmentTool, getCalendarTool, getTimeSummaryTool, getInvoicesTool, getQuotesTool, searchKnowledgeTool, syncReceiptsTool],
+        // Only the tools this role may use. Each tool still checks the role itself; not offering it is the stronger layer.
+        tools: toolNamesForRole(runtimeContext?.accessLevel, Object.keys(AGENT_TOOLS)).map((name) => AGENT_TOOLS[name]),
         system: finalSystemPrompt,
         // The tools learn who is asking from here, never from the model's arguments. Without this they received an
         // empty context and every tool except the search refused with "not authenticated".
@@ -718,7 +737,19 @@ const ogeemoAgentFlow = ai.defineFlow(
         config: { temperature: 0.1 },
       });
 
-      return { reply: result.text || "I processed your request." };
+      let result = await generateOnce();
+      let called = toolsCalled(result.messages);
+      // The model sometimes comes back with no words and no tool call at all. Nothing has happened yet, so one more try is
+      // safe (never after a tool ran: a retry after a write could save it twice).
+      if (shouldRetryEmptyReply(result.text, called)) {
+        console.warn('[ogeemoAgentFlow] empty reply with no tool call; retrying once');
+        result = await generateOnce();
+        called = toolsCalled(result.messages);
+      }
+
+      // Which tools it chose, by name only (never the arguments, which can hold client names and amounts).
+      console.info(`[ogeemoAgentFlow] tools called: ${describeToolsCalled(called)}`);
+      return { reply: result.text.trim() ? result.text : emptyReplyMessage(called), toolsCalled: called };
     } catch (error: any) {
       console.error("[ogeemoAgentFlow] Model call failed:", error);
       throw new Error(friendlyAiError(error));
@@ -756,7 +787,7 @@ const ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow(
  * Runs the Co-Pilot agent. `runtimeContext` must come from the server session (see trustedRuntimeContext), because
  * the tools act on its workspace and the model reads its role as a fact.
  */
-export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string }> {
+export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string; toolsCalled?: string[] }> {
   return ogeemoAgentFlow(input);
 }
 

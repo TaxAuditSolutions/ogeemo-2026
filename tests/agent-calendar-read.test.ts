@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { getCalendarHandler } from '../src/ai/agent-calendar-tool';
+import { toolNamesForRole } from '../src/ai/tool-access';
 import { readToolContext } from '../src/lib/ai-runtime';
 import { fakeDb } from './fake-db';
 
@@ -60,7 +61,11 @@ test('reading refuses a bad date, a missing identity and a missing database', as
 
 test('the agent offers both calendar tools and the Co-Pilot is told how to use them', () => {
   const agent = fs.readFileSync('src/ai/flows/ogeemo-chat.ts', 'utf8');
-  assert.match(agent, /tools: \[[^\]]*createAppointmentTool[^\]]*getCalendarTool[^\]]*\]/);
+  // The tools are registered by name and offered through the role filter (src/ai/tool-access.ts), not a fixed array.
+  assert.match(agent, /createAppointment: createAppointmentTool/);
+  assert.match(agent, /getCalendar: getCalendarTool/);
+  assert.deepEqual(toolNamesForRole('editor', ['createAppointment', 'getCalendar']), ['createAppointment', 'getCalendar']);
+  assert.deepEqual(toolNamesForRole('viewer', ['createAppointment', 'getCalendar']), ['getCalendar'], 'a viewer may read the calendar but not book');
   assert.ok(agent.includes('createAppointmentHandler(') && agent.includes('getCalendarHandler('));
   assert.match(agent, /\*\*Appointments\*\*/);
 });

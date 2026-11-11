@@ -83,3 +83,11 @@ test('the receipt folder lists no made-up files and Drive extraction returns no 
   const ocr = read('src/app/actions/ocr-actions.ts');
   assert.ok(!ocr.includes('mockExtraction') && !ocr.includes('Math.random'), 'the invented invoice is back');
 });
+
+test('the agent retries an empty reply once, only before any tool ran, and never claims success on an empty reply', () => {
+  const source = code('src/ai/flows/ogeemo-chat.ts');
+  assert.match(source, /shouldRetryEmptyReply\(result\.text, called\)/, 'the empty-reply retry is gone');
+  assert.match(source, /emptyReplyMessage\(called\)/, 'the honest empty-reply message is gone');
+  assert.ok(!source.includes('I processed your request.", toolsCalled'), 'the false-success message is back on the tool agent');
+  assert.ok(!/result\.text\s*\|\|\s*"I processed your request\."/.test(source.split('ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow')[0]), 'the tool agent says it processed a request it may not have');
+});

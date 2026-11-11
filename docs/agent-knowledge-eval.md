@@ -35,9 +35,48 @@ via `npm run kb:eval`) and tick what you see. Any ✗ = fix before shipping
 | 9 | "How do workflows work?" | `/workflows`; apply/restore sidebar; default five listed correctly |
 | 10 | "Who is [a contact name]?" | `searchGlobal` **first** (search-first rule), then launcher tags |
 
-**Prompt-size budget:** knowledge loads with every request — keep the four
-files lean (target < 6k tokens total). If a file balloons, split by intent or
-trim prose, don't move facts into more files.
+## Tool-choice eval (`npm run kb:tools`)
+
+The golden questions above grade answers by hand. This one grades **which tool the model reaches for first**, by
+machine: `src/ai/tool-eval-cases.ts` holds 30 cases (a message, a role, the acceptable first tool, and tools that must
+never be called), `scripts/run-tool-eval.ts` runs them through the real agent with credentials stripped (nothing can
+read or write real data), and `src/ai/tool-eval.ts` grades them.
+
+- `npm run kb:tools` runs every case once. `npm run kb:tools -- unbilled` runs the cases whose id contains the text.
+- `npm run kb:tools -- --runs 5` runs each case five times and reports PASS (all runs right), FLAKY (some) or FAIL
+  (none). **Use `--runs` to judge a prompt change**: the model is not deterministic, and one run cannot tell a fix from
+  luck. Five runs of 30 cases takes about 8 minutes and about 150 model calls.
+- Results are written to `scratch/tool-eval-results.md`; the exit code is non-zero if any case is not stable.
+- Only the first call is graded, because with no database later steps of a chain fail. Writes are checked by the
+  `forbid` lists (for example, "move my 3pm" must not call `createAppointment`).
+- `npm test` fails if a tool exists with no case expecting it first, or if a case names a tool that does not exist, so a
+  new tool cannot ship unevaluated. Add a case when you add a tool.
+- Every server reply now logs `[ogeemoAgentFlow] tools called: ...` (names only, never arguments), so a real
+  conversation can be checked the same way.
+
+Baseline on 11 Nov 2026 with `--runs 5`: 29 of 30 cases stable. The one flaky case, "What is unbilled?", reaches for
+`searchKnowledge` (to define the word) instead of `getTimeSummary` about 1 time in 10, after three prompt changes; the
+other phrasings of the same question are stable.
+
+**What the eval found and what was done about it**
+
+- A viewer asking for a to-do made the model call `createTask` anyway (the tool refused, but it was tried). A viewer is
+  now simply **not offered** the write tools or the invoice and quote tools (`src/ai/tool-access.ts`); the tools keep
+  their own checks as a second layer. `npm test` fails if a tool is added without being classified there.
+- The model sometimes returned no words and no tool call, and the server then said "I processed your request",
+  claiming success it had not checked. It now retries once **only if no tool ran** (a retry after a write could save
+  the record twice), and otherwise says plainly that nothing was changed, or, if a saving tool ran, that it cannot
+  confirm and the user should check before asking again.
+- The prompt's Rules were numbered 1 to 22, then 24, 25, then 23, and one rule refers to others by number. They now run
+  1 to 25 in order and `npm test` keeps them that way.
+
+**Prompt-size budget:** the knowledge files load with every request. The goal above (under 6,000 tokens) is **not met**:
+measured on 11 Nov 2026 the four files are about 9,500 tokens, the system prompt rules about 2,600 and the 12 tool
+descriptions about 1,600, roughly 13,700 tokens before the conversation. `tests/prompt-budget.test.ts` now sets a
+ceiling just above today's size, so growth fails the build until someone trims or raises the number on purpose.
+The largest saving is available in `04_tool_definitions.json` (about 3,900 tokens), which repeats what Genkit already
+sends as each tool's own schema; trimming it is the way back toward the goal, but it also carries the `cannotYet`
+list the Co-Pilot quotes, so trim it with `kb:tools --runs 5` and golden question 4 alongside.
 
 **Sync rule:** code changed? update the knowledge files **in the same
 commit** — `npm test` enforces it (routes, labels, tool parity, vocabulary).

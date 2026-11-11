@@ -13,6 +13,7 @@
     "deploy:app": "npx firebase-tools deploy --only hosting,firestore:rules,storage",
     "test": "node --import tsx --test tests/*.test.ts",
     "kb:eval": "node --import tsx scripts/run-kb-eval.ts",
+    "kb:tools": "node --import tsx scripts/run-tool-eval.ts",
     "knowledge:sync": "node --import tsx scripts/sync-knowledge-base.ts",
     "contacts:orphans": "node --import tsx scripts/clean-orphaned-contacts.ts",
     "access:cleanup": "node --import tsx scripts/clean-access-data.ts",

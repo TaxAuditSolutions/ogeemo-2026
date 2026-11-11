@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { createContactHandler } from '../src/ai/agent-contact-tool';
+import { toolNamesForRole } from '../src/ai/tool-access';
 import { readToolContext } from '../src/lib/ai-runtime';
 import { fakeDb } from './fake-db';
 
@@ -83,7 +84,10 @@ test('a failed save says the contact was not saved', async () => {
 
 test('the agent offers the tool, the Contacts Hub shares the keyword builder, and the route has no draft detour', () => {
   const agent = fs.readFileSync('src/ai/flows/ogeemo-chat.ts', 'utf8');
-  assert.match(agent, /tools: \[[^\]]*createContactTool[^\]]*\]/);
+  // Registered by name and offered through the role filter (src/ai/tool-access.ts), not a fixed array.
+  assert.match(agent, /createContact: createContactTool/);
+  assert.deepEqual(toolNamesForRole('editor', ['createContact']), ['createContact']);
+  assert.deepEqual(toolNamesForRole('viewer', ['createContact']), [], 'a viewer is not offered the tool that adds a contact');
   assert.ok(agent.includes('createContactHandler('));
   const service = fs.readFileSync('src/services/contact-service.ts', 'utf8');
   assert.ok(service.includes("from '@/lib/contact-keywords'"));

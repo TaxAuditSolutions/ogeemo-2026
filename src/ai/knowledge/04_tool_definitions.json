@@ -92,6 +92,18 @@
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
     },
     {
+      "name": "getTimeSummary",
+      "description": "Adds up recorded time: hours worked, billable hours, unbilled hours and their value, hours already invoiced, and unbilled hours per client, for a date range and optionally one client.",
+      "inputs": {
+        "from": "YYYY-MM-DD (optional; all dates when omitted), in the user's time zone",
+        "to": "YYYY-MM-DD (optional; inclusive; today when only from is given)",
+        "contactId": "string (optional) - one client, must be a contact in this workspace, from searchContacts",
+        "scope": "'mine' or 'workspace' (optional) - 'workspace' is honoured for org_admin and super_admin only; everyone else always gets their own time"
+      },
+      "sideEffects": "Read-only (Firestore timeLogs and tasks, scoped to the user's workspace). It uses the Time Log Report's billing rules: unbilled means worked, billable, with a client and not yet on an invoice; scheduled-but-not-worked time is reported separately and never counted. By default a person sees only their OWN time because the figures carry billing rates; the whole workspace needs an administrator. It returns totals only (no individual entries) and at most 10 clients.",
+      "auth": "Requires a signed-in user inside a workspace; the workspace comes from the server session."
+    },
+    {
       "name": "searchKnowledge",
       "description": "Searches the reviewed Knowledge Base entries (every module's how-to and business rules) and returns up to three short passages.",
       "inputs": {
@@ -151,7 +163,7 @@
     ]
   },
   "cannotYet": [
-    "Query business data: time logs, unbilled totals, invoice lists and payroll runs cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. The user's own Calendar CAN be read with getCalendar.",
+    "Query invoice lists, quotes, ledgers and payroll runs, or list individual time entries: these cannot be read by tools yet - point the user to the relevant report/screen from 03_operational_qna.md. Time TOTALS (worked, billable and unbilled hours) CAN be read with getTimeSummary, and the user's own Calendar with getCalendar.",
     "Create or edit invoices, quotes, receipts or payroll directly as writes. Adding a contact is possible (createContact), but editing an existing contact is UI-assisted via the contactCapability flow, and Employees and Contractors are added on the Workers page (/workers).",
     "Send emails, notifications or file changes; manage users, tenants or settings.",
     "Modify, move, cancel or delete existing tasks, events or appointments (createTask and createAppointment only create); point the user to the Calendar (/calendar), where an event can be dragged or deleted. Invite or notify other people, or see anyone else's calendar."

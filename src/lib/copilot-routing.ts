@@ -102,6 +102,43 @@ export function isCalendarQuestion(message: string): boolean {
 }
 
 /**
+ * To-do and task requests ("make a to-do", "add a T-Do: call the bank", "create a task for Friday", "remind me to call
+ * Dana") belong in the Co-Pilot conversation, where createTask saves them. Left to the command processor they only
+ * opened the To-Do List or the Activity Manager. A creation word is required, so "open my tasks" stays navigation.
+ */
+const CREATE_VERB = /\b(create|make|new|add|set\s*up|start)\b/i;
+const TASK_NOUN = /\b(to[\s-]?do|t[\s-]?do|todo|tasks?|reminders?)\b/i;
+const NOT_A_RECORD_REQUEST = /\b(template|report|invoice|quote|form|agenda|timer|time\s*log|worksheet)\b/i;
+
+export function isTaskRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!text || NOT_A_RECORD_REQUEST.test(text)) return false;
+    if (/\bremind\s+me\b/i.test(text)) return true;
+    return CREATE_VERB.test(text) && TASK_NOUN.test(text);
+}
+
+/**
+ * Project-creation requests ("add a new project", "create a project called Website Redesign") are saved by the
+ * createProject tool. Asking for the form ("open the new project form") or anything about templates stays as it was.
+ */
+const PROJECT_NOUN = /\bprojects?\b/i;
+
+export function isProjectCreationRequest(message: string): boolean {
+    const text = (message || '').trim();
+    if (!text || NOT_A_RECORD_REQUEST.test(text) || isTaskRequest(text)) return false;
+    if (/\b(open|go|goto|show|view|launch|navigate)\b/i.test(text)) return false;
+    return CREATE_VERB.test(text) && PROJECT_NOUN.test(text);
+}
+
+/** The assistant just asked what to call a task or project, or whether to create a same-named one. */
+function isAnsweringTaskOrProjectQuestion(history: CopilotRoutingMessage[]): boolean {
+    const last = history[history.length - 1];
+    if (!last || last.role !== 'model') return false;
+    return /\b(project|task|to-?do|reminder)\b/i.test(last.content)
+        && /\b(what (should|would you like)|called|name|title|what time|which day|already exists|same name|anyway)\b/i.test(last.content);
+}
+
+/**
  * Outside an open assistant question the command processor still decides; inside
  * one only an explicit command verb may interrupt the conversation.
  */
@@ -110,7 +147,9 @@ export function shouldProcessAsCommand(message: string, history: CopilotRoutingM
     if (!text) return false;
     if (isContactCreationRequest(text) || isContactEditRequest(text)) return false;
     if (isAppointmentRequest(text) || isCalendarQuestion(text)) return false;
+    if (isTaskRequest(text) || isProjectCreationRequest(text)) return false;
     if (!isAwaitingAssistantReply(history)) return true;
+    if (isAnsweringTaskOrProjectQuestion(history)) return false;
     // Answering "book it anyway?" or "which time?" is part of the booking, not a new command.
     const activeAppointmentWorkflow = history.slice(-8).some((entry) =>
         /\b(appointment|booked|nothing was booked|overlaps|free time|next free|double.?book|what time)\b/i.test(entry.content)

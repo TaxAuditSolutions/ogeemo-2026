@@ -15,7 +15,7 @@
 **Assigning contact owners:** edit the contact record (owner/assignment fields live on the contact form).
 
 ## Projects & Tasks
-**How do I create a project?** Projects (`/projects/all`) → create, link client and details; Project Status (`/project-status`) shows progress.
+**How do I create a project?** Projects (`/projects/all`) → create, link client and details; Project Status (`/project-status`) shows progress. Or ask Co-Pilot ("add a new project called Website Redesign") and it uses `createProject` (editors and administrators only): it saves the project with Planning status and refuses a second project with the same name unless you say to go ahead. Plan the steps in the Project Planner afterwards.
 **How do I make a task?** To-Do List (`/to-do`) for personal tasks; Activity Manager (`/event-manager`) for work sessions - or ask Co-Pilot to `createTask` (editors and administrators only). It saves a to-do, or a scheduled event when you give a start time; "tomorrow at 3" is worked out from today's date and your time zone.
 **How do I set task due dates?** Tell Co-Pilot the date and time (for example "tomorrow at 3pm") when you ask for `createTask`, or edit the task on its board.
 **Action-to-Protocol:** park ideas on the Idea Board (`/idea-board`), then schedule them into time slots (Calendar `/calendar` or Activity Manager) to make them billable work.

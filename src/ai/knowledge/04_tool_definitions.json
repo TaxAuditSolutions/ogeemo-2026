@@ -78,6 +78,27 @@
       },
       "sideEffects": "WRITES a document to the Firestore 'tasks' collection with status 'todo', stamped with the workspace so the app lists it. A task with no date and no project is a To-Do List item. If the database is unavailable nothing is written and the reply says the task was NOT created.",
       "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
+    },
+    {
+      "name": "createProject",
+      "description": "Creates a project in the workspace's Project List and saves it with Planning status.",
+      "inputs": {
+        "name": "string (required)",
+        "description": "string (optional)",
+        "contactId": "string (optional) - the client; must be a contact in this workspace, from searchContacts",
+        "allowDuplicate": "boolean (optional) - true only after the user said to create it although a project with that name exists"
+      },
+      "sideEffects": "WRITES a document to the Firestore 'projects' collection with the same fields the New Project screen saves (Planning status, no steps, the workspace and the creator). It refuses a project whose name matches an existing one (case and spacing ignored) and writes nothing until allowDuplicate is true. It never plans steps: those are added in the Project Planner (/project-plan). If the database is unavailable nothing is written and the reply says the project was NOT created.",
+      "auth": "Requires a signed-in user in a workspace with the editor, org_admin or super_admin role; a viewer is refused."
+    },
+    {
+      "name": "searchKnowledge",
+      "description": "Searches the reviewed Knowledge Base entries (every module's how-to and business rules) and returns up to three short passages.",
+      "inputs": {
+        "question": "string - the user's question or topic in a few words"
+      },
+      "sideEffects": "Read-only. Returns only entries the user's role may read. It cannot read the user's own business data (time logs, invoices, payroll) - it explains how Ogeemo works. When nothing matches it says so and the Co-Pilot must not guess.",
+      "auth": "Requires a signed-in user."
     }
   ],
   "flows": [

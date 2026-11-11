@@ -35,6 +35,7 @@ const QUESTIONS: string[] = [
     'What is BKS?',
     'How do workflows work?',
     'Who is Dan?',
+    'What happens to my payroll deductions at year end?',
 ];
 
 async function main() {

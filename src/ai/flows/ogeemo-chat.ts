@@ -11,6 +11,9 @@ import { searchContactsHandler, searchGlobalHandler, syncReceiptsHandler } from 
 import { createTaskHandler } from '@/ai/agent-task-tool';
 import { createContactHandler } from '@/ai/agent-contact-tool';
 import { createAppointmentHandler, getCalendarHandler } from '@/ai/agent-calendar-tool';
+import { createProjectHandler } from '@/ai/agent-project-tool';
+import { searchKnowledgeHandler } from '@/ai/agent-knowledge-tool';
+import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
 import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/lib/ai-runtime';
 import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
@@ -179,6 +182,41 @@ const getCalendarTool = ai.defineTool(
   async (input, { context }) => getCalendarHandler(getAdminDb(), readToolContext(context), input)
 );
 
+const createProjectTool = ai.defineTool(
+  {
+    name: 'createProject',
+    description: 'Creates a new project in this workspace and saves it with Planning status. Use it when the user asks you to add, create, make or start a project. Only the name is required; add a description or a client only if the user gave one. For a client, call searchContacts first and pass that contact\'s real id. It refuses a project whose name already exists unless allowDuplicate is true. A to-do or task is not a project: use createTask.',
+    inputSchema: z.object({
+      name: z.string().describe('The project name'),
+      description: z.string().optional().describe('What the project is about, only if the user said'),
+      contactId: z.string().optional().describe('The ID of the client contact, from searchContacts'),
+      allowDuplicate: z.boolean().optional().describe('Set true only after the user said to create it although a project with that name exists'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      projectId: z.string().optional(),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => createProjectHandler(getAdminDb(), readToolContext(context), input)
+);
+
+const searchKnowledgeTool = ai.defineTool(
+  {
+    name: 'searchKnowledge',
+    description: 'Searches the reviewed Ogeemo Knowledge Base for how a feature works, the business rules behind it and the screen to use. Use it for how-to and "why" questions, and before telling a user how to do something the four built-in knowledge documents do not cover in detail (invoices, quotes, payroll, time, workflows, documents and so on). Read-only. Answer only from what it returns.',
+    inputSchema: z.object({
+      question: z.string().describe('The user\'s question or the topic, in a few words'),
+    }),
+    outputSchema: z.object({
+      success: z.boolean(),
+      passages: z.array(z.object({ title: z.string(), module: z.string(), routes: z.array(z.string()), content: z.string() })),
+      message: z.string(),
+    }),
+  },
+  async (input, { context }) => searchKnowledgeHandler(retrieveKnowledge, readToolContext(context), input)
+);
+
 
 // --- Agent Logic ---
 
@@ -266,6 +304,9 @@ You are Ogeemo, the flagship AI assistant for the Ogeemo platform. Your goal is 
 18. **Appointments**: When the user asks you to book, schedule, make or set up an appointment, meeting or call at a day and time, call createAppointment yourself. It needs a title and a day AND a time of day; if either is missing, ask one short question. The length defaults to an hour; use the length the user gave. To tie it to a person, call searchContacts first and pass that contact's real id. Only say it is booked if createAppointment returned success. A plain to-do or a reminder with no time is a task: use createTask.
 19. **Overlaps**: If createAppointment says the time overlaps something, nothing was booked. Tell the user what it overlaps, offer the free time it suggests or ask for another, and call it again with allowDoubleBooking true only if the user says to book it anyway.
 20. **Reading the Calendar**: For "what is on tomorrow", "am I free at 3" or "what do I have this week", call getCalendar (a date as YYYY-MM-DD and a number of days) and answer only from what it returns. It shows only the signed-in person's own events. You cannot change or cancel an existing event yet; say so and point to the Calendar (/calendar).
+21. **To-Dos and Tasks**: When the user asks you to make, add or create a to-do, a task or a reminder ("make a to-do", "add a to-do: call the bank", "remind me to call Dana on Friday"), call createTask yourself; do not send them to a screen. It needs only a title; if the title is missing, ask one short question ("What should the to-do say?"). With no date and no project it lands on the To-Do List (/to-do). Pass startTime only if the user gave a day, and then it needs a time of day too. To tie it to a person or project, call searchContacts or searchGlobal first and pass the real id. Only say it was created if createTask returned success, and name where it is (the To-Do List, or the Calendar for a timed one).
+22. **Projects**: When the user asks you to add, create, make or start a project ("add a new project", "create a project called Website Redesign"), call createProject yourself. It needs only a name; if the name is missing, ask "What should the project be called?". Pass a description or a client only if the user gave one, and look the client up with searchContacts first. The project is saved with Planning status; tell the user it is on the Project List (/projects/all) and that its steps are planned in the Project Planner. If createProject says the name already exists, nothing was created: tell the user and call it again with allowDuplicate true only if they say yes. Only say a project was created if createProject returned success. You cannot yet edit, move, complete or delete a project; point to the Project List or the Project Board (/project-status).
+23. **Knowledge Base Search**: For how-to questions, business rules or "why" questions about a feature that the knowledge documents above only mention briefly, call searchKnowledge first and answer only from the passages it returns, naming the screen and route. If it finds nothing, say there is no verified documentation on it; never fill the gap from memory. Do not use it for action requests.
 
 **Knowledge Base:**
 {{{knowledgeBase}}}
@@ -597,7 +638,7 @@ const ogeemoAgentFlow = ai.defineFlow(
       const result = await ai.generate({
         model: STABLE_GEMINI_MODEL,
         messages: scrubbedMessages,
-        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createContactTool, createAppointmentTool, getCalendarTool, syncReceiptsTool],
+        tools: [searchGlobalTool, searchContactsTool, createTaskTool, createProjectTool, createContactTool, createAppointmentTool, getCalendarTool, searchKnowledgeTool, syncReceiptsTool],
         system: finalSystemPrompt,
         // The tools learn who is asking from here, never from the model's arguments. Without this they received an
         // empty context and every tool except the search refused with "not authenticated".

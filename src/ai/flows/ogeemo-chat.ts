@@ -25,6 +25,7 @@ import { fillTemplate } from '@/lib/ai-input';
 import { allMenuItems } from '@/lib/menu-items';
 import { buildScrubbedMessages } from '@/ai/capability-history';
 import { describeToolsCalled, emptyReplyMessage, shouldRetryEmptyReply, toolsCalled } from '@/ai/tool-trace';
+import { savedRecord, type SavedRecord } from '@/lib/ai-open-record';
 import { describeToolLimits, toolNamesForRole, unofferedToolReply } from '@/ai/tool-access';
 import fs from 'fs';
 import path from 'path';
@@ -763,7 +764,12 @@ const ogeemoAgentFlow = ai.defineFlow(
   {
     name: 'ogeemoAgentFlow',
     inputSchema: OgeemoAgentInputSchema,
-    outputSchema: z.object({ reply: z.string(), toolsCalled: z.array(z.string()).optional() }),
+    outputSchema: z.object({
+      reply: z.string(),
+      toolsCalled: z.array(z.string()).optional(),
+      // The contact or project saved while answering, so the browser can open its form (see src/lib/ai-open-record.ts).
+      saved: z.object({ kind: z.enum(['contact', 'project']), id: z.string() }).optional(),
+    }),
   },
   async (input) => {
     const { message, history, runtimeContext } = input;
@@ -813,7 +819,9 @@ const ogeemoAgentFlow = ai.defineFlow(
 
       // Which tools it chose, by name only (never the arguments, which can hold client names and amounts).
       console.info(`[ogeemoAgentFlow] tools called: ${describeToolsCalled(called)}`);
-      return { reply: result.text.trim() ? result.text : emptyReplyMessage(called), toolsCalled: called };
+      // The id of a contact or project a tool saved, read from the tool's own result (never from the model's words).
+      const saved = savedRecord(result.messages);
+      return { reply: result.text.trim() ? result.text : emptyReplyMessage(called), toolsCalled: called, ...(saved ? { saved } : {}) };
     } catch (error: any) {
       // The model asked for a tool this role was not offered. That is a role limit, not an outage.
       const unoffered = unofferedToolReply(error);
@@ -857,7 +865,7 @@ const ogeemoGeneralKnowledgeFallbackFlow = ai.defineFlow(
  * Runs the Co-Pilot agent. `runtimeContext` must come from the server session (see trustedRuntimeContext), because
  * the tools act on its workspace and the model reads its role as a fact.
  */
-export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string; toolsCalled?: string[] }> {
+export async function ogeemoAgent(input: { message: string; history: any[]; runtimeContext: TrustedRuntimeContext }): Promise<{ reply: string; toolsCalled?: string[]; saved?: SavedRecord }> {
   return ogeemoAgentFlow(input);
 }
 

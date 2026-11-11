@@ -6,6 +6,7 @@ import { getAdminDb } from '@/core/firebase-admin';
 import { assistantLimiter, tooManyRequests } from '@/lib/ai-limits';
 import { checkPrompt, limitHistory } from '@/lib/ai-input';
 import { recentUserText, selectCatalogContacts, trustedRuntimeContext } from '@/lib/ai-runtime';
+import { openActionFor, openedFormNote } from '@/lib/ai-open-record';
 
 const FUNCTIONS_REFUSAL_PATTERNS = [
     'provided guide context does not contain',
@@ -176,7 +177,10 @@ export async function POST(request: NextRequest) {
             const genkitAnswer = normalizeAnswerText(genkitResult?.reply);
             if (genkitAnswer && !hasLegacyRefusalPattern(genkitAnswer)) {
                 console.info('/api/ogeemo-assistant source', { source: 'genkit_operational_accepted' });
-                return NextResponse.json({ answer: genkitAnswer }, { status: 200 });
+                // A contact or project saved while answering opens its own form, so the person can check it and add details.
+                const opened = openActionFor(genkitResult?.saved);
+                const note = openedFormNote(genkitResult?.saved);
+                return NextResponse.json({ answer: note ? `${genkitAnswer}\n\n${note}` : genkitAnswer, ...(opened ? { action: opened } : {}) }, { status: 200 });
             }
 
             operationalOutcome = genkitAnswer ? 'refusal_pattern' : 'empty_reply';

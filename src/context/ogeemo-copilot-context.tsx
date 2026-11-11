@@ -10,6 +10,7 @@ import { autoOpenTarget, describeDispatch, type DispatchReply } from '@/lib/copi
 import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile } from '@/core/user-profile-service';
 import { parseAssistantMessageAction } from '@/ai/assistant-actions';
+import { isProjectFormTarget } from '@/lib/ai-open-record';
 import {
     createAssistantChatThread,
     deleteAssistantChatThreads,
@@ -255,6 +256,11 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                     dispatchCopilotWorkflowEvent('copilot:navigate', { target: destination });
                     router.push(destination);
                 }
+            } else if (assistantAction?.type === 'dispatch' && isProjectFormTarget(assistantAction.target)) {
+                // A project the Co-Pilot just saved: open its own form so the person can check it and add details. The
+                // only link the service sends that opens by itself; the reply keeps it as a button too.
+                dispatchCopilotWorkflowEvent('copilot:navigate', { target: assistantAction.target });
+                router.push(assistantAction.target);
             } else if (assistantAction?.type === 'open_contact_form') {
                 if (pathname === '/contacts') {
                     dispatchCopilotWorkflowEvent('copilot:open_contact_form', { draft: assistantAction.draft });

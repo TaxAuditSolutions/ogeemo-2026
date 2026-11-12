@@ -190,7 +190,9 @@ Refusals, searches and everything else are still the model's own words. For the 
 screens' data the tools changed (`changedAreas`, read off the tools' successful results) and the chat tells open screens to
 reload in place (`copilot:data_changed`): the Calendar, the Contacts Hub and the Project List. Verified live with the real
 20-message history: preview exact and unchanged on the Calendar, then "yes" moved it, with the exact "Moved..." reply and
-`changed=["calendar"]`.
+`changed=["calendar"]`. Confirmed in the browser the same day: the open Calendar refreshed itself after the move with no page
+reload, and the move, cancel and "no, leave it" flows all behaved (questions 22 and 23). Not yet exercised directly: a reply
+that STARTS with "yes" but adds something ("yes but make it Friday"); the unit tests cover it, the live chat did not.
 
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on

@@ -7,6 +7,7 @@ import { assistantLimiter, tooManyRequests } from '@/lib/ai-limits';
 import { checkPrompt, limitHistory } from '@/lib/ai-input';
 import { recentUserText, selectCatalogContacts, trustedRuntimeContext } from '@/lib/ai-runtime';
 import { openActionFor, openedFormNote } from '@/lib/ai-open-record';
+import { fallbackAnswer } from '@/lib/ai-fallback-note';
 
 const FUNCTIONS_REFUSAL_PATTERNS = [
     'provided guide context does not contain',
@@ -209,7 +210,9 @@ export async function POST(request: NextRequest) {
                     source: 'genkit_general_knowledge_accepted',
                     genkitOperationalOutcome: operationalOutcome,
                 });
-                return NextResponse.json({ answer: generalAnswer }, { status: 200 });
+                // The fallback has no tools. When the main assistant did not answer, say so in the server's own words, so a
+                // reply like "Requested to save the changes" can never leave someone believing something was saved.
+                return NextResponse.json({ answer: fallbackAnswer(generalAnswer, operationalOutcome) }, { status: 200 });
             }
 
             generalOutcome = generalAnswer ? 'refusal_pattern' : 'empty_reply';

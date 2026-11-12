@@ -32,7 +32,8 @@ test('whether the user said yes is decided by the server from their own message,
   assert.match(source, /confirmed: readUserConfirmed\(context\), turnStartedAt: readTurnStartedAt\(context\)/);
   // The turn start is taken as the flow begins, before the model is called, so it is older than anything the model saves.
   assert.ok(source.indexOf('const turnStartedAt = Date.now()') > 0 && source.indexOf('const turnStartedAt = Date.now()') < source.indexOf('const generateOnce'), 'the turn start must be taken before the model runs');
-  const schemas = [...source.matchAll(/inputSchema: z\.object\(\{([\s\S]*?)\n    \}\),\n    outputSchema/g)].map((m) => m[1]).join('\n');
+  // Line endings differ by machine (the file is CRLF since the 12 Nov checkpoint), so the pattern accepts either.
+  const schemas = [...source.matchAll(/inputSchema: z\.object\(\{([\s\S]*?)\r?\n    \}\),\r?\n    outputSchema/g)].map((m) => m[1]).join('\n');
   assert.ok(schemas.length > 500, 'could not read the tool input schemas');
   assert.ok(!/\b(confirm|confirmed|userConfirmed|approved|force)\b\s*:/.test(schemas), 'a tool schema lets the model set its own confirmation');
 });

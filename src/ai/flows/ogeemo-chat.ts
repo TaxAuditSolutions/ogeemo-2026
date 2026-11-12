@@ -49,7 +49,7 @@ const OgeemoAgentInputSchema = z.object({
 });
 export type OgeemoAgentInput = z.infer<typeof OgeemoAgentInputSchema>;
 
-const STABLE_GEMINI_MODEL = 'googleai/gemini-2.5-flash';
+const STABLE_GEMINI_MODEL = 'googleai/gemini-3.8-flash';
 
 // --- Tools ---
 // The handlers live in src/ai/agent-tools.ts and src/ai/agent-task-tool.ts so they can be tested without a model.
@@ -157,7 +157,7 @@ const createAppointmentTool = ai.defineTool(
   {
     name: 'createAppointment',
     description: 'Books an appointment on the signed-in user\'s Calendar and saves it. Use it when the user asks you to book, schedule or set up an appointment, meeting or call. It needs a title and a start date AND time of day. The length defaults to one hour. It refuses a time in the past and a time that overlaps one of the user\'s own unfinished events (unless allowDoubleBooking is true), and then suggests the next free time. For a to-do with no time, use createTask.',
-  inputSchema: z.object({
+    inputSchema: z.object({
       title: z.string().describe('What the appointment is for'),
       startTime: z.string().describe('ISO date-time with a time of day, such as 2026-11-10T15:00:00-05:00; without an offset it is read in the user\'s time zone'),
       endTime: z.string().optional().describe('ISO date-time for the end; use this or durationMinutes, not both'),

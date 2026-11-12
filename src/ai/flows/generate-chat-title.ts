@@ -6,7 +6,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const STABLE_GEMINI_MODEL = 'googleai/gemini-2.5-flash';
+const STABLE_GEMINI_MODEL = 'googleai/gemini-3.8-flash';
 const MAX_TITLE_LENGTH = 48;
 
 const GenerateChatTitleInputSchema = z.object({

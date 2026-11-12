@@ -34,6 +34,6 @@ test('nextReceiptDocumentNumber ignores other dates, prefixes and junk values', 
   assert.equal(nextReceiptDocumentNumber(['REC-20261030-999'], '20261031'), 'REC-20261031-001');
 });
 
-test('the OCR model name is a plain model id the server can namespace', () => {
-  assert.match(RECEIPT_OCR_MODEL_NAME, /^gemini-[\w.-]+$/);
+test('the receipt staging fallback uses Gemini 3.8 Flash', () => {
+  assert.equal(RECEIPT_OCR_MODEL_NAME, 'gemini-3.8-flash');
 });

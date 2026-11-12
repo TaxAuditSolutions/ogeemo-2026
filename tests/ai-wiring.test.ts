@@ -82,6 +82,21 @@ test('no flow asks for a model the API no longer lists', () => {
   }
 });
 
+test('text-generation flows use Gemini 3.8 Flash and image generation keeps its image model', () => {
+  for (const file of [
+    'src/ai/flows/generate-chat-title.ts',
+    'src/ai/flows/knowledge-base-chat.ts',
+    'src/ai/flows/ogeemo-chat.ts',
+    'src/ai/flows/sandbox-agent-flow.ts',
+  ]) {
+    assert.ok(code(file).includes('googleai/gemini-3.8-flash'), `${file} does not use Gemini 3.8 Flash`);
+  }
+  assert.ok(
+    code('src/ai/flows/image-generation-flow.ts').includes('googleai/gemini-2.5-flash-image'),
+    'image generation no longer uses its image model'
+  );
+});
+
 test('the AI key is read from the server environment only and never logged', () => {
   const source = code('src/ai/genkit.ts');
   assert.ok(!source.includes('NEXT_PUBLIC_'), 'a NEXT_PUBLIC key would be shipped to every browser');

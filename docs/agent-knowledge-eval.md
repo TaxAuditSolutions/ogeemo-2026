@@ -217,6 +217,21 @@ answers "Okay, I have not changed anything." Both decline cases then passed 5 of
 ("Change Phone test's phone number") now returns a real preview made by `updateContact`. Not re-tested: a full receipt scan
 with a real receipt, and the Knowledge Base chat page.
 
+**Contact change checks 26, 27 and 28, run live on 12 Nov 2026 (after the Genkit upgrade). All passed.**
+- **26, an email another contact already has:** held back first ("Dana already has the email address... Nothing was changed.
+  Would you like to make the change anyway?"), nothing saved. It then takes TWO yeses, not one: the first answers that
+  question and produces the normal "Ready to change... Nothing has changed yet" preview, the second saves it. That is the
+  design (an override is a separate decision from confirming the preview). A replay five times against the live data
+  confirmed the hold-back each time with no preview saved. The test left a deliberate duplicate email in the test workspace.
+- **27, things it must decline:** the SIN, the hourly pay rate and "Delete" were each refused with where to do it (the
+  contact form, the Workers page, the Contacts Hub row menu), never a preview. The data check afterwards: the contact still
+  existed, no SIN or pay rate was set, and no contact with a SIN was updated.
+- **28, renaming an Employee:** "Rename Foghorn Leghorn to Foghorn Test" was refused with the Workers page as the place to
+  do it, no preview. The data afterwards: still one "Foghorn Leghorn", no "Foghorn Test". Its last-updated time had moved
+  because of an earlier, allowed change in the same session (a plain email change, previewed and confirmed), not the rename.
+Still not exercised live: a "yes" that adds something ("yes but make it Friday"), a real receipt scan, and the Knowledge
+Base chat page after the Genkit upgrade.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

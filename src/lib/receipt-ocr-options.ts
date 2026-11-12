@@ -172,7 +172,7 @@ export const DEFAULT_RECEIPT_OCR_SETTINGS: ReceiptOcrSettings = {
   recordKeepingMode: 'simple',
   keepScan: true,
   requireScanToPost: false,
-  model: 'gemini-3.5-flash-lite',
+  model: 'gemini-3.8-flash',
   language: 'auto',
   dateFormat: 'auto',
   taxMode: 'auto',

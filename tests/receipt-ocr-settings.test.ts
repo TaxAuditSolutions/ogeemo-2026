@@ -42,10 +42,11 @@ test('invalid values are replaced individually and valid ones are kept', () => {
   assert.equal(result.defaultLedgerType, 'expense');
 });
 
-test('a saved model Google has retired falls back to a working default', () => {
+test('receipt OCR defaults and falls back to Gemini 3.8 Flash', () => {
+  assert.equal(defaults.model, 'gemini-3.8-flash');
   for (const retired of ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']) {
     const result = normalizeReceiptOcrSettings({ model: retired });
-    assert.equal(result.model, 'gemini-3.5-flash-lite', `${retired} must not stay selected`);
+    assert.equal(result.model, defaults.model, `${retired} must not stay selected`);
   }
   assert.equal(normalizeReceiptOcrSettings({ model: 'gemini-3.8-flash' }).model, 'gemini-3.8-flash');
 });

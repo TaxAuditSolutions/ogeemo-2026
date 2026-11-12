@@ -11,7 +11,7 @@ import path from 'path';
 // This file is a server action the browser can call directly, so it checks the signed-in SESSION itself.
 // It used to run for anyone (the sign-in check was commented out) and accept a user id from the caller, and it
 // asked for "gemini-1.5-flash", which the API no longer lists.
-const SANDBOX_MODEL = 'googleai/gemini-2.5-flash';
+const SANDBOX_MODEL = 'googleai/gemini-3.8-flash';
 
 const AskAgentInputSchema = z.object({
   prompt: z.string().describe('The user question about Ogeemo.'),

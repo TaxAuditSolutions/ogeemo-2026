@@ -105,7 +105,7 @@ Supplied sources:
 ${sources}`;
 
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-3.8-flash',
       messages: buildMessages(history, message),
       system,
       config: { temperature: 0.1, maxOutputTokens: 1000 },

@@ -17,7 +17,7 @@ import { getInvoicesHandler } from '@/ai/agent-invoice-tool';
 import { getQuotesHandler } from '@/ai/agent-quote-tool';
 import { changeEventHandler } from '@/ai/agent-event-tool';
 import { updateContactHandler } from '@/ai/agent-contact-update-tool';
-import { isConfirmingPreview, readTurnStartedAt, readUserConfirmed } from '@/lib/ai-confirm';
+import { DECLINED_REPLY, isConfirmingPreview, isDecliningPreview, readTurnStartedAt, readUserConfirmed } from '@/lib/ai-confirm';
 import { searchKnowledgeHandler } from '@/ai/agent-knowledge-tool';
 import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
 import { describeRuntime, readToolContext, type TrustedRuntimeContext } from '@/lib/ai-runtime';
@@ -782,6 +782,17 @@ const ogeemoAgentFlow = ai.defineFlow(
     const { message, history, runtimeContext } = input;
     const turnStartedAt = Date.now();
     const scrubbedMessages = buildScrubbedMessages(history, message);
+
+    // A plain "no" to a preview needs no model: clear the waiting preview (so a later "yes" cannot apply it) and say so.
+    if (isDecliningPreview(history, message)) {
+      try {
+        if (runtimeContext?.userId) await getAdminDb()?.collection('aiPendingChanges').doc(runtimeContext.userId).delete();
+      } catch (error) {
+        console.warn('[ogeemoAgentFlow] could not clear the declined preview; it expires on its own');
+      }
+      console.info('[ogeemoAgentFlow] tools called: none (preview declined)');
+      return { reply: DECLINED_REPLY, toolsCalled: [] };
+    }
 
     const pageGuidance = getPageContextGuidance(runtimeContext?.currentPath || '/co-pilot');
     const limits = describeToolLimits(runtimeContext?.accessLevel, Object.keys(AGENT_TOOLS));

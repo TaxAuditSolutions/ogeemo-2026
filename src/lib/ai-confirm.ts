@@ -71,6 +71,41 @@ export function isConfirmingPreview(history: unknown, message: unknown): boolean
   return false;
 }
 
+/**
+ * A plain "no" to a preview. Only these whole phrases count (after the same tidy-up as a yes), so "no, make it 5pm" or
+ * "no, Friday instead" are NOT declines: they are new requests and go to the assistant.
+ */
+const DECLINES = new Set([
+  'no', 'nope', 'nah', 'no thanks', 'no thank you', 'leave it', 'no leave it', 'leave it alone', 'no leave it alone',
+  'never mind', 'nevermind', 'no never mind', 'stop', 'no stop', 'don t', 'dont', 'no don t', 'no dont', 'do not',
+  'no do not', 'forget it', 'forget that', 'not now', 'no not now', 'no thanks leave it',
+]);
+
+/** True only for a short, plain refusal such as "no", "no, leave it", "never mind" or "don't". */
+export function isUserDecline(message: unknown): boolean {
+  if (typeof message !== 'string') return false;
+  const text = normalize(message).replace(/ please$/, '');
+  return text !== '' && DECLINES.has(text);
+}
+
+/**
+ * True when this message is a plain no AND the Co-Pilot's most recent reply was a preview waiting for an answer.
+ * Handled by the server without the model: with the newer model the assistant sometimes called the change tool again
+ * after a "no" and showed a second preview (found 12 Nov 2026). Nothing could have been saved, but it was wrong to ask.
+ */
+export function isDecliningPreview(history: unknown, message: unknown): boolean {
+  if (!isUserDecline(message) || !Array.isArray(history)) return false;
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const entry = history[i];
+    if (!entry || typeof entry !== 'object') continue;
+    if (isModel((entry as { role?: unknown }).role)) return PREVIEW_MARKER.test(asText((entry as { content?: unknown }).content));
+  }
+  return false;
+}
+
+/** What the user is told after declining a preview. Said by the server, so it is always exactly this. */
+export const DECLINED_REPLY = 'Okay, I have not changed anything.';
+
 /** True when a reply the user was shown is a preview waiting for a yes (used to keep that yes in the conversation). */
 export function isPreviewReply(text: unknown): boolean {
   return PREVIEW_MARKER.test(asText(text));

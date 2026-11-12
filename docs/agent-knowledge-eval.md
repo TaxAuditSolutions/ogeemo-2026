@@ -202,6 +202,21 @@ phone" before answering yes. Chosen on purpose to leave it as is. Also confirmed
 and the open Contacts Hub shows the new number without a page refresh. Not yet checked live: 26 (email that matches another
 contact), 27 (SIN, pay rate, delete declined) and 28 (renaming an Employee).
 
+**Model upgrade to Gemini 3.8 Flash, and the Genkit upgrade it needed (12 Nov 2026).** The model was changed to
+`gemini-3.8-flash` in seven files without changing the Genkit plugin. With the old `@genkit-ai/googleai` 1.28 plugin every
+tool call failed ("400 Role 'function' is not supported"), so the Co-Pilot silently used the no-tools fallback, which said
+"Requested to save the changes" and saved nothing. Fixed in two parts. (1) The fallback never claims to have acted: the
+server adds "Ogeemo's tools were unavailable for this message, so nothing was saved or changed." to every fallback reply
+(`fallbackAnswer`, `src/lib/ai-fallback-note.ts`). (2) Genkit upgraded from 1.32/1.28 to 1.44, and the plugin replaced by
+`@genkit-ai/google-genai` 1.44 (`src/ai/genkit.ts`, `next.config.js`). Checked after the upgrade: a tool round trip on both
+`gemini-3.8-flash` and `gemini-2.5-flash` through the project's own setup; the image model; structured output from an image
+(what the receipt reader does); chat titles; multi-turn with a system prompt; the unit tests; and `kb:tools`: 46 of 47 on the
+first pass. The one failure was the 3.8 model re-calling `updateContact` after a plain "no". That is now decided by the
+server without the model (`isDecliningPreview`, `src/lib/ai-confirm.ts`): a plain "no" to a waiting preview clears it and
+answers "Okay, I have not changed anything." Both decline cases then passed 5 of 5. The exact request that failed live
+("Change Phone test's phone number") now returns a real preview made by `updateContact`. Not re-tested: a full receipt scan
+with a real receipt, and the Knowledge Base chat page.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

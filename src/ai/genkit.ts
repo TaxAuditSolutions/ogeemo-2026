@@ -1,5 +1,7 @@
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+// The current Google AI plugin. The older @genkit-ai/googleai (1.28) sent a tool's result back to Google with a role that
+// Gemini 3.8 rejects ("Role 'function' is not supported"), so every Co-Pilot action failed after the model upgrade.
+import { googleAI } from '@genkit-ai/google-genai';
 
 // The key is read from the server environment only. A NEXT_PUBLIC_ variable is copied into the browser
 // bundle, so a key set there would be public: it is deliberately not used as a fallback.

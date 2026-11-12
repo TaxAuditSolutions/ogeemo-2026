@@ -82,7 +82,7 @@ const createNextConfig = (phase) => ({
     'firebase-admin',
     'genkit',
     '@genkit-ai/core',
-    '@genkit-ai/googleai',
+    '@genkit-ai/google-genai',
     '@opentelemetry/sdk-node',
   ],
 });

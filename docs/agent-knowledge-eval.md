@@ -194,6 +194,14 @@ reload in place (`copilot:data_changed`): the Calendar, the Contacts Hub and the
 reload, and the move, cancel and "no, leave it" flows all behaved (questions 22 and 23). Not yet exercised directly: a reply
 that STARTS with "yes" but adds something ("yes but make it Friday"); the unit tests cover it, the live chat did not.
 
+**Contact phone change (question 25), checked live 12 Nov 2026.** "Change a contact's phone number" with no phone on file
+puts the number in the **cell phone** field. That is a decision, not a fault: nothing tells the model which phone field a
+plain "phone number" means, so with none on file it picks cell (the Contacts Hub list also shows cell first, then business,
+then home). The preview names the field ("cell phone from (empty) to ...") and the person can say "make it the business
+phone" before answering yes. Chosen on purpose to leave it as is. Also confirmed live: the preview appears before the yes,
+and the open Contacts Hub shows the new number without a page refresh. Not yet checked live: 26 (email that matches another
+contact), 27 (SIN, pay rate, delete declined) and 28 (renaming an Employee).
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

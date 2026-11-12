@@ -4,6 +4,9 @@ import { retrieveKnowledge } from '@/ai/knowledge-base/retrieve';
 import { knowledgeCitations } from '@/ai/knowledge-base/retriever';
 import { KNOWLEDGE_AUDIENCES } from '@/ai/knowledge-base/types';
 
+/** Room for the model's hidden thinking AND the visible answer (see the comment where it is used). */
+export const KNOWLEDGE_MAX_OUTPUT_TOKENS = 4000;
+
 const inputSchema = z.object({
   message: z.string().min(1).max(2000),
   history: z.array(z.any()).max(12).optional(),
@@ -108,7 +111,10 @@ ${sources}`;
       model: 'googleai/gemini-3.8-flash',
       messages: buildMessages(history, message),
       system,
-      config: { temperature: 0.1, maxOutputTokens: 1000 },
+      // Gemini 3.x counts its hidden thinking tokens against this limit. At 1000 a long how-to answer was cut off with
+      // almost no text left (measured 12 Nov 2026: 957 thinking tokens, 39 answer tokens); at 4000 the same questions
+      // finished. The answer itself is still asked to be concise by the system prompt.
+      config: { temperature: 0.1, maxOutputTokens: KNOWLEDGE_MAX_OUTPUT_TOKENS },
     });
 
     return {

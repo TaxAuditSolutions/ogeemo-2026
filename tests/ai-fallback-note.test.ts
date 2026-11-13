@@ -29,7 +29,7 @@ test('if the main assistant had answered, nothing is added (not used today, but 
 
 test('the wiring: the route uses it, and the fallback prompt says it has no tools and must not claim to have acted', () => {
   const route = fs.readFileSync('src/app/api/ogeemo-assistant/route.ts', 'utf8');
-  assert.match(route, /fallbackAnswer\(generalAnswer, operationalOutcome\)/);
+  assert.match(route, /fallbackAnswer\((withoutFalseOpening\()?generalAnswer\)?, operationalOutcome\)/);
   const flow = fs.readFileSync('src/ai/flows/ogeemo-chat.ts', 'utf8');
   const start = flow.indexOf('const generalKnowledgeFallbackPrompt');
   const prompt = flow.slice(start, flow.indexOf('`;', start));

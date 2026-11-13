@@ -6,7 +6,7 @@
 
 import { allMenuItems } from './menu-items';
 import { isContactCreationRequest, isContactEditRequest } from './copilot-routing';
-import { GOOGLE_APPS_CATEGORY, googleAppLabel, matchGoogleApp } from './google-app-names';
+import { GOOGLE_APPS_CATEGORY, googleAppLabel, googleAppNeedingGoogle, googleHintMessage, matchGoogleApp } from './google-app-names';
 
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
@@ -14,6 +14,11 @@ export interface CommandResult {
     label?: string;
     message: string;
     assistantMessage?: string;
+    /**
+     * On an 'unknown' result: what the SERVER says, with no model call (for example "Gemini is a Google app. Say ...").
+     * The chat shows it as the reply. See googleHint in this file.
+     */
+    serverReply?: string;
     description?: string;
     isExternal?: boolean;
     category?: string;
@@ -295,6 +300,27 @@ function googleAppCommand(text: string): CommandResult | undefined {
             message: `Ready: [Open ${label}]`,
             description: `${label} opens on another site.`,
             category: GOOGLE_APPS_CATEGORY,
+        };
+    }
+    return undefined;
+}
+
+/**
+ * "open gemini" / "open drive" / "open keep" / "open docs" / "open sites" / "open chat": a Google app whose bare name needs
+ * "Google" in front. Asked for LAST, after every Ogeemo screen has had its chance, so it never takes a name Ogeemo uses.
+ */
+function googleHint(text: string): CommandResult | undefined {
+    const typed = text.trim();
+    const hadVerb = NAVIGATION_PHRASE.test(typed);
+    const stripped = typed.replace(NAVIGATION_PHRASE, '').replace(TRAILING_FILLER, '').replace(/\s+app$/i, '');
+    for (const candidate of [stripped, stripped.replace(LEADING_FILLER, '')]) {
+        const app = googleAppNeedingGoogle(candidate, hadVerb);
+        if (!app) continue;
+        return {
+            type: 'unknown',
+            message: 'Google app name',
+            serverReply: googleHintMessage(app),
+            description: 'The name needs the word Google.',
         };
     }
     return undefined;
@@ -618,6 +644,11 @@ export function processCommand(input: string): CommandResult {
 
     const exactBare = exactMenuItem(rawInput) ?? screenSynonym(rawInput);
     if (exactBare) return menuNavigation(exactBare);
+
+    // A Google app whose bare name needs "Google" ("open gemini", "go to docs"). Asked for here, after every exact screen
+    // name and BEFORE the loose matching below, which glues "go to" + "docs" into the alias "todo" and opened the To-Do List.
+    const needsGoogle = googleHint(rawInput);
+    if (needsGoogle) return needsGoogle;
 
     const directCmd = findExactOrAliasCommand(rawInput);
     if (directCmd) {

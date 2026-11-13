@@ -30,6 +30,28 @@ const ALIASES: Record<string, string> = {
 /** The apps whose bare name nothing in Ogeemo shares. Everything else needs "Google" in front. */
 const BARE_NAME_OK = new Set(['drawings', 'photos', 'sheets', 'slides', 'maps', 'gmail', 'groups', 'notebooklm', 'textmessages']);
 
+/**
+ * The Google app a person probably meant when they typed its bare name after a verb ("open gemini", "open drive") but the
+ * bare name is one that needs "Google" in front. Used only when Ogeemo has no screen of that name, so the caller asks
+ * for this last. Without it these went to the AI model, which copied the "Opening Google Maps in a new tab" replies in
+ * its own chat history and claimed to have opened Gemini, with no tab and no button (found live, 13 Nov 2026).
+ */
+export function googleAppNeedingGoogle(typedName: string, hadVerb: boolean): GoogleApp | undefined {
+  const typed = (typedName || '').trim();
+  if (!hadVerb || /^(?:the\s+)?google\s/i.test(typed)) return undefined;
+  const raw = squash(typed);
+  if (!raw) return undefined;
+  const key = ALIASES[raw] ?? raw;
+  if (BARE_NAME_OK.has(key)) return undefined;
+  return allApps.find((candidate) => keyOf(candidate) === key);
+}
+
+/** The sentence the server says for that case. A statement, not a question, so a later "yes" is not left waiting on it. */
+export function googleHintMessage(app: GoogleApp): string {
+  const bare = app.name.replace(/^google\s+/i, '');
+  return `${bare} is a Google app. Say "open google ${bare.toLowerCase()}" and I will open ${googleAppLabel(app)} in a new tab.`;
+}
+
 /** "Google Maps", "Gmail", "Google Notebook LM": the name shown to the person. */
 export function googleAppLabel(app: GoogleApp): string {
   return /^google\s/i.test(app.name) || /^gmail$/i.test(app.name) ? app.name : `Google ${app.name}`;

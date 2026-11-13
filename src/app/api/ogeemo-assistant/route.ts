@@ -8,6 +8,7 @@ import { checkPrompt, limitHistory } from '@/lib/ai-input';
 import { recentUserText, selectCatalogContacts, trustedRuntimeContext } from '@/lib/ai-runtime';
 import { openActionFor, openedFormNote } from '@/lib/ai-open-record';
 import { fallbackAnswer } from '@/lib/ai-fallback-note';
+import { markChatOpenings, withoutFalseOpening } from '@/lib/capability-claims';
 
 const FUNCTIONS_REFUSAL_PATTERNS = [
     'provided guide context does not contain',
@@ -76,7 +77,9 @@ export async function POST(request: NextRequest) {
         const prompt = checkPrompt(body?.question ?? body?.message, 4000);
         if (!prompt.ok) return NextResponse.json({ error: prompt.error }, { status: 400 });
         const question = prompt.text;
-        const history = limitHistory(body?.history);
+        // The chat's own "Opening ..." replies are marked as the chat's, so the assistant does not copy their wording and
+        // claim to have opened something (see src/lib/capability-claims.ts).
+        const history = markChatOpenings(limitHistory(body?.history));
         const runtimeContext = trustedRuntimeContext(session, body?.runtimeContext, '/co-pilot');
 
         let tenantFolders: Array<{ id: string; name: string; parentId?: string | null }> = [];
@@ -181,8 +184,11 @@ export async function POST(request: NextRequest) {
                 // A contact or project saved while answering opens its own form, so the person can check it and add details.
                 const opened = openActionFor(genkitResult?.saved);
                 const note = openedFormNote(genkitResult?.saved);
+                // Only the chat itself can open a screen or a Google app. If the assistant wrote a reply that claims to,
+                // the person is told nothing was opened instead.
+                const honest = withoutFalseOpening(genkitAnswer);
                 return NextResponse.json({
-                    answer: note ? `${genkitAnswer}\n\n${note}` : genkitAnswer,
+                    answer: note ? `${honest}\n\n${note}` : honest,
                     ...(opened ? { action: opened } : {}),
                     // Which screens' data changed, so an open screen reloads instead of showing the old data.
                     ...(genkitResult?.changed?.length ? { changed: genkitResult.changed } : {}),
@@ -212,7 +218,7 @@ export async function POST(request: NextRequest) {
                 });
                 // The fallback has no tools. When the main assistant did not answer, say so in the server's own words, so a
                 // reply like "Requested to save the changes" can never leave someone believing something was saved.
-                return NextResponse.json({ answer: fallbackAnswer(generalAnswer, operationalOutcome) }, { status: 200 });
+                return NextResponse.json({ answer: fallbackAnswer(withoutFalseOpening(generalAnswer), operationalOutcome) }, { status: 200 });
             }
 
             generalOutcome = generalAnswer ? 'refusal_pattern' : 'empty_reply';

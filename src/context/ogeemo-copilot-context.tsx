@@ -217,6 +217,10 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
 
             if (!screenCheck.ok) {
                 assistantContent = screenCheck.message;
+            } else if (command && command.type === 'unknown' && command.serverReply) {
+                // A name the server can answer by itself ("Gemini is a Google app. Say ..."). Not sent to the model: it
+                // copies the "Opening ..." replies in its own history and claims to have opened something.
+                assistantContent = command.serverReply;
             } else if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
                 dispatchReply = describeDispatch(command, { openedNewTab });

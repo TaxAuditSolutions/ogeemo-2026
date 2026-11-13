@@ -290,6 +290,18 @@ their names used to open nothing for 14 of them and the WRONG screen for 5 ("goo
   Not yet tried in a browser: please check that the tab opens, and that a pop-up blocker's message (if any) is sensible.
 - **They follow the Google Apps menu entry**: if an administrator hides Google Apps from someone, the chat does not hand
   them Google Maps either (`accessScreen`, `src/lib/screen-access.ts`).
+- **A false "Opening ..." from the AI model (found live, 13 Nov 2026).** After several real "Opening Google Maps in a new
+  tab..." replies, "open gemini", "open drive", "open keep", "open docs", "open sites" and "open chat" were each answered
+  "Opening Google X in a new tab. If it does not open, click ..." with NO tab and NO button. Those six bare names need the
+  word "Google", so they were not commands and went to the model, which copied the chat's own replies from its history.
+  Only the chat's code can attach a button or open a tab. Three fixes: (1) the server answers those six itself, with no
+  model call: "Gemini is a Google app. Say "open google gemini" and I will open Google Gemini in a new tab."
+  (`googleHint`, `src/lib/command-processor.ts`); (2) the history the model reads marks the chat's own "Opening ..." replies
+  as the chat's (`markChatOpenings`, `src/lib/capability-claims.ts`): with the real chat history the model copied the false
+  wording in 2 of 4 runs before and 0 of 4 after; (3) a model reply that still claims to open something is replaced with
+  "I did not open anything..." on both the main and the fallback answer (`withoutFalseOpening`). While testing, "go to docs"
+  and "take me to docs" opened the To-Do List (the older matcher glues "go to" + "docs" into "todo"); the hint is now asked
+  for before that matcher. Tests: `tests/google-apps-hints.test.ts`, `tests/capability-claims.test.ts`.
 - Questions stay questions ("what is google drive", "how do I open google maps?"). Known limit: a sentence that carries a
   client or a time ("open google calendar for Dana tomorrow") is read as a request for Ogeemo's Calendar; and "google
   search" is the Drive search on the list, not a web search.

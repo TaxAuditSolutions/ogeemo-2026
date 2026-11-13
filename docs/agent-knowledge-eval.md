@@ -232,6 +232,17 @@ with a real receipt, and the Knowledge Base chat page.
 Still not exercised live: a "yes" that adds something ("yes but make it Friday"), a real receipt scan, and the Knowledge
 Base chat page after the Genkit upgrade.
 
+**Quotes from the chat (12 Nov 2026).** Reading quotes already worked ("which quotes need follow-up", "what quotes do I
+have open", "how many quotes and what is the total" all call `getQuotes` and match the database). Three typed requests did
+not: "open quotes" and "go to quotes" opened nothing, and "open quote form" was answered with a route written in text.
+Now (`screenSynonym`, `src/lib/command-processor.ts`): the Quote Manager opens from "open / go to / take me to / bring up
+quotes", "my quotes", "all quotes", "the quote list" and a bare "quotes"; Create Quote opens from "open / go to / show me
+the quote form", "the quote generator", "new quote form". "Show me my quotes" and "view quotes" are deliberately left to
+the Co-Pilot, which reads them and answers with the figures; a client or a time in the sentence ("quotes for Dana") also
+goes to the Co-Pilot. Creating a quote from chat is still not possible (there is no write tool for quotes, on purpose: they
+involve line items, tax and totals) and "create a quote for Dana" opens the empty form, because the quote form takes a
+client id and not a name. Tests: `tests/command-processor-quotes.test.ts`.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

@@ -166,6 +166,49 @@ function exactMenuItem(text: string): (typeof allMenuItems)[number] | undefined 
     return undefined;
 }
 
+/**
+ * Other names people use for a screen that already has an exact name, matched as a WHOLE phrase (not loosely like the
+ * aliases above). Added after "open quotes", "go to quotes" and "open the quote form" opened nothing and the assistant
+ * answered with a route written in text.
+ *
+ * Two kinds, because "show me my quotes" wants the quotes themselves (the Co-Pilot reads them and answers), while "open
+ * quotes" wants the screen:
+ *   - LIST names say "the list of these". They open the screen after open / go to / take me to, but NOT after show / view.
+ *   - FORM names say "the form to make one". They open it after any of those verbs.
+ */
+const LIST_SCREEN_NAMES: Record<string, string> = {
+    quotes: '/accounting/quotes',
+    myquotes: '/accounting/quotes',
+    allquotes: '/accounting/quotes',
+    quotelist: '/accounting/quotes',
+    quoteslist: '/accounting/quotes',
+    quotesmanager: '/accounting/quotes',
+};
+const FORM_SCREEN_NAMES: Record<string, string> = {
+    quoteform: '/accounting/quotes/create',
+    newquoteform: '/accounting/quotes/create',
+    quotegenerator: '/accounting/quotes/create',
+    quotecreator: '/accounting/quotes/create',
+    newquote: '/accounting/quotes/create',
+};
+/** After these the person wants the information, not the page. */
+const DATA_VERB = /^(?:show me|show|view)\s+/i;
+
+function screenSynonym(text: string): (typeof allMenuItems)[number] | undefined {
+    const typed = text.trim();
+    const dataVerb = DATA_VERB.test(typed);
+    const stripped = typed.replace(NAVIGATION_PHRASE, '').replace(TRAILING_FILLER, '');
+    for (const candidate of [stripped, stripped.replace(LEADING_FILLER, '')]) {
+        const wanted = normalize(candidate);
+        if (!wanted) continue;
+        const href = FORM_SCREEN_NAMES[wanted] ?? (dataVerb ? undefined : LIST_SCREEN_NAMES[wanted]);
+        if (!href) continue;
+        const found = allMenuItems.find((item) => item.href === href);
+        if (found) return found;
+    }
+    return undefined;
+}
+
 function menuNavigation(item: (typeof allMenuItems)[number]): CommandResult {
     return {
         type: 'navigation',
@@ -382,7 +425,7 @@ export function processCommand(input: string): CommandResult {
 
         // An exact screen name beats every alias (see exactMenuItem). `remaining` is used, not `cleaned`, because
         // cleanParam strips words like "manager" and "list" that are part of real screen names.
-        const exact = exactMenuItem(remaining);
+        const exact = exactMenuItem(remaining) ?? screenSynonym(input);
         if (exact) return menuNavigation(exact);
 
         const routeMatch = findExactOrAliasCommand(searchTarget) || findExactOrAliasCommand(cleaned);
@@ -473,7 +516,7 @@ export function processCommand(input: string): CommandResult {
         };
     }
 
-    const exactBare = exactMenuItem(rawInput);
+    const exactBare = exactMenuItem(rawInput) ?? screenSynonym(rawInput);
     if (exactBare) return menuNavigation(exactBare);
 
     const directCmd = findExactOrAliasCommand(rawInput);

@@ -123,7 +123,8 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
     try {
       const command = processCommand(query.trim());
       // The search list above already hides what the menu hides; a typed command must not bring it back.
-      const allowed = !command.target || command.isExternal || canOpenScreen(command.target, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess }).ok;
+      const gate = command.target && (!command.isExternal || command.accessScreen) ? (command.accessScreen ?? command.target) : null;
+      const allowed = !gate || canOpenScreen(gate, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess }).ok;
       if (command.type !== 'unknown' && command.target && allowed) {
         commandResult = [
           {

@@ -267,6 +267,29 @@ a card (for example Legal Hub, Audit Readiness, Equity, Loan Application, Bank R
 should know is a decision for the product owner. Tests: `tests/command-processor-names.test.ts`,
 `tests/screen-access.test.ts`, `tests/screen-access-typed.test.ts`.
 
+**Google apps by name (12 Nov 2026).** The sidebar's Google Apps group lists 19 apps that open on another site. Typing
+their names used to open nothing for 14 of them and the WRONG screen for 5 ("google calendar" opened Ogeemo's Calendar,
+"google contacts" Ogeemo's Contacts Hub, "open meet" Ogeemo's Meetings). Now (`src/lib/google-app-names.ts`):
+- **"Google" in front always means the Google app**, for all 19: "open google maps", "google drawings", "open google
+  calendar", "go to google drive". It never depends on what else Ogeemo has.
+- **The bare name works for the nine apps nothing in Ogeemo shares**, after a verb: maps, drawings, gmail, sheets, slides,
+  photos, groups, notebook lm, text messages ("open maps"). Typed with no verb they are left to the Co-Pilot.
+- **The bare name keeps its Ogeemo meaning where Ogeemo has its own**: calendar, contacts, meet (Meetings), search
+  (Advanced Search), documents (Document Manager). Docs, Drive, Keep, Sites, Chat and Gemini need "Google" too. ("open
+  docs" was briefly an alias for the Document Manager earlier the same day; it is removed.)
+- Singular and common names work: map, photo, spreadsheet, presentation, "google mail", "google messages".
+- The apps come from the same list the sidebar reads (`src/lib/google-apps.ts`), so a new app there works with "Google"
+  in front without another change; its bare name stays closed until someone decides it is safe.
+- **They show a button and do not open by themselves.** An outside link opened after the chat was busy is a pop-up, which
+  browsers block, so the reply says "Google Maps is ready. Click 'Google Maps' below to open it." (the same as before for
+  outside links). Ogeemo screens still open on their own.
+- **They follow the Google Apps menu entry**: if an administrator hides Google Apps from someone, the chat does not hand
+  them Google Maps either (`accessScreen`, `src/lib/screen-access.ts`).
+- Questions stay questions ("what is google drive", "how do I open google maps?"). Known limit: a sentence that carries a
+  client or a time ("open google calendar for Dana tomorrow") is read as a request for Ogeemo's Calendar; and "google
+  search" is the Drive search on the list, not a web search.
+Tests: `tests/google-apps-commands.test.ts`, `tests/google-apps-wording.test.ts`.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

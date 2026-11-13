@@ -202,8 +202,12 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             let changedAreas: ReturnType<typeof parseChangedAreas> = [];
 
             // A screen the menu hides from this person is not opened for them by typing its name. The reply says why.
-            const screenCheck = command && command.type !== 'unknown' && command.target && !command.isExternal
-                ? canOpenScreen(command.target, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess })
+            // A Google app is governed by the Google Apps menu entry (accessScreen); any other outside link is not decided here.
+            const gated = command && command.type !== 'unknown' && command.target && (!command.isExternal || command.accessScreen)
+                ? (command.accessScreen ?? command.target)
+                : null;
+            const screenCheck = gated
+                ? canOpenScreen(gated, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess })
                 : ({ ok: true } as const);
 
             if (!screenCheck.ok) {

@@ -38,11 +38,13 @@ test('typing the name of a closed screen is caught: the typed command resolves, 
 
 test('the wiring: the Co-Pilot checks before it opens or even offers a screen, and so does the search box', () => {
   const context = fs.readFileSync('src/context/ogeemo-copilot-context.tsx', 'utf8');
-  assert.match(context, /canOpenScreen\(command\.target, \{ accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess \}\)/);
+  assert.match(context, /canOpenScreen\(gated, \{ accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess \}\)/);
+  assert.match(context, /\(command\.accessScreen \?\? command\.target\)/, 'a Google app is judged by the Google Apps entry');
   const check = context.indexOf('const screenCheck');
   assert.ok(check > 0 && check < context.indexOf('dispatchReply = describeDispatch(command)'), 'checked before the reply and the button are made');
   assert.match(context, /if \(!screenCheck\.ok\) \{\s*\r?\n\s*assistantContent = screenCheck\.message;/);
   assert.match(context, /setSidebarAccess\(profile\?\.sidebarAccess \?\? undefined\)/);
   const search = fs.readFileSync('src/components/layout/global-search.tsx', 'utf8');
-  assert.match(search, /canOpenScreen\(command\.target, \{ accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess \}\)/);
+  assert.match(search, /canOpenScreen\(gate, \{ accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess \}\)/);
+  assert.match(search, /command\.accessScreen \?\? command\.target/);
 });

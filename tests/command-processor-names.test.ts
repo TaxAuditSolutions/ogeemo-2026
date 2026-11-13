@@ -16,7 +16,7 @@ const opens = (phrase: string, href: string) => {
 
 test('the names that used to open nothing now open their screen', () => {
   const cases: Array<[string, string]> = [
-    ['open documents', '/document-manager'], ['open my documents', '/document-manager'], ['open docs', '/document-manager'],
+    ['open documents', '/document-manager'], ['open my documents', '/document-manager'],
     ['open my notes', '/user-notes'], ['open ideas', '/idea-board'], ['open help', '/help'], ['open the help page', '/help'],
     ['open users', '/user-manager'], ['open receipts', '/accounting/receipt-processor'], ['open loans', '/accounting/loan-manager'],
     ['open human resources', '/hr-manager'], ['open leave', '/hr-manager/time-off'], ['open reports', '/reports'],

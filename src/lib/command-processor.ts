@@ -6,6 +6,7 @@
 
 import { allMenuItems } from './menu-items';
 import { isContactCreationRequest, isContactEditRequest } from './copilot-routing';
+import { GOOGLE_APPS_CATEGORY, googleAppLabel, matchGoogleApp } from './google-app-names';
 
 export interface CommandResult {
     type: 'navigation' | 'action' | 'unknown';
@@ -16,6 +17,11 @@ export interface CommandResult {
     description?: string;
     isExternal?: boolean;
     category?: string;
+    /**
+     * The menu screen whose permissions decide whether this may be opened, when the target is not itself a menu screen
+     * (a Google app is governed by the Google Apps entry). See src/lib/screen-access.ts.
+     */
+    accessScreen?: string;
 }
 
 /**
@@ -199,7 +205,8 @@ const FORM_SCREEN_NAMES: Record<string, string> = {
  */
 const SCREEN_NAMES: Record<string, string> = {
     // Workspace
-    documents: '/document-manager', docs: '/document-manager', mydocs: '/document-manager',
+    // "docs" is deliberately not here: it means Google Docs, which needs the word "Google" (see google-app-names.ts).
+    documents: '/document-manager',
     mynotes: '/user-notes', usernotes: '/user-notes', notes: '/user-notes',
     ideas: '/idea-board', ideaboards: '/idea-board',
     activity: '/event-manager', activities: '/event-manager',
@@ -262,6 +269,33 @@ function screenSynonym(text: string): ScreenRef | undefined {
         const found: ScreenRef | undefined = allMenuItems.find((item) => item.href === href)
             ?? (EXTRA_SCREEN_LABELS[href] ? { href, label: EXTRA_SCREEN_LABELS[href] } : undefined);
         if (found) return found;
+    }
+    return undefined;
+}
+
+/**
+ * A typed request for one of the Google apps ("open google maps", "google drawings", "open maps"). The apps open on
+ * another site, so the result is an external link; the Co-Pilot shows it as a button (see copilot-dispatch.ts). Which names
+ * count, and which need the word "Google", is decided in google-app-names.ts.
+ */
+function googleAppCommand(text: string): CommandResult | undefined {
+    const typed = text.trim();
+    const hadVerb = NAVIGATION_PHRASE.test(typed);
+    const stripped = typed.replace(NAVIGATION_PHRASE, '').replace(TRAILING_FILLER, '').replace(/\s+app$/i, '');
+    for (const candidate of [stripped, stripped.replace(LEADING_FILLER, '')]) {
+        const app = matchGoogleApp(candidate, hadVerb);
+        if (!app) continue;
+        const label = googleAppLabel(app);
+        return {
+            type: 'navigation',
+            target: app.href,
+            label,
+            isExternal: true,
+            accessScreen: '/google',
+            message: `Ready: [Open ${label}]`,
+            description: `${label} opens on another site.`,
+            category: GOOGLE_APPS_CATEGORY,
+        };
     }
     return undefined;
 }
@@ -344,6 +378,10 @@ export function processCommand(input: string): CommandResult {
             description: 'Routing to Ogeemo Co-Pilot for an answer.',
         };
     }
+
+    // A Google app by name comes first, so "google calendar" opens Google's calendar and not Ogeemo's.
+    const googleApp = googleAppCommand(rawInput);
+    if (googleApp) return googleApp;
 
     const normalizedInput = normalize(rawInput);
     const tokens = rawInput.split(/\s+/).filter(Boolean);

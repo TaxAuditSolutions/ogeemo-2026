@@ -1,5 +1,6 @@
 /**
- * Opening the form of a record the Co-Pilot has just saved (pure; see tests/ai-open-record.test.ts).
+ * Opening the screen of a record the Co-Pilot has just saved (pure; see tests/ai-open-record.test.ts). A contact or
+ * project opens its form; a booked appointment or a timed to-do opens the Calendar; a plain to-do opens the To-Do List.
  *
  * "Add a contact named Test Person" and "add a project called Website Redesign" save at once, which left the person
  * looking at a chat reply with nothing to check or add to. Now the saved record's own form opens too, so they can
@@ -9,16 +10,31 @@
  * reported success counts, so a held-back duplicate or a refusal opens nothing.
  */
 
-export type SavedRecord = { kind: 'contact' | 'project'; id: string };
+export type SavedRecord = { kind: 'contact' | 'project' | 'calendar' | 'todo'; id: string };
 
 /** The ids Firestore hands out. Anything else is not a record id. */
 const RECORD_ID = /^[A-Za-z0-9_-]{6,64}$/;
 
-/** The create tools whose result opens a form, and which id they return. */
-const OPENING_TOOLS: Record<string, { kind: SavedRecord['kind']; idField: string }> = {
-  createContact: { kind: 'contact', idField: 'contactId' },
-  createProject: { kind: 'project', idField: 'projectId' },
+/** The create tools whose result opens a screen, and which id they return. */
+const OPENING_TOOLS: Record<string, { idField: string }> = {
+  createContact: { idField: 'contactId' },
+  createProject: { idField: 'projectId' },
+  createAppointment: { idField: 'appointmentId' },
+  createTask: { idField: 'taskId' },
 };
+
+/**
+ * What a successful create tool opened. A booked appointment is on the Calendar. A task says where it landed (`screen`,
+ * set by the server's own handler): a timed one on the Calendar, a plain to-do on the To-Do List, and a task inside a
+ * project on neither, so nothing opens for it.
+ */
+function kindFor(name: string, output: Record<string, unknown>): SavedRecord['kind'] | null {
+  if (name === 'createContact') return 'contact';
+  if (name === 'createProject') return 'project';
+  if (name === 'createAppointment') return 'calendar';
+  if (name === 'createTask') return output.screen === 'calendar' ? 'calendar' : output.screen === 'todo' ? 'todo' : null;
+  return null;
+}
 
 /** The last record saved while answering one message, read from the conversation Genkit returns; null if none. */
 export function savedRecord(messages: unknown): SavedRecord | null {
@@ -33,8 +49,9 @@ export function savedRecord(messages: unknown): SavedRecord | null {
       const tool = OPENING_TOOLS[response.name];
       const output = response.output && typeof response.output === 'object' ? (response.output as Record<string, unknown>) : null;
       if (!tool || !output || output.success !== true) continue;
+      const kind = kindFor(response.name, output);
       const id = output[tool.idField];
-      if (typeof id === 'string' && RECORD_ID.test(id)) found = { kind: tool.kind, id };
+      if (kind && typeof id === 'string' && RECORD_ID.test(id)) found = { kind, id };
     }
   }
   return found;
@@ -59,7 +76,20 @@ export function openActionFor(record: SavedRecord | null | undefined):
   if (record.kind === 'project') {
     return { type: 'dispatch', target: projectFormTarget(record.id), isExternal: false, label: 'Open Project', category: 'Operations' };
   }
+  if (record.kind === 'calendar') return { type: 'dispatch', target: CALENDAR_SCREEN, isExternal: false, label: 'Open Calendar', category: 'Workspace' };
+  if (record.kind === 'todo') return { type: 'dispatch', target: TODO_SCREEN, isExternal: false, label: 'Open To-Do List', category: 'Workspace' };
   return undefined;
+}
+
+const CALENDAR_SCREEN = '/calendar';
+const TODO_SCREEN = '/to-do';
+
+/**
+ * Whether a link from the Co-Pilot service is the Calendar or the To-Do List, which the browser may open by itself
+ * after something was saved there. Exactly these two paths, no query: anything else the service sends stays a button.
+ */
+export function isSavedScreenTarget(target: unknown): target is string {
+  return target === CALENDAR_SCREEN || target === TODO_SCREEN;
 }
 
 /**
@@ -69,6 +99,8 @@ export function openActionFor(record: SavedRecord | null | undefined):
  */
 export function openedFormNote(record: SavedRecord | null | undefined): string {
   if (!record || !openActionFor(record)) return '';
+  if (record.kind === 'calendar') return 'It is saved. The Calendar is opening so you can see it.';
+  if (record.kind === 'todo') return 'It is saved. The To-Do List is opening so you can see it.';
   return record.kind === 'contact'
     ? 'It is saved. Its form is opening so you can check it and add details.'
     : 'It is saved. Its form is opening so you can check it and add details; saving there updates the same project.';

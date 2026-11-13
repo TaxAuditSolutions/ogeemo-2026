@@ -117,6 +117,8 @@ const createTaskTool = ai.defineTool(
     outputSchema: z.object({
       success: z.boolean(),
       taskId: z.string().optional(),
+      // Where it landed, so the browser can open that screen: a timed task is on the Calendar, a plain to-do on the To-Do List.
+      screen: z.enum(['calendar', 'todo']).optional(),
       message: z.string(),
     }),
   },
@@ -773,7 +775,7 @@ const ogeemoAgentFlow = ai.defineFlow(
       reply: z.string(),
       toolsCalled: z.array(z.string()).optional(),
       // The contact or project saved while answering, so the browser can open its form (see src/lib/ai-open-record.ts).
-      saved: z.object({ kind: z.enum(['contact', 'project']), id: z.string() }).optional(),
+      saved: z.object({ kind: z.enum(['contact', 'project', 'calendar', 'todo']), id: z.string() }).optional(),
       // Which screens' data the tools changed this turn, so an open screen can reload (see src/lib/ai-tool-reply.ts).
       changed: z.array(z.enum(['calendar', 'contacts', 'projects'])).optional(),
     }),

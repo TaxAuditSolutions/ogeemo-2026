@@ -6,12 +6,9 @@ import { format as formatDate, isToday, isTomorrow, set } from 'date-fns';
 import {
     Calendar as CalendarIcon,
     Check,
-    CheckCircle2,
     ChevronDown,
     Circle,
     Clock,
-    FileText,
-    Folder,
     MoreVertical,
     Plus,
     Search,
@@ -40,37 +37,16 @@ import { endFollowsStart } from '@/lib/schedule-dates';
 import { formatDurationMinutes } from '@/lib/next-free-slot';
 import { cn } from '@/lib/utils';
 import { addProject } from '@/services/project-service';
-import { type ActivityType, type TaskStatus } from '@/types/calendar-types';
+import { type TaskStatus } from '@/types/calendar-types';
 import { type Contact } from '@/services/contact-service';
 
-// The three capture tiles at the top of the form. A tile sets
-// Event.activityType; every field stays available. "Action" covers both
-// tasks and appointments - whether it has a time is the When band's job.
-// Clicking Action on a new form stores 'task'; an existing 'appointment'
-// stays an appointment (it still shows as selected and is never changed
-// by merely opening it), so the calendar's overdue rule keeps working.
-const ACTIVITY_TYPES: {
-    value: ActivityType;
-    matches: ActivityType[];
-    label: string;
-    caption: string;
-    Icon: React.ComponentType<{ className?: string }>;
-}[] = [
-    { value: 'task', matches: ['task', 'appointment'], label: 'Action', caption: 'Something to do or attend', Icon: CheckCircle2 },
-    { value: 'project', matches: ['project'], label: 'Project', caption: 'Larger piece of work', Icon: Folder },
-    { value: 'note', matches: ['note'], label: 'Note', caption: 'Conversation or record', Icon: FileText },
-];
+// There is no activity-type chooser on the form. Event.activityType is still
+// stored: a new activity is a 'task', and an existing 'appointment' (or older
+// 'project' / 'note') record keeps its stored value when it is opened and saved,
+// because the calendar's overdue rule treats appointments differently.
 
-// Colour identification for the activity type. The selected tile and the
-// Subject field read the same entry, so they always match. All four types
-// share light tan for now; give a type its own colour by editing its entry.
-const TYPE_TAN = 'border-[#e8d8bc] bg-[#faf4e8] dark:border-[#7a6544] dark:bg-[#3d3220]';
-const ACTIVITY_TYPE_COLORS: Record<ActivityType, string> = {
-    task: TYPE_TAN,
-    appointment: TYPE_TAN,
-    project: TYPE_TAN,
-    note: TYPE_TAN,
-};
+// Light tan highlight for the When band once a time is set.
+const WHEN_BAND_ACTIVE = 'border-[#e8d8bc] bg-[#faf4e8] dark:border-[#7a6544] dark:bg-[#3d3220]';
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
     { value: 'todo', label: 'To Do' },
@@ -97,8 +73,8 @@ interface ActivityFormFieldsProps {
 }
 
 /**
- * The Activity Manager's single-card form: activity type tiles, subject,
- * client / project / assignee pickers, notes, and the Schedule / Billable /
+ * The Activity Manager's single-card form: subject, When band,
+ * client / project / assignee pickers, notes, and the Billable /
  * Status controls. Rendered by the Activity Manager page and by the Calendar's
  * Add dialog; each host supplies its own footer and save handling.
  */
@@ -108,7 +84,6 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
     const {
         subject, setSubject,
         notes, setNotes,
-        activityType,
         status, setStatus,
         selectedProjectId, setSelectedProjectId,
         selectedContactId, setSelectedContactId,
@@ -125,7 +100,6 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
         isAllDay, setIsAllDay,
         startDateTouchedRef,
         startTimeTouchedRef,
-        handleActivityTypeSelect,
         isSlotSuggested, setIsSlotSuggested,
         selectNextFreeSlot,
         selectPickTime,
@@ -212,38 +186,12 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
     return (
         <>
             <div className="space-y-6">
-                {/* Activity type tiles: Action / Project / Note */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {ACTIVITY_TYPES.map(({ value, matches, label, caption, Icon }) => {
-                        const isSelected = matches.includes(activityType);
-                        return (
-                            <button
-                                key={value}
-                                type="button"
-                                onClick={() => { if (!isSelected) handleActivityTypeSelect(value); }}
-                                aria-pressed={isSelected}
-                                className={cn(
-                                    'flex items-center gap-3 rounded-lg border p-4 text-left transition-colors',
-                                    isSelected ? ACTIVITY_TYPE_COLORS[value] : 'border-border bg-card hover:bg-muted/50'
-                                )}
-                            >
-                                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground')}>
-                                    <Icon className="h-5 w-5" />
-                                </span>
-                                <span className="min-w-0">
-                                    <span className="block text-sm font-semibold">{label}</span>
-                                    <span className="block text-xs text-muted-foreground">{caption}</span>
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
                 <div className="space-y-2">
                     <Label htmlFor="subject">Subject <span className="text-destructive">*</span></Label>
-                    <Input id="subject" className={cn('transition-colors', ACTIVITY_TYPE_COLORS[activityType])} placeholder="e.g. Prepare design concept" value={subject} onChange={(e) => setSubject(e.target.value)} ref={subjectInputRef} />
+                    <Input id="subject" placeholder="e.g. Prepare design concept" value={subject} onChange={(e) => setSubject(e.target.value)} ref={subjectInputRef} />
                 </div>
                 {/* When: the time is part of the activity, so it sits right under the Subject. */}
-                <div className={cn('space-y-3 rounded-lg border p-4 transition-colors', whenMode !== 'none' ? ACTIVITY_TYPE_COLORS.task : 'border-border bg-card')}>
+                <div className={cn('space-y-3 rounded-lg border p-4 transition-colors', whenMode !== 'none' ? WHEN_BAND_ACTIVE : 'border-border bg-card')}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -376,10 +324,7 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={isProjectPopoverOpen}
-                                    className={cn(
-                                        'w-full justify-start gap-2 font-normal h-10 transition-colors',
-                                        activityType === 'project' && cn(ACTIVITY_TYPE_COLORS.project, 'hover:bg-[#f5ecd9] dark:hover:bg-[#4a3d28]')
-                                    )}
+                                    className="w-full justify-start gap-2 font-normal h-10"
                                 >
                                     <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                                     <span className={cn('truncate', selectedProjectId ? 'text-foreground' : 'text-muted-foreground')}>
@@ -510,7 +455,7 @@ export function ActivityFormFields({ form, data, subjectInputRef, onOpenAgenda }
                             </div>
                         )}
                     </div>
-                    <Textarea id="notes" className={cn('transition-colors', activityType === 'note' && cn(ACTIVITY_TYPE_COLORS.note, 'border-input dark:border-input'))} value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add notes, instructions or other details..." />
+                    <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Add notes, instructions or other details..." />
                 </div>
                 {/* Controls row: Billable / Status (scheduling lives in the When band above) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

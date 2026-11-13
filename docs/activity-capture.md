@@ -40,14 +40,13 @@ not document work if recording it means too much typing or too many steps.
 The interim capture surface above was replaced by the single-card
 "Create a new activity" form on `/event-manager`:
 
-- **Activity type tiles** (Task / Appointment / Project / Note) — persisted
-  as `Event.activityType` (legacy docs default to `task`). The Appointment
-  tile flips the Schedule switch on.
-- **Three type tiles: Action / Project / Note.** *Action* replaces the separate
-  Task and Appointment tiles. A new Action is stored as `task`; an existing
-  `appointment` still shows under Action and keeps its type (the calendar's
-  overdue rule treats appointments differently, so the stored value is never
-  rewritten by opening it).
+- **No activity-type tiles.** The Action / Project / Note tiles were removed
+  because they only set a stored label and changed no behaviour. `Event.activityType`
+  is still persisted (legacy docs default to `task`): a new activity is stored as
+  `task`, and an existing `appointment` / `project` / `note` keeps its stored value
+  when opened and saved (the calendar's overdue rule treats appointments
+  differently, so the stored value is never rewritten by opening it). Link an
+  activity to a project with the Project dropdown.
 - **When band (under Subject):** the time is part of the activity, not a hidden
   switch. Three choices — **Next free slot** (default for a new activity on the
   Activity Manager page), **Pick a time**, **No set time**. Next free slot is the
@@ -76,7 +75,7 @@ in `useActivityForm`, picker data in `useActivityReferenceData`, and the fields
 in `ActivityFormFields`, all used by `/event-manager` as well, so both save the
 same record shape (including the start/end rules in `resolveScheduledWindow`).
 
-- Opens **scheduled for now**: Appointment tile selected, Schedule switch on,
+- Opens **scheduled for now** (stored as an `appointment`), Schedule switch on,
   Start = today at the current hour and 5-minute slot, End date = today. (A
   calendar entry has to be scheduled to appear on the calendar, so this is the
   one place a new activity defaults to scheduled.)

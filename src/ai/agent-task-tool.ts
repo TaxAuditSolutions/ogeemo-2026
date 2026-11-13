@@ -54,7 +54,9 @@ export async function createTaskHandler(db: DbLike | null, ctx: ToolContext, inp
     }
 
     const where = task.start ? ` for ${whenText(task.start, ctx.timeZone)}` : '';
-    return { success: true, taskId: ref.id as string, message: `Created "${oneLine(task.title, 80)}"${where}.` };
+    // Where it shows up: a timed task on the Calendar, a plain to-do on the To-Do List, a project task on neither.
+    const screen = task.start ? ('calendar' as const) : task.projectId ? undefined : ('todo' as const);
+    return { success: true, taskId: ref.id as string, ...(screen ? { screen } : {}), message: `Created "${oneLine(task.title, 80)}"${where}.` };
   } catch (error: any) {
     return { success: false, message: `The task could not be saved: ${oneLine(error?.message, 160)}` };
   }

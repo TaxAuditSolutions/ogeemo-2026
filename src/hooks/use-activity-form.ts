@@ -10,7 +10,7 @@ import { presetHourValue, presetMinuteValue, resolveScheduledWindow } from '@/li
 import { findNextFreeSlot } from '@/lib/next-free-slot';
 
 export interface ActivityFormOptions {
-    /** Starting activity type tile (default: task). */
+    /** Starting stored activity type (default: task). There is no on-screen type chooser. */
     activityType?: ActivityType;
     /**
      * Open with the Schedule switch on and Start set to the current system
@@ -173,16 +173,6 @@ export function useActivityForm({
         setIsScheduleEnabled(false);
     };
 
-    // A tile sets the activity type; Appointment also flips the Schedule
-    // switch on (a scheduled activity needs a date).
-    const handleActivityTypeSelect = (value: ActivityType) => {
-        setActivityType(value);
-        if (value === 'appointment' && !isScheduleEnabled) {
-            setIsScheduleEnabled(true);
-            applyScheduleDefaults();
-        }
-    };
-
     const handleScheduleToggle = (enabled: boolean) => {
         setIsScheduleEnabled(enabled);
         if (enabled) applyScheduleDefaults();
@@ -284,7 +274,6 @@ export function useActivityForm({
         selectPickTime,
         selectNoSetTime,
         applyScheduleDefaults,
-        handleActivityTypeSelect,
         handleScheduleToggle,
         scheduledSpanSeconds,
         resolveSchedule,

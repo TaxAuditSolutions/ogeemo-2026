@@ -17,7 +17,6 @@ import {
     Pause, 
     Trash2, 
     Pencil, 
-    MessageSquare, 
     RefreshCw, 
     BellRing, 
     Mail, 
@@ -25,9 +24,6 @@ import {
     User, 
     Square,
     ArrowRight,
-    ChevronDown,
-    CheckCircle2,
-    Briefcase,
     ListPlus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -47,13 +43,6 @@ import { FavoriteActionsMenu } from '@/components/time/favorite-actions-menu';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '../ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -193,7 +182,6 @@ export function TimeManagerView() {
         setEndMinute: trackFormChange(form.setEndMinute, () => setIsDirty(true)),
         setIsAllDay: trackFormChange(form.setIsAllDay, () => setIsDirty(true)),
         setIsSlotSuggested: trackFormChange(form.setIsSlotSuggested, () => setIsDirty(true)),
-        handleActivityTypeSelect: trackFormChange(form.handleActivityTypeSelect, () => setIsDirty(true)),
         handleScheduleToggle: trackFormChange(form.handleScheduleToggle, () => setIsDirty(true)),
         selectNextFreeSlot: trackFormChange(form.selectNextFreeSlot, () => setIsDirty(true)),
         selectPickTime: trackFormChange(form.selectPickTime, () => setIsDirty(true)),
@@ -459,25 +447,6 @@ export function TimeManagerView() {
         setIsDirty(true);
     };
 
-    const handleToggleComplete = async () => {
-        if (!eventToEdit) return;
-        const newStatus = status === 'done' ? 'todo' : 'done';
-        try {
-            await updateTask(eventToEdit.id, { status: newStatus });
-            setStatus(newStatus);
-            setEventToEdit(current => current ? { ...current, status: newStatus } : current);
-            await refData.reloadEvents();
-            toast({ title: newStatus === 'done' ? 'Activity Completed' : 'Activity Reopened' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Failed to update activity', description: error.message });
-        }
-    };
-
-    const handleGoToProject = () => {
-        if (!eventToEdit?.projectId || !confirmDiscardChanges()) return;
-        router.push(`/projects/${eventToEdit.projectId}/tasks`);
-    };
-
     const handleDeleteEvent = async () => {
         if (!eventToEdit) return;
         const deletedId = eventToEdit.id;
@@ -664,8 +633,14 @@ export function TimeManagerView() {
                         </div>
                 </header>
 
-                <div className="grid w-full max-w-4xl grid-cols-1 gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[auto_minmax(240px,1fr)_auto_auto] print:hidden">
-                    <Button type="button" variant={eventToEdit ? 'outline' : 'secondary'} className="w-full" onClick={handleNewActivity}>
+                <div className="w-full max-w-4xl flex flex-col gap-2 sm:flex-row sm:justify-end print:hidden">
+                    <Button variant="outline" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
+                    <Button variant="secondary" onClick={() => { if (confirmDiscardChanges()) router.back(); }}>Cancel</Button>
+                    <Button onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> Save</Button>
+                </div>
+
+                <div className="grid w-full max-w-4xl grid-cols-1 gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-3 print:hidden">
+                    <Button type="button" variant={eventToEdit ? 'outline' : 'secondary'} className="w-full border border-black dark:border-white" onClick={handleNewActivity}>
                         <Plus className="mr-2 h-4 w-4" /> New activity
                     </Button>
                     <ActivityPicker
@@ -677,60 +652,11 @@ export function TimeManagerView() {
                         onSelect={handleSelectActivity}
                     />
                     <FavoriteActionsMenu onBeforeNavigate={confirmDiscardChanges} />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="outline" className="w-full justify-between gap-2" disabled={!eventToEdit}>
-                                <span>Activity actions</span><ChevronDown className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
-                            {!timerState?.isActive ? (
-                                <DropdownMenuItem onSelect={handleStartTimer}>
-                                    <Play className="mr-2 h-4 w-4" /> Start timer
-                                </DropdownMenuItem>
-                            ) : (
-                                <>
-                                    <DropdownMenuItem onSelect={timerState.isPaused ? handleResumeTimer : handlePauseTimer}>
-                                        {timerState.isPaused ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
-                                        {timerState.isPaused ? 'Resume timer' : 'Pause timer'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={handleLogCurrentSession} disabled={elapsedSeconds <= 0}>
-                                        <Square className="mr-2 h-4 w-4" /> Log running session
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                            <DropdownMenuItem onSelect={handleOpenLogTime}>
-                                <ListPlus className="mr-2 h-4 w-4" /> Log actual time
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={handleToggleComplete}>
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> {status === 'done' ? 'Reopen activity' : 'Mark complete'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setIsAgendaFormOpen(true)}>
-                                <MessageSquare className="mr-2 h-4 w-4" /> View agenda
-                            </DropdownMenuItem>
-                            {eventToEdit?.projectId && (
-                                <DropdownMenuItem onSelect={handleGoToProject}>
-                                    <Briefcase className="mr-2 h-4 w-4" /> Go to project workspace
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onSelect={() => setIsDeleteDialogOpen(true)}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete activity
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
 
-                <div className="w-full max-w-4xl flex flex-col gap-2 sm:flex-row sm:justify-end print:hidden">
-                    <Button variant="outline" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
-                    <Button variant="secondary" onClick={() => { if (confirmDiscardChanges()) router.back(); }}>Cancel</Button>
-                    <Button onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> Save</Button>
-                </div>
-
-                <div className="w-full max-w-4xl space-y-6">
+                <div className="w-full max-w-4xl space-y-6 !mt-3">
                     <Card className="shadow-md border-black/5">
-                        <CardContent className="pt-6">
+                        <CardContent className="pt-4">
                             <ActivityFormFields form={formForFields} data={refData} subjectInputRef={subjectInputRef} onOpenAgenda={() => setIsAgendaFormOpen(true)} />
                         </CardContent>
                         {eventToEdit && (
@@ -809,6 +735,17 @@ export function TimeManagerView() {
                                     </>
                                 )}
                             </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={handleOpenLogTime}
+                                disabled={!eventToEdit}
+                                title={eventToEdit ? undefined : 'Save this activity first, then log time against it.'}
+                            >
+                                <ListPlus className="mr-2 h-4 w-4" /> Log actual time
+                            </Button>
                             <div className="flex gap-2 items-end">
                                 <div className="flex-1">
                                     <Label htmlFor="sn" className="text-xs">Active Session Notes</Label>

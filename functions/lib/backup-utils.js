@@ -139,6 +139,7 @@ exports.BACKUP_SCOPE_CONFIGS = {
         collectionIds: [
             'projects',
             'tasks',
+            'trashedTasks',
             'projectTemplates',
             'workOrders',
             'workOrderLineItems',

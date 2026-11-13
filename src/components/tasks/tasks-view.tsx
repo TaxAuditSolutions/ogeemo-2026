@@ -44,6 +44,11 @@ import { NewTaskDialog } from '@/components/tasks/NewTaskDialog';
 import { TaskColumn } from '../tasks/TaskColumn';
 import { cn } from '@/lib/utils';
 import { ProjectManagementHeader } from '../tasks/ProjectManagementHeader';
+import { subscribeToCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
+import { TrashBin, TrashDialog } from '@/components/tasks/todo-trash';
+import { ToastAction } from '@/components/ui/toast';
+import { getTrashedTasks, restoreTrashedTask, trashTasks } from '@/services/trash-service';
+import { trashedMessage } from '@/lib/task-trash';
 
 
 export function ToDoListView() {
@@ -62,17 +67,20 @@ export function ToDoListView() {
   const [isProjectPopoverOpen, setIsProjectPopoverOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false);
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
+  const [trashCount, setTrashCount] = useState(0);
 
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const loadData = useCallback(async () => {
+  // `quiet` reloads without the full-page spinner, so something open on top of the page (the trash) stays open.
+  const loadData = useCallback(async (quiet: boolean = false) => {
     if (!user) {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!quiet) setIsLoading(true);
     try {
       const userTasks = await getTasksForUser(user.uid);
       const userProjects = await getProjects(user.uid).catch(() => []);
@@ -94,8 +102,63 @@ export function ToDoListView() {
   }, [user, toast]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
+
+  // How many items are in the trash, for the number on the bin. A failure just leaves the old number.
+  const loadTrashCount = useCallback(async () => {
+    if (!user) return;
+    try {
+      setTrashCount((await getTrashedTasks()).length);
+    } catch (error) {
+      console.warn('Could not count the trash:', error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void loadTrashCount();
+  }, [loadTrashCount]);
+
+  const handleTrashed = useCallback(async (taskIds: string[]) => {
+    try {
+      const { trashIds, titles } = await trashTasks(taskIds);
+      if (trashIds.length === 0) {
+        toast({ variant: 'destructive', title: 'Nothing was moved', description: 'Those items no longer exist.' });
+        return;
+      }
+      setSelectedTaskIds((current) => current.filter((id) => !taskIds.includes(id)));
+      await Promise.all([loadData(true), loadTrashCount()]);
+      toast({
+        title: 'Moved to the trash',
+        description: trashedMessage(titles),
+        action: (
+          <ToastAction
+            altText="Undo moving to the trash"
+            onClick={async () => {
+              try {
+                for (const id of trashIds) await restoreTrashedTask(id);
+                await Promise.all([loadData(true), loadTrashCount()]);
+              } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Could not undo', description: error?.message || 'Open the trash and restore it from there.' });
+              }
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
+      });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Cannot move to the trash', description: error?.message || 'Please try again.' });
+    }
+  }, [toast, loadData, loadTrashCount]);
+
+  const handleTrashTask = useCallback((task: TaskEvent) => { void handleTrashed([task.id]); }, [handleTrashed]);
+
+  // The Co-Pilot just made a to-do (to-dos and calendar events are the same records, so the Calendar signal covers it):
+  // reload, so the new one shows without refreshing the page.
+  useEffect(() => subscribeToCopilotWorkflowEvent('copilot:data_changed', ({ areas }) => {
+    if (areas.includes('calendar')) void loadData();
+  }), [loadData]);
 
   const filteredTasks = useMemo(() => {
     if (selectedProjectId === 'all') return tasks;
@@ -329,6 +392,7 @@ export function ToDoListView() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <TrashBin count={trashCount} onDropTask={handleTrashTask} onOpen={() => setIsTrashOpen(true)} />
               <Button variant="outline" onClick={() => handleAddTask({ isTodoItem: true, projectId: selectedProjectId === 'all' || selectedProjectId === 'unassigned' ? null : selectedProjectId })}>
                 <Plus className="mr-2 h-4 w-4" /> Add Task
               </Button>
@@ -350,6 +414,7 @@ export function ToDoListView() {
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
               onAddToTodoList={handleAddToTodoList}
+              onTrash={handleTrashTask}
             />
             <TaskColumn
               status="inProgress"
@@ -365,6 +430,7 @@ export function ToDoListView() {
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
               onAddToTodoList={handleAddToTodoList}
+              onTrash={handleTrashTask}
             />
             <TaskColumn
               status="done"
@@ -380,10 +446,16 @@ export function ToDoListView() {
               onToggleSelectAll={handleToggleSelectAll}
               onMakeProject={handleMakeProject}
               onAddToTodoList={handleAddToTodoList}
+              onTrash={handleTrashTask}
             />
           </div>
         </div>
       </div>
+      <TrashDialog
+        open={isTrashOpen}
+        onOpenChange={setIsTrashOpen}
+        onChanged={() => { void loadData(true); void loadTrashCount(); }}
+      />
       <CreateTaskDialog
         isOpen={isNewTaskDialogOpen}
         onOpenChange={(open) => {

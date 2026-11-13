@@ -1,6 +1,17 @@
 {
   "documents": [
     {
+      "id": "todo.trash.bin",
+      "module": "Projects",
+      "title": "Trash a to-do, restore it, or empty the trash",
+      "routes": ["/to-do"],
+      "intents": ["how-to", "tasks", "delete", "restore"],
+      "keywords": ["trash", "trash bin", "delete", "remove", "restore", "undelete", "undo", "empty trash", "to-do list", "move to trash", "deleted task"],
+      "audiences": ["all"],
+      "content": "On the To-Do List, drag a task card onto the Trash bin above the columns, or open the card's menu and choose Move to Trash. The task leaves the list at once and a message offers Undo. Click the bin to open the trash: each item shows its status and when it was trashed, with a Restore button that puts it back on the list (a project or client that has since been deleted is left off and the message says so), and a button to delete it for good. Empty trash deletes everything in it for good, after asking, and cannot be undone. A task that is on an invoice or quote, or part of an open work order, cannot be trashed, and neither can one with recorded time, because that time feeds payroll and the time reports; archive that task instead, which keeps the time. The trash is shared by everyone in the workspace, and only editors and administrators can trash or restore. Delete Task in the card menu still deletes at once with no trash.",
+      "sourceFiles": ["src/components/tasks/tasks-view.tsx", "src/components/tasks/todo-trash.tsx", "src/services/trash-service.ts", "src/lib/task-trash.ts"]
+    },
+    {
       "id": "projects.task-board.columns",
       "module": "Projects",
       "title": "Work a project's Task Board",

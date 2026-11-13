@@ -32,6 +32,7 @@ interface TaskColumnProps {
   onToggleSelect: (taskId: string, event?: React.MouseEvent) => void;
   onToggleSelectAll: (status: TaskStatus) => void;
   onAddToTodoList: (task: TaskEvent) => void;
+  onTrash?: (task: TaskEvent) => void;
 }
 
 const columnTitles: Record<TaskStatus, string> = {
@@ -56,6 +57,7 @@ export function TaskColumn({
   onToggleSelect,
   onToggleSelectAll,
   onAddToTodoList,
+  onTrash,
 }: TaskColumnProps) {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: ['task', StepItemTypes.STEP],
@@ -101,6 +103,7 @@ export function TaskColumn({
                 onArchive={onArchive}
                 onSchedule={onSchedule}
                 onAddToTodoList={onAddToTodoList}
+                onTrash={onTrash}
             />
           ))}
         </CardContent>

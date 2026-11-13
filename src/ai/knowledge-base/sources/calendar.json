@@ -30,7 +30,7 @@
       "intents": ["business-rule", "overdue", "troubleshooting"],
       "keywords": ["amber", "overdue", "unfinished", "missed", "appointment", "task", "ritual", "drag forward", "past"],
       "audiences": ["all"],
-      "content": "An unfinished scheduled task whose end time has passed is considered overdue and can appear amber so it can be dragged forward. Stored appointments and daily or weekly planning rituals are not flagged overdue. Completed items are not overdue. This distinction is why existing appointments keep their stored appointment type when displayed under the Activity Manager's Action tile. A newly created Action is stored as a task, so a missed scheduled Action can be flagged overdue.",
+      "content": "An unfinished scheduled task whose end time has passed is considered overdue and can appear amber so it can be dragged forward. Stored appointments and daily or weekly planning rituals are not flagged overdue. Completed items are not overdue. This distinction is why existing appointments keep their stored appointment type when opened in the Activity Manager. A newly created activity is stored as a task, so a missed scheduled activity can be flagged overdue.",
       "sourceFiles": ["src/lib/calendar-quick-entry.ts", "src/components/calendar/CalendarEvent.tsx"]
     },
     {

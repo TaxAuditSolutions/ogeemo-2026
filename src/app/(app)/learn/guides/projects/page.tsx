@@ -97,6 +97,9 @@ export default function ProjectInstructionsPage() {
                                    <p>
                                       The <Link href="/to-do">To-Do List</Link> serves as your universal inbox for any tasks that haven't been assigned to a specific project yet. It's the perfect place to quickly capture a single to-do item without breaking your flow. You can later assign these tasks to the appropriate project when you're ready to organize them.
                                    </p>
+                                   <p>
+                                      To remove a task, drag its card onto the <strong>Trash</strong> bin above the columns, or choose <strong>Move to Trash</strong> from the card's menu. A message offers <strong>Undo</strong> right away. Click the bin to open the trash, where you can <strong>Restore</strong> an item, delete one for good, or <strong>Empty trash</strong>. A task that is on an invoice or quote, or has recorded time, cannot be trashed; archive it instead.
+                                   </p>
                                </div>
                             </AccordionContent>
                         </AccordionItem>

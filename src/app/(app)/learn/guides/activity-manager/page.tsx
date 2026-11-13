@@ -51,8 +51,7 @@ export default function TimeManagerInstructionsPage() {
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <ul>
                                         <li>Use <strong>New activity</strong> to clear the form and start again.</li>
-                                        <li>Use <strong>Select an activity</strong> to search open activities by subject, notes, client, or project. Turn on <strong>Show completed activities</strong> when you need a completed record.</li>
-                                        <li><strong>Activity actions</strong> provides timer controls, manual time entry, completion/reopening, agenda and project links, and deletion for the selected activity.</li>
+                                        <li>Use <strong>Select an existing activity</strong> to search open activities by subject, notes, client, or project. Turn on <strong>Show completed activities</strong> when you need a completed record.</li>
                                         <li><strong>Quick actions</strong> (<Star className="inline h-4 w-4"/>) mirrors your Favorite Actions from My Shortcuts. Choose <strong>Manage favorites</strong> to customize the list and its order.</li>
                                     </ul>
                                     <p>Activity Manager asks for confirmation before a selection or internal shortcut discards unsaved edits.</p>
@@ -74,7 +73,7 @@ export default function TimeManagerInstructionsPage() {
                                      <ul>
                                         <li><strong>For Future Events:</strong> Choose Pick a time and select a future date and time to place the activity on your calendar.</li>
                                         <li><strong>For Unscheduled Work:</strong> Choose No set time. The activity remains available without a calendar appointment.</li>
-                                        <li><strong>For Completed Work:</strong> Select the activity and choose <strong>Activity actions → Log actual time</strong>. Save a new activity before adding its first manual session.</li>
+                                        <li><strong>For Completed Work:</strong> Select the activity and choose <strong>Log actual time</strong> in the Time Sessions card. Save a new activity before adding its first manual session.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>

@@ -29,6 +29,8 @@ interface TaskCardProps {
   onMakeProject: (task: TaskEvent) => void;
   onSchedule?: (task: TaskEvent) => void;
   onAddToTodoList: (task: TaskEvent) => void;
+  /** When given, the card's menu offers Move to Trash (the To-Do List has a trash bin). */
+  onTrash?: (task: TaskEvent) => void;
 }
 
 export function TaskCard({ 
@@ -41,6 +43,7 @@ export function TaskCard({
     onMakeProject,
     onSchedule,
     onAddToTodoList,
+    onTrash,
 }: TaskCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -113,6 +116,11 @@ export function TaskCard({
                         <Archive className="mr-2 h-4 w-4" /> Archive
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    {onTrash && (
+                        <DropdownMenuItem onSelect={() => onTrash(task)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Move to Trash
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onSelect={() => onTaskDelete(task.id)} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" /> Delete Task
                     </DropdownMenuItem>

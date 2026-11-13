@@ -11,7 +11,7 @@ import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { canOpenScreen } from '@/lib/screen-access';
 import { parseAssistantMessageAction } from '@/ai/assistant-actions';
-import { isProjectFormTarget } from '@/lib/ai-open-record';
+import { isProjectFormTarget, isSavedScreenTarget } from '@/lib/ai-open-record';
 import { parseChangedAreas } from '@/lib/ai-tool-reply';
 import {
     createAssistantChatThread,
@@ -291,6 +291,15 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                 if (destination) {
                     dispatchCopilotWorkflowEvent('copilot:navigate', { target: destination });
                     router.push(destination);
+                }
+            } else if (assistantAction?.type === 'dispatch' && isSavedScreenTarget(assistantAction.target)) {
+                // An appointment or to-do the Co-Pilot just saved: show it where it landed (the Calendar, or the To-Do
+                // List). Only when this person may open that screen, and not when they are already on it (the screen
+                // reloads itself from the data-changed signal above). The reply keeps the link as a button too.
+                const allowed = canOpenScreen(assistantAction.target, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess }).ok;
+                if (allowed && pathname !== assistantAction.target) {
+                    dispatchCopilotWorkflowEvent('copilot:navigate', { target: assistantAction.target });
+                    router.push(assistantAction.target);
                 }
             } else if (assistantAction?.type === 'dispatch' && isProjectFormTarget(assistantAction.target)) {
                 // A project the Co-Pilot just saved: open its own form so the person can check it and add details. The

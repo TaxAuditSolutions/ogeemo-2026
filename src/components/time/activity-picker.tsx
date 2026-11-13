@@ -74,7 +74,7 @@ export function ActivityPicker({ activities, projects, contacts, selectedActivit
                     className="w-full min-w-0 justify-between gap-2"
                 >
                     <span className={cn('min-w-0 truncate', !selectedTitle && 'text-muted-foreground')}>
-                        {selectedTitle || 'Select an activity…'}
+                        {selectedTitle || 'Select an existing activity…'}
                     </span>
                     <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                 </Button>

@@ -185,6 +185,7 @@ service cloud.firestore {
     match /suppliers/{supplierId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /projects/{projectId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /tasks/{taskId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
+    match /trashedTasks/{trashId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /ideas/{ideaId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /meetings/{meetingId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }
     match /fileManagerFolders/{folderId} { allow read: if canReadOrgDoc(); allow create: if canCreateOrgDoc(); allow update: if canUpdateOrgDoc(); allow delete: if canDeleteOrgDoc(); }

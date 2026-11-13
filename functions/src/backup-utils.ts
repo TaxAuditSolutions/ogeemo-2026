@@ -163,6 +163,7 @@ export const BACKUP_SCOPE_CONFIGS: Record<BackupScopeLabel, BackupScopeConfig> =
     collectionIds: [
       'projects',
       'tasks',
+      'trashedTasks',
       'projectTemplates',
       'workOrders',
       'workOrderLineItems',

@@ -29,7 +29,7 @@ The comparison runner strips Admin credentials so the existing Co-Pilot cannot w
 
 ## Current coverage
 
-- Activity Manager: Action/Project/Note, Subject/Notes, When choices, next-free-slot rules, save controls, time sessions and billing
+- Activity Manager: Subject/Notes, When choices, next-free-slot rules, save controls, time sessions and billing
 - Calendar: quick entry, Add dialog, Done/Reopen, overdue rules, dragging
 - Navigation: All/Groups/Favorites, filtering/sorting, Workflows
 - Contacts and Clients: creation and required fields, system/default folders, folder management, editing/deletion, merging duplicates (linked records are moved first), workflow actions, Client Record, document-folder provisioning, and worker-only HR fields

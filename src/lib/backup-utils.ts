@@ -143,6 +143,7 @@ export const BACKUP_SCOPE_OPTIONS: readonly BackupScopeOption[] = [
         collectionIds: [
             'projects',
             'tasks',
+            'trashedTasks',
             'projectTemplates',
             'workOrders',
             'workOrderLineItems',

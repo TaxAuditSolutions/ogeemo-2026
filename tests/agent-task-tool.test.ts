@@ -36,6 +36,16 @@ test('a scheduled task is read in the user zone and the answer names the local t
   assert.match(result.message, /3:00/);
 });
 
+test('the result says which screen the task landed on, so the browser can open it', async () => {
+  const plain: any = await createTaskHandler(fakeDb(seed()), editor, { title: 'Call the bank' }, NOW);
+  assert.equal(plain.screen, 'todo');
+  const timed: any = await createTaskHandler(fakeDb(seed()), editor, { title: 'Meeting', startTime: '2026-11-10T15:00:00' }, NOW);
+  assert.equal(timed.screen, 'calendar');
+  const inProject: any = await createTaskHandler(fakeDb(seed()), editor, { title: 'Draft layout', projectId: 'p1' }, NOW);
+  assert.equal(inProject.success, true);
+  assert.equal(inProject.screen, undefined, 'a task inside a project is on neither screen');
+});
+
 test('a viewer, a guest and a missing workspace cannot create a task, and nothing is written', async () => {
   for (const ctx of [
     readToolContext({ userId: 'u1', orgId: 'orgA', accessLevel: 'viewer' }),

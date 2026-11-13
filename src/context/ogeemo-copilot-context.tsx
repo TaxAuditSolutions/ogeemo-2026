@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { processCommand } from '@/lib/command-processor';
 import { shouldProcessAsCommand } from '@/lib/copilot-routing';
-import { autoOpenTarget, describeDispatch, type DispatchReply } from '@/lib/copilot-dispatch';
+import { autoOpenTarget, describeDispatch, externalTabTarget, openExternalTab, type DispatchReply } from '@/lib/copilot-dispatch';
 import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
 import { getUserProfile, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { canOpenScreen } from '@/lib/screen-access';
@@ -188,10 +188,24 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         setInput('');
 
         try {
-            await persistThread({ ...thread, messages: messagesWithUserTurn });
+            // Everything in this block up to the first `await` runs inside the person's keypress, which is the only
+            // moment a browser lets a page open a new tab. So a request for another site (a Google app) is worked out and
+            // opened HERE, before the message is saved; opened after the wait it was blocked as a pop-up.
             const command = shouldProcessAsCommand(messageText, thread.messages)
                 ? processCommand(messageText)
                 : null;
+            // A screen the menu hides from this person is not opened for them by typing its name. The reply says why.
+            // A Google app is governed by the Google Apps menu entry (accessScreen); any other outside link is not decided here.
+            const gated = command && command.type !== 'unknown' && command.target && (!command.isExternal || command.accessScreen)
+                ? (command.accessScreen ?? command.target)
+                : null;
+            const screenCheck = gated
+                ? canOpenScreen(gated, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess })
+                : ({ ok: true } as const);
+            const externalUrl = screenCheck.ok ? externalTabTarget(command) : null;
+            const openedNewTab = externalUrl ? openExternalTab(externalUrl, (url, target) => window.open(url, target)) : false;
+
+            await persistThread({ ...thread, messages: messagesWithUserTurn });
             let assistantContent: string;
             let assistantAction: AssistantChatMessage['action'];
             let assistantDegraded = false;
@@ -201,20 +215,11 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             // Which screens' data the Co-Pilot's tools changed this turn (from the server, read off the tools' results).
             let changedAreas: ReturnType<typeof parseChangedAreas> = [];
 
-            // A screen the menu hides from this person is not opened for them by typing its name. The reply says why.
-            // A Google app is governed by the Google Apps menu entry (accessScreen); any other outside link is not decided here.
-            const gated = command && command.type !== 'unknown' && command.target && (!command.isExternal || command.accessScreen)
-                ? (command.accessScreen ?? command.target)
-                : null;
-            const screenCheck = gated
-                ? canOpenScreen(gated, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess })
-                : ({ ok: true } as const);
-
             if (!screenCheck.ok) {
                 assistantContent = screenCheck.message;
             } else if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
-                dispatchReply = describeDispatch(command);
+                dispatchReply = describeDispatch(command, { openedNewTab });
                 assistantContent = dispatchReply.content;
                 assistantAction = {
                     type: 'dispatch',

@@ -280,9 +280,14 @@ their names used to open nothing for 14 of them and the WRONG screen for 5 ("goo
 - Singular and common names work: map, photo, spreadsheet, presentation, "google mail", "google messages".
 - The apps come from the same list the sidebar reads (`src/lib/google-apps.ts`), so a new app there works with "Google"
   in front without another change; its bare name stays closed until someone decides it is safe.
-- **They show a button and do not open by themselves.** An outside link opened after the chat was busy is a pop-up, which
-  browsers block, so the reply says "Google Maps is ready. Click 'Google Maps' below to open it." (the same as before for
-  outside links). Ogeemo screens still open on their own.
+- **They open in a new tab, at the keypress.** First version showed only a button ("Google Maps is ready. Click ...")
+  because a tab opened after the chat had saved the message is blocked as a pop-up; confirmed in use on 13 Nov. A browser
+  only allows a new tab during the person's keypress, so `sendMessage` now opens the tab FIRST, before the message is saved
+  (`externalTabTarget` and `openExternalTab`, `src/lib/copilot-dispatch.ts`). The reply then says "Opening Google Maps in
+  a new tab. If it does not open, click 'Google Maps' below."; if the browser blocks it anyway, or the person's menu hides
+  Google Apps, the button stays (or the refusal shows) and no tab opens. The new tab cannot reach back into Ogeemo
+  (`opener` is cleared) and only an https address of a Google app is ever opened. Ogeemo screens still open in this tab.
+  Not yet tried in a browser: please check that the tab opens, and that a pop-up blocker's message (if any) is sensible.
 - **They follow the Google Apps menu entry**: if an administrator hides Google Apps from someone, the chat does not hand
   them Google Maps either (`accessScreen`, `src/lib/screen-access.ts`).
 - Questions stay questions ("what is google drive", "how do I open google maps?"). Known limit: a sentence that carries a

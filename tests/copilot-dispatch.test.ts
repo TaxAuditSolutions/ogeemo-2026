@@ -55,7 +55,7 @@ test('a reply that must not auto-open never navigates, whatever the target', () 
 
 test('the chat opens the screen from sendMessage only, never from an effect, so reloading or reopening a chat cannot navigate again', () => {
   const source = fs.readFileSync('src/context/ogeemo-copilot-context.tsx', 'utf8');
-  assert.match(source, /describeDispatch\(command\)/);
+  assert.match(source, /describeDispatch\(command(, \{ openedNewTab \})?\)/);
   assert.match(source, /autoOpenTarget\(/);
   assert.ok(!/useEffect\([^)]*autoOpenTarget/.test(source), 'auto-open must not run from an effect');
   const sendAt = source.indexOf('const sendMessage = useCallback');

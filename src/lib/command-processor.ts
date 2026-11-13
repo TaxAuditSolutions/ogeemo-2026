@@ -191,25 +191,82 @@ const FORM_SCREEN_NAMES: Record<string, string> = {
     quotecreator: '/accounting/quotes/create',
     newquote: '/accounting/quotes/create',
 };
+/**
+ * Other names for a screen that open it after ANY verb. Found by trying the names people type for every menu screen
+ * (12 Nov 2026): these either opened nothing ("open documents", "open ideas", "open loans") or opened a neighbour
+ * ("open client time log" opened the WORKER report, "open sales tax" opened the Tax Center, not the calculator).
+ * Screens that are not in the menu but are reached from a visible button or a card are included, with their own label.
+ */
+const SCREEN_NAMES: Record<string, string> = {
+    // Workspace
+    documents: '/document-manager', docs: '/document-manager', mydocs: '/document-manager',
+    mynotes: '/user-notes', usernotes: '/user-notes', notes: '/user-notes',
+    ideas: '/idea-board', ideaboards: '/idea-board',
+    activity: '/event-manager', activities: '/event-manager',
+    organizeideas: '/idea-board/organize', organiseideas: '/idea-board/organize', ideaboardorganize: '/idea-board/organize',
+    reminders: '/calendar/reminders', calendarreminders: '/calendar/reminders', calendarreminder: '/calendar/reminders',
+    // Reports
+    reports: '/reports',
+    clienttimelog: '/reports/client-time-log', clienttimelogs: '/reports/client-time-log', clienttimereport: '/reports/client-time-log', clienttime: '/reports/client-time-log',
+    // Accounting
+    salestax: '/accounting/tax/sales-tax', salestaxes: '/accounting/tax/sales-tax',
+    taxcategory: '/accounting/tax/categories',
+    receipts: '/accounting/receipt-processor', receiptscanner: '/accounting/receipt-processor',
+    loans: '/accounting/loan-manager', loan: '/accounting/loan-manager',
+    // People
+    humanresources: '/hr-manager',
+    leave: '/hr-manager/time-off', vacation: '/hr-manager/time-off',
+    // Settings and tools reached from a card or a button
+    rituals: '/settings/rituals', planningrituals: '/settings/rituals', settingsrituals: '/settings/rituals',
+    siteimages: '/settings/site-images', settingssiteimages: '/settings/site-images', imagesettings: '/settings/site-images',
+    pos: '/inventory-manager/pos', pointofsale: '/inventory-manager/pos', inventorypos: '/inventory-manager/pos',
+    changepassword: '/change-password', changemypassword: '/change-password',
+    // Administration
+    users: '/user-manager', usermanagement: '/user-manager',
+    tenants: '/tenant-manager',
+    help: '/help', helppage: '/help', helpcentre: '/help', helpcenter: '/help',
+};
+/**
+ * Names above that are ordinary words on their own. They open a screen only after a verb ("open help"), never typed
+ * bare: a lone "help" or "users" is far more likely to be the start of a question for the Co-Pilot. (A few bare words
+ * such as "leave", "loan" and "activity" already opened a screen before this list existed, through the older matching
+ * of menu labels; this list does not change that.)
+ */
+const NEEDS_A_VERB = new Set(['help', 'helppage', 'helpcentre', 'helpcenter', 'vacation', 'users', 'tenants', 'activity', 'activities', 'reminders', 'pos']);
+/** Labels for the screens above that are not in the menu (a menu screen uses its own label). */
+const EXTRA_SCREEN_LABELS: Record<string, string> = {
+    '/settings/rituals': 'Planning Rituals',
+    '/settings/site-images': 'Site Images',
+    '/calendar/reminders': 'Calendar Reminders',
+    '/inventory-manager/pos': 'Point of Sale',
+    '/idea-board/organize': 'Organize Ideas',
+    '/change-password': 'Change Password',
+    '/help': 'Help',
+};
 /** After these the person wants the information, not the page. */
 const DATA_VERB = /^(?:show me|show|view)\s+/i;
 
-function screenSynonym(text: string): (typeof allMenuItems)[number] | undefined {
+type ScreenRef = { href: string; label: string };
+
+function screenSynonym(text: string): ScreenRef | undefined {
     const typed = text.trim();
     const dataVerb = DATA_VERB.test(typed);
+    const hadVerb = NAVIGATION_PHRASE.test(typed);
     const stripped = typed.replace(NAVIGATION_PHRASE, '').replace(TRAILING_FILLER, '');
     for (const candidate of [stripped, stripped.replace(LEADING_FILLER, '')]) {
         const wanted = normalize(candidate);
         if (!wanted) continue;
-        const href = FORM_SCREEN_NAMES[wanted] ?? (dataVerb ? undefined : LIST_SCREEN_NAMES[wanted]);
+        const named = SCREEN_NAMES[wanted];
+        const href = FORM_SCREEN_NAMES[wanted] ?? (named && (hadVerb || !NEEDS_A_VERB.has(wanted)) ? named : undefined) ?? (dataVerb ? undefined : LIST_SCREEN_NAMES[wanted]);
         if (!href) continue;
-        const found = allMenuItems.find((item) => item.href === href);
+        const found: ScreenRef | undefined = allMenuItems.find((item) => item.href === href)
+            ?? (EXTRA_SCREEN_LABELS[href] ? { href, label: EXTRA_SCREEN_LABELS[href] } : undefined);
         if (found) return found;
     }
     return undefined;
 }
 
-function menuNavigation(item: (typeof allMenuItems)[number]): CommandResult {
+function menuNavigation(item: ScreenRef): CommandResult {
     return {
         type: 'navigation',
         target: item.href,
@@ -259,6 +316,11 @@ const QUESTION_PATTERNS = [
     // ("do my taxes" is a request) and "can/could/should/would/will" only count with a subject ("can I print...").
     /^(does|did|is|are)\s+\w+/i,
     /^(can|could|should|would|will)\s+(i|we|my|there|the|it|this|that)\b/i,
+    // "help me with payroll", "help with invoices", "help me create a contact": asking the Co-Pilot for help, not naming
+    // a screen. These used to open Payroll / Invoice List / Contacts because a screen name was inside the sentence.
+    // A bare "help" (or "open help") is handled separately and still means the Help screen after a verb.
+    /^(?:please\s+)?(?:help|assist)\s+(?:me|us|with|to)\b/i,
+    /^(?:i\s+)?(?:need|want)\s+(?:some\s+)?help\b/i,
 ];
 
 export function isQuestion(input: string): boolean {

@@ -17,6 +17,7 @@ import { canAccessUserManager } from '@/core/rbac';
 import { getUserProfile, type AccessLevel, type SidebarAccessConfig } from '@/core/user-profile-service';
 import { allMenuItems } from '@/lib/menu-items';
 import { processCommand } from '@/lib/command-processor';
+import { canOpenScreen } from '@/lib/screen-access';
 import { cn } from '@/lib/utils';
 
 interface GlobalSearchProps {
@@ -121,7 +122,9 @@ export function GlobalSearch({ isOpen, onOpenChange }: GlobalSearchProps) {
     let commandResult: SearchResult[] = [];
     try {
       const command = processCommand(query.trim());
-      if (command.type !== 'unknown' && command.target) {
+      // The search list above already hides what the menu hides; a typed command must not bring it back.
+      const allowed = !command.target || command.isExternal || canOpenScreen(command.target, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess }).ok;
+      if (command.type !== 'unknown' && command.target && allowed) {
         commandResult = [
           {
             label: command.label || command.description || command.message,

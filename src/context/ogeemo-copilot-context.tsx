@@ -8,7 +8,8 @@ import { processCommand } from '@/lib/command-processor';
 import { shouldProcessAsCommand } from '@/lib/copilot-routing';
 import { autoOpenTarget, describeDispatch, type DispatchReply } from '@/lib/copilot-dispatch';
 import { dispatchCopilotWorkflowEvent } from '@/lib/copilot-workflow-events';
-import { getUserProfile } from '@/core/user-profile-service';
+import { getUserProfile, type SidebarAccessConfig } from '@/core/user-profile-service';
+import { canOpenScreen } from '@/lib/screen-access';
 import { parseAssistantMessageAction } from '@/ai/assistant-actions';
 import { isProjectFormTarget } from '@/lib/ai-open-record';
 import { parseChangedAreas } from '@/lib/ai-tool-reply';
@@ -58,6 +59,9 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
     const [isLoading, setIsLoading] = useState(true);
     const [isThinking, setIsThinking] = useState(false);
     const [activeOrgId, setActiveOrgId] = useState<string | undefined>();
+    // What the sidebar menu uses to hide screens from this person, so "open ..." follows the same rules (see screen-access.ts).
+    const [profileAccessLevel, setProfileAccessLevel] = useState<string | null>(null);
+    const [sidebarAccess, setSidebarAccess] = useState<SidebarAccessConfig | undefined>(undefined);
 
     const replaceThreads = useCallback((nextThreads: AssistantChatThread[]) => {
         threadsRef.current = nextThreads;
@@ -72,6 +76,8 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             replaceThreads([]);
             setActiveThreadId(null);
             setActiveOrgId(undefined);
+            setProfileAccessLevel(null);
+            setSidebarAccess(undefined);
             setIsLoading(false);
             return;
         }
@@ -88,6 +94,8 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
                     : savedThreads[0]?.id ?? null
             );
             setActiveOrgId(profile?.orgId || undefined);
+            setProfileAccessLevel(profile?.accessLevel ?? null);
+            setSidebarAccess(profile?.sidebarAccess ?? undefined);
         }).catch((error) => {
             if (!isMounted) return;
             console.warn('[OCP] Failed to load chat history:', error);
@@ -193,7 +201,14 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
             // Which screens' data the Co-Pilot's tools changed this turn (from the server, read off the tools' results).
             let changedAreas: ReturnType<typeof parseChangedAreas> = [];
 
-            if (command && command.type !== 'unknown' && command.target) {
+            // A screen the menu hides from this person is not opened for them by typing its name. The reply says why.
+            const screenCheck = command && command.type !== 'unknown' && command.target && !command.isExternal
+                ? canOpenScreen(command.target, { accessLevel, profileAccessLevel, isMasterTenant, sidebarAccess })
+                : ({ ok: true } as const);
+
+            if (!screenCheck.ok) {
+                assistantContent = screenCheck.message;
+            } else if (command && command.type !== 'unknown' && command.target) {
                 const label = command.label || 'Requested destination';
                 dispatchReply = describeDispatch(command);
                 assistantContent = dispatchReply.content;
@@ -321,6 +336,8 @@ export function OgeemoCopilotProvider({ children }: { children: React.ReactNode 
         isMasterTenant,
         isThinking,
         pathname,
+        profileAccessLevel,
+        sidebarAccess,
         persistThread,
         renameThread,
         replaceThreads,

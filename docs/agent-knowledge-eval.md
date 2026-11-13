@@ -243,6 +243,30 @@ goes to the Co-Pilot. Creating a quote from chat is still not possible (there is
 involve line items, tax and totals) and "create a quote for Dana" opens the empty form, because the quote form takes a
 client id and not a name. Tests: `tests/command-processor-quotes.test.ts`.
 
+**Opening apps by name: a review of every screen (12 Nov 2026).** All 66 menu screens point at real pages, and the
+navigation map the Co-Pilot reads matches the menu exactly. "Open settings" in six wordings already worked. Trying the
+other names people type for every menu screen found 32 that opened nothing and 24 that opened a neighbour. Fixed:
+- **More names** (`SCREEN_NAMES`, `src/lib/command-processor.ts`): documents, my notes, ideas, help, users, receipts, loans,
+  human resources, leave, reports; and the ones that opened a NEIGHBOUR: client time log (opened the worker report), sales
+  tax (opened the Tax Center), tax category, idea boards. Pages reached from a card or button but not in the menu now open
+  from their own name, with their own label: Planning Rituals, Site Images, Calendar Reminders, Point of Sale, Organize
+  Ideas, Change Password, Help. Words that are ordinary on their own ("help", "users", "reminders", "pos") open a screen
+  only after a verb; typed bare they go to the Co-Pilot.
+- **"Help me with payroll" no longer opens Payroll.** A sentence asking for help is a question for the Co-Pilot; it used
+  to open the screen named inside it (Payroll, Invoice List, Contacts). Found while testing the fix above; it was already
+  wrong before today.
+- **Permissions** (`canOpenScreen`, `src/lib/screen-access.ts`): the sidebar hides screens by an administrator-only flag,
+  an owner-only flag and per-person allow and block lists, and the search box honoured them, but a typed "open tenant
+  manager" in the chat did not. The chat now applies the same rules before it opens, or even offers, a screen, and says why
+  it did not ("User Manager is for administrators..."). The search box's typed-command suggestion follows them too. A page
+  reached from a menu screen follows that screen (hide Settings and Planning Rituals closes too); Help and Change Password
+  are open to everyone. Pages still guard themselves; this only stops the chat being a way round the menu.
+Left as they are, on purpose: ambiguous one-word names ("receipt" could be Intake or Archive; "payroll" opens Run Payroll;
+"income" opens the Income Ledger; "clients" opens Contacts) and the 50 pages that are not in the menu and not reached from
+a card (for example Legal Hub, Audit Readiness, Equity, Loan Application, Bank Reconciliation): which of those the Co-Pilot
+should know is a decision for the product owner. Tests: `tests/command-processor-names.test.ts`,
+`tests/screen-access.test.ts`, `tests/screen-access-typed.test.ts`.
+
 **The timer.** "Start timer" resolves to `/event-manager?startTimer=true`, and the Activity Manager starts a timer and
 saves a new "Untitled Session" activity (status in progress) as soon as that page loads with the flag. Before, the click on
 the button was the only thing that did that. With auto-open there is no click, so **typing "start timer" now starts a

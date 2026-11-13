@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Calendar, Save, Link as LinkIcon, Info, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Clock, Calendar, Save, Link as LinkIcon, Info, Pencil, Trash2, MessageSquare, Search, Star } from "lucide-react";
 import Link from "next/link";
 import { SectionHeader } from '@/components/layout/section-header';
 import {
@@ -40,6 +40,25 @@ export default function TimeManagerInstructionsPage() {
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
+                        <AccordionItem value="item-selection">
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-3">
+                                    <Search className="h-5 w-5 text-primary"/>
+                                    <span className="font-semibold">Finding Activities & Quick Actions</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
+                                    <ul>
+                                        <li>Use <strong>New activity</strong> to clear the form and start again.</li>
+                                        <li>Use <strong>Select an activity</strong> to search open activities by subject, notes, client, or project. Turn on <strong>Show completed activities</strong> when you need a completed record.</li>
+                                        <li><strong>Activity actions</strong> provides timer controls, manual time entry, completion/reopening, agenda and project links, and deletion for the selected activity.</li>
+                                        <li><strong>Quick actions</strong> (<Star className="inline h-4 w-4"/>) mirrors your Favorite Actions from My Shortcuts. Choose <strong>Manage favorites</strong> to customize the list and its order.</li>
+                                    </ul>
+                                    <p>Activity Manager asks for confirmation before a selection or internal shortcut discards unsaved edits.</p>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
                         <AccordionItem value="item-2">
                             <AccordionTrigger>
                                 <div className="flex items-center gap-3">
@@ -50,11 +69,12 @@ export default function TimeManagerInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Use the <strong>"Set Start Time"</strong> controls to define when an event happens.
+                                        Use the <strong>When</strong> controls to choose <strong>Next free slot</strong>, <strong>Pick a time</strong>, or <strong>No set time</strong>.
                                     </p>
                                      <ul>
-                                        <li><strong>For Future Events:</strong> Select a future date and time. This will place a new event on your calendar.</li>
-                                        <li><strong>For Past Work:</strong> Select a past date and time. This will create a completed entry in your log for that time.</li>
+                                        <li><strong>For Future Events:</strong> Choose Pick a time and select a future date and time to place the activity on your calendar.</li>
+                                        <li><strong>For Unscheduled Work:</strong> Choose No set time. The activity remains available without a calendar appointment.</li>
+                                        <li><strong>For Completed Work:</strong> Select the activity and choose <strong>Activity actions → Log actual time</strong>. Save a new activity before adding its first manual session.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>
@@ -113,12 +133,12 @@ export default function TimeManagerInstructionsPage() {
                             <AccordionContent>
                                 <div className="prose prose-sm dark:prose-invert max-w-none pl-8">
                                     <p>
-                                        Use the <strong>Billing Status</strong> radio buttons to make a clear choice for every entry. This prevents accidental billing errors.
+                                        Turn on <strong>Mark as billable</strong> only for work that should be available for invoicing. The hourly rate field appears when billing is enabled.
                                     </p>
                                      <ul>
-                                        <li><strong>Non-Billable:</strong> The default, safe option for internal tasks or non-client work.</li>
-                                        <li><strong>Billable:</strong> Select this to make the time entry billable. The rate input will appear, allowing you to set your hourly rate for this specific task.</li>
-                                        <li>Click <strong>"Save & Close"</strong> to finalize the event and all associated time sessions.</li>
+                                        <li>Leave billing off for internal tasks or non-client work.</li>
+                                        <li>Review the hourly rate for each billable activity.</li>
+                                        <li>Click <strong>Save</strong> to finalize the activity and its associated time sessions. Use <strong>Save & New</strong> when you want to continue with another activity.</li>
                                     </ul>
                                 </div>
                             </AccordionContent>

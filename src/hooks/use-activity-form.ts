@@ -243,7 +243,7 @@ export function useActivityForm({
         [resolveSchedule, subject, notes, status, selectedProjectId, selectedContactId, selectedWorkerId, user?.uid, isBillable, billableRate, activityType],
     );
 
-    const resetForm = () => {
+    const resetForm = React.useCallback(() => {
         const now = new Date();
         setSubject(''); setNotes(''); setSelectedProjectId(null); setSelectedContactId(null);
         setActivityType('task'); setStatus('todo'); setIsScheduleEnabled(false);
@@ -256,7 +256,7 @@ export function useActivityForm({
         setIsSlotSuggested(false);
         slotAppliedRef.current = false;
         setSlotResetTick((tick) => tick + 1);
-    };
+    }, [setIsSlotSuggested]);
 
     return {
         subject, setSubject,

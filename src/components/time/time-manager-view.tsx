@@ -24,7 +24,11 @@ import {
     Inbox,
     User, 
     Square,
-    ArrowRight
+    ArrowRight,
+    ChevronDown,
+    CheckCircle2,
+    Briefcase,
+    ListPlus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -38,9 +42,18 @@ import { parseTimerState, sessionEndMs, sessionSecondsFrom, startTimerBlock, tim
 import { useActivityForm } from '@/hooks/use-activity-form';
 import { useActivityReferenceData } from '@/hooks/use-activity-reference-data';
 import { ActivityFormFields } from '@/components/time/activity-form-fields';
+import { ActivityPicker } from '@/components/time/activity-picker';
+import { FavoriteActionsMenu } from '@/components/time/favorite-actions-menu';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '../ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -85,6 +98,16 @@ const broadcastTimerState = (nextState: StoredTimerState | null) => {
     window.dispatchEvent(new CustomEvent('timer-state-changed', { detail: nextState }));
 };
 
+function trackFormChange<Args extends unknown[], Return>(
+    callback: (...args: Args) => Return,
+    markDirty: () => void,
+) {
+    return (...args: Args): Return => {
+        markDirty();
+        return callback(...args);
+    };
+}
+
 export function TimeManagerView() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -126,6 +149,7 @@ export function TimeManagerView() {
     const [isLoadingData, setIsLoadingData] = React.useState(true);
 
     const [eventToEdit, setEventToEdit] = React.useState<TaskEvent | null>(null);
+    const [isDirty, setIsDirty] = React.useState(false);
     
     // Timer state
     const [timerState, setTimerState] = React.useState<StoredTimerState | null>(null);
@@ -139,13 +163,87 @@ export function TimeManagerView() {
     const [editSessionHours, setEditSessionHours] = React.useState<number | ''>('');
     const [editSessionMinutes, setEditSessionMinutes] = React.useState<number | ''>('');
     const [editSessionNotes, setEditSessionNotes] = React.useState('');
+    const [isSavingSession, setIsSavingSession] = React.useState(false);
     
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
     const [isAgendaFormOpen, setIsAgendaFormOpen] = useState(false);
 
     const hasStartedTimerRef = useRef(false);
+    const loadRequestRef = useRef(0);
     const subjectInputRef = useRef<HTMLInputElement>(null);
+
+    // Only edits made in the rendered controls count as dirty. Route hydration
+    // and automatic next-free-slot suggestions use the original form setters.
+    const formForFields: typeof form = {
+        ...form,
+        setSubject: trackFormChange(form.setSubject, () => setIsDirty(true)),
+        setNotes: trackFormChange(form.setNotes, () => setIsDirty(true)),
+        setStatus: trackFormChange(form.setStatus, () => setIsDirty(true)),
+        setSelectedProjectId: trackFormChange(form.setSelectedProjectId, () => setIsDirty(true)),
+        setSelectedContactId: trackFormChange(form.setSelectedContactId, () => setIsDirty(true)),
+        setSelectedWorkerId: trackFormChange(form.setSelectedWorkerId, () => setIsDirty(true)),
+        setIsBillable: trackFormChange(form.setIsBillable, () => setIsDirty(true)),
+        setBillableRate: trackFormChange(form.setBillableRate, () => setIsDirty(true)),
+        setStartDate: trackFormChange(form.setStartDate, () => setIsDirty(true)),
+        setStartHour: trackFormChange(form.setStartHour, () => setIsDirty(true)),
+        setStartMinute: trackFormChange(form.setStartMinute, () => setIsDirty(true)),
+        setEndDate: trackFormChange(form.setEndDate, () => setIsDirty(true)),
+        setEndHour: trackFormChange(form.setEndHour, () => setIsDirty(true)),
+        setEndMinute: trackFormChange(form.setEndMinute, () => setIsDirty(true)),
+        setIsAllDay: trackFormChange(form.setIsAllDay, () => setIsDirty(true)),
+        setIsSlotSuggested: trackFormChange(form.setIsSlotSuggested, () => setIsDirty(true)),
+        handleActivityTypeSelect: trackFormChange(form.handleActivityTypeSelect, () => setIsDirty(true)),
+        handleScheduleToggle: trackFormChange(form.handleScheduleToggle, () => setIsDirty(true)),
+        selectNextFreeSlot: trackFormChange(form.selectNextFreeSlot, () => setIsDirty(true)),
+        selectPickTime: trackFormChange(form.selectPickTime, () => setIsDirty(true)),
+        selectNoSetTime: trackFormChange(form.selectNoSetTime, () => setIsDirty(true)),
+    };
+
+    const resetToNewActivity = useCallback((stopTimer: boolean = false) => {
+        if (stopTimer) broadcastTimerState(null);
+        resetForm();
+        if (user?.uid) setSelectedWorkerId(user.uid);
+        setEventToEdit(null);
+        setSessions([]);
+        setCurrentSessionNotes('');
+        setSessionToEdit(null);
+        setTimerState(null);
+        setElapsedSeconds(0);
+        setIsEditSessionDialogOpen(false);
+        setIsDeleteDialogOpen(false);
+        setIsAgendaFormOpen(false);
+        setIsDirty(false);
+        hasStartedTimerRef.current = false;
+        router.replace('/event-manager');
+        setTimeout(() => subjectInputRef.current?.focus(), 100);
+    }, [resetForm, router, user?.uid]);
+
+    const confirmDiscardChanges = useCallback(() => {
+        return !isDirty || window.confirm('You have unsaved changes. Discard them and continue?');
+    }, [isDirty]);
+
+    const handleNewActivity = () => {
+        if (confirmDiscardChanges()) resetToNewActivity();
+    };
+
+    const handleSelectActivity = (activityId: string): boolean => {
+        if (activityId === eventToEdit?.id) return true;
+        if (!confirmDiscardChanges()) return false;
+        router.push(`/event-manager?eventId=${encodeURIComponent(activityId)}`);
+        return true;
+    };
+
+    useEffect(() => {
+        const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (!isDirty) return;
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', warnBeforeUnload);
+        return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+    }, [isDirty]);
+
 
     // Displayed duration + provenance. Actual sessions/timer always win; the
     // scheduled span is a labelled non-billable placeholder until work exists
@@ -175,12 +273,14 @@ export function TimeManagerView() {
         try {
             const newEvent = await addTask(eventData);
             setEventToEdit(newEvent);
+            setIsDirty(false);
+            await refData.reloadEvents();
             return newEvent;
         } catch (error: any) {
             toast({ variant: "destructive", title: "Failed to start session", description: error.message });
             return null;
         }
-    }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, activityType, toast]);
+    }, [user, subject, notes, selectedProjectId, selectedContactId, selectedWorkerId, isBillable, billableRate, activityType, toast, refData.reloadEvents]);
 
     const handleStartTimer = useCallback(async () => {
         const running = parseTimerState(localStorage.getItem(TIMER_STORAGE_KEY));
@@ -234,10 +334,10 @@ export function TimeManagerView() {
         }
     }, []);
 
-    const handleSaveEvent = useCallback(async (andClose: boolean = false, sessionOverride?: { sessions: TimeSession[]; durationSeconds: number; durationSource: DurationSource | null }) => {
+    const handleSaveEvent = useCallback(async (andClose: boolean = false, sessionOverride?: { sessions: TimeSession[]; durationSeconds: number; durationSource: DurationSource | null }): Promise<boolean> => {
         if (!user || !subject.trim()) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter a subject for the event.' });
-            return;
+            return false;
         }
         // When logging a session, the caller passes the just-logged sessions
         // array explicitly: React state has not flushed yet at this point, so
@@ -250,29 +350,30 @@ export function TimeManagerView() {
             sessions: sessionOverride?.sessions ?? sessions,
         });
         try {
+            let savedEvent: TaskEvent;
             if (eventToEdit) {
                 await updateTask(eventToEdit.id, eventData);
+                savedEvent = { ...eventToEdit, ...eventData };
                 toast({ title: "Event Updated" });
             } else {
-                const newEvent = await addTask({ ...eventData as Omit<TaskEvent, 'id'>, userId: user.uid });
-                setEventToEdit(newEvent);
+                savedEvent = await addTask({ ...eventData as Omit<TaskEvent, 'id'>, userId: user.uid });
                 toast({ title: "Event Saved" });
             }
+            setEventToEdit(savedEvent);
+            setIsDirty(false);
+            await refData.reloadEvents();
             if (andClose) router.back();
+            return true;
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to save event', description: error.message });
+            return false;
         }
-    }, [user, subject, buildEventData, sessions, eventToEdit, toast, router, calculatedDuration, durationSource]);
+    }, [user, subject, buildEventData, sessions, eventToEdit, toast, router, calculatedDuration, durationSource, refData.reloadEvents]);
 
     const handleSaveAndNew = async () => {
-        await handleSaveEvent(false);
-        // Re-read the calendar so the next suggestion skips the slot just saved.
-        await refData.reloadEvents();
-        resetForm();
-        setSessions([]); setEventToEdit(null);
-        broadcastTimerState(null);
-        router.replace('/event-manager');
-        setTimeout(() => subjectInputRef.current?.focus(), 100);
+        const saved = await handleSaveEvent(false);
+        if (!saved) return;
+        resetToNewActivity(true);
     };
 
     const handleLogCurrentSession = async () => {
@@ -289,13 +390,14 @@ export function TimeManagerView() {
             notes: currentSessionNotes,
         };
         const sessionsWithNew = [...sessions, newSession];
+        // Persist first. If the save fails, the timer stays available and the
+        // session is not presented as logged.
+        const computed = computeDurationAndSource({ sessions: sessionsWithNew, elapsedSeconds: 0, scheduledSpanSeconds });
+        const saved = await handleSaveEvent(false, { sessions: sessionsWithNew, durationSeconds: computed.durationSeconds, durationSource: computed.source });
+        if (!saved) return;
         setSessions(sessionsWithNew);
         setCurrentSessionNotes('');
         broadcastTimerState(null);
-        // Persist the just-logged session explicitly (state hasn't flushed yet),
-        // with duration derived from the updated session list.
-        const computed = computeDurationAndSource({ sessions: sessionsWithNew, elapsedSeconds: 0, scheduledSpanSeconds });
-        await handleSaveEvent(false, { sessions: sessionsWithNew, durationSeconds: computed.durationSeconds, durationSource: computed.source });
         toast({ title: 'Session Logged' });
     };
 
@@ -307,25 +409,89 @@ export function TimeManagerView() {
         setIsEditSessionDialogOpen(true);
     };
 
-    const handleSaveSession = () => {
-        if (!sessionToEdit) return;
+    const handleOpenLogTime = () => {
+        setSessionToEdit(null);
+        setEditSessionHours(0);
+        setEditSessionMinutes(30);
+        setEditSessionNotes('');
+        setIsEditSessionDialogOpen(true);
+    };
+
+    const handleSaveSession = async () => {
         const length = sessionSecondsFrom(editSessionHours, editSessionMinutes);
         if (!length.ok) {
             toast({ variant: 'destructive', title: 'Check the session length', description: length.error });
             return;
         }
-        setSessions(prev => prev.map(s => s.id === sessionToEdit.id ? { ...sessionToEdit, durationSeconds: length.seconds, notes: editSessionNotes } : s));
-        setIsEditSessionDialogOpen(false);
+
+        if (sessionToEdit) {
+            setSessions(prev => prev.map(s => s.id === sessionToEdit.id ? { ...sessionToEdit, durationSeconds: length.seconds, notes: editSessionNotes } : s));
+            setIsDirty(true);
+            setIsEditSessionDialogOpen(false);
+            return;
+        }
+        if (!eventToEdit) return;
+
+        const endTime = new Date();
+        const newSession: TimeSession = {
+            id: `session_${Date.now()}`,
+            startTime: new Date(endTime.getTime() - length.seconds * 1000),
+            endTime,
+            durationSeconds: length.seconds,
+            notes: editSessionNotes,
+        };
+        const nextSessions = [...sessions, newSession];
+        const computed = computeDurationAndSource({ sessions: nextSessions, elapsedSeconds: 0, scheduledSpanSeconds });
+        setIsSavingSession(true);
+        try {
+            const saved = await handleSaveEvent(false, { sessions: nextSessions, durationSeconds: computed.durationSeconds, durationSource: computed.source });
+            if (!saved) return;
+            setSessions(nextSessions);
+            setIsEditSessionDialogOpen(false);
+            toast({ title: 'Time Logged' });
+        } finally {
+            setIsSavingSession(false);
+        }
+    };
+
+    const handleDeleteSession = (sessionId: string) => {
+        setSessions(prev => prev.filter(session => session.id !== sessionId));
+        setIsDirty(true);
+    };
+
+    const handleToggleComplete = async () => {
+        if (!eventToEdit) return;
+        const newStatus = status === 'done' ? 'todo' : 'done';
+        try {
+            await updateTask(eventToEdit.id, { status: newStatus });
+            setStatus(newStatus);
+            setEventToEdit(current => current ? { ...current, status: newStatus } : current);
+            await refData.reloadEvents();
+            toast({ title: newStatus === 'done' ? 'Activity Completed' : 'Activity Reopened' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Failed to update activity', description: error.message });
+        }
+    };
+
+    const handleGoToProject = () => {
+        if (!eventToEdit?.projectId || !confirmDiscardChanges()) return;
+        router.push(`/projects/${eventToEdit.projectId}/tasks`);
     };
 
     const handleDeleteEvent = async () => {
         if (!eventToEdit) return;
+        const deletedId = eventToEdit.id;
         try {
-            await deleteTask(eventToEdit.id);
+            await deleteTask(deletedId);
+            const running = parseTimerState(localStorage.getItem(TIMER_STORAGE_KEY));
+            if (running?.eventId === deletedId) broadcastTimerState(null);
             toast({ title: 'Event Deleted' });
-            router.back();
+            await refData.reloadEvents();
+            resetToNewActivity();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Failed to delete event', description: error.message });
+        } finally {
+            setIsDeleteDialogOpen(false);
         }
     };
 
@@ -336,30 +502,44 @@ export function TimeManagerView() {
     };
 
     const loadInitialData = React.useCallback(async () => {
+        const requestId = ++loadRequestRef.current;
         if (!user) { setIsLoadingData(false); return; }
         setIsLoadingData(true);
+        hasStartedTimerRef.current = false;
+        setEventToEdit(null);
+        setSessions([]);
+        setCurrentSessionNotes('');
+        setSessionToEdit(null);
+        setIsEditSessionDialogOpen(false);
+        resetForm();
         try {
             setSelectedWorkerId(user.uid);
-            const eventIdParam = searchParams.get('eventId');
+            const eventIdParam = searchParams.get('eventId') || searchParams.get('logTimeFor');
             if (eventIdParam) {
                 const eventData = await getTaskById(eventIdParam);
-                if (eventData) {
-                    setEventToEdit(eventData); setSubject(eventData.title); setNotes(eventData.description || "");
-                    setActivityType(eventData.activityType || 'task');
-                    setStatus(eventData.status || 'todo');
-                    setIsScheduleEnabled(Boolean(eventData.start || eventData.isScheduled));
-                    setSelectedProjectId(eventData.projectId || null); setSelectedContactId(eventData.contactId || null);
-                    setSelectedWorkerId(eventData.workerId || user.uid); setIsBillable(eventData.isBillable || false);
-                    setBillableRate(eventData.billableRate || 0); setSessions(eventData.sessions || []);
-                    if (eventData.start) {
-                        const sDate = new Date(eventData.start);
-                        startDateTouchedRef.current = true; startTimeTouchedRef.current = true;
-                        setStartDate(sDate); setStartHour(String(sDate.getHours()).padStart(2, '0')); setStartMinute(String(sDate.getMinutes()).padStart(2, '0'));
-                    }
-                    if (eventData.end) {
-                        const eDate = new Date(eventData.end);
-                        setEndDate(eDate); setEndHour(String(eDate.getHours()).padStart(2, '0')); setEndMinute(String(eDate.getMinutes()).padStart(2, '0'));
-                    }
+                if (requestId !== loadRequestRef.current) return;
+                if (!eventData) throw new Error('That activity could not be found or is not available in this workspace.');
+                setEventToEdit(eventData); setSubject(eventData.title); setNotes(eventData.description || "");
+                setActivityType(eventData.activityType || 'task');
+                setStatus(eventData.status || 'todo');
+                setIsScheduleEnabled(Boolean(eventData.start || eventData.isScheduled));
+                setSelectedProjectId(eventData.projectId || null); setSelectedContactId(eventData.contactId || null);
+                setSelectedWorkerId(eventData.workerId || user.uid); setIsBillable(eventData.isBillable || false);
+                setBillableRate(eventData.billableRate || 0); setSessions(eventData.sessions || []);
+                if (eventData.start) {
+                    const sDate = new Date(eventData.start);
+                    startDateTouchedRef.current = true; startTimeTouchedRef.current = true;
+                    setStartDate(sDate); setStartHour(String(sDate.getHours()).padStart(2, '0')); setStartMinute(String(sDate.getMinutes()).padStart(2, '0'));
+                }
+                if (eventData.end) {
+                    const eDate = new Date(eventData.end);
+                    setEndDate(eDate); setEndHour(String(eDate.getHours()).padStart(2, '0')); setEndMinute(String(eDate.getMinutes()).padStart(2, '0'));
+                }
+                if (searchParams.get('logTimeFor')) {
+                    setEditSessionHours(0);
+                    setEditSessionMinutes(30);
+                    setEditSessionNotes('');
+                    setIsEditSessionDialogOpen(true);
                 }
             } else {
                 const sParam = searchParams.get('start');
@@ -381,20 +561,28 @@ export function TimeManagerView() {
                 }
             }
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
+            if (requestId === loadRequestRef.current) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message });
+            }
         } finally {
-            setIsLoadingData(false);
+            if (requestId === loadRequestRef.current) {
+                setIsDirty(false);
+                setIsLoadingData(false);
+            }
         }
-    }, [user, searchParams, toast]);
+    }, [user, searchParams, toast, resetForm]);
 
-    useEffect(() => { loadInitialData(); }, [loadInitialData]);
+    useEffect(() => {
+        void loadInitialData();
+        return () => { loadRequestRef.current += 1; };
+    }, [loadInitialData]);
     
     useEffect(() => {
-        if (searchParams.get('startTimer') === 'true' && eventToEdit && !hasStartedTimerRef.current) {
+        if (!isLoadingData && searchParams.get('startTimer') === 'true' && eventToEdit && searchParams.get('eventId') === eventToEdit.id && !hasStartedTimerRef.current) {
             hasStartedTimerRef.current = true;
             handleStartTimer();
         }
-    }, [searchParams, eventToEdit, handleStartTimer]);
+    }, [searchParams, eventToEdit, handleStartTimer, isLoadingData]);
 
     const syncWithGlobalTimer = useCallback(() => {
         const savedState = parseTimerState(localStorage.getItem(TIMER_STORAGE_KEY));
@@ -476,16 +664,74 @@ export function TimeManagerView() {
                         </div>
                 </header>
 
+                <div className="grid w-full max-w-4xl grid-cols-1 gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[auto_minmax(240px,1fr)_auto_auto] print:hidden">
+                    <Button type="button" variant={eventToEdit ? 'outline' : 'secondary'} className="w-full" onClick={handleNewActivity}>
+                        <Plus className="mr-2 h-4 w-4" /> New activity
+                    </Button>
+                    <ActivityPicker
+                        activities={refData.events}
+                        projects={refData.projects}
+                        contacts={refData.contacts}
+                        selectedActivityId={eventToEdit?.id || null}
+                        isLoading={refData.isLoadingEvents}
+                        onSelect={handleSelectActivity}
+                    />
+                    <FavoriteActionsMenu onBeforeNavigate={confirmDiscardChanges} />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="outline" className="w-full justify-between gap-2" disabled={!eventToEdit}>
+                                <span>Activity actions</span><ChevronDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-60">
+                            {!timerState?.isActive ? (
+                                <DropdownMenuItem onSelect={handleStartTimer}>
+                                    <Play className="mr-2 h-4 w-4" /> Start timer
+                                </DropdownMenuItem>
+                            ) : (
+                                <>
+                                    <DropdownMenuItem onSelect={timerState.isPaused ? handleResumeTimer : handlePauseTimer}>
+                                        {timerState.isPaused ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
+                                        {timerState.isPaused ? 'Resume timer' : 'Pause timer'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={handleLogCurrentSession} disabled={elapsedSeconds <= 0}>
+                                        <Square className="mr-2 h-4 w-4" /> Log running session
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                            <DropdownMenuItem onSelect={handleOpenLogTime}>
+                                <ListPlus className="mr-2 h-4 w-4" /> Log actual time
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={handleToggleComplete}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> {status === 'done' ? 'Reopen activity' : 'Mark complete'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setIsAgendaFormOpen(true)}>
+                                <MessageSquare className="mr-2 h-4 w-4" /> View agenda
+                            </DropdownMenuItem>
+                            {eventToEdit?.projectId && (
+                                <DropdownMenuItem onSelect={handleGoToProject}>
+                                    <Briefcase className="mr-2 h-4 w-4" /> Go to project workspace
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onSelect={() => setIsDeleteDialogOpen(true)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete activity
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+
                 <div className="w-full max-w-4xl flex flex-col gap-2 sm:flex-row sm:justify-end print:hidden">
                     <Button variant="outline" onClick={handleSaveAndNew}><Plus className="mr-2 h-4 w-4" /> Save & New</Button>
-                    <Button variant="secondary" onClick={() => router.back()}>Cancel</Button>
+                    <Button variant="secondary" onClick={() => { if (confirmDiscardChanges()) router.back(); }}>Cancel</Button>
                     <Button onClick={() => handleSaveEvent(true)}><Save className="mr-2 h-4 w-4" /> Save</Button>
                 </div>
 
                 <div className="w-full max-w-4xl space-y-6">
                     <Card className="shadow-md border-black/5">
                         <CardContent className="pt-6">
-                            <ActivityFormFields form={form} data={refData} subjectInputRef={subjectInputRef} onOpenAgenda={() => setIsAgendaFormOpen(true)} />
+                            <ActivityFormFields form={formForFields} data={refData} subjectInputRef={subjectInputRef} onOpenAgenda={() => setIsAgendaFormOpen(true)} />
                         </CardContent>
                         {eventToEdit && (
                             <CardFooter className="border-t pt-4">
@@ -584,7 +830,7 @@ export function TimeManagerView() {
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditSession(s)}>
                                                     <Pencil className="h-3.5 w-3.5"/>
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteSession(s.id)}>
                                                     <Trash2 className="h-3.5 w-3.5"/>
                                                 </Button>
                                             </div>
@@ -602,9 +848,14 @@ export function TimeManagerView() {
                     </Card>
                 </div>
             </div>
-            <Dialog open={isEditSessionDialogOpen} onOpenChange={setIsEditSessionDialogOpen}>
+            <Dialog open={isEditSessionDialogOpen} onOpenChange={(open) => { if (!isSavingSession) setIsEditSessionDialogOpen(open); }}>
                 <DialogContent>
-                    <DialogHeader><DialogTitle>Edit Recorded Session</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>{sessionToEdit ? 'Edit Recorded Session' : 'Log Actual Time'}</DialogTitle>
+                        <DialogDescription>
+                            {sessionToEdit ? 'Adjust this recorded session, then save the activity.' : 'Add a session ending now. The activity and its time will be saved together.'}
+                        </DialogDescription>
+                    </DialogHeader>
                     <div className="py-4 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -622,8 +873,11 @@ export function TimeManagerView() {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsEditSessionDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveSession}>Apply Changes</Button>
+                        <Button variant="ghost" disabled={isSavingSession} onClick={() => setIsEditSessionDialogOpen(false)}>Cancel</Button>
+                        <Button disabled={isSavingSession} onClick={() => void handleSaveSession()}>
+                            {isSavingSession && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                            {sessionToEdit ? 'Apply Changes' : isSavingSession ? 'Logging Time…' : 'Log Time'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

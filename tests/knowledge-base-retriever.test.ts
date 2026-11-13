@@ -15,6 +15,8 @@ const idsFor = (query: string, currentPath?: string) => rankKnowledgeChunks(chun
 const idsForQuery = (query: string) => idsFor(query);
 
 const cases = [
+  ['How do I select an existing activity?', 'activity-manager.selection-and-quick-actions'],
+  ['How do I customize Quick actions in Activity Manager?', 'activity-manager.selection-and-quick-actions'],
   ['How does Next free slot choose a time?', 'activity-manager.when.next-free-slot'],
   ['How do I give an activity no set time?', 'activity-manager.when.choices-and-editing'],
   ['What happens when I change the assignee?', 'activity-manager.when.next-free-slot'],

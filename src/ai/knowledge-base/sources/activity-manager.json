@@ -1,6 +1,17 @@
 {
   "documents": [
     {
+      "id": "activity-manager.selection-and-quick-actions",
+      "module": "Activity Manager",
+      "title": "Select an activity, Quick actions and Activity actions",
+      "routes": ["/event-manager"],
+      "intents": ["how-to", "navigation", "editing", "favorites"],
+      "keywords": ["select activity", "existing activity", "search activities", "completed activities", "quick actions", "favorites", "favourites", "my shortcuts", "activity actions", "new activity"],
+      "audiences": ["all"],
+      "content": "The toolbar above the activity form provides New activity, Select an activity, Quick actions, and Activity actions. New activity resets the form. Select an activity searches open activities by subject, notes, linked client, or linked project; enable Show completed activities to include completed records. Quick actions mirrors the signed-in user's Favorite Actions from My Shortcuts in the same order, and Manage favorites opens the existing customization screen. Activity actions is available after an existing activity is selected and provides timer controls, Log actual time, Mark complete or Reopen, View agenda, Go to project workspace when linked, and Delete. Switching records or following an internal Quick action asks before discarding unsaved edits.",
+      "sourceFiles": ["src/components/time/activity-picker.tsx", "src/components/time/favorite-actions-menu.tsx", "src/components/time/time-manager-view.tsx"]
+    },
+    {
       "id": "activity-manager.capture.types-and-fields",
       "module": "Activity Manager",
       "title": "Action, Project, Note, Subject and Notes",
@@ -41,7 +52,7 @@
       "intents": ["how-to", "buttons", "save"],
       "keywords": ["save", "save and new", "save & new", "cancel", "delete", "create activity", "buttons", "top"],
       "audiences": ["all"],
-      "content": "Save, Save & New, and Cancel are at the top of Activity Manager below the page header. Save stores the activity and returns to the previous page. Save & New stores it, refreshes the calendar used for availability, resets the form, and suggests another free slot so the just-used time is not reused. Cancel returns without saving the current edits. A Subject is required before Save or Save & New. Delete Activity remains at the bottom and is shown only when editing an existing activity.",
+      "content": "Save, Save & New, and Cancel are at the top of Activity Manager below the selection toolbar. Save stores the activity and returns to the previous page. Save & New stores it, refreshes the calendar used for availability, resets the form, and suggests another free slot so the just-used time is not reused. Cancel asks before discarding unsaved edits, then returns to the previous page. A Subject is required before Save or Save & New. Delete Activity is available in Activity actions and at the bottom when editing an existing activity; deletion returns Activity Manager to a clean New activity state.",
       "sourceFiles": ["src/components/time/time-manager-view.tsx"]
     },
     {
@@ -52,7 +63,7 @@
       "intents": ["how-to", "time-tracking", "billing"],
       "keywords": ["timer", "session", "actual time", "billable", "hourly rate", "status", "time log", "pause"],
       "audiences": ["all"],
-      "content": "The Time Sessions card records actual work on an activity. Start a session to run the timer; pause, resume, or log the session as needed. Actual sessions take precedence over the planned schedule span for recorded duration. Mark as billable controls whether the activity can be included on an invoice and reveals the hourly rate. Status can be To Do, In Progress, or Done. Scheduled time by itself is planning information, not automatically billable work.",
+      "content": "The Time Sessions card records actual work on an activity. Start a session to run the timer; pause, resume, or log the session as needed. Activity actions also provides Log actual time for a manual hours-and-minutes session ending now, and the Calendar's Log Actual Time link opens the same dialog for the selected activity. Actual sessions take precedence over the planned schedule span for recorded duration. Mark as billable controls whether the activity can be included on an invoice and reveals the hourly rate. Status can be To Do, In Progress, or Done. Scheduled time by itself is planning information, not automatically billable work.",
       "sourceFiles": ["src/components/time/time-manager-view.tsx", "src/lib/duration-source.ts"]
     }
   ]

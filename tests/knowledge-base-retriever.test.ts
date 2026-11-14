@@ -26,7 +26,7 @@ const cases = [
   ['How do I create an entry from a calendar time slot?', 'calendar.quick-entry.create'],
   ['How do I switch the sidebar to Favorites?', 'navigation.sidebar.views'],
   ['How do Workflows affect the sidebar Workspace group?', 'navigation.sidebar.workflows'],
-  ['What can the Knowledge Base beta do?', 'platform.knowledge-base.purpose'],
+  ['What can the Knowledge Base do?', 'platform.knowledge-base.purpose'],
   ['How do I add a contact?', 'contacts.create.manual'],
   ['Where do new contacts go if I do not choose a folder?', 'contacts.folders.defaults-and-system'],
   ['What happens when I delete a contact folder?', 'contacts.folders.manage'],

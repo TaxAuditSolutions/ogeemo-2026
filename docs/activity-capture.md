@@ -24,6 +24,11 @@ not document work if recording it means too much typing or too many steps.
   into any text field — Notes, session notes, any form, any page — and tap
   the mic; or tap it first, and your last-touched field is remembered (with
   Activity Manager Notes as the sensible default).
+- The Co-Pilot panel covers the right edge on desktop, so the floating mic
+  sits just left of the panel (it follows the panel's width as it opens,
+  closes or is resized). The Co-Pilot also has its own mic button
+  (`CopilotMicButton`) beside the message field that dictates straight into
+  the chat box. Both honor Settings > Preferences > Voice Dictation.
 - Clicking the mic never steals focus from your field; while recording a pill
   shows where words are landing (`Listening → Notes`) and the button pulses
   red. If nothing sensible is selected it prompts to select a field instead

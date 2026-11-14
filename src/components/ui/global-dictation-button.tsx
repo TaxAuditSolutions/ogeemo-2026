@@ -8,6 +8,7 @@ import { pickDictationField } from '@/lib/dictation-target';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { useToast } from '@/hooks/use-toast';
+import { useOgeemoCopilotSidebar } from '@/context/ogeemo-copilot-sidebar-context';
 
 /**
  * One microphone, any field (docs/activity-capture.md).
@@ -43,6 +44,7 @@ function fieldLabel(el: HTMLElement): string {
 
 export function GlobalDictation() {
     const { preferences } = useUserPreferences();
+    const copilot = useOgeemoCopilotSidebar();
     const { toast } = useToast();
     const [targetLabel, setTargetLabel] = React.useState<string | null>(null);
     const lastFieldRef = React.useRef<HTMLElement | null>(null);
@@ -114,8 +116,15 @@ export function GlobalDictation() {
         startListening();
     };
 
+    // On desktop the Co-Pilot panel owns the right edge, so sit just left of
+    // it (it has its own mic beside the chat field) instead of on top of it.
+    const rightOffset = copilot.isMobile ? undefined : copilot.layoutWidth + 24;
+
     return (
-        <div className="fixed bottom-20 right-4 z-50 flex items-center gap-2 sm:bottom-6 sm:right-6">
+        <div
+            className="fixed bottom-20 right-4 z-50 flex items-center gap-2 sm:bottom-6 sm:right-6"
+            style={rightOffset === undefined ? undefined : { right: rightOffset }}
+        >
             {active && (
                 <span
                     role="status"

@@ -17,7 +17,7 @@ interface ChatMessage { id: string; role: 'user' | 'assistant'; content: string;
 
 const WELCOME: ChatMessage = {
   id: 'welcome', role: 'assistant',
-  content: 'Ask me how Ogeemo works. I’ll retrieve the relevant instructions and cite their sources. This beta currently covers the **Activity Manager**, **Calendar**, **Contacts**, **Projects**, **Workflows**, **Time Tracking and Reports**, and **sidebar navigation**.',
+  content: 'Ask me how Ogeemo works. I’ll retrieve the relevant instructions and cite their sources. It currently covers the **Activity Manager**, **Calendar**, **Contacts**, **Projects**, **Workflows**, **Time Tracking and Reports**, and **sidebar navigation**.',
 };
 const SUGGESTED_QUESTIONS = [
   'How does Next free slot choose a time?',
@@ -64,7 +64,6 @@ export function KnowledgeBaseView() {
           <div className="flex items-center gap-2">
             <BookOpen className="h-7 w-7 text-primary" />
             <h1 className="text-3xl font-bold font-headline text-primary">Ogeemo Knowledge Base</h1>
-            <Badge variant="secondary">Beta</Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">Source-backed answers about how Ogeemo works.</p>
         </div>
@@ -77,7 +76,7 @@ export function KnowledgeBaseView() {
       </header>
       <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <p>Read-only beta. It does not change records or inspect private account data. Unsupported questions receive an honest “not documented” response.</p>
+        <p>Read-only. It does not change records or inspect private account data. Unsupported questions receive an honest “not documented” response.</p>
       </div>
       <Card className="flex min-h-[540px] flex-1 flex-col shadow-md">
         <CardHeader className="border-b py-4">

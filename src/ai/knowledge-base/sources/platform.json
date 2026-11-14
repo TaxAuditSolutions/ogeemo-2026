@@ -3,12 +3,12 @@
     {
       "id": "platform.knowledge-base.purpose",
       "module": "Knowledge Base",
-      "title": "What the Knowledge Base beta can do",
+      "title": "What the Knowledge Base can do",
       "routes": ["/knowledge-base"],
       "intents": ["help", "capabilities", "limitations"],
-      "keywords": ["knowledge", "assistant", "ask", "answer", "read only", "copilot", "beta", "sources"],
+      "keywords": ["knowledge", "assistant", "ask", "answer", "read only", "copilot", "sources"],
       "audiences": ["all"],
-      "content": "Ogeemo Knowledge Base is a read-only beta assistant for questions about how Ogeemo works. It explains features, business rules, navigation, and step-by-step workflows using selectively retrieved documentation. It cites the knowledge entries used for each answer. It does not create, edit, complete, or delete records, and it does not query private account data. For live questions such as 'What is my next appointment?', use the Calendar or the operational Co-Pilot. If documentation does not cover a question, the Knowledge Base should say so rather than guess.",
+      "content": "Ogeemo Knowledge Base is a read-only assistant for questions about how Ogeemo works. It explains features, business rules, navigation, and step-by-step workflows using selectively retrieved documentation. It cites the knowledge entries used for each answer. It does not create, edit, complete, or delete records, and it does not query private account data. For live questions such as 'What is my next appointment?', use the Calendar or the operational Co-Pilot. If documentation does not cover a question, the Knowledge Base should say so rather than guess.",
       "sourceFiles": ["src/ai/flows/knowledge-base-chat.ts", "src/components/knowledge-base/knowledge-base-view.tsx"]
     },
     {
@@ -19,7 +19,7 @@
       "intents": ["overview", "definition"],
       "keywords": ["ogeemo", "platform", "business", "operating system", "bks", "bookkeeping", "projects", "contacts"],
       "audiences": ["all"],
-      "content": "Ogeemo is a business operating system built by Tax Audit Solutions (TAS). It connects contacts, projects, activities, scheduling, time tracking, documents, workflows, and Bookkeeping Kept Simple (BKS). The Activity Manager is the main execution hub. My Shortcuts provides personalized navigation. The operational Co-Pilot can perform supported actions, while this separate Knowledge Base beta only explains documented product behaviour.",
+      "content": "Ogeemo is a business operating system built by Tax Audit Solutions (TAS). It connects contacts, projects, activities, scheduling, time tracking, documents, workflows, and Bookkeeping Kept Simple (BKS). The Activity Manager is the main execution hub. My Shortcuts provides personalized navigation. The operational Co-Pilot can perform supported actions, while this separate Knowledge Base only explains documented product behaviour.",
       "sourceFiles": ["src/ai/knowledge/01_platform_identity.md", "src/lib/menu-items.ts"]
     }
   ]

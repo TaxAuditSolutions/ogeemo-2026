@@ -64,7 +64,7 @@ export const knowledgeBaseChatFlow = ai.defineFlow(
   async ({ message, history, currentPath, accessLevel }) => {
     if (isLiveAccountQuestion(message)) {
       return {
-        reply: 'I can explain how Ogeemo works, but this read-only beta cannot inspect your account records. Open the relevant Ogeemo screen for current information—for example, [Calendar](/calendar) for appointments, [Activity Manager](/event-manager) for activities, or the [Time Log Report](/reports/time-log) for hours worked and billable time. I can explain how any of these work.',
+        reply: 'I can explain how Ogeemo works, but the Knowledge Base is read-only and cannot inspect your account records. Open the relevant Ogeemo screen for current information—for example, [Calendar](/calendar) for appointments, [Activity Manager](/event-manager) for activities, or the [Time Log Report](/reports/time-log) for hours worked and billable time. I can explain how any of these work.',
         citations: [], store: 'source-fallback' as const, candidateCount: 0,
       };
     }

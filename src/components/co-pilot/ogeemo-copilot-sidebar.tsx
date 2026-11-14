@@ -20,6 +20,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { CoPilotMark } from '@/components/co-pilot/co-pilot-mark';
+import { CopilotMicButton } from '@/components/co-pilot/copilot-mic-button';
 import { AssistantDispatchLink } from '@/components/co-pilot/assistant-dispatch-link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -358,6 +359,7 @@ function CopilotPanelContent({
                             className="h-9 min-w-0 flex-1 text-xs text-black placeholder:text-muted-foreground"
                             disabled={isThinking}
                         />
+                        <CopilotMicButton value={input} onChange={setInput} disabled={isThinking} />
                         <Button
                             type="button"
                             size="icon"

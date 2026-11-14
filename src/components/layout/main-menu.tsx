@@ -290,6 +290,22 @@ export function MainMenu() {
         }
     };
 
+    // Save the view currently shown (All / Groups / Favorites) as the one the
+    // sidebar opens with on later visits. Same preference as Settings >
+    // Sidebar Layout, so both places stay in step.
+    const VIEW_LABELS: Record<typeof view, string> = { fullMenu: 'All', grouped: 'Groups', dashboard: 'Favorites' };
+    const savedView = preferences?.defaultSidebarView || 'grouped';
+    const isViewSaved = savedView === view;
+
+    const handleSetDefaultView = () => {
+        if (isViewSaved) return;
+        updatePreferences({ defaultSidebarView: view });
+        toast({
+            title: 'Default view saved',
+            description: `The sidebar will open on ${VIEW_LABELS[view]} next time.`,
+        });
+    };
+
     // Shortcuts collapse so the map stays primary; the choice
     // persists per user, and icon-collapsed sidebars always show them.
     const shortcutsExpanded = preferences?.shortcutsExpanded ?? false;
@@ -343,6 +359,23 @@ export function MainMenu() {
                     </Button>
                 ))}
                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant={isViewSaved ? 'secondary' : 'ghost'}
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-black"
+                                onClick={handleSetDefaultView}
+                                aria-label={isViewSaved ? `${VIEW_LABELS[view]} is your default view` : `Save ${VIEW_LABELS[view]} as your default view`}
+                                aria-pressed={isViewSaved}
+                            >
+                                <Save className={isViewSaved ? 'h-4 w-4 fill-current' : 'h-4 w-4'} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p>{isViewSaved ? `${VIEW_LABELS[view]} is your default view` : `Save ${VIEW_LABELS[view]} as default view`}</p>
+                        </TooltipContent>
+                    </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button

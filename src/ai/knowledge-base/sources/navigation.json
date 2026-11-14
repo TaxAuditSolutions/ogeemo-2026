@@ -8,7 +8,7 @@
       "intents": ["how-to", "navigation", "sidebar"],
       "keywords": ["sidebar", "all", "groups", "favorites", "favourites", "full menu", "view", "switch", "left menu"],
       "audiences": ["all"],
-      "content": "Use the three buttons at the top of the left sidebar: All shows the full menu, Groups shows module groups, and Favorites shows favorite actions. The selected view is highlighted and changes immediately without opening Settings. The pin control beside them pins or unpins the sidebar. To choose the default view used on later visits, open Settings and use Sidebar Layout. Settings and Help also remain at the bottom of the sidebar.",
+      "content": "Use the three buttons at the top of the left sidebar: All shows the full menu, Groups shows module groups, and Favorites shows favorite actions. The selected view is highlighted and changes immediately without opening Settings. Beside them, the Save button saves the view you are looking at as your default, so the sidebar opens on it on later visits (the button looks filled when the current view is already your default, and a message confirms each save), and the pin control pins or unpins the sidebar. The same default can also be chosen in Settings under Sidebar Layout. Settings and Help also remain at the bottom of the sidebar.",
       "sourceFiles": ["src/components/layout/main-menu.tsx", "src/app/(app)/settings/page.tsx", "src/context/sidebar-view-context.tsx"]
     },
     {

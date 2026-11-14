@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { Mic, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { appendTranscript } from '@/lib/transcript';
@@ -42,6 +43,26 @@ function fieldLabel(el: HTMLElement): string {
     return 'selected field';
 }
 
+interface DialogHost {
+    el: HTMLElement;
+    /** The dialog is the Co-Pilot drawer, which has its own mic. */
+    hasOwnMic: boolean;
+}
+
+const OPEN_DIALOG_SELECTOR = '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]';
+const TEXT_FIELD_SELECTOR =
+    'textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="button"]):not([type="submit"])';
+
+/** The topmost open modal that has a text field to dictate into, if any. */
+function findDialogHost(doc: Document): DialogHost | null {
+    const open = doc.querySelectorAll<HTMLElement>(OPEN_DIALOG_SELECTOR);
+    const el = open.length > 0 ? open[open.length - 1] : null;
+    if (!el) return null;
+    if (el.querySelector('[aria-label="Message Ogeemo Co-Pilot"]')) return { el, hasOwnMic: true };
+    if (!el.querySelector(TEXT_FIELD_SELECTOR)) return null;
+    return { el, hasOwnMic: false };
+}
+
 export function GlobalDictation() {
     const { preferences } = useUserPreferences();
     const copilot = useOgeemoCopilotSidebar();
@@ -76,17 +97,58 @@ export function GlobalDictation() {
         return () => document.removeEventListener('focusin', onFocusIn);
     }, []);
 
+    // A modal dialog (Add Task, Edit Contact, ...) switches off clicks on
+    // everything outside it and draws its overlay over the page, so the
+    // floating mic would be unreachable. While one is open, the mic moves
+    // into the dialog itself: inside the dialog it is clickable and counts as
+    // "inside" for the outside-click rule, so it does not close the dialog.
+    const [dialogHost, setDialogHost] = React.useState<DialogHost | null>(null);
+    React.useEffect(() => {
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            const next = findDialogHost(document);
+            setDialogHost((prev) =>
+                prev?.el === next?.el && prev?.hasOwnMic === next?.hasOwnMic ? prev : next,
+            );
+        };
+        const schedule = () => {
+            if (!frame) frame = window.requestAnimationFrame(update);
+        };
+        update();
+        const observer = new MutationObserver(schedule);
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['data-state'],
+        });
+        return () => {
+            observer.disconnect();
+            if (frame) window.cancelAnimationFrame(frame);
+        };
+    }, []);
+
     const showButton = preferences?.showDictationButton !== false;
     const active = status !== 'idle';
 
     if (!showButton || isSupported !== true) return null;
+    // The Co-Pilot drawer already has its own mic beside the chat field.
+    if (dialogHost?.hasOwnMic) return null;
 
-    const resolveTarget = () =>
-        pickDictationField<HTMLTextAreaElement | HTMLInputElement>(
-            document.activeElement,
-            lastFieldRef.current,
-            document.getElementById('notes'),
+    const resolveTarget = () => {
+        // With a dialog open, only its own fields are valid targets: a field
+        // behind the overlay (last touched before the dialog opened) must
+        // never receive the words.
+        const host = dialogHost?.el ?? null;
+        const within = (el: Element | null): Element | null =>
+            host ? (el && host.contains(el) ? el : null) : el;
+        return pickDictationField<HTMLTextAreaElement | HTMLInputElement>(
+            within(document.activeElement),
+            within(lastFieldRef.current),
+            host ? null : document.getElementById('notes'),
         );
+    };
 
     const promptSelectField = () => {
         if (noTargetToastShownRef.current) return;
@@ -120,10 +182,16 @@ export function GlobalDictation() {
     // it (it has its own mic beside the chat field) instead of on top of it.
     const rightOffset = copilot.isMobile ? undefined : copilot.layoutWidth + 24;
 
-    return (
+    const inDialog = Boolean(dialogHost);
+
+    const control = (
         <div
-            className="fixed bottom-20 right-4 z-50 flex items-center gap-2 sm:bottom-6 sm:right-6"
-            style={rightOffset === undefined ? undefined : { right: rightOffset }}
+            className={
+                inDialog
+                    ? 'absolute right-12 top-3 z-[60] flex items-center gap-2'
+                    : 'fixed bottom-20 right-4 z-50 flex items-center gap-2 sm:bottom-6 sm:right-6'
+            }
+            style={inDialog || rightOffset === undefined ? undefined : { right: rightOffset }}
         >
             {active && (
                 <span
@@ -142,7 +210,8 @@ export function GlobalDictation() {
                 aria-label={active ? 'Stop voice dictation' : 'Start voice dictation'}
                 title={active ? 'Stop voice dictation' : 'Dictate into the selected field'}
                 className={cn(
-                    'flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-colors',
+                    'flex items-center justify-center rounded-full shadow-lg transition-colors',
+                    inDialog ? 'h-9 w-9' : 'h-12 w-12',
                     active
                         ? 'animate-pulse bg-destructive text-white'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90',
@@ -152,4 +221,6 @@ export function GlobalDictation() {
             </button>
         </div>
     );
+
+    return dialogHost ? createPortal(control, dialogHost.el) : control;
 }
